@@ -1,0 +1,15 @@
+name: Auto Request Review
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review, reopened]
+
+jobs:
+  auto-request-review:
+    name: Auto Request Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request review based on files changes and/or groups the author belongs to
+        uses: necojackarc/auto-request-review@b5e81876454003a4ccb9b89cb205c67d77d7035b #Using sha pinning instead of version tag of v0.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
