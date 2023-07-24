@@ -1,10 +1,6 @@
 reviewers:
   defaults:
-    - nkwangleiGIT
     - bjwswang
-    - 0xff-dev
-    - Abirdcfly
-    - Lanture1064
 
 options:
   ignore_draft: true
