@@ -4,7 +4,7 @@ metadata:
   name: kubeagi
   namespace: kubebb-system
 spec:
-  url: https://kubeagi.github.io/charts
+  url: https://kubeagi.github.io/arcadia
   pullStategy:
     intervalSeconds: 120
     retry: 5

@@ -13,7 +13,7 @@
 #### 1. Get Repo Info
 
 ```shell
-helm repo add kubeagi https://kubeagi.github.io/charts
+helm repo add kubeagi https://kubeagi.github.io/arcadia
 helm repo update
 ```
 
