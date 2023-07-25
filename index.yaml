@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  arcadia:
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2023-07-25T15:59:32.723128515Z"
+    description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
+    digest: 0c0dd7c54887baaddc61abe99500d4dac5749c30c6450714d08feea1d082aca0
+    name: arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.1.0/arcadia-0.1.0.tgz
+    version: 0.1.0
   jupyterlab:
   - apiVersion: v2
     appVersion: 4.0.3
@@ -11,4 +22,15 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/jupyterlab-0.1.0/jupyterlab-0.1.0.tgz
     version: 0.1.0
-generated: "2023-07-25T11:41:15.875648878Z"
+  llms:
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2023-07-25T15:59:33.056228303Z"
+    description: A Helm chart(KubeBB Component) for Arcadia LLM Services
+    digest: 53d03c71169831e1eba19005822f89c686a78bdabe8e552773f2f94c811ee9cb
+    name: llms
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-07-25T15:59:33.056232603Z"
