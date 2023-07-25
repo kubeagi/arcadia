@@ -30,10 +30,10 @@ helm install [RELEASE_NAME] kubeagi/jupyterlab
 #### 1. Create a repository `kubeagi` into kubebb
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/kubebb/arcadia/master/.kubebb_repo.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubeagi/arcadia/main/.kubeagi_repo.yaml
 ```
 
-> Note: If you want to create this repository in other namespace, you should update field `metadata.namespace` in `.kubebb_repo.yaml` before apply.
+> Note: If you want to create this repository in other namespace, you should update field `metadata.namespace` in `.kubeagi_repo.yaml` before apply.
 
 #### 2. Install Jupyterlab with `ComponentPlan`
 
