@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "jupyterlab.fullname" . }}
+  labels:
+    {{- include "jupyterlab.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8888
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "jupyterlab.selectorLabels" . | nindent 4 }}

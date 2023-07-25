@@ -1,0 +1,10 @@
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Repository
+metadata:
+  name: kubeagi
+  namespace: kubebb-system
+spec:
+  url: https://kubeagi.github.io/charts
+  pullStategy:
+    intervalSeconds: 120
+    retry: 5
