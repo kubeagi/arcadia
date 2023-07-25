@@ -13,10 +13,10 @@ image:
 imagePullSecrets: []
 
 ingress:
-  enabled: true
+  enabled: false
   # portal-ingress is the default ingress provided by kubebb
   className: "portal-ingress"
-  host: jupyterlab.172.190.30.163.nip.io
+  host: jupyterlab.172.168.0.2.nip.io
   annotations:
     {}
     # kubernetes.io/ingress.class: portal-ingress
