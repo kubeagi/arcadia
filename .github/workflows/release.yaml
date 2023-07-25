@@ -31,7 +31,7 @@ jobs:
         uses: helm/chart-releaser-action@v1.5.0
         with:
           charts_dir: charts
-          charts_repo_url: https://kubeagi.github.io/charts/
+          charts_repo_url: https://kubeagi.github.io/arcadia/
           # FIXME: uncomment this once customized configuration is needed
           # config: cr.yaml
         env:
