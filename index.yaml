@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  jupyterlab:
+  - apiVersion: v2
+    appVersion: 4.0.3
+    created: "2023-07-25T11:41:15.875632477Z"
+    description: A Helm chart for JupyterLab
+    digest: ac6a2035ae0cd442b840988e0018a5c6769cb96a732807e75e98e6df9bba9b93
+    name: jupyterlab
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/jupyterlab-0.1.0/jupyterlab-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-07-25T11:41:15.875648878Z"
