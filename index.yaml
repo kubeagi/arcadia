@@ -14,6 +14,22 @@ entries:
   jupyterlab:
   - apiVersion: v2
     appVersion: 4.0.3
+    created: "2023-07-28T08:19:32.479442043Z"
+    description: A Helm chart for JupyterLab
+    digest: 0cc4ef94701f8fa067251e64764ac469ce0fbf6823fe2dc4671982c172eab432
+    keywords:
+    - AI
+    - JupyterLab
+    maintainers:
+    - email: bjwswang@gmail.com
+      name: bjwswang
+    name: jupyterlab
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/jupyterlab-0.1.1/jupyterlab-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 4.0.3
     created: "2023-07-25T11:41:15.875632477Z"
     description: A Helm chart for JupyterLab
     digest: ac6a2035ae0cd442b840988e0018a5c6769cb96a732807e75e98e6df9bba9b93
@@ -33,4 +49,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-07-25T15:59:33.056232603Z"
+generated: "2023-07-28T08:19:32.479452443Z"
