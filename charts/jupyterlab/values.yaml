@@ -10,13 +10,19 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "lab-4.0.3"
 
+# reference https://jupyter-server.readthedocs.io/en/latest/other/full-config.html
+conf:
+  # follow https://jupyter-server.readthedocs.io/en/latest/operators/public-server.html#preparing-a-hashed-password to get a `hashed password`
+  # default: hashed of "Passw0rd!"
+  hashed_password: ""
+
 imagePullSecrets: []
 
 ingress:
   enabled: false
   # portal-ingress is the default ingress provided by kubebb
-  className: "portal-ingress"
-  host: jupyterlab.172.168.0.2.nip.io
+  className: ""
+  host: jupyterlab.172.18.0.2.nip.io
   annotations:
     {}
     # kubernetes.io/ingress.class: portal-ingress
@@ -25,6 +31,44 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
+
+persistence:
+  enabled: false
+
+  # Mount the persistent volume at `/home/jovyan` by default
+  # Only data under `mountPath` will be persisted
+  mountPath: ""
+
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  existingClaim: ""
+
+  ## Jupyter data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  ## Storage class of PV to bind. By default it looks for standard storage class.
+  ## If the PV uses a different storage class, specify that here.
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 podAnnotations: {}
 
@@ -40,19 +84,6 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
-resources:
-  {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
 nodeSelector: {}
 

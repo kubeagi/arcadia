@@ -30,6 +30,16 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Reference: https://jupyter-docker-stacks.readthedocs.io/en/latest/using/common.html#jupyter-server-options
+          command:
+            - "tini"
+            - "-g"
+            - "--"
+            - "start-notebook.sh"
+            - "--PasswordIdentityProvider.hashed_password={{ .Values.conf.hashed_password | default "argon2:$argon2id$v=19$m=10240,t=10,p=8$N7IUvGWAkAvJiE7P1YltZw$tjCZSm85Ihe1/vGSwmY0eS3HnJbOfs4fZiS0NO4zQWA" }}"
+          volumeMounts:
+            - name: export
+              mountPath: "{{ .Values.persistence.mountPath | default "/home/jovyan" }}"
           ports:
             - name: http
               containerPort: 8888
@@ -56,3 +66,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: export
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "jupyterlab.fullname" .) }}
+        {{- else }}
+          emptyDir: {}
+        {{- end }}
