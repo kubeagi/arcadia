@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fschat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fschat
+  template:
+    metadata:
+      labels:
+        app: fschat
+    spec:
+      containers:
+        - name: fschat-controller
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: ["python3.9", "-m", "fastchat.serve.controller"]
+          ports:
+            - containerPort: 21001
+
+        - name: fschat-api
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: ["python3.9", "-m", "fastchat.serve.openai_api_server"]
+          ports:
+            - containerPort: 8000
