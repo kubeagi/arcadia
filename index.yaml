@@ -40,6 +40,19 @@ entries:
     version: 0.1.0
   llms:
   - apiVersion: v2
+    appVersion: 0.2.18
+    created: "2023-08-01T10:41:20.956954505Z"
+    description: A Helm chart(KubeBB Component) for Arcadia LLM Services
+    digest: 496aaa66f96cf1be06cb6c6820824de89b9350d4d2008b2fc5212a30c18c00ae
+    maintainers:
+    - name: Lanture1064
+    - name: bjwswang
+    name: llms
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.2/llms-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.0.0
     created: "2023-07-25T15:59:33.056228303Z"
     description: A Helm chart(KubeBB Component) for Arcadia LLM Services
@@ -49,4 +62,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-07-28T08:19:32.479452443Z"
+generated: "2023-08-01T10:41:20.956966105Z"
