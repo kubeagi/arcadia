@@ -112,3 +112,4 @@ Temporary Items
 .apdisk
 .vagrant/
 _output/
+*.bkp
