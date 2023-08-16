@@ -20,22 +20,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // LLMSpec defines the desired state of LLM
 type LLMSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	DisplayName string `json:"displayName,omitempty"`
+	// Type defines the type of llm
+	Type LLMType `json:"type"`
+	// URL keeps the URL of the llm service(Must required)
+	URL string `json:"url"`
+	// Auth keeps the authentication credentials when access llm
+	// keeps in k8s secret
+	Auth string `json:"auth,omitempty"`
+}
 
-	// Foo is an example field of LLM. Edit llm_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type AuthInfo struct {
+	APIKey string `json:"apiKey,omitempty"`
 }
 
 // LLMStatus defines the observed state of LLM
 type LLMStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ConditionedStatus is the current status
+	ConditionedStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true
