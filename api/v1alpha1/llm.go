@@ -29,7 +29,8 @@ var (
 type LLMType string
 
 const (
-	OpenAI LLMType = "openai"
+	OpenAI  LLMType = "openai"
+	ZhiPuAI LLMType = "zhipuai"
 )
 
 func (o *AuthInfo) FromSecret(secret corev1.Secret) error {

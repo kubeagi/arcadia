@@ -25,7 +25,7 @@ type LLMSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 	// Type defines the type of llm
 	Type LLMType `json:"type"`
-	// URL keeps the URL of the llm service(Must required)
+	// URL keeps the URL of the llm service(required)
 	URL string `json:"url"`
 	// Auth keeps the authentication credentials when access llm
 	// keeps in k8s secret
@@ -40,6 +40,11 @@ type AuthInfo struct {
 type LLMStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
+	// URL keeps the URL of the llm service(required)
+	URL string `json:"url"`
+	// Auth keeps the authentication credentials when access llm
+	// keeps in k8s secret
+	Auth string `json:"auth,omitempty"`
 }
 
 //+kubebuilder:object:root=true

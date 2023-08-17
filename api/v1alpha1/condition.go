@@ -32,6 +32,8 @@ const (
 	TypeReady ConditionType = "Ready"
 	// TypeUnknown resources are unknown to the system
 	TypeUnknown ConditionType = "Unknown"
+	// TypeUnavailable resources are unavailable
+	TypeUnavailable ConditionType = "Unavailable"
 )
 
 // A ConditionReason represents the reason a resource is in a condition.
