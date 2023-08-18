@@ -35,10 +35,44 @@ spec:
           spec:
             description: PromptSpec defines the desired state of Prompt
             properties:
-              foo:
-                description: Foo is an example field of Prompt. Edit prompt_types.go
-                  to remove/update
+              llm:
+                description: LLM serivice name(CRD LLM)
                 type: string
+              zhiPuAIParams:
+                description: ZhiPuAIParams defines the params of ZhiPuAI
+                properties:
+                  incremental:
+                    description: Incremental is only Used for SSE Invoke
+                    type: boolean
+                  method:
+                    description: Method used for this prompt call
+                    type: string
+                  model:
+                    description: Model used for this prompt call
+                    type: string
+                  prompt:
+                    description: Contents
+                    items:
+                      description: Prompt defines the content of ZhiPuAI Prompt Call
+                      properties:
+                        content:
+                          type: string
+                        role:
+                          type: string
+                      type: object
+                    type: array
+                  task_id:
+                    description: TaskID is used for getting result of AsyncInvoke
+                    type: string
+                  temperature:
+                    description: Temperature is float in zhipuai
+                  top_p:
+                    description: TopP is float in zhipuai
+                required:
+                - prompt
+                type: object
+            required:
+            - llm
             type: object
           status:
             description: PromptStatus defines the observed state of Prompt

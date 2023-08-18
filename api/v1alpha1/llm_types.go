@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/kubeagi/arcadia/pkg/llms"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,7 +25,7 @@ import (
 type LLMSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 	// Type defines the type of llm
-	Type LLMType `json:"type"`
+	Type llms.LLMType `json:"type"`
 	// URL keeps the URL of the llm service(Must required)
 	URL string `json:"url"`
 	// Auth keeps the authentication credentials when access llm

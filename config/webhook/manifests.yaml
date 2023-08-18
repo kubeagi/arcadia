@@ -1,0 +1,55 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-arcadia-kubeagi-k8s-com-cn-v1alpha1-prompt
+  failurePolicy: Fail
+  name: mprompt.kb.io
+  rules:
+  - apiGroups:
+    - arcadia.kubeagi.k8s.com.cn
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - portals
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-arcadia-kubeagi-k8s-com-cn-v1alpha1-prompt
+  failurePolicy: Fail
+  name: vprompt.kb.io
+  rules:
+  - apiGroups:
+    - arcadia.kubeagi.k8s.com.cn
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - prompts
+  sideEffects: None
