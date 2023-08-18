@@ -17,19 +17,16 @@ limitations under the License.
 package v1alpha1
 
 import (
+	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // PromptSpec defines the desired state of Prompt
 type PromptSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Prompt. Edit prompt_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// LLM serivice name(CRD LLM)
+	LLM string `json:"llm"`
+	// ZhiPuAIParams defines the params of ZhiPuAI
+	ZhiPuAIParams *llmzhipuai.ModelParams `json:"zhiPuAIParams,omitempty"`
 }
 
 // PromptStatus defines the observed state of Prompt

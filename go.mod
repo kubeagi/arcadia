@@ -3,6 +3,7 @@ module github.com/kubeagi/arcadia
 go 1.20
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
 	k8s.io/api v0.24.2
