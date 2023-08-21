@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -51,11 +53,18 @@ func init() {
 }
 
 func main() {
-	var configFile string
+	var (
+		configFile      string
+		enableProfiling bool
+		probeAddr       string
+	)
 	flag.StringVar(&configFile, "config", "",
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
+	flag.BoolVar(&enableProfiling, "profiling", true,
+		"Enable profiling via web interface host:port/debug/pprof/")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -65,7 +74,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
-	options := ctrl.Options{Scheme: scheme}
+	options := ctrl.Options{Scheme: scheme, HealthProbeBindAddress: probeAddr}
 	if configFile != "" {
 		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
 		if err != nil {
@@ -146,6 +155,14 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+
+	if enableProfiling {
+		_ = mgr.AddMetricsExtraHandler("/debug/pprof/", http.HandlerFunc(pprof.Index))
+		_ = mgr.AddMetricsExtraHandler("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+		_ = mgr.AddMetricsExtraHandler("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+		_ = mgr.AddMetricsExtraHandler("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+		_ = mgr.AddMetricsExtraHandler("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 	}
 
 	setupLog.Info("starting manager")
