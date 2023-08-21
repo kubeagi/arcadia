@@ -16,11 +16,11 @@ helm install arcadia arcadia/arcadia
 
 ### 2. Add a LLM
 
-> Take [ZhiPuAI] as an example.
+> Take [ZhiPuAI](https://www.zhipuai.cn/) as an example.
 
 1. Prepare auth info
 
-Update apiKey in [zhipuai's secret](https://github.com/kubeagi/arcadia/blob/main/config/samples/core_v1alpha1_arcadia_llm.yaml).
+Update apiKey(`Base64 encoded`) in [zhipuai's secret](https://github.com/kubeagi/arcadia/blob/main/config/samples/arcadia_v1alpha1_llm.yaml#L7).
 
 > On how to get apiKey, please refer to [ZhiPuAI](https://open.bigmodel.cn/dev/api#auth)
 

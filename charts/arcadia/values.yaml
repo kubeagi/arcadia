@@ -1,5 +1,5 @@
 deployment:
-  image: kubebb/arcadia:latest
+  image: kubebb/arcadia:v0.0.0-20230822-1b9f847
   imagePullPolcy: IfNotPresent
   resources:
     limits:
