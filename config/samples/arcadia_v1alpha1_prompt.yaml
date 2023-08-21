@@ -1,6 +1,14 @@
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Prompt
 metadata:
-  name: prompt-sample
+  name: prompt-zhipuai-sample
 spec:
-  # TODO(user): Add fields here
+  llm: "zhipuai"
+  zhiPuAIParams:
+    model: "chatglm_lite"
+    method: "invoke"
+    temperature: 0.75
+    top_p: 0.5
+    prompt:
+      - role: "user"
+        content: "What is kubernetes?"

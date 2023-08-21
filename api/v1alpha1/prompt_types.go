@@ -31,8 +31,11 @@ type PromptSpec struct {
 
 // PromptStatus defines the observed state of Prompt
 type PromptStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ConditionedStatus is the current status
+	ConditionedStatus `json:",inline"`
+
+	// Data retrieved after LLM Call
+	Data []byte `json:"data"`
 }
 
 //+kubebuilder:object:root=true

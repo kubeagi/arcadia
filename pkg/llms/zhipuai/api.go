@@ -62,6 +62,20 @@ func NewZhiPuAI(apiKey string) *ZhiPuAI {
 	}
 }
 
+// Call wraps a common AI api call
+func (z *ZhiPuAI) Call(params ModelParams) (map[string]interface{}, error) {
+	switch params.Method {
+	case ZhiPuAIInvoke:
+		return z.Invoke(params)
+	case ZhiPuAIAsyncInvoke:
+		return z.AsyncInvoke(params)
+	case ZhiPuAIAsyncGet:
+		return z.Get(params)
+	default:
+		return nil, errors.New("unknown method")
+	}
+}
+
 // Invoke calls zhipuai and returns result immediately
 func (z *ZhiPuAI) Invoke(params ModelParams) (map[string]interface{}, error) {
 	url := BuildAPIURL(params.Model, ZhiPuAIInvoke)
