@@ -3,6 +3,24 @@ entries:
   arcadia:
   - apiVersion: v2
     appVersion: 0.0.0
+    created: "2023-08-21T10:43:57.1936891Z"
+    description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
+    digest: 76375aeab585fafff420c9d0115e25c5bf4f8d0ac89796b272e7c643497f7cae
+    keywords:
+    - kubeagi
+    - NativeAI
+    maintainers:
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    name: arcadia
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.1.2/arcadia-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 0.0.0
     created: "2023-08-16T09:11:07.278986057Z"
     description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
     digest: 7280eb547d49ea6456e541d274f014156f460bc1931cc0b7ee208dc434b5e285
@@ -80,4 +98,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-08-16T09:11:07.278998358Z"
+generated: "2023-08-21T10:43:57.1937138Z"
