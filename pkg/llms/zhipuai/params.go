@@ -18,7 +18,9 @@ limitations under the License.
 
 package zhipuai
 
-import "errors"
+import (
+	"errors"
+)
 
 type Role string
 

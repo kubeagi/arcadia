@@ -49,7 +49,6 @@ spec:
                 type: string
             required:
             - type
-            - url
             type: object
           status:
             description: LLMStatus defines the observed state of LLM
