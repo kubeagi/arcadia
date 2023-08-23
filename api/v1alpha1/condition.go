@@ -34,6 +34,8 @@ const (
 	TypeUnknown ConditionType = "Unknown"
 	// TypeDone resources are believed to be processed
 	TypeDone ConditionType = "Done"
+	// TypeUnavailable resources are unavailable
+	TypeUnavailable ConditionType = "Unavailable"
 )
 
 // A ConditionReason represents the reason a resource is in a condition.
