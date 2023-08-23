@@ -1,8 +1,6 @@
 # Arcadia
 
-The idea of `Arcadia` comes from the chat with `ClaudeAI`.See[POE Chat](https://poe.com/s/ZFpODyF8aSbgHG1GiQOp)
-
-Our vision is to realize the ideal paradise for all through AI. To achieve a perfect fusion of technology and ideal life.We hope that through our work, we can take steps towards this grander goal of harnessing AI for the good of all.
+Our vision is to make it easier for cloud-native applications to integrate with AI, thereby making the cloud more intelligent and impactful.
 
 ## Quick start
 
@@ -54,14 +52,17 @@ Output:
 {"code":200,"data":{"choices":[{"content":"\" Kubernetes (also known as K8s) is an open-source container orchestration system for automating the deployment, scaling, and management of containerized applications. It was originally designed by Google, and is now maintained by the Cloud Native Computing Foundation (CNCF).\\n\\nKubernetes provides a platform-as-a-service (PaaS) model, which allows developers to deploy, run, and scale containerized applications with minimal configuration and effort. It does this by abstracting the underlying infrastructure and providing a common set of APIs and tools that can be used to deploy, manage, and scale applications consistently across different environments.\\n\\nKubernetes is widely adopted by organizations of all sizes and has a large, active community of developers contributing to its continued development and improvement. It is available on a variety of platforms, including Linux, Windows, and 移动设备，and can be deployed on-premises, in the cloud, or in a hybrid environment.\"","role":"assistant"}],"request_id":"7865480399259975113","task_id":"7865480399259975113","task_status":"SUCCESS","usage":{"total_tokens":203}},"msg":"操作成功","success":true}
 ```
 
-## Library
+## Clients
 
-To support different kinds of LLM services,we developed some libs.
+We developed some clients in Golang to interfact with AI in Golang.
 
-### ZhiPuAI
+### ZhiPuAI(ChatGLM)
 
-- [Library](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- [Client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
 - [Examples on How to use this Library](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
+
+For ChatGLM,see [here](https://github.com/THUDM/ChatGLM2-6B)
+For `智谱AI`,see [here](https://open.bigmodel.cn/)
 
 ## Contribute to Arcadia
 
