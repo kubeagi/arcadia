@@ -31,8 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -131,6 +134,15 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 // SetupWithManager sets up the controller with the Manager.
 func (r *PromptReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.Prompt{}).
+		For(&arcadiav1alpha1.Prompt{}, builder.WithPredicates(PromptPredicates{})).
 		Complete(r)
+}
+
+type PromptPredicates struct {
+	predicate.Funcs
+}
+
+func (p PromptPredicates) Create(ce event.CreateEvent) bool {
+	prompt := ce.Object.(*arcadiav1alpha1.Prompt)
+	return len(prompt.Status.ConditionedStatus.Conditions) == 0
 }

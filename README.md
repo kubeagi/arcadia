@@ -54,27 +54,14 @@ Output:
 {"code":200,"data":{"choices":[{"content":"\" Kubernetes (also known as K8s) is an open-source container orchestration system for automating the deployment, scaling, and management of containerized applications. It was originally designed by Google, and is now maintained by the Cloud Native Computing Foundation (CNCF).\\n\\nKubernetes provides a platform-as-a-service (PaaS) model, which allows developers to deploy, run, and scale containerized applications with minimal configuration and effort. It does this by abstracting the underlying infrastructure and providing a common set of APIs and tools that can be used to deploy, manage, and scale applications consistently across different environments.\\n\\nKubernetes is widely adopted by organizations of all sizes and has a large, active community of developers contributing to its continued development and improvement. It is available on a variety of platforms, including Linux, Windows, and 移动设备，and can be deployed on-premises, in the cloud, or in a hybrid environment.\"","role":"assistant"}],"request_id":"7865480399259975113","task_id":"7865480399259975113","task_status":"SUCCESS","usage":{"total_tokens":203}},"msg":"操作成功","success":true}
 ```
 
-## Why in Kubernetes?
+## Library
 
-Kubernetes provides an ideal platform for building the intelligent systems required to realize our vision of an AI-powered utopia. Some of the key reasons are:
+To support different kinds of LLM services,we developed some libs.
 
-• Scalability: Kubernetes can easily scale from a few nodes to thousands, allowing the system to grow as our utopia expands.
+### ZhiPuAI
 
-• Portability: Kubernetes abstracts the underlying infrastructure, making the system hardware agnostic and portable.
-
-• Auto-healing: Kubernetes' self-healing capabilities ensure that applications keep running smoothly with minimal human intervention.
-
-• Service discovery and load balancing: Exposing applications as Kubernetes services provides a unified way for them to discover and communicate with each other.
-
-• Resource Optimization: Kubernetes automatically manages and schedules compute resources, ensuring optimal utilization.
-
-• Extensibility: The ecosystem of Kubernetes operators and custom controllers allows extending the platform to meet our futuristic needs.
-
-• Integrations: Kubernetes seamlessly integrates with other cloud-native technologies like Istio, Prometheus etc., which are essential for building intelligent systems.
-
-• Abstraction: Kubernetes abstracts the complexities of container and cluster orchestration, allowing us to focus on building the AI models and applications.
-
-In summary, Kubernetes provides an ideal foundation for building a distributed intelligent system of the scale and complexity required to realize our vision of an AI-powered utopia. Its maturity, robustness and cloud-native design make it a perfect vehicle for our lofty goals.
+- [Library](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- [Examples on How to use this Library](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
 
 ## Contribute to Arcadia
 
