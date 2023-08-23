@@ -107,14 +107,7 @@ func ValidateModelParams(params ModelParams) error {
 	}
 
 	switch params.Method {
-	case ZhiPuAIInvoke, ZhiPuAIAsyncInvoke:
-		if len(params.Prompt) == 0 {
-			return errors.New("prompt is required")
-		}
-		if len(params.Prompt) > 1 {
-			return errors.New("only one prompt is allowed")
-		}
-	case ZhiPuAISSEInvoke:
+	case ZhiPuAIInvoke, ZhiPuAIAsyncInvoke, ZhiPuAISSEInvoke:
 	case ZhiPuAIAsyncGet:
 		if params.TaskID == "" {
 			return errors.New("task_id is required")

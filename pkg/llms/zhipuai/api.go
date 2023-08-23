@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/r3labs/sse/v2"
 )
 
 const (
@@ -63,7 +65,7 @@ func NewZhiPuAI(apiKey string) *ZhiPuAI {
 }
 
 // Call wraps a common AI api call
-func (z *ZhiPuAI) Call(params ModelParams) (map[string]interface{}, error) {
+func (z *ZhiPuAI) Call(params ModelParams) (*Response, error) {
 	switch params.Method {
 	case ZhiPuAIInvoke:
 		return z.Invoke(params)
@@ -77,7 +79,7 @@ func (z *ZhiPuAI) Call(params ModelParams) (map[string]interface{}, error) {
 }
 
 // Invoke calls zhipuai and returns result immediately
-func (z *ZhiPuAI) Invoke(params ModelParams) (map[string]interface{}, error) {
+func (z *ZhiPuAI) Invoke(params ModelParams) (*Response, error) {
 	url := BuildAPIURL(params.Model, ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, API_TOKEN_TTL_SECONDS)
 	if err != nil {
@@ -88,7 +90,7 @@ func (z *ZhiPuAI) Invoke(params ModelParams) (map[string]interface{}, error) {
 }
 
 // AsyncInvoke only returns a task id which can be used to get result of task later
-func (z *ZhiPuAI) AsyncInvoke(params ModelParams) (map[string]interface{}, error) {
+func (z *ZhiPuAI) AsyncInvoke(params ModelParams) (*Response, error) {
 	url := BuildAPIURL(params.Model, ZhiPuAIAsyncInvoke)
 	token, err := GenerateToken(z.apiKey, API_TOKEN_TTL_SECONDS)
 	if err != nil {
@@ -99,7 +101,7 @@ func (z *ZhiPuAI) AsyncInvoke(params ModelParams) (map[string]interface{}, error
 }
 
 // Get result of task async-invoke
-func (z *ZhiPuAI) Get(params ModelParams) (map[string]interface{}, error) {
+func (z *ZhiPuAI) Get(params ModelParams) (*Response, error) {
 	if params.TaskID == "" {
 		return nil, errors.New("TaskID is required when running Get with method AsyncInvoke")
 	}
@@ -112,4 +114,13 @@ func (z *ZhiPuAI) Get(params ModelParams) (map[string]interface{}, error) {
 	}
 
 	return Get(url, token, ZHIPUAI_MODEL_Default_Timeout)
+}
+
+func (z *ZhiPuAI) SSEInvoke(params ModelParams, handler func(*sse.Event)) error {
+	url := BuildAPIURL(params.Model, ZhiPuAISSEInvoke)
+	token, err := GenerateToken(z.apiKey, API_TOKEN_TTL_SECONDS)
+	if err != nil {
+		return err
+	}
+	return Stream(url, token, params, ZHIPUAI_MODEL_Default_Timeout, nil)
 }
