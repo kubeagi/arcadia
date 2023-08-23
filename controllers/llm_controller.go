@@ -19,17 +19,19 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/go-logr/logr"
+	"github.com/kubeagi/arcadia/pkg/llms"
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
@@ -81,7 +83,7 @@ func (r *LLMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *LLMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.LLM{}).
+		For(&arcadiav1alpha1.LLM{}, builder.WithPredicates(LLMPredicates{})).
 		Complete(r)
 }
 
@@ -89,7 +91,28 @@ func (r *LLMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.LLM) error {
 	logger.Info("Checking LLM instance")
 	// Check new URL/Auth availability
-	err := r.TestLLMAvailability(ctx, instance, logger)
+	var err error
+	var response llms.Response
+
+	secret := &corev1.Secret{}
+	err = r.Get(ctx, types.NamespacedName{Name: instance.Spec.Auth, Namespace: instance.Namespace}, secret)
+	if err != nil {
+		return err
+	}
+	apiKey := string(secret.Data["apiKey"])
+
+	switch instance.Spec.Type {
+	case llms.OpenAI:
+		// validator := openai.NewOpenAI(apiKey)
+		// response, err = validator.Validate()
+		return fmt.Errorf("openAI not implemented yet")
+	case llms.ZhiPuAI:
+		validator := zhipuai.NewZhiPuAI(apiKey)
+		response, err = validator.Validate()
+	default:
+		return fmt.Errorf("unknown LLM type: %s", instance.Spec.Type)
+	}
+
 	if err != nil {
 		// Set status to unavailable
 		instance.Status.SetConditions(arcadiav1alpha1.Condition{
@@ -105,64 +128,15 @@ func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instan
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            "Available",
+			Message:            response.String(),
 			LastTransitionTime: metav1.Now(),
 			LastSuccessfulTime: metav1.Now(),
 		})
 	}
+
 	return r.Client.Status().Update(ctx, instance)
 }
 
-// TestLLMAvailability tests LLM availability.
-func (r *LLMReconciler) TestLLMAvailability(ctx context.Context, instance *arcadiav1alpha1.LLM, logger logr.Logger) error {
-	logger.Info("Testing LLM availability")
-
-	//TODO: change URL & request for different types of LLM instance
-	// For openai instance, we use the "GET model" api.
-	// For Zhipuai instance, we send a standard async request.
-	testURL := instance.Spec.URL + "/v1/models"
-
-	if instance.Spec.Auth == "" {
-		return fmt.Errorf("auth is empty")
-	}
-
-	// get auth by secret name
-	var auth string
-	secret := &corev1.Secret{}
-	err := r.Get(ctx, types.NamespacedName{Name: instance.Spec.Auth, Namespace: instance.Namespace}, secret)
-	if err != nil {
-		return err
-	}
-
-	auth = "Bearer " + string(secret.Data["apiKey"])
-
-	err = SendTestRequest("GET", testURL, auth)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func SendTestRequest(method string, url string, auth string) error {
-	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", auth)
-	req.Header.Set("Content-Type", "application/json")
-
-	cli := &http.Client{}
-	resp, err := cli.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("returns unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
+type LLMPredicates struct {
+	predicate.Funcs
 }
