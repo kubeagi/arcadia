@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
+	"k8s.io/klog/v2"
 )
 
 func main() {
@@ -26,21 +28,78 @@ func main() {
 		panic("api key is empty")
 	}
 	apiKey := os.Args[1]
+
+	klog.V(0).Info("try `Invoke`")
 	resp, err := sampleInvoke(apiKey)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("SampleInvoke: \n %+v\n", resp)
+	klog.V(0).Info("Response: \n %s\n", resp.String())
 
+	klog.V(0).Info("try `AsyncInvoke`")
 	resp, err = sampleInvokeAsync(apiKey)
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Printf("sampleInvokeAsync: \n %+v\n", resp)
-	// taskID := "76997570932704279317856632766629711813"
-	// resp, err = getInvokeAsyncResult(apiKey, taskID)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("getInvokeAsyncResult: \n %+v\n", resp)
+	klog.V(0).Info("Response: \n %s\n", resp.String())
+
+	var taskID string
+	if resp.Data != nil {
+		taskID = resp.Data.TaskID
+	}
+	if taskID == "" {
+		panic("Failed to get task id from previous AsyncInvoke response")
+	}
+
+	klog.V(0).Info("try `getInvokeAsyncResult` with previous task id")
+	resp, err = getInvokeAsyncResult(apiKey, taskID)
+	if err != nil {
+		panic(err)
+	}
+	klog.V(0).Info("Response: \n %s\n", resp.String())
+
+	klog.V(0).Info("try `SSEInvoke` with default handler")
+	err = sampleSSEInvoke(apiKey)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func sampleInvoke(apiKey string) (*zhipuai.Response, error) {
+	client := zhipuai.NewZhiPuAI(apiKey)
+	params := zhipuai.DefaultModelParams()
+	params.Prompt = []zhipuai.Prompt{
+		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
+	}
+	return client.Invoke(params)
+}
+
+func sampleInvokeAsync(apiKey string) (*zhipuai.Response, error) {
+	client := zhipuai.NewZhiPuAI(apiKey)
+	params := zhipuai.DefaultModelParams()
+	params.Prompt = []zhipuai.Prompt{
+		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
+	}
+	return client.AsyncInvoke(params)
+}
+
+func getInvokeAsyncResult(apiKey string, taskID string) (*zhipuai.Response, error) {
+	client := zhipuai.NewZhiPuAI(apiKey)
+	params := zhipuai.DefaultModelParams()
+	params.TaskID = taskID
+	return client.Get(params)
+}
+
+func sampleSSEInvoke(apiKey string) error {
+	client := zhipuai.NewZhiPuAI(apiKey)
+	params := zhipuai.DefaultModelParams()
+	params.Prompt = []zhipuai.Prompt{
+		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
+	}
+	// you can define a customized `handler` on `Event`
+	err := client.SSEInvoke(params, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }

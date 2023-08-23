@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -96,7 +95,7 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 	}
 
 	// llm call
-	var resp = make(map[string]interface{})
+	var resp llms.Response
 	var err error
 	switch llm.Spec.Type {
 	case llms.ZhiPuAI:
@@ -123,7 +122,7 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 	}
 	promptDeepCodpy.Status.ConditionedStatus = arcadiav1alpha1.ConditionedStatus{Conditions: []arcadiav1alpha1.Condition{newCond}}
 	if resp != nil {
-		promptDeepCodpy.Status.Data, _ = json.Marshal(resp)
+		promptDeepCodpy.Status.Data = resp.Bytes()
 	}
 
 	return r.Status().Update(ctx, promptDeepCodpy)

@@ -32,12 +32,12 @@ func setHeadersWithToken(req *http.Request, token string) {
 	req.Header.Set("Authorization", token)
 }
 
-func parseHTTPResponse(resp *http.Response) (map[string]interface{}, error) {
+func parseHTTPResponse(resp *http.Response) (*Response, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("exception: %s", resp.Status)
 	}
 
-	var data map[string]interface{}
+	var data = new(Response)
 	err := json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func parseHTTPResponse(resp *http.Response) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func Post(apiURL, token string, params ModelParams, timeout time.Duration) (map[string]interface{}, error) {
+func Post(apiURL, token string, params ModelParams, timeout time.Duration) (*Response, error) {
 	jsonParams, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func Post(apiURL, token string, params ModelParams, timeout time.Duration) (map[
 
 	return parseHTTPResponse(resp)
 }
-func Get(apiURL, token string, timeout time.Duration) (map[string]interface{}, error) {
+func Get(apiURL, token string, timeout time.Duration) (*Response, error) {
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
@@ -87,9 +87,4 @@ func Get(apiURL, token string, timeout time.Duration) (map[string]interface{}, e
 	defer resp.Body.Close()
 
 	return parseHTTPResponse(resp)
-}
-
-// TODO: impl stream
-func Stream(apiURL, token string, params ModelParams, timeout time.Duration) (*http.Response, error) {
-	return nil, nil
 }

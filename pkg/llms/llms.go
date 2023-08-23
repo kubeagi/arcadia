@@ -22,3 +22,9 @@ const (
 	OpenAI  LLMType = "openai"
 	ZhiPuAI LLMType = "zhipuai"
 )
+
+type Response interface {
+	Type() LLMType
+	String() string
+	Bytes() []byte
+}
