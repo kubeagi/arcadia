@@ -26,9 +26,9 @@ import (
 )
 
 const (
-	API_TOKEN_TTL_SECONDS = 3 * 60
+	APITokenTTLSeconds = 3 * 60
 	// FIXME: impl TLL Cache
-	CACHE_TTL_SECONDS = (API_TOKEN_TTL_SECONDS - 30)
+	CacheTTLSeconds = (APITokenTTLSeconds - 30)
 )
 
 func GenerateToken(apikey string, expSeconds int64) (string, error) {
