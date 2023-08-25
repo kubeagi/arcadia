@@ -35,6 +35,7 @@ Perform RBAC inquiry and evaluate security issues.
 
 - `-f, --file`**(Must required)**: RBAC file to be queried.
 - `-l, --language`: Language for the response (default: English). Can be any language! Chinese, Japanese, Korean, etc.
+- `-o, --output-format`: OutputFormat for AI response.Can be default,json.
 
 Note: The `file` argument is required.
 

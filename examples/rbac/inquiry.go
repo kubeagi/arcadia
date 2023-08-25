@@ -21,9 +21,6 @@ Below is a snippet of RBAC configuration:
 
   {{.Context}}
 
-
-**Answer in {{.Language}}**
-
 **RBAC Assessment**:
    - Could you please review this RBAC configuration and inform me of any security risks, permissions, or potential vulnerabilities that might be associated with it?
 
@@ -31,17 +28,36 @@ Below is a snippet of RBAC configuration:
    - On a scale of 1 to 10, with 10 being the most secure, how would you rate the security of this RBAC configuration?
 
 I appreciate your assistance in evaluating this RBAC configuration for security purposes. 
+
+Your answer should follow the below format:
+{{.OutputFormat}}
 `
+	defaultOutputFormat = `Rating: "xxx"
+Assesement: 
+1. xxx
+2. xxx
+`
+	jsonOutputFormat = `
+{
+	"rating": "xxx",
+	"assesement": [
+		"1. xxx",
+		"2. xxx",
+	]
+}
+	`
 )
 
 type InquiryData struct {
-	Context  string
-	Language string
+	Context      string
+	Language     string
+	OutputFormat string
 }
 
 var (
-	rbacFile string
-	language string
+	rbacFile     string
+	language     string
+	outputFormat string
 )
 
 func Inquiry() *cobra.Command {
@@ -58,10 +74,13 @@ func Inquiry() *cobra.Command {
 			}
 			// Prepare data for template
 			data := InquiryData{
-				Context:  strings.TrimSpace(string(rbacContent)),
-				Language: language,
+				Context:      strings.TrimSpace(string(rbacContent)),
+				Language:     language,
+				OutputFormat: defaultOutputFormat,
 			}
-
+			if outputFormat == "json" {
+				data.OutputFormat = jsonOutputFormat
+			}
 			// Create a new template and parse the RBAC inquiry template
 			tmpl := template.Must(template.New("RBACInquiry").Parse(RBACInquiryTemplate))
 
@@ -101,6 +120,7 @@ func Inquiry() *cobra.Command {
 
 	cmd.Flags().StringVarP(&rbacFile, "file", "f", "", "rbac file to be inquired")
 	cmd.Flags().StringVarP(&language, "language", "l", "English", "Language in the response")
+	cmd.Flags().StringVarP(&outputFormat, "output-format", "o", "", "OutputFormat for AI response.Can be default,json")
 
 	cmd.MarkFlagRequired("file")
 
