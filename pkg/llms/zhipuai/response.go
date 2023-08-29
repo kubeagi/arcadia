@@ -29,6 +29,13 @@ type Response struct {
 	Success bool   `json:"success"`
 }
 
+type EmbeddingResponse struct {
+	Code    int            `json:"code"`
+	Data    *EmbeddingData `json:"data"`
+	Msg     string         `json:"msg"`
+	Success bool           `json:"success"`
+}
+
 func (response *Response) Type() llms.LLMType {
 	return llms.ZhiPuAI
 }
@@ -52,6 +59,20 @@ type Data struct {
 	Usage      Usage  `json:"usage,omitempty"`
 
 	Choices []Choice `json:"choices,omitempty"`
+}
+
+type EmbeddingData struct {
+	RequestID  string `json:"request_id,omitempty"`
+	TaskID     string `json:"task_id,omitempty"`
+	TaskStatus string `json:"task_status,omitempty"`
+	Usage      Usage  `json:"usage,omitempty"`
+
+	Embedding []float64 `json:"embedding,omitempty"` // Vectorized texts, length 1024.
+}
+
+type EmbeddingText struct {
+	Prompt    string `json:"prompt,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 }
 
 type Usage struct {
