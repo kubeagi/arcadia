@@ -18,14 +18,14 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/llms"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
 	llmszhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -90,25 +90,35 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 
 	apiKey, err := llm.AuthAPIKey(ctx, r.Client)
 	if err != nil {
-		return err
+		return r.UpdateStatus(ctx, prompt, nil, err)
 	}
 
 	// llm call
-	var resp llms.Response
+	var llmClient llms.LLM
+	var callData []byte
 	switch llm.Spec.Type {
 	case llms.ZhiPuAI:
-		resp, err = llmszhipuai.NewZhiPuAI(apiKey).Call(*prompt.Spec.ZhiPuAIParams)
+		llmClient = llmszhipuai.NewZhiPuAI(apiKey)
+		callData = prompt.Spec.ZhiPuAIParams.Marshall()
 	case llms.OpenAI:
-		err = fmt.Errorf("OpenAI not supported yet")
+		llmClient = openai.NewOpenAI(apiKey)
 	default:
-		err = fmt.Errorf("unknown LLM type: %s", llm.Spec.Type)
+		llmClient = llms.NewUnknowLLM()
 	}
 
-	promptDeepCodpy := prompt.DeepCopy()
+	resp, err := llmClient.Call(callData)
+	if err != nil {
+		return err
+	}
 
+	return r.UpdateStatus(ctx, prompt, resp, err)
+}
+
+func (r *PromptReconciler) UpdateStatus(ctx context.Context, prompt *arcadiav1alpha1.Prompt, response llms.Response, err error) error {
+	promptDeepCodpy := prompt.DeepCopy()
 	newCond := arcadiav1alpha1.Condition{
 		Type:               arcadiav1alpha1.TypeDone,
-		Status:             v1.ConditionTrue,
+		Status:             corev1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             arcadiav1alpha1.ReasonReconcileSuccess,
 		Message:            "Finished CallLLM",
@@ -118,11 +128,10 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 		newCond.Reason = arcadiav1alpha1.ReasonReconcileError
 		newCond.Message = err.Error()
 	}
-	promptDeepCodpy.Status.ConditionedStatus = arcadiav1alpha1.ConditionedStatus{Conditions: []arcadiav1alpha1.Condition{newCond}}
-	if resp != nil {
-		promptDeepCodpy.Status.Data = resp.Bytes()
+	promptDeepCodpy.Status.SetConditions(newCond)
+	if response != nil {
+		promptDeepCodpy.Status.Data = response.Bytes()
 	}
-
 	return r.Status().Update(ctx, promptDeepCodpy)
 }
 
@@ -140,4 +149,11 @@ type PromptPredicates struct {
 func (p PromptPredicates) Create(ce event.CreateEvent) bool {
 	prompt := ce.Object.(*arcadiav1alpha1.Prompt)
 	return len(prompt.Status.ConditionedStatus.Conditions) == 0
+}
+
+func (p PromptPredicates) Update(ue event.UpdateEvent) bool {
+	oldPrompt := ue.ObjectOld.(*arcadiav1alpha1.Prompt)
+	newPrompt := ue.ObjectNew.(*arcadiav1alpha1.Prompt)
+
+	return !reflect.DeepEqual(oldPrompt.Spec, newPrompt.Spec)
 }

@@ -72,7 +72,11 @@ func (z ZhiPuAI) Type() llms.LLMType {
 }
 
 // Call wraps a common AI api call
-func (z *ZhiPuAI) Call(params ModelParams) (*Response, error) {
+func (z *ZhiPuAI) Call(data []byte) (llms.Response, error) {
+	params := ModelParams{}
+	if err := params.Unmarshall(data); err != nil {
+		return nil, err
+	}
 	switch params.Method {
 	case ZhiPuAIInvoke:
 		return z.Invoke(params)

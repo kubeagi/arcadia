@@ -19,7 +19,10 @@ limitations under the License.
 package zhipuai
 
 import (
+	"encoding/json"
 	"errors"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 type Role string
@@ -28,6 +31,8 @@ const (
 	User      Role = "user"
 	Assistant Role = "assistant"
 )
+
+var _ llms.ModelParams = (*ModelParams)(nil)
 
 // +kubebuilder:object:generate=true
 // ZhiPuAIParams defines the params of ZhiPuAI Prompt Call
@@ -67,6 +72,18 @@ func DefaultModelParams() ModelParams {
 		TopP:        0.7,  // zhipuai official
 		Prompt:      []Prompt{},
 	}
+}
+
+func (params *ModelParams) Marshall() []byte {
+	data, err := json.Marshal(params)
+	if err != nil {
+		return []byte{}
+	}
+	return data
+}
+
+func (params *ModelParams) Unmarshall(bytes []byte) error {
+	return json.Unmarshal(bytes, params)
 }
 
 // MergeZhiPuAI merges b to a  with this rule

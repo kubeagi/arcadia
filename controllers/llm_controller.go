@@ -18,10 +18,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/kubeagi/arcadia/pkg/llms"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -73,10 +75,11 @@ func (r *LLMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	err = r.CheckLLM(ctx, logger, instance)
 	if err != nil {
+		logger.Error(err, "Failed to check LLM")
+		// Update conditioned status
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Instance is updated and synchronized")
 	return ctrl.Result{}, nil
 }
 
@@ -92,29 +95,32 @@ func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instan
 	logger.Info("Checking LLM instance")
 	// Check new URL/Auth availability
 	var err error
-	var response llms.Response
 
 	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
 	if err != nil {
-		return err
+		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
+	var llmClient llms.LLM
 	switch instance.Spec.Type {
 	case llms.OpenAI:
-		// validator := openai.NewOpenAI(apiKey)
-		// response, err = validator.Validate()
-		return fmt.Errorf("openAI not implemented yet")
+		llmClient = openai.NewOpenAI(apiKey)
 	case llms.ZhiPuAI:
-		validator := zhipuai.NewZhiPuAI(apiKey)
-		response, err = validator.Validate()
+		llmClient = zhipuai.NewZhiPuAI(apiKey)
 	default:
-		return fmt.Errorf("unknown LLM type: %s", instance.Spec.Type)
+		llmClient = llms.NewUnknowLLM()
 	}
 
+	response, err := llmClient.Validate()
+	return r.UpdateStatus(ctx, instance, response, err)
+}
+
+func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.LLM, response llms.Response, err error) error {
+	instanceCopy := instance.DeepCopy()
 	if err != nil {
 		// Set status to unavailable
-		instance.Status.SetConditions(arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeUnavailable,
+		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
+			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionFalse,
 			Reason:             arcadiav1alpha1.ReasonUnavailable,
 			Message:            err.Error(),
@@ -122,7 +128,7 @@ func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instan
 		})
 	} else {
 		// Set status to available
-		instance.Status.SetConditions(arcadiav1alpha1.Condition{
+		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
@@ -131,10 +137,21 @@ func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instan
 			LastSuccessfulTime: metav1.Now(),
 		})
 	}
-
-	return r.Client.Status().Update(ctx, instance)
+	return r.Client.Status().Update(ctx, instanceCopy)
 }
 
 type LLMPredicates struct {
 	predicate.Funcs
+}
+
+func (llm LLMPredicates) Create(ce event.CreateEvent) bool {
+	prompt := ce.Object.(*arcadiav1alpha1.LLM)
+	return len(prompt.Status.ConditionedStatus.Conditions) == 0
+}
+
+func (llm LLMPredicates) Update(ue event.UpdateEvent) bool {
+	oldLLM := ue.ObjectOld.(*arcadiav1alpha1.LLM)
+	newLLM := ue.ObjectNew.(*arcadiav1alpha1.LLM)
+
+	return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec)
 }

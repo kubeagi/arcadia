@@ -16,20 +16,46 @@ limitations under the License.
 
 package llms
 
+import "errors"
+
 type LLMType string
 
 const (
 	OpenAI  LLMType = "openai"
 	ZhiPuAI LLMType = "zhipuai"
+	Unknown LLMType = "unknown"
 )
 
 type LLM interface {
 	Type() LLMType
+	Call([]byte) (Response, error)
 	Validate() (Response, error)
+}
+
+type ModelParams interface {
+	Marshall() []byte
+	Unmarshall([]byte) error
 }
 
 type Response interface {
 	Type() LLMType
 	String() string
 	Bytes() []byte
+}
+
+type UnknowLLM struct{}
+
+func NewUnknowLLM() UnknowLLM {
+	return UnknowLLM{}
+}
+func (unknown UnknowLLM) Type() LLMType {
+	return Unknown
+}
+
+func (unknown UnknowLLM) Call(data []byte) (Response, error) {
+	return nil, errors.New("unknown llm type")
+}
+
+func (unknown UnknowLLM) Validate() (Response, error) {
+	return nil, errors.New("unknown llm type")
 }
