@@ -23,6 +23,11 @@ const (
 	ZhiPuAI LLMType = "zhipuai"
 )
 
+type LLM interface {
+	Type() LLMType
+	Validate() (Response, error)
+}
+
 type Response interface {
 	Type() LLMType
 	String() string

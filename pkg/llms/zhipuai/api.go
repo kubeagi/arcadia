@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/r3labs/sse/v2"
 )
 
@@ -54,6 +55,8 @@ func BuildAPIURL(model Model, method Method) string {
 	return fmt.Sprintf("%s/%s/%s", ZhipuaiModelAPIURL, model, method)
 }
 
+var _ llms.LLM = (*ZhiPuAI)(nil)
+
 type ZhiPuAI struct {
 	apiKey string
 }
@@ -62,6 +65,10 @@ func NewZhiPuAI(apiKey string) *ZhiPuAI {
 	return &ZhiPuAI{
 		apiKey: apiKey,
 	}
+}
+
+func (z ZhiPuAI) Type() llms.LLMType {
+	return llms.ZhiPuAI
 }
 
 // Call wraps a common AI api call
@@ -125,7 +132,7 @@ func (z *ZhiPuAI) SSEInvoke(params ModelParams, handler func(*sse.Event)) error 
 	return Stream(url, token, params, ZhipuaiModelDefaultTimeout, nil)
 }
 
-func (z *ZhiPuAI) Validate() (*Response, error) {
+func (z *ZhiPuAI) Validate() (llms.Response, error) {
 	url := BuildAPIURL(ZhiPuAILite, ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {

@@ -88,18 +88,13 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 		return err
 	}
 
-	var apiKey string
-	if llm.Spec.Auth != "" {
-		authSecret := corev1.Secret{}
-		if err := r.Get(ctx, types.NamespacedName{Name: llm.Spec.Auth, Namespace: prompt.Namespace}, &authSecret); err != nil {
-			return err
-		}
-		apiKey = string(authSecret.Data["apiKey"])
+	apiKey, err := llm.AuthAPIKey(ctx, r.Client)
+	if err != nil {
+		return err
 	}
 
 	// llm call
 	var resp llms.Response
-	var err error
 	switch llm.Spec.Type {
 	case llms.ZhiPuAI:
 		resp, err = llmszhipuai.NewZhiPuAI(apiKey).Call(*prompt.Spec.ZhiPuAIParams)

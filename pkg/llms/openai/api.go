@@ -20,12 +20,16 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 const (
 	OpenaiModelAPIURL    = "https://api.openai.com/v1"
 	OpenaiDefaultTimeout = 300 * time.Second
 )
+
+var _ llms.LLM = (*OpenAI)(nil)
 
 type OpenAI struct {
 	apiKey string
@@ -37,7 +41,11 @@ func NewOpenAI(auth string) *OpenAI {
 	}
 }
 
-func (o *OpenAI) Validate() (*Response, error) {
+func (o OpenAI) Type() llms.LLMType {
+	return llms.OpenAI
+}
+
+func (o *OpenAI) Validate() (llms.Response, error) {
 	// Validate OpenAI type CRD LLM Instance
 	// instance.Spec.URL should be like "https://api.openai.com/"
 
