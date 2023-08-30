@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
@@ -26,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,12 +94,10 @@ func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instan
 	var err error
 	var response llms.Response
 
-	secret := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: instance.Spec.Auth, Namespace: instance.Namespace}, secret)
+	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
 	if err != nil {
 		return err
 	}
-	apiKey := string(secret.Data["apiKey"])
 
 	switch instance.Spec.Type {
 	case llms.OpenAI:

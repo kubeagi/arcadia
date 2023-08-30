@@ -4,7 +4,7 @@ metadata:
   name: zhipuai
 type: Opaque
 data:
-  apiKey: "MjZiMmJjNTVmYWU0MDc1MjA1NWNhZGZjNDc5MmY5ZGUud2FnQTROSXdnNWFaSldobQ==" # replace this with your API key
+  apiKey: "ZmVkMDk2NWJjZTAxOTBmZjJiYzY4MWFjMzA2ZDVmM2QuZUlwN3NPWHJueG1XSnhPaw==" # replace this with your API key
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: LLM
