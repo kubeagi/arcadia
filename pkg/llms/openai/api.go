@@ -17,6 +17,7 @@ limitations under the License.
 package openai
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -43,6 +44,10 @@ func NewOpenAI(auth string) *OpenAI {
 
 func (o OpenAI) Type() llms.LLMType {
 	return llms.OpenAI
+}
+
+func (o *OpenAI) Call(data []byte) (llms.Response, error) {
+	return nil, errors.New("not implemented yet")
 }
 
 func (o *OpenAI) Validate() (llms.Response, error) {
