@@ -69,6 +69,7 @@ func Post(apiURL, token string, params ModelParams, timeout time.Duration) (*Res
 
 	return parseHTTPResponse(resp)
 }
+
 func Get(apiURL, token string, timeout time.Duration) (*Response, error) {
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -87,4 +88,41 @@ func Get(apiURL, token string, timeout time.Duration) (*Response, error) {
 	defer resp.Body.Close()
 
 	return parseHTTPResponse(resp)
+}
+
+// EmbeddingPost posts embedding request to model
+// FIXME: should this be made an interface?
+func EmbeddingPost(apiURL, token string, text EmbeddingText, timeout time.Duration) (*EmbeddingResponse, error) {
+	jsonParams, err := json.Marshal(text)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonParams))
+	if err != nil {
+		return nil, err
+	}
+
+	setHeadersWithToken(req, token)
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("exception: %s", resp.Status)
+	}
+
+	var data = new(EmbeddingResponse)
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

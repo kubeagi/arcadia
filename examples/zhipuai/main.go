@@ -19,8 +19,9 @@ package main
 import (
 	"os"
 
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"k8s.io/klog/v2"
+
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 func main() {

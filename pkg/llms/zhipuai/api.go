@@ -35,9 +35,10 @@ const (
 type Model string
 
 const (
-	ZhiPuAILite Model = "chatglm_lite"
-	ZhiPuAIStd  Model = "chatglm_std"
-	ZhiPuAIPro  Model = "chatglm_pro"
+	ZhiPuAILite      Model = "chatglm_lite"
+	ZhiPuAIStd       Model = "chatglm_std"
+	ZhiPuAIPro       Model = "chatglm_pro"
+	ZhiPuAIEmbedding Model = "text_embedding"
 )
 
 type Method string
@@ -159,6 +160,21 @@ func (z *ZhiPuAI) Validate() (llms.Response, error) {
 	}
 
 	postResponse, err := Post(url, token, testParam, ZhipuaiModelDefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	return postResponse, nil
+}
+
+func (z *ZhiPuAI) Embedding(text EmbeddingText) (*EmbeddingResponse, error) {
+	url := BuildAPIURL(ZhiPuAIEmbedding, ZhiPuAIInvoke)
+	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
+	if err != nil {
+		return nil, err
+	}
+
+	postResponse, err := EmbeddingPost(url, token, text, ZhipuaiModelDefaultTimeout)
 	if err != nil {
 		return nil, err
 	}

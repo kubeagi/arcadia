@@ -40,7 +40,7 @@ const (
 // Should be only one word
 type ConditionReason string
 
-// Some common Condition resons.
+// Some common Condition reasons.
 const (
 	ReasonAvailable        ConditionReason = "Available"
 	ReasonUnavailable      ConditionReason = "Unavailable"
