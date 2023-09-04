@@ -19,8 +19,9 @@ package openai
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kubeagi/arcadia/pkg/llms"
 	"net/http"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 type Response struct {
@@ -44,6 +45,10 @@ func (response *Response) Bytes() []byte {
 
 func (response *Response) String() string {
 	return string(response.Bytes())
+}
+
+func (response *Response) Unmarshall(bytes []byte) error {
+	return json.Unmarshal(bytes, response)
 }
 
 func parseHTTPResponse(resp *http.Response) (*Response, error) {

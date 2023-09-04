@@ -41,6 +41,7 @@ type Response interface {
 	Type() LLMType
 	String() string
 	Bytes() []byte
+	Unmarshall([]byte) error
 }
 
 type UnknowLLM struct{}
