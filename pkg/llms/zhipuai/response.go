@@ -36,6 +36,10 @@ type EmbeddingResponse struct {
 	Success bool           `json:"success"`
 }
 
+func (response *Response) Unmarshall(bytes []byte) error {
+	return json.Unmarshal(response.Bytes(), response)
+}
+
 func (response *Response) Type() llms.LLMType {
 	return llms.ZhiPuAI
 }
