@@ -3,7 +3,7 @@ module github.com/kubeagi/arcadia
 go 1.20
 
 require (
-	github.com/amikos-tech/chroma-go v0.0.0-20230809210405-a3fb26bbc4b4
+	github.com/amikos-tech/chroma-go v0.0.0-20230901221218-d0087270239e
 	github.com/go-logr/logr v1.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/onsi/ginkgo v1.16.5

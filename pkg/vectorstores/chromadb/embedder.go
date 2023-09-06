@@ -21,12 +21,12 @@ import (
 	"github.com/tmc/langchaingo/embeddings"
 )
 
-type LocalEmbedder struct {
+type wrappedEmbeddingFunction struct {
 	embeddings.Embedder
 }
 
-func (l *LocalEmbedder) CreateEmbedding(documents []string) ([][]float32, error) {
-	vectors, err := l.Embedder.EmbedDocuments(context.TODO(), documents)
+func (embedder wrappedEmbeddingFunction) CreateEmbedding(documents []string) ([][]float32, error) {
+	vectors, err := embedder.EmbedDocuments(context.TODO(), documents)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +40,6 @@ func (l *LocalEmbedder) CreateEmbedding(documents []string) ([][]float32, error)
 	return target, nil
 }
 
-func (l *LocalEmbedder) CreateEmbeddingWithModel(documents []string, model string) ([][]float32, error) {
-	return l.CreateEmbedding(documents)
+func (embedder wrappedEmbeddingFunction) CreateEmbeddingWithModel(documents []string, model string) ([][]float32, error) {
+	return embedder.CreateEmbedding(documents)
 }

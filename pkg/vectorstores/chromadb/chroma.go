@@ -17,103 +17,67 @@ package chromadb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	chroma "github.com/amikos-tech/chroma-go"
-	openapiclient "github.com/amikos-tech/chroma-go/swagger"
+	chromaopenapi "github.com/amikos-tech/chroma-go/swagger"
 	"github.com/tmc/langchaingo/schema"
-	vs "github.com/tmc/langchaingo/vectorstores"
+	"github.com/tmc/langchaingo/vectorstores"
 )
 
-type chromadb struct {
-	option *option
-	client *chroma.Client
+var (
+	// ErrEmbedderWrongNumberVectors is returned when if the embedder returns a number
+	// of vectors that is not equal to the number of documents given.
+	ErrEmbedderWrongNumberVectors = errors.New(
+		"number of vectors from embedder does not match number of documents",
+	)
+	ErrInvalidScoreThreshold = errors.New(
+		"score threshold must be between 0 and 1")
+)
+
+type Store struct {
+	embedder wrappedEmbeddingFunction
+	client   *chroma.Client
+
+	namespaceKey string
+	textKey      string
+
+	nameSpace string
+
+	basePath string
+
+	distanceFunc chroma.DistanceFunction
+	transport    *http.Transport
 }
 
-func NewChromaDB(opts ...Option) (vs.VectorStore, error) {
-	store := &chromadb{option: &option{host: "http://localhost", port: 8000, textKey: "text", distanceFunc: chroma.L2}}
-	for _, opt := range opts {
-		opt(store.option)
-	}
-	if err := store.verify(); err != nil {
+var _ vectorstores.VectorStore = Store{}
+
+func New(ctx context.Context, opts ...Option) (vectorstores.VectorStore, error) {
+	s, err := applyClientOptions(opts...)
+	if err != nil {
 		return nil, err
 	}
-	c := http.DefaultClient
-	if store.option.transport != nil {
-		c = &http.Client{
-			Transport: store.option.transport,
-		}
-	}
-	cfg := openapiclient.Configuration{
-		Servers: openapiclient.ServerConfigurations{
-			{
-				URL:         fmt.Sprintf("%s:%d", store.option.host, store.option.port),
-				Description: "chromadb server",
-			},
+
+	configuration := chromaopenapi.NewConfiguration()
+	configuration.Servers = chromaopenapi.ServerConfigurations{
+		{
+			URL:         s.basePath,
+			Description: "Chromadb server url for this store",
 		},
-		HTTPClient: c,
+	}
+	s.client = &chroma.Client{
+		ApiClient: chromaopenapi.NewAPIClient(configuration),
 	}
 
-	store.client = &chroma.Client{ApiClient: openapiclient.NewAPIClient(&cfg)}
-	return store, nil
+	return s, nil
 }
 
-func (c *chromadb) verify() error {
-	if c.option.collectionName == "" {
-		return fmt.Errorf("collectioName can't be empty")
-	}
-	if c.option.embeddr == nil {
-		return fmt.Errorf("embedder is empty")
-	}
+func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options ...vectorstores.Option) error {
+	opts := s.getOptions(options...)
+	nameSpace := s.getNameSpace(opts)
 
-	return nil
-}
-
-func (c *chromadb) getOptions(options ...vs.Option) vs.Options {
-	opts := vs.Options{}
-	for _, opt := range options {
-		opt(&opts)
-	}
-	return opts
-}
-
-// find where and where documents
-func (c *chromadb) getFilter(opts vs.Options) (map[string]interface{}, map[string]interface{}) {
-	mustBeArray, ok := opts.Filters.([]interface{})
-	if !ok {
-		return nil, nil
-	}
-	if len(mustBeArray) != 2 {
-		return nil, nil
-	}
-	a, oka := mustBeArray[0].(map[string]interface{})
-	b, okb := mustBeArray[1].(map[string]interface{})
-	if oka && okb {
-		return a, b
-	}
-
-	return nil, nil
-}
-
-func (c *chromadb) addDocuments(ctx context.Context, texts, ids []string, metadatas []map[string]interface{}) error {
-	localEmbedder := &LocalEmbedder{Embedder: c.option.embeddr}
-	collection, err := c.client.CreateCollection(c.option.collectionName, map[string]interface{}{}, true, localEmbedder, c.option.distanceFunc)
-	if err != nil {
-		return err
-	}
-	vectors, err := localEmbedder.CreateEmbedding(texts)
-	if err != nil {
-		return err
-	}
-	if len(vectors) != len(texts) {
-		return fmt.Errorf("number of vectors from embedder does not match number of documents")
-	}
-	_, err = collection.Add(vectors, metadatas, texts, ids)
-	return err
-}
-
-func (c *chromadb) AddDocuments(ctx context.Context, docs []schema.Document, options ...vs.Option) error {
 	texts := make([]string, 0, len(docs))
 	ids := make([]string, len(docs))
 	for idx, doc := range docs {
@@ -121,26 +85,59 @@ func (c *chromadb) AddDocuments(ctx context.Context, docs []schema.Document, opt
 		ids[idx] = fmt.Sprintf("%d", idx)
 	}
 
-	metadatas := make([]map[string]interface{}, 0)
+	collection, err := s.client.CreateCollection(s.nameSpace, map[string]interface{}{}, true, s.embedder, s.distanceFunc)
+	if err != nil {
+		return err
+	}
+
+	vectors, err := s.embedder.CreateEmbedding(texts)
+	if err != nil {
+		return err
+	}
+	if len(vectors) != len(texts) {
+		return ErrEmbedderWrongNumberVectors
+	}
+
+	metadatas := make([]map[string]any, 0)
 	for i := 0; i < len(docs); i++ {
-		metadata := make(map[string]interface{})
+		metadata := make(map[string]any)
 		for k, v := range docs[i].Metadata {
 			metadata[k] = v
 		}
-		metadata[c.option.textKey] = texts[i]
+		metadata[s.textKey] = texts[i]
+		metadata[s.namespaceKey] = nameSpace
+
 		metadatas = append(metadatas, metadata)
 	}
-	return c.addDocuments(ctx, texts, ids, metadatas)
+
+	if _, err = collection.Add(vectors, metadatas, texts, ids); err != nil {
+		return err
+	}
+
+	return err
 }
 
-func (c *chromadb) SimilaritySearch(ctx context.Context, query string, numDocuments int, options ...vs.Option) ([]schema.Document, error) {
-	localEmbedder := &LocalEmbedder{Embedder: c.option.embeddr}
-	collection, err := c.client.GetCollection(c.option.collectionName, localEmbedder)
+func (s Store) SimilaritySearch(
+	ctx context.Context,
+	query string,
+	numDocuments int,
+	options ...vectorstores.Option,
+) ([]schema.Document, error) {
+	opts := s.getOptions(options...)
+	nameSpace := s.getNameSpace(opts)
+
+	// FIXME: use scoreThreshold
+	// scoreThreshold, err := s.getScoreThreshold(opts)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	collection, err := s.client.GetCollection(nameSpace, s.embedder)
 	if err != nil {
 		return nil, err
 	}
-	opts := c.getOptions(options...)
-	where, whereDocument := c.getFilter(opts)
+
+	where, whereDocument := s.getFilters(opts)
 	result, err := collection.Query([]string{query}, int32(numDocuments), where, whereDocument, nil)
 	if err != nil {
 		return nil, err
@@ -148,7 +145,6 @@ func (c *chromadb) SimilaritySearch(ctx context.Context, query string, numDocume
 
 	dl := len(result.Documents[0])
 	documents := make([]schema.Document, dl)
-	// {"ids":[["0001","0003"]],"distances":[[0.0005762028712337219,0.0005762028712337219]],"metadatas":[[{"chapter":"3","verse":"16"},{"chapter":"29","verse":"11"}]],"embeddings":null,"documents":[["doc1","doc3"]]}
 	for i := 0; i < dl; i++ {
 		doc := schema.Document{
 			Metadata:    result.Metadatas[0][i],
@@ -158,4 +154,35 @@ func (c *chromadb) SimilaritySearch(ctx context.Context, query string, numDocume
 	}
 
 	return documents, nil
+}
+
+func (s Store) getNameSpace(opts vectorstores.Options) string {
+	if opts.NameSpace != "" {
+		return opts.NameSpace
+	}
+	return s.nameSpace
+}
+
+// func (s Store) getScoreThreshold(opts vectorstores.Options) (float32, error) {
+// 	if opts.ScoreThreshold < 0 || opts.ScoreThreshold > 1 {
+// 		return 0, ErrInvalidScoreThreshold
+// 	}
+// 	f32 := float32(opts.ScoreThreshold)
+// 	return f32, nil
+// }
+
+func (s Store) getFilters(opts vectorstores.Options) (where, whereDocument map[string]any) {
+	filters, ok := opts.Filters.([]map[string]any)
+	if !ok || len(filters) != 2 {
+		return nil, nil
+	}
+	return filters[0], filters[1]
+}
+
+func (s Store) getOptions(options ...vectorstores.Option) vectorstores.Options {
+	opts := vectorstores.Options{}
+	for _, opt := range options {
+		opt(&opts)
+	}
+	return opts
 }

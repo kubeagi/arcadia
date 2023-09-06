@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) == 0 {
+	if len(os.Args) == 1 {
 		panic("api key is empty")
 	}
 	apiKey := os.Args[1]

@@ -21,10 +21,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/llms"
-	"github.com/kubeagi/arcadia/pkg/llms/openai"
-	llmszhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/llms"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
+	llmszhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 // PromptReconciler reconciles a Prompt object

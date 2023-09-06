@@ -21,9 +21,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"github.com/kubeagi/arcadia/pkg/llms"
-	"github.com/kubeagi/arcadia/pkg/llms/openai"
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +34,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/llms"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 // LLMReconciler reconciles a LLM object

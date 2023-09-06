@@ -24,10 +24,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -37,7 +33,10 @@ import (
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/controllers"
-	//+kubebuilder:scaffold:imports
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 var (

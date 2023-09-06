@@ -19,11 +19,12 @@ package v1alpha1
 import (
 	"context"
 
-	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 // log is for logging in this package.
@@ -59,11 +60,11 @@ func (p *Prompt) Default(ctx context.Context, obj runtime.Object) error {
 var _ webhook.CustomValidator = &Prompt{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Prompt) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	promptlog.Info("validate create", "name", r.Name)
+func (p *Prompt) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	promptlog.Info("validate create", "name", p.Name)
 
-	if r.Spec.ZhiPuAIParams != nil {
-		if err := llmzhipuai.ValidateModelParams(*r.Spec.ZhiPuAIParams); err != nil {
+	if p.Spec.ZhiPuAIParams != nil {
+		if err := llmzhipuai.ValidateModelParams(*p.Spec.ZhiPuAIParams); err != nil {
 			promptlog.Error(err, "validate model params")
 			return err
 		}
@@ -73,11 +74,11 @@ func (r *Prompt) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Prompt) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) error {
-	promptlog.Info("validate update", "name", r.Name)
+func (p *Prompt) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) error {
+	promptlog.Info("validate update", "name", p.Name)
 
-	if r.Spec.ZhiPuAIParams != nil {
-		if err := llmzhipuai.ValidateModelParams(*r.Spec.ZhiPuAIParams); err != nil {
+	if p.Spec.ZhiPuAIParams != nil {
+		if err := llmzhipuai.ValidateModelParams(*p.Spec.ZhiPuAIParams); err != nil {
 			promptlog.Error(err, "validate model params")
 			return err
 		}
@@ -87,7 +88,7 @@ func (r *Prompt) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newO
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Prompt) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	promptlog.Info("validate delete", "name", r.Name)
+func (p *Prompt) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	promptlog.Info("validate delete", "name", p.Name)
 	return nil
 }
