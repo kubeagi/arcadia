@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 // PromptSpec defines the desired state of Prompt

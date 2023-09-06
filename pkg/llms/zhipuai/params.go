@@ -43,7 +43,7 @@ type ModelParams struct {
 	// Model used for this prompt call
 	Model Model `json:"model,omitempty"`
 
-	//Temperature is float in zhipuai
+	// Temperature is float in zhipuai
 	Temperature float32 `json:"temperature,omitempty"`
 	// TopP is float in zhipuai
 	TopP float32 `json:"top_p,omitempty"`

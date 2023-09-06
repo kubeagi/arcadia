@@ -19,12 +19,14 @@ limitations under the License.
 package zhipuai
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/r3labs/sse/v2"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 const (
@@ -180,4 +182,27 @@ func (z *ZhiPuAI) Embedding(text EmbeddingText) (*EmbeddingResponse, error) {
 	}
 
 	return postResponse, nil
+}
+
+// CreateEmbedding do batch embedding
+// To compatible with langchaingo/llms
+func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float64, error) {
+	url := BuildAPIURL(ZhiPuAIEmbedding, ZhiPuAIInvoke)
+	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
+	if err != nil {
+		return nil, err
+	}
+
+	embeddings := make([][]float64, 0, len(inputTexts))
+	for _, text := range inputTexts {
+		postResponse, err := EmbeddingPost(url, token, EmbeddingText{
+			Prompt: text,
+		}, ZhipuaiModelDefaultTimeout)
+		if err != nil {
+			return nil, err
+		}
+		embeddings = append(embeddings, postResponse.Data.Embedding)
+	}
+
+	return embeddings, nil
 }

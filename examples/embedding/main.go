@@ -17,47 +17,49 @@ limitations under the License.
 package main
 
 import (
-	llmszhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"k8s.io/klog/v2"
+	"context"
+	"fmt"
+	"log"
 	"os"
+
+	embedding "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
+	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
+	"github.com/tmc/langchaingo/schema"
 )
 
 func main() {
-	// usage: go run main.go <apiKey> <testWord>
-	// apiKey 	== The apiKey of user, available on ZhiPuAI dashboard.
-	// testWord == The text to be embedded.
 	if len(os.Args) == 1 {
 		panic("api key is empty")
 	}
 	apiKey := os.Args[1]
 
-	if len(os.Args) == 2 {
-		panic("test word is empty")
-	}
-	testWord := os.Args[2]
-
-	klog.V(0).Info("try `Embedding`")
-	resp, err := sampleEmbedding(apiKey, testWord)
-
+	// init embedder
+	embedder, err := embedding.NewZhiPuAI(
+		embedding.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
+	)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("error create embedder: %s", err.Error()))
 	}
-	klog.V(0).Info("Response: \n", resp.Success)
-	klog.V(0).Info("Usage: \n", resp.Data.Usage)
-	klog.V(0).Info("First 5 number of the Result: \n", resp.Data.Embedding[:5])
-	// resp.Data.Embedding is available.
-}
-
-func sampleEmbedding(apiKey, testWord string) (*llmszhipuai.EmbeddingResponse, error) {
-	ai := llmszhipuai.NewZhiPuAI(apiKey)
-	text := llmszhipuai.EmbeddingText{
-		Prompt:    testWord,
-		RequestID: "1",
-	}
-
-	resp, err := ai.Embedding(text)
+	// init vector store
+	chroma, err := chromadb.New(context.TODO(), chromadb.WithBasePath("http://localhost:8000"), chromadb.WithEmbedder(embedder))
 	if err != nil {
-		return nil, err
+		panic(fmt.Errorf("error create chroma db: %s", err.Error()))
 	}
-	return resp, nil
+
+	// add documents
+	err = chroma.AddDocuments(context.TODO(), []schema.Document{
+		{PageContent: "This is a document about cats. Cats are great."},
+		{PageContent: "this is a document about dogs. Dogs are great."},
+	})
+	if err != nil {
+		panic(fmt.Errorf("error add documents to chroma db: %s", err.Error()))
+	}
+
+	docs, err := chroma.SimilaritySearch(context.TODO(), "cats", 1)
+	if err != nil {
+		log.Fatalf("Error similarity search: %s \n", err.Error())
+	}
+
+	fmt.Printf("SimilaritySearch: %v \n", docs)
 }

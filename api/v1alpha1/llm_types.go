@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kubeagi/arcadia/pkg/llms"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 // LLMSpec defines the desired state of LLM

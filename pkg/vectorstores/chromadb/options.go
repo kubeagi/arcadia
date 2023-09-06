@@ -16,62 +16,88 @@ limitations under the License.
 package chromadb
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	chroma "github.com/amikos-tech/chroma-go"
 	"github.com/tmc/langchaingo/embeddings"
 )
 
-type option struct {
-	host           string
-	port           int
-	embeddr        embeddings.Embedder
-	collectionName string
-	textKey        string
-	distanceFunc   chroma.DistanceFunction
-	transport      *http.Transport
-}
+const (
+	_defaultNameSpaceKey = "nameSpace"
+	_defaultTextKey      = "text"
+	_defaultNameSpace    = "default"
+	_defualtDistanceFunc = chroma.L2
+)
 
-type Option func(*option)
+// ErrInvalidOptions is returned when the options given are invalid.
+var ErrInvalidOptions = errors.New("invalid options")
 
-func WithHost(host string) Option {
-	return func(o *option) {
-		o.host = host
-	}
-}
+type Option func(p *Store)
 
-func WithPort(port int) Option {
-	return func(o *option) {
-		o.port = port
+func WithBasePath(basePath string) Option {
+	return func(c *Store) {
+		c.basePath = basePath
 	}
 }
 
 func WithEmbedder(e embeddings.Embedder) Option {
-	return func(o *option) {
-		o.embeddr = e
+	return func(c *Store) {
+		c.embedder.Embedder = e
 	}
 }
 
-func WithCollectionName(collectionName string) Option {
-	return func(o *option) {
-		o.collectionName = collectionName
+func WithNameSpace(nameSpace string) Option {
+	return func(c *Store) {
+		c.nameSpace = nameSpace
 	}
 }
 
 func WithTextKey(textKey string) Option {
-	return func(o *option) {
-		o.textKey = textKey
+	return func(c *Store) {
+		c.textKey = textKey
+	}
+}
+
+func WithNameSpaceKey(nameSpaceKey string) Option {
+	return func(c *Store) {
+		c.namespaceKey = nameSpaceKey
 	}
 }
 
 func WithDistanceFunc(f chroma.DistanceFunction) Option {
-	return func(o *option) {
-		o.distanceFunc = f
+	return func(c *Store) {
+		c.distanceFunc = f
 	}
 }
 
 func WithTransport(tp *http.Transport) Option {
-	return func(o *option) {
-		o.transport = tp
+	return func(c *Store) {
+		c.transport = tp
 	}
+}
+
+func applyClientOptions(opts ...Option) (Store, error) {
+	s := &Store{
+		textKey:      _defaultTextKey,
+		namespaceKey: _defaultNameSpaceKey,
+		nameSpace:    _defaultNameSpace,
+
+		distanceFunc: _defualtDistanceFunc,
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	if s.basePath == "" {
+		return Store{}, fmt.Errorf("%w: missing url", ErrInvalidOptions)
+	}
+
+	if s.embedder.Embedder == nil {
+		return Store{}, fmt.Errorf("%w: missing embedder", ErrInvalidOptions)
+	}
+
+	return *s, nil
 }
