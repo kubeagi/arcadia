@@ -18,9 +18,13 @@ package chromadb
 import (
 	"context"
 
+	chroma "github.com/amikos-tech/chroma-go"
 	"github.com/tmc/langchaingo/embeddings"
 )
 
+var _ chroma.EmbeddingFunction = wrappedEmbeddingFunction{}
+
+// wrappedEmbeddingFunction is a wrapper around an embeddings.Embedder to convert langchain embedder to chroma embeddingFunction
 type wrappedEmbeddingFunction struct {
 	embeddings.Embedder
 }

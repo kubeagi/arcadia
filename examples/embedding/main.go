@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	embedding "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
@@ -42,7 +41,7 @@ func main() {
 		panic(fmt.Errorf("error create embedder: %s", err.Error()))
 	}
 	// init vector store
-	chroma, err := chromadb.New(context.TODO(), chromadb.WithBasePath("http://localhost:8000"), chromadb.WithEmbedder(embedder))
+	chroma, err := chromadb.New(context.TODO(), chromadb.WithScheme("http"), chromadb.WithHost("localhost:8000"), chromadb.WithEmbedder(embedder))
 	if err != nil {
 		panic(fmt.Errorf("error create chroma db: %s", err.Error()))
 	}
@@ -56,9 +55,9 @@ func main() {
 		panic(fmt.Errorf("error add documents to chroma db: %s", err.Error()))
 	}
 
-	docs, err := chroma.SimilaritySearch(context.TODO(), "cats", 1)
+	docs, err := chroma.SimilaritySearch(context.TODO(), "cats", 5)
 	if err != nil {
-		log.Fatalf("Error similarity search: %s \n", err.Error())
+		panic(fmt.Errorf("error similarity search: %s", err.Error()))
 	}
 
 	fmt.Printf("SimilaritySearch: %v \n", docs)

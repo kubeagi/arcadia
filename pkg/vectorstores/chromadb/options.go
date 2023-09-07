@@ -18,7 +18,6 @@ package chromadb
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	chroma "github.com/amikos-tech/chroma-go"
 	"github.com/tmc/langchaingo/embeddings"
@@ -27,7 +26,7 @@ import (
 const (
 	_defaultNameSpaceKey = "nameSpace"
 	_defaultTextKey      = "text"
-	_defaultNameSpace    = "default"
+	_defaultNameSpace    = "langchain"
 	_defualtDistanceFunc = chroma.L2
 )
 
@@ -36,68 +35,88 @@ var ErrInvalidOptions = errors.New("invalid options")
 
 type Option func(p *Store)
 
-func WithBasePath(basePath string) Option {
-	return func(c *Store) {
-		c.basePath = basePath
-	}
-}
-
+// WithEmbedder is an option for setting the embedder to use.Must be set.
 func WithEmbedder(e embeddings.Embedder) Option {
-	return func(c *Store) {
-		c.embedder.Embedder = e
+	return func(p *Store) {
+		p.embedder.Embedder = e
 	}
 }
 
-func WithNameSpace(nameSpace string) Option {
-	return func(c *Store) {
-		c.nameSpace = nameSpace
-	}
-}
-
+// WithTextKey is an option for setting the text key in the metadata to the vectors
+// in the index. The text key stores the text of the document the vector represents.
 func WithTextKey(textKey string) Option {
-	return func(c *Store) {
-		c.textKey = textKey
+	return func(p *Store) {
+		p.textKey = textKey
 	}
 }
 
+// WithNameSpaceKey is an option for setting the nameSpace key in the metadata to the vectors
+// in the index. The nameSpace key stores the nameSpace of the document the vector represents.
+// In chromadb, namespace represents the collection.
 func WithNameSpaceKey(nameSpaceKey string) Option {
-	return func(c *Store) {
-		c.namespaceKey = nameSpaceKey
+	return func(p *Store) {
+		p.nameSpaceKey = nameSpaceKey
+	}
+}
+
+// WithScheme is an option for setting the scheme of the chromadb server.Must be set.
+func WithScheme(scheme string) Option {
+	return func(p *Store) {
+		p.scheme = scheme
+	}
+}
+
+// WithHost is an option for setting the host of the chromadb server.Must be set.
+func WithHost(host string) Option {
+	return func(p *Store) {
+		p.host = host
+	}
+}
+
+// WithNameSpace is an option for setting the nameSpace to upsert and query the vectors.
+// In chromadb, namespace represents the collection.
+func WithNameSpace(nameSpace string) Option {
+	return func(p *Store) {
+		p.nameSpace = nameSpace
 	}
 }
 
 func WithDistanceFunc(f chroma.DistanceFunction) Option {
-	return func(c *Store) {
-		c.distanceFunc = f
+	return func(p *Store) {
+		p.distanceFunc = f
 	}
 }
 
-func WithTransport(tp *http.Transport) Option {
-	return func(c *Store) {
-		c.transport = tp
+// WithIncludes is an option for setting the includes to query the vectors.
+func WithIncludes(includes []chroma.QueryEnum) Option {
+	return func(p *Store) {
+		p.includes = includes
 	}
 }
 
 func applyClientOptions(opts ...Option) (Store, error) {
-	s := &Store{
+	o := &Store{
 		textKey:      _defaultTextKey,
-		namespaceKey: _defaultNameSpaceKey,
+		nameSpaceKey: _defaultNameSpaceKey,
 		nameSpace:    _defaultNameSpace,
-
 		distanceFunc: _defualtDistanceFunc,
 	}
 
 	for _, opt := range opts {
-		opt(s)
+		opt(o)
 	}
 
-	if s.basePath == "" {
-		return Store{}, fmt.Errorf("%w: missing url", ErrInvalidOptions)
+	if o.scheme == "" {
+		return Store{}, fmt.Errorf("%w: missing scheme", ErrInvalidOptions)
 	}
 
-	if s.embedder.Embedder == nil {
+	if o.host == "" {
+		return Store{}, fmt.Errorf("%w: missing host", ErrInvalidOptions)
+	}
+
+	if o.embedder.Embedder == nil {
 		return Store{}, fmt.Errorf("%w: missing embedder", ErrInvalidOptions)
 	}
 
-	return *s, nil
+	return *o, nil
 }
