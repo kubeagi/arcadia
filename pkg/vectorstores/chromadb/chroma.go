@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	chroma "github.com/amikos-tech/chroma-go"
 	chromaopenapi "github.com/amikos-tech/chroma-go/swagger"
@@ -37,24 +36,30 @@ var (
 		"score threshold must be between 0 and 1")
 )
 
+// Store is a wrapper around the chromadb client.
 type Store struct {
 	embedder wrappedEmbeddingFunction
 	client   *chroma.Client
 
-	namespaceKey string
-	textKey      string
+	scheme string
+	host   string
 
+	// optional
+	nameSpaceKey string
+	// optional
+	textKey string
+	// optional: nameSpace represents collection in chromadb
 	nameSpace string
-
-	basePath string
-
+	// optional
 	distanceFunc chroma.DistanceFunction
-	transport    *http.Transport
+	// optional
+	includes []chroma.QueryEnum
 }
 
 var _ vectorstores.VectorStore = Store{}
 
-func New(ctx context.Context, opts ...Option) (vectorstores.VectorStore, error) {
+// New creates a new Store with options for chromadb.
+func New(opts ...Option) (vectorstores.VectorStore, error) {
 	s, err := applyClientOptions(opts...)
 	if err != nil {
 		return nil, err
@@ -63,12 +68,16 @@ func New(ctx context.Context, opts ...Option) (vectorstores.VectorStore, error) 
 	configuration := chromaopenapi.NewConfiguration()
 	configuration.Servers = chromaopenapi.ServerConfigurations{
 		{
-			URL:         s.basePath,
+			URL:         fmt.Sprintf("%s://%s", s.scheme, s.host),
 			Description: "Chromadb server url for this store",
 		},
 	}
 	s.client = &chroma.Client{
 		ApiClient: chromaopenapi.NewAPIClient(configuration),
+	}
+
+	if _, err = s.client.Heartbeat(); err != nil {
+		return nil, err
 	}
 
 	return s, nil
@@ -105,7 +114,7 @@ func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options
 			metadata[k] = v
 		}
 		metadata[s.textKey] = texts[i]
-		metadata[s.namespaceKey] = nameSpace
+		metadata[s.nameSpaceKey] = nameSpace
 
 		metadatas = append(metadatas, metadata)
 	}
@@ -125,35 +134,39 @@ func (s Store) SimilaritySearch(
 ) ([]schema.Document, error) {
 	opts := s.getOptions(options...)
 	nameSpace := s.getNameSpace(opts)
+	where := s.getFilters(opts)
 
-	// FIXME: use scoreThreshold
-	// scoreThreshold, err := s.getScoreThreshold(opts)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	scoreThreshold, err := s.getScoreThreshold(opts)
+	if err != nil {
+		return nil, err
+	}
 
 	collection, err := s.client.GetCollection(nameSpace, s.embedder)
 	if err != nil {
 		return nil, err
 	}
 
-	where, whereDocument := s.getFilters(opts)
-	result, err := collection.Query([]string{query}, int32(numDocuments), where, whereDocument, nil)
+	result, err := collection.Query([]string{query}, int32(numDocuments), where, nil, s.includes)
 	if err != nil {
 		return nil, err
 	}
 
-	dl := len(result.Documents[0])
-	documents := make([]schema.Document, dl)
-	for i := 0; i < dl; i++ {
+	docs := make([]schema.Document, 0, len(result.Documents[0]))
+	for i := 0; i < len(result.Documents[0]); i++ {
 		doc := schema.Document{
 			Metadata:    result.Metadatas[0][i],
 			PageContent: result.Documents[0][i],
 		}
-		documents[i] = doc
+		// lower distance represents more similarity
+		// score = 1 - distance
+		if scoreThreshold != 0 && 1-result.Distances[0][i] >= scoreThreshold {
+			docs = append(docs, doc)
+		} else if scoreThreshold == 0 {
+			docs = append(docs, doc)
+		}
 	}
 
-	return documents, nil
+	return docs, nil
 }
 
 func (s Store) getNameSpace(opts vectorstores.Options) string {
@@ -163,20 +176,21 @@ func (s Store) getNameSpace(opts vectorstores.Options) string {
 	return s.nameSpace
 }
 
-// func (s Store) getScoreThreshold(opts vectorstores.Options) (float32, error) {
-// 	if opts.ScoreThreshold < 0 || opts.ScoreThreshold > 1 {
-// 		return 0, ErrInvalidScoreThreshold
-// 	}
-// 	f32 := float32(opts.ScoreThreshold)
-// 	return f32, nil
-// }
-
-func (s Store) getFilters(opts vectorstores.Options) (where, whereDocument map[string]any) {
-	filters, ok := opts.Filters.([]map[string]any)
-	if !ok || len(filters) != 2 {
-		return nil, nil
+func (s Store) getScoreThreshold(opts vectorstores.Options) (float32, error) {
+	if opts.ScoreThreshold < 0 || opts.ScoreThreshold > 1 {
+		return 0, ErrInvalidScoreThreshold
 	}
-	return filters[0], filters[1]
+	f32 := float32(opts.ScoreThreshold)
+	return f32, nil
+}
+
+// FIXME: optimize filter
+func (s Store) getFilters(opts vectorstores.Options) map[string]any {
+	filters, ok := opts.Filters.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return filters
 }
 
 func (s Store) getOptions(options ...vectorstores.Option) vectorstores.Options {

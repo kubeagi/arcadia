@@ -10,6 +10,7 @@ require (
 	github.com/onsi/gomega v1.18.1
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/cobra v1.4.0
+	github.com/stretchr/testify v1.8.4
 	github.com/tmc/langchaingo v0.0.0-20230829032728-c85d3967da08
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
@@ -60,6 +61,7 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkoukk/tiktoken-go v0.1.2 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
