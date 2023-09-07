@@ -59,7 +59,7 @@ type Store struct {
 var _ vectorstores.VectorStore = Store{}
 
 // New creates a new Store with options for chromadb.
-func New(ctx context.Context, opts ...Option) (vectorstores.VectorStore, error) {
+func New(opts ...Option) (vectorstores.VectorStore, error) {
 	s, err := applyClientOptions(opts...)
 	if err != nil {
 		return nil, err
@@ -157,12 +157,11 @@ func (s Store) SimilaritySearch(
 			Metadata:    result.Metadatas[0][i],
 			PageContent: result.Documents[0][i],
 		}
-
 		// lower distance represents more similarity
 		// score = 1 - distance
 		if scoreThreshold != 0 && 1-result.Distances[0][i] >= scoreThreshold {
 			docs = append(docs, doc)
-		} else {
+		} else if scoreThreshold == 0 {
 			docs = append(docs, doc)
 		}
 	}
