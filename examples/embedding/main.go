@@ -33,6 +33,8 @@ func main() {
 	}
 	apiKey := os.Args[1]
 
+	fmt.Printf("Connecting with apikey %s\n", apiKey)
+
 	// init embedder
 	embedder, err := embedding.NewZhiPuAI(
 		embedding.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
@@ -48,14 +50,24 @@ func main() {
 
 	// add documents
 	err = chroma.AddDocuments(context.TODO(), []schema.Document{
-		{PageContent: "This is a document about cats. Cats are great."},
-		{PageContent: "this is a document about dogs. Dogs are great."},
+		{PageContent: "This is a document about cats. Cats are great.",
+			Metadata: map[string]interface{}{"about": "cat"}},
 	})
+
 	if err != nil {
 		panic(fmt.Errorf("error add documents to chroma db: %s", err.Error()))
 	}
 
-	docs, err := chroma.SimilaritySearch(context.TODO(), "cats", 5)
+	err = chroma.AddDocuments(context.TODO(), []schema.Document{
+		{PageContent: "This is a document about dogs. Dogs are great.",
+			Metadata: map[string]interface{}{"about": "dog"}},
+	})
+
+	if err != nil {
+		panic(fmt.Errorf("error add documents to chroma db: %s", err.Error()))
+	}
+
+	docs, err := chroma.SimilaritySearch(context.TODO(), "This is a photo of a cat. Cats are cute.", 5)
 	if err != nil {
 		panic(fmt.Errorf("error similarity search: %s", err.Error()))
 	}
