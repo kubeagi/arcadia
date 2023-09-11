@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package chromadb
 
 import (
@@ -25,46 +26,35 @@ import (
 	chroma "github.com/amikos-tech/chroma-go"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-
 	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 )
 
-func getValues(t *testing.T) (string, string) {
+func getValues(t *testing.T) string {
 	t.Helper()
 
-	scheme := os.Getenv("CHROMA_SCHEME")
-	if scheme == "" {
-		t.Skip("Must set CHROMA_SCHEME to run test")
-	}
-
-	host := os.Getenv("CHROMA_HOST")
-	if host == "" {
-		t.Skip("Must set CHROMA_HOST to run test")
+	url := os.Getenv("CHROMA_URL")
+	if url == "" {
+		t.Skip("Must set CHROMA_URL to run test")
 	}
 
 	if openaiKey := os.Getenv("OPENAI_API_KEY"); openaiKey == "" {
 		t.Skip("OPENAI_API_KEY not set")
 	}
 
-	if zhipuaiKey := os.Getenv("ZHIPUAI_API_KEY"); zhipuaiKey == "" {
-		t.Skip("ZHIPUAI_API_KEY not set")
-	}
-
-	return scheme, host
+	return url
 }
 
 func TestChromaStoreRest(t *testing.T) {
 	t.Parallel()
 
-	scheme, host := getValues(t)
+	url := getValues(t)
 	e, err := openaiEmbeddings.NewOpenAI()
 	require.NoError(t, err)
 
 	store, err := New(
-		WithScheme(scheme),
-		WithHost(host),
+		WithURL(url),
 		WithEmbedder(e),
 		WithNameSpace(uuid.New().String()),
 		WithDistanceFunc(chroma.COSINE),
@@ -92,13 +82,12 @@ func TestChromaStoreRest(t *testing.T) {
 func TestChromaStoreRestWithScoreThreshold(t *testing.T) {
 	t.Parallel()
 
-	scheme, host := getValues(t)
+	url := getValues(t)
 	e, err := openaiEmbeddings.NewOpenAI()
 	require.NoError(t, err)
 
 	store, err := New(
-		WithScheme(scheme),
-		WithHost(host),
+		WithURL(url),
 		WithEmbedder(e),
 		WithNameSpace(uuid.New().String()),
 		WithDistanceFunc(chroma.COSINE),
@@ -137,13 +126,12 @@ func TestChromaStoreRestWithScoreThreshold(t *testing.T) {
 func TestSimilaritySearchWithInvalidScoreThreshold(t *testing.T) {
 	t.Parallel()
 
-	scheme, host := getValues(t)
+	url := getValues(t)
 	e, err := openaiEmbeddings.NewOpenAI()
 	require.NoError(t, err)
 
 	store, err := New(
-		WithScheme(scheme),
-		WithHost(host),
+		WithURL(url),
 		WithEmbedder(e),
 		WithNameSpace(uuid.New().String()),
 	)

@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package chromadb
 
 import (
@@ -60,16 +61,9 @@ func WithNameSpaceKey(nameSpaceKey string) Option {
 }
 
 // WithScheme is an option for setting the scheme of the chromadb server.Must be set.
-func WithScheme(scheme string) Option {
+func WithURL(url string) Option {
 	return func(p *Store) {
-		p.scheme = scheme
-	}
-}
-
-// WithHost is an option for setting the host of the chromadb server.Must be set.
-func WithHost(host string) Option {
-	return func(p *Store) {
-		p.host = host
+		p.url = url
 	}
 }
 
@@ -106,12 +100,8 @@ func applyClientOptions(opts ...Option) (Store, error) {
 		opt(o)
 	}
 
-	if o.scheme == "" {
-		return Store{}, fmt.Errorf("%w: missing scheme", ErrInvalidOptions)
-	}
-
-	if o.host == "" {
-		return Store{}, fmt.Errorf("%w: missing host", ErrInvalidOptions)
+	if o.url == "" {
+		return Store{}, fmt.Errorf("%w: missing url", ErrInvalidOptions)
 	}
 
 	if o.embedder.Embedder == nil {

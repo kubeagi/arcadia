@@ -13,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package chromadb
 
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	chroma "github.com/amikos-tech/chroma-go"
 	chromaopenapi "github.com/amikos-tech/chroma-go/swagger"
@@ -41,8 +41,7 @@ type Store struct {
 	embedder wrappedEmbeddingFunction
 	client   *chroma.Client
 
-	scheme string
-	host   string
+	url string
 
 	// optional
 	nameSpaceKey string
@@ -59,16 +58,16 @@ type Store struct {
 var _ vectorstores.VectorStore = Store{}
 
 // New creates a new Store with options for chromadb.
-func New(opts ...Option) (vectorstores.VectorStore, error) {
+func New(opts ...Option) (Store, error) {
 	s, err := applyClientOptions(opts...)
 	if err != nil {
-		return nil, err
+		return Store{}, err
 	}
 
 	configuration := chromaopenapi.NewConfiguration()
 	configuration.Servers = chromaopenapi.ServerConfigurations{
 		{
-			URL:         fmt.Sprintf("%s://%s", s.scheme, s.host),
+			URL:         s.url,
 			Description: "Chromadb server url for this store",
 		},
 	}
@@ -77,7 +76,7 @@ func New(opts ...Option) (vectorstores.VectorStore, error) {
 	}
 
 	if _, err = s.client.Heartbeat(); err != nil {
-		return nil, err
+		return Store{}, err
 	}
 
 	return s, nil
@@ -89,9 +88,8 @@ func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options
 
 	texts := make([]string, 0, len(docs))
 	ids := make([]string, len(docs))
-	for idx, doc := range docs {
+	for _, doc := range docs {
 		texts = append(texts, doc.PageContent)
-		ids[idx] = fmt.Sprintf("%d", idx)
 	}
 
 	collection, err := s.client.CreateCollection(s.nameSpace, map[string]interface{}{}, true, s.embedder, s.distanceFunc)
@@ -184,7 +182,7 @@ func (s Store) getScoreThreshold(opts vectorstores.Options) (float32, error) {
 	return f32, nil
 }
 
-// FIXME: optimize filter
+// FIXME: optimize filter.
 func (s Store) getFilters(opts vectorstores.Options) map[string]any {
 	filters, ok := opts.Filters.(map[string]any)
 	if !ok {

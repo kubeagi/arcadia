@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package chromadb
 
 import (
@@ -24,7 +25,7 @@ import (
 
 var _ chroma.EmbeddingFunction = wrappedEmbeddingFunction{}
 
-// wrappedEmbeddingFunction is a wrapper around an embeddings.Embedder to convert langchain embedder to chroma embeddingFunction
+// wrappedEmbeddingFunction is a wrapper around an embeddings.
 type wrappedEmbeddingFunction struct {
 	embeddings.Embedder
 }
