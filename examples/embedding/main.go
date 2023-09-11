@@ -41,7 +41,7 @@ func main() {
 		panic(fmt.Errorf("error create embedder: %s", err.Error()))
 	}
 	// init vector store
-	chroma, err := chromadb.New(chromadb.WithScheme("http"), chromadb.WithHost("localhost:8000"), chromadb.WithEmbedder(embedder))
+	chroma, err := chromadb.New(chromadb.WithURL("http://localhost:8000"), chromadb.WithEmbedder(embedder))
 	if err != nil {
 		panic(fmt.Errorf("error create chroma db: %s", err.Error()))
 	}
