@@ -2,19 +2,16 @@
 
 arctl(arcadia command line tool) 
 
-```shell
-```
-
 ## Quick Install
 
 ```shell
-cd arcadia
-make arctl
+go install github.com/kubeagi/arcadia/arctl@latest
 ```
+
 If build succeeded, `arctl` will be built into `bin/arctl` under `arcadia`
 
 ```shell
-❯ ./bin/arctl -h
+❯ arctl -h
 Command line tools for Arcadia
 
 Usage:
@@ -37,7 +34,7 @@ Use "arctl [command] --help" for more information about a command.
 ### Load documents into vector store
 
 ```shell
-❯ ./bin/arctl load -h
+❯ arctl load -h
 Load documents into VectorStore
 
 Usage:
@@ -61,13 +58,12 @@ Required Arguments:
 
 For example:
 ```shell
-./bin/arctl load  --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --document ./README.md
+arctl load  --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --document ./README.md
 ```
-
 
 ### Chat with LLM
 ```shell
-❯ ./bin/arctl chat -h
+❯ arctl chat -h
 Do LLM chat with similarity search(optional)
 
 Usage:
@@ -98,7 +94,7 @@ Now `arctl chat` has two modes which is controlled by flag `--enable-embedding-s
 #### Normal chat(Without embedding)
 
 ```shell
-./bin/arctl chat --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro --question "介绍一下Arcadia"
+arctl chat --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro --question "介绍一下Arcadia"
 ```
 
 Required Arguments:
@@ -123,7 +119,7 @@ Arcadia 开发的游戏中最知名的作品之一是《Second Life》（第二�
 #### Enable Similarity Search
 
 ```shell
-./bin/arctl chat --enable-embedding-search --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
+arctl chat --enable-embedding-search --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
 ```
 
 Required Arguments:
