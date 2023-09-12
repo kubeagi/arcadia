@@ -22,6 +22,7 @@ import (
 
 	chroma "github.com/amikos-tech/chroma-go"
 	chromaopenapi "github.com/amikos-tech/chroma-go/swagger"
+	"github.com/google/uuid"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 )
@@ -87,8 +88,9 @@ func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options
 	nameSpace := s.getNameSpace(opts)
 
 	texts := make([]string, 0, len(docs))
-	ids := make([]string, len(docs))
+	ids := make([]string, 0, len(docs))
 	for _, doc := range docs {
+		ids = append(ids, uuid.New().String())
 		texts = append(texts, doc.PageContent)
 	}
 
@@ -111,7 +113,6 @@ func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options
 		for k, v := range docs[i].Metadata {
 			metadata[k] = v
 		}
-		metadata[s.textKey] = texts[i]
 		metadata[s.nameSpaceKey] = nameSpace
 
 		metadatas = append(metadatas, metadata)
