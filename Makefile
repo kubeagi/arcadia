@@ -233,3 +233,8 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# CLI Arcadia
+.PHONY: arctl
+arctl: fmt vet ## Build manager binary.
+	go build -o bin/arctl arctl/*.go
