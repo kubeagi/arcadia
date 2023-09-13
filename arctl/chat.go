@@ -35,9 +35,8 @@ import (
 
 var (
 	question string
+
 	// chat with LLM
-	chatLLMType string
-	chatAPIKey  string
 	model       string
 	method      string
 	temperature float32
@@ -102,25 +101,24 @@ func NewChatCmd() *cobra.Command {
 	}
 
 	// For similarity search
-	cmd.Flags().BoolVar(&enableSimilaritySearch, "enable-embedding-search", false, "enable embedding similarity search")
-	cmd.Flags().StringVar(&embeddingLLMType, "embedding-llm-type", string(llms.ZhiPuAI), "llm type to use(Only zhipuai,openai supported now)")
-	cmd.Flags().StringVar(&embeddingLLMApiKey, "embedding-llm-apikey", "", "apiKey to access embedding service.Must required when embedding similarity search is enabled")
+	cmd.Flags().BoolVar(&enableSimilaritySearch, "enable-embedding-search", false, "enable embedding similarity search(false by default)")
 	cmd.Flags().StringVar(&vectorStore, "vector-store", "http://localhost:8000", "vector stores to use(Only chroma supported now)")
+	// Similarity search params
 	cmd.Flags().StringVar(&nameSpace, "namespace", "arcadia", "namespace/collection to query from")
 	cmd.Flags().Float64Var(&scoreThreshold, "score-threshold", 0, "score threshold for similarity search(Higher is better)")
 	cmd.Flags().IntVar(&numDocs, "num-docs", 5, "number of documents to be returned with SimilarSearch")
 
-	cmd.Flags().StringVar(&question, "question", "", "question text to be asked")
-
 	// For LLM chat
-	cmd.Flags().StringVar(&chatLLMType, "chat-llm-type", string(llms.ZhiPuAI), "llm type to use(Only zhipuai,openai supported now)")
-	cmd.Flags().StringVar(&chatAPIKey, "chat-llm-apikey", "", "apiKey to access embedding service")
+	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use for embedding & chat(Only zhipuai,openai supported now)")
+	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access embedding/llm service.Must required when embedding similarity search is enabled")
+	cmd.Flags().StringVar(&question, "question", "", "question text to be asked")
+	// LLM Chat params
 	cmd.PersistentFlags().StringVar(&model, "model", string(zhipuai.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
 	cmd.PersistentFlags().StringVar(&method, "method", "sse-invoke", "Invoke method used when access LLM service(invoke/sse-invoke)")
 	cmd.PersistentFlags().Float32Var(&temperature, "temperature", 0.95, "temperature for chat")
 	cmd.PersistentFlags().Float32Var(&topP, "top-p", 0.7, "top-p for chat")
 
-	if err = cmd.MarkFlagRequired("chat-llm-apikey"); err != nil {
+	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
 	if err = cmd.MarkFlagRequired("question"); err != nil {
@@ -134,14 +132,14 @@ func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
 	var embedder embeddings.Embedder
 	var err error
 
-	if embeddingLLMApiKey == "" {
+	if apiKey == "" {
 		return nil, errors.New("embedding-llm-apikey is required when embedding similarity search is enabled")
 	}
 
-	switch embeddingLLMType {
+	switch llmType {
 	case "zhipuai":
 		embedder, err = zhipuaiembeddings.NewZhiPuAI(
-			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(embeddingLLMApiKey)),
+			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
 		)
 		if err != nil {
 			return nil, err
@@ -169,7 +167,7 @@ func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
 
 func Chat(ctx context.Context, similarDocs []schema.Document) error {
 	// Only for zhipuai
-	client := zhipuai.NewZhiPuAI(chatAPIKey)
+	client := zhipuai.NewZhiPuAI(apiKey)
 
 	params := zhipuai.DefaultModelParams()
 	params.Model = zhipuai.Model(model)
