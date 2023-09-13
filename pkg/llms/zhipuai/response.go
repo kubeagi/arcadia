@@ -22,18 +22,38 @@ import (
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
-type Response struct {
-	Code    int    `json:"code"`
-	Data    *Data  `json:"data"`
-	Msg     string `json:"msg"`
-	Success bool   `json:"success"`
-}
-
 type EmbeddingResponse struct {
 	Code    int            `json:"code"`
 	Data    *EmbeddingData `json:"data"`
 	Msg     string         `json:"msg"`
 	Success bool           `json:"success"`
+}
+
+func (embeddingResp *EmbeddingResponse) Unmarshall(bytes []byte) error {
+	return json.Unmarshal(embeddingResp.Bytes(), embeddingResp)
+}
+
+func (embeddingResp *EmbeddingResponse) Type() llms.LLMType {
+	return llms.ZhiPuAI
+}
+
+func (embeddingResp *EmbeddingResponse) Bytes() []byte {
+	bytes, err := json.Marshal(embeddingResp)
+	if err != nil {
+		return []byte{}
+	}
+	return bytes
+}
+
+func (embeddingResp *EmbeddingResponse) String() string {
+	return string(embeddingResp.Bytes())
+}
+
+type Response struct {
+	Code    int    `json:"code"`
+	Data    *Data  `json:"data"`
+	Msg     string `json:"msg"`
+	Success bool   `json:"success"`
 }
 
 func (response *Response) Unmarshall(bytes []byte) error {

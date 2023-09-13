@@ -8,7 +8,7 @@ arctl(arcadia command line tool)
 go install github.com/kubeagi/arcadia/arctl@latest
 ```
 
-If build succeeded, `arctl` will be built into `bin/arctl` under `arcadia`
+Now have a try!❤️ 
 
 ```shell
 ❯ arctl -h
@@ -30,8 +30,47 @@ Flags:
 Use "arctl [command] --help" for more information about a command.
 ```
 
+### Build from local code 
+
+1. Clone `arcadia`
+
+```shell
+git clone https://github.com/kubeagi/arcadia.git
+```
+
+2. Build 
+
+```shell
+make arctl
+```
+
+3. Have a try! ❤️ 
+
+```shell
+❯ ./bin/arctl chat -h
+Do LLM chat with similarity search(optional)
+
+Usage:
+  arctl chat [usage] [flags]
+
+Flags:
+      --enable-embedding-search   enable embedding similarity search
+  -h, --help                      help for chat
+      --llm-apikey string         apiKey to access embedding/llm service.Must required when embedding similarity search is enabled
+      --llm-type string           llm type to use for embedding & chat(Only zhipuai,openai supported now) (default "zhipuai")
+      --method string             Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
+      --model string              which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
+      --namespace string          namespace/collection to query from (default "arcadia")
+      --num-docs int              number of documents to be returned with SimilarSearch (default 5)
+      --question string           question text to be asked
+      --score-threshold float     score threshold for similarity search(Higher is better)
+      --temperature float32       temperature for chat (default 0.95)
+      --top-p float32             top-p for chat (default 0.7)
+      --vector-store string       vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+```
+
 ## Usage
-### Load documents into vector store
+### Load documents into vector store with embedding service
 
 ```shell
 ❯ arctl load -h
@@ -41,24 +80,25 @@ Usage:
   arctl load [usage] [flags]
 
 Flags:
-      --chunk-overlap int             chunk overlap for embedding (default 30)
-      --chunk-size int                chunk size for embedding (default 300)
-      --document string               path of the document to load
-      --document-language string      language of the document(Only text,html,csv supported now) (default "text")
-      --embedding-llm-apikey string   apiKey to access embedding service
-      --embedding-llm-type string     llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
-  -h, --help                          help for load
-      --namespace string              namespace/collection of the document to load into (default "arcadia")
-      --vector-store string           vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+      --chunk-overlap int          chunk overlap for embedding (default 30)
+      --chunk-size int             chunk size for embedding (default 300)
+      --document string            path of the document to load
+      --document-language string   language of the document(Only text,html,csv supported now) (default "text")
+  -h, --help                       help for load
+      --llm-apikey string          apiKey to access embedding service
+      --llm-type string            llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
+      --namespace string           namespace/collection of the document to load into (default "arcadia")
+      --vector-store string        vector stores to use(Only chroma supported now) (default "http://localhost:8000")
 ```
 
 Required Arguments:
-- `--embedding-llm-apikey`
+- `--llm-apikey`
 - `--document`
 
 For example:
+> This will load `./README.md` into vectorstore(chromadb http://localhost:8000) with help of embedding service `zhipuai` and its apikey `26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm`
 ```shell
-arctl load  --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --document ./README.md
+arctl load  --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --document ./README.md
 ```
 
 ### Chat with LLM
@@ -70,37 +110,36 @@ Usage:
   arctl chat [usage] [flags]
 
 Flags:
-      --chat-llm-apikey string        apiKey to access embedding service
-      --chat-llm-type string          llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
-      --embedding-llm-apikey string   apiKey to access embedding service.Must required when embedding similarity search is enabled
-      --embedding-llm-type string     llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
-      --enable-embedding-search       enable embedding similarity search
-  -h, --help                          help for chat
-      --method string                 Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
-      --model string                  which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
-      --namespace string              namespace/collection to query from (default "arcadia")
-      --num-docs int                  number of documents to be returned with SimilarSearch (default 3)
-      --question string               question text to be asked
-      --score-threshold float         score threshold for similarity search(Higher is better)
-      --temperature float32           temperature for chat (default 0.95)
-      --top-p float32                 top-p for chat (default 0.7)
-      --vector-store string           vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+      --enable-embedding-search   enable embedding similarity search(false by default)
+  -h, --help                      help for chat
+      --llm-apikey string         apiKey to access embedding/llm service.Must required when embedding similarity search is enabled
+      --llm-type string           llm type to use for embedding & chat(Only zhipuai,openai supported now) (default "zhipuai")
+      --method string             Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
+      --model string              which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
+      --namespace string          namespace/collection to query from (default "arcadia")
+      --num-docs int              number of documents to be returned with SimilarSearch (default 5)
+      --question string           question text to be asked
+      --score-threshold float     score threshold for similarity search(Higher is better)
+      --temperature float32       temperature for chat (default 0.95)
+      --top-p float32             top-p for chat (default 0.7)
+      --vector-store string       vector stores to use(Only chroma supported now) (default "http://localhost:8000")
 ```
 
 Now `arctl chat` has two modes which is controlled by flag `--enable-embedding-search`:
 - normal chat without embedding search(default)
 - enable similarity search with embedding
 
-#### Normal chat(Without embedding)
+#### Chat without embedding
+
+> This will chat with LLM `zhipuai` with its apikey by using model `chatglm_pro` without embedding
 
 ```shell
-arctl chat --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro --question "介绍一下Arcadia"
+arctl chat --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro --question "介绍一下Arcadia"
 ```
 
 Required Arguments:
-- `--chat-llm-apikey`
+- `--llm-apikey`
 - `--question`
-
 
 **Output:**
 ```shell
@@ -116,16 +155,17 @@ Arcadia 开发的游戏中最知名的作品之一是《Second Life》（第二�
 总的来说，Arcadia 是一家在游戏行业具有较高声誉和影响力的公司，他们不断推出新的游戏作品，为玩家带来更多精彩的游戏体验。
 ```
 
-#### Enable Similarity Search
+#### Chat with embedding
+
+> This will chat with LLM `zhipuai` with its apikey by using model `chatglm_pro` with embedding enabled
 
 ```shell
-arctl chat --enable-embedding-search --chat-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --embedding-llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
+arctl chat --enable-embedding-search --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
 ```
 
 Required Arguments:
 - `--enable-embedding-search`
-- `--embedding-llm-apikey`
-- `--chat-llm-apikey`
+- `--llm-apikey`
 - `--question`
 
 **Output:**
@@ -161,7 +201,6 @@ Arcadia 项目包含了一些用于增强 Golang 中 AI 功能的软件包。其
 3. Embedding Service
 
 - ✅ zhipuai
-- ✅ openai
 
 4. LLM Service
 

@@ -201,6 +201,10 @@ func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][
 		if err != nil {
 			return nil, err
 		}
+		if postResponse.Code != 200 {
+			return nil, fmt.Errorf("embedding failed: %s", postResponse.String())
+		}
+
 		embeddings = append(embeddings, postResponse.Data.Embedding)
 	}
 

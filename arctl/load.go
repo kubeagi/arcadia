@@ -35,8 +35,8 @@ import (
 )
 
 var (
-	embeddingLLMType   string
-	embeddingLLMApiKey string
+	llmType string
+	apiKey  string
 
 	document string
 	language string
@@ -61,8 +61,8 @@ func NewLoadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&embeddingLLMType, "embedding-llm-type", string(llms.ZhiPuAI), "llm type to use(Only zhipuai,openai supported now)")
-	cmd.Flags().StringVar(&embeddingLLMApiKey, "embedding-llm-apikey", "", "apiKey to access embedding service")
+	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use(Only zhipuai,openai supported now)")
+	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access embedding service")
 
 	cmd.Flags().StringVar(&vectorStore, "vector-store", "http://localhost:8000", "vector stores to use(Only chroma supported now)")
 
@@ -73,7 +73,7 @@ func NewLoadCmd() *cobra.Command {
 	cmd.Flags().IntVar(&chunkSize, "chunk-size", 300, "chunk size for embedding")
 	cmd.Flags().IntVar(&chunkOverlap, "chunk-overlap", 30, "chunk overlap for embedding")
 
-	if err = cmd.MarkFlagRequired("embedding-llm-apikey"); err != nil {
+	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
 	if err = cmd.MarkFlagRequired("document"); err != nil {
@@ -112,10 +112,10 @@ func EmbedDocuments(ctx context.Context, documents []schema.Document) error {
 	var embedder embeddings.Embedder
 	var err error
 
-	switch embeddingLLMType {
+	switch llmType {
 	case "zhipuai":
 		embedder, err = zhipuaiembeddings.NewZhiPuAI(
-			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(embeddingLLMApiKey)),
+			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
 		)
 		if err != nil {
 			return err
