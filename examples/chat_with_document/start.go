@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
@@ -47,12 +48,12 @@ func NewStartCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&apiKey, "api-key", "", "used to connect to ZhiPuAI platform")
-	cmd.Flags().StringVar(&url, "vector-store", "", "the chromaDB vector database url")
+	cmd.Flags().StringVar(&apiKey, "apikey", "", "used to connect to ZhiPuAI platform(required)")
+	cmd.Flags().StringVar(&url, "vector-store", "", "the chromaDB vector database url(required)")
 	cmd.Flags().StringVar(&addr, "addr", ":8800", "used to listen and serve GET request, default :8800")
-	cmd.Flags().StringVar(&namespace, "name-space", _defaultNamespace, "the vector database namespace")
+	cmd.Flags().StringVar(&namespace, "namespace", _defaultNamespace, "the vector database namespace")
 
-	if err := cmd.MarkFlagRequired("api-key"); err != nil {
+	if err := cmd.MarkFlagRequired("apikey"); err != nil {
 		panic(err)
 	}
 	if err := cmd.MarkFlagRequired("vector-store"); err != nil {

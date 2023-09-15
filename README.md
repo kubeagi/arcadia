@@ -75,6 +75,13 @@ To enhace the AI capability in Golang,we developed some packages.
 
 - ✅[ChromaDB](https://github.com/tmc/langchaingo/tree/main/vectorstores)
 
+## Examples
+
+- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you chat with your document
+- [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
+- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows to to inquiry the security risks in your RBAC with AI.
+- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) show how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+
 ## Contribute to Arcadia
 
 If you want to contribute to Arcadia, refer to [contribute guide](CONTRIBUTING.md).
