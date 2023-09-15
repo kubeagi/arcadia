@@ -17,8 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +37,6 @@ func NewCLI() *cobra.Command {
 }
 
 func main() {
-	flag.Parse()
-
 	if err := NewCLI().Execute(); err != nil {
 		fmt.Printf("Run failed, error:\n %v", err)
 	}

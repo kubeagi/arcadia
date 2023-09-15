@@ -13,13 +13,13 @@ an API server sample for load and chat with your own document.
 2. Build
 
     ```shell
-    go build -o bin/chat example/chat_with_document/*.go
+    go build -o bin/chat_with_document examples/chat_with_document/*.go
     ```
 
 3. Start the API server
 
     ```shell
-    $ ./bin/chat start -h
+    $ ./bin/chat_with_document start -h
    Start the server
 
     Usage:
@@ -27,12 +27,12 @@ an API server sample for load and chat with your own document.
 
     Flags:
     --addr string           used to listen and serve GET request (default ":8800")
-    --api-key string        used to connect to ZhiPuAI platform
+    --apikey string        used to connect to ZhiPuAI platform
     -h, --help              help for start
-    --name-space string     the vector database namespace (default "arcadia")
+    --namespace string     the vector database namespace (default "arcadia")
     --vector-store string   the chromaDB vector database url
    
-   $ ./bin/chat start --api-key [YOUR_API_KEY] --vector-store [YOUR_CHROMADB_URL]
+   $ ./bin/chat_with_document start --apikey [YOUR_API_KEY] --vector-store [YOUR_CHROMADB_URL]
    Starting chat server example...
     Connecting platform...
     Connecting vector database...
@@ -53,6 +53,18 @@ an API server sample for load and chat with your own document.
 ## Usage
 
 ### Load document into vector store
+
+Example:
+```shell
+curl --request POST \
+  --url http://localhost:8800/load \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "document": "KubeAGI 是 KubeBB 下的项目，致力于将大语言模型与 KubeBB 结合，助力开发者及 K8s 生态发展。",
+    "chunk-size": 2048,
+    "chunk-overlap": 128
+}'
+```
 
 #### URL
 
@@ -85,6 +97,17 @@ an API server sample for load and chat with your own document.
 ```
 
 ### Chat with document
+
+Example:
+
+```shell
+curl --request POST \
+  --url http://localhost:8800/chat \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "content": "什么是KubeAGI？"
+}'
+```
 
 #### URL
 
