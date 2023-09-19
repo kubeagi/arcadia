@@ -17,23 +17,30 @@ limitations under the License.
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
-	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
+	"github.com/r3labs/sse/v2"
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/textsplitter"
+	"github.com/valyala/fasthttp"
 
+	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
 )
 
 const (
-	_defaultChunkSize    = 2048
+	_defaultChunkSize    = 1024
 	_defaultChunkOverlap = 128
+	_defaultTimeout      = 300 * time.Second
+	APITokenTTLSeconds   = 3 * 60
 )
 
 type Workload struct {
@@ -168,4 +175,84 @@ func (w Workload) EmbedAndStoreDocument(ctx context.Context) error {
 	}
 
 	return chroma.AddDocuments(ctx, documents)
+}
+
+func StreamQueryHandler(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Transfer-Encoding", "chunked")
+
+	var chat Chat
+	err := c.BodyParser(&chat)
+	if chat.Content == "" {
+		return errors.New("content cannot be empty")
+	}
+
+	embedder, err := zhipuaiembeddings.NewZhiPuAI(
+		zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Connecting vector database...")
+	db, err := chromadb.New(
+		chromadb.WithURL(url),
+		chromadb.WithEmbedder(embedder),
+		chromadb.WithNameSpace(namespace),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating chroma db: %s", err.Error())
+	}
+
+	res, sErr := db.SimilaritySearch(context.Background(), chat.Content, 5)
+	if sErr != nil {
+		return fmt.Errorf("error performing similarity search: %s", sErr.Error())
+	}
+
+	prompt := buildPrompt(chat.Content, res)
+
+	params := zhipuai.ModelParams{
+		Method:      zhipuai.ZhiPuAISSEInvoke,
+		Model:       zhipuai.ZhiPuAIPro,
+		Temperature: 0.5,
+		TopP:        0.7,
+		Prompt:      prompt,
+	}
+
+	apiURL := zhipuai.BuildAPIURL(params.Model, params.Method)
+	token, err := zhipuai.GenerateToken(apiKey, APITokenTTLSeconds)
+	if err != nil {
+		return err
+	}
+
+	c.Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+		iErr := zhipuai.Stream(apiURL, token, params, _defaultTimeout, func(event *sse.Event) {
+			switch string(event.Event) {
+			case "add":
+				fmt.Fprintf(w, string(event.Data))
+				fmt.Printf(string(event.Data))
+			case "error", "interrupted", "finish":
+				fmt.Fprintf(w, "\n\n %s: %s", event.Event, event.Data)
+			}
+
+			err := w.Flush()
+			if err != nil {
+				// Refreshing page in web browser will establish a new
+				// SSE connection, but only (the last) one is alive, so
+				// dead connections must be closed here.
+				fmt.Printf("Error while flushing: %v. Closing http connection.\n", err)
+
+				return
+			}
+		})
+
+		if iErr != nil {
+			fmt.Printf("Error while invoking: %v. Closing http connection.\n", iErr)
+			return
+		}
+	}))
+
+	return nil
 }

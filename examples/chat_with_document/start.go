@@ -109,6 +109,7 @@ func run() error {
 	app.Use(cors.New(cors.ConfigDefault))
 
 	app.Get("/", HomePageGetHandler)
+	app.Post("/sse", StreamQueryHandler)
 	app.Post("/load", LoadHandler)
 	app.Post("/chat", QueryHandler)
 
