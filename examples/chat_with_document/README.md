@@ -119,7 +119,7 @@ curl --request POST \
 |---------|-----------|--------|--------------|
 | content | Yes       | string | chat content |
 
-#### Request Body
+#### Request body
 
 ```json
 {
@@ -148,4 +148,52 @@ curl --request POST \
   "msg":"操作成功",
   "success":true
 }    
+```
+
+### Stream chat with document
+
+Example:
+
+```shell
+curl -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"content": "KubeBB 有哪些核心套件?"}' \
+     http://localhost:8800/sse
+```
+
+#### URL
+
+- `POST /chat`
+
+#### Parameter
+
+| Name    | Must have | Type   | Description  |
+|---------|-----------|--------|--------------|
+| content | Yes       | string | chat content |
+
+#### Request body
+
+```json
+{
+    "content": "KubeBB 有哪些核心套件?"
+}
+```
+
+#### Response
+
+```shell
+ KubeBB 的核心套件包括：
+
+1. 内核 Kit：提供声明式的组件生命周期管理和组件市场，并通过 Tekton 流水线强化低代码平台组件与底座服务的集成。
+2. 底座 Kit：提供开箱即用的云原生服务门户，包括用户、OIDC 认证、权限、审计、租户管理、门户服务等基础组件以及证书管理、Nginx Ingress 等集群组件。
+3. 低码 Kit：依托 Low-Code Engine 和具有 Git 特性的关系数据库 Dolt 打造，并借助底座门户的菜单和路由资源以及内核套件的组件管理能力，实现组件开发、测试到上线的全链路能力。
+
+关于 KubeBB 套件之间的关系，可以类比为：
+
+- Kubernetes ~ 操作系统内核
+- Core ~ 软件安装器
+- 底座 Kit ~ 操作系统的系统软件，如 GUI、用户系统、网络等
+- 低码组件开发 Kit ~ 操作系统软件开发工具
+
+ finish:
 ```
