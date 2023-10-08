@@ -74,7 +74,7 @@ func DefaultModelParams() ModelParams {
 	}
 }
 
-func (params *ModelParams) Marshall() []byte {
+func (params *ModelParams) Marshal() []byte {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return []byte{}
@@ -82,7 +82,7 @@ func (params *ModelParams) Marshall() []byte {
 	return data
 }
 
-func (params *ModelParams) Unmarshall(bytes []byte) error {
+func (params *ModelParams) Unmarshal(bytes []byte) error {
 	return json.Unmarshal(bytes, params)
 }
 

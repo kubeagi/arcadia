@@ -47,7 +47,7 @@ func (response *Response) String() string {
 	return string(response.Bytes())
 }
 
-func (response *Response) Unmarshall(bytes []byte) error {
+func (response *Response) Unmarshal(bytes []byte) error {
 	return json.Unmarshal(bytes, response)
 }
 
