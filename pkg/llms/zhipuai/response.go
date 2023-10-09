@@ -56,7 +56,7 @@ type Response struct {
 	Success bool   `json:"success"`
 }
 
-func (response *Response) Unmarshall(bytes []byte) error {
+func (response *Response) Unmarshal(bytes []byte) error {
 	return json.Unmarshal(response.Bytes(), response)
 }
 

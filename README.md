@@ -26,13 +26,13 @@ kubectl apply -f config/samples/arcadia_v1alpha1_llm.yaml
 kubectl apply -f config/samples/arcadia_v1alpha1_prompt.yaml
 ```
 
-After prompt got created, you can see the prompt in the following command:
+After the prompt got created, you can see the prompt in the following command:
 
 ```shell
 kubectl get prompt prompt-zhipuai-sample -oyaml
 ```
 
-If no error found,you can use this command to get the prompt response data.
+If no error is found, you can use this command to get the prompt response data.
 
 ```shell
 kubectl get prompt prompt-zhipuai-sample --output="jsonpath={.status.data}" | base64 --decode
@@ -56,18 +56,18 @@ go install github.com/kubeagi/arcadia/arctl@latest
 
 ## Packages
 
-To enhace the AI capability in Golang,we developed some packages.
+To enhace the AI capability in Golang, we developed some packages.
 
 ### LLMs
 
-- ✅ [ZhiPuAI(智谱AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- ✅ [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
   - [example](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
 
 ### Embeddings
 
 > Fully compatible with [langchain embeddings](https://github.com/tmc/langchaingo/tree/main/embeddings)
 
-- ✅[ZhiPuAI(智谱AI) Embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
+- ✅[ZhiPuAI(智谱 AI) Embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
 
 ### VectorStores
 
@@ -77,10 +77,10 @@ To enhace the AI capability in Golang,we developed some packages.
 
 ## Examples
 
-- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you chat with your document
+- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you to chat with your document
 - [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
-- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows to to inquiry the security risks in your RBAC with AI.
-- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) show how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows how to inquiry the security risks in your RBAC with AI.
+- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
 
 ## Contribute to Arcadia
 

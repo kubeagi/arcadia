@@ -21,9 +21,10 @@ import "errors"
 type LLMType string
 
 const (
-	OpenAI  LLMType = "openai"
-	ZhiPuAI LLMType = "zhipuai"
-	Unknown LLMType = "unknown"
+	OpenAI    LLMType = "openai"
+	ZhiPuAI   LLMType = "zhipuai"
+	DashScope LLMType = "dashscope"
+	Unknown   LLMType = "unknown"
 )
 
 type LLM interface {
@@ -33,15 +34,15 @@ type LLM interface {
 }
 
 type ModelParams interface {
-	Marshall() []byte
-	Unmarshall([]byte) error
+	Marshal() []byte
+	Unmarshal([]byte) error
 }
 
 type Response interface {
 	Type() LLMType
 	String() string
 	Bytes() []byte
-	Unmarshall([]byte) error
+	Unmarshal([]byte) error
 }
 
 type UnknowLLM struct{}
