@@ -48,7 +48,8 @@ type ModelParams struct {
 // +kubebuilder:object:generate=true
 
 type Input struct {
-	Messages []Message `json:"messages"`
+	Messages []Message `json:"messages,omitempty"`
+	Prompt   string    `json:"prompt,omitempty"`
 }
 
 type Parameters struct {
