@@ -35,7 +35,8 @@ type Response struct {
 }
 
 type Output struct {
-	Choices []Choice `json:"choices"`
+	Choices []Choice `json:"choices,omitempty"`
+	Text    string   `json:"text,omitempty"`
 }
 
 type FinishReason string

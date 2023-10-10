@@ -30,8 +30,12 @@ const (
 type Model string
 
 const (
+	// 通义千问对外开源的 14B / 7B 规模参数量的经过人类指令对齐的 chat 模型
 	QWEN14BChat Model = "qwen-14b-chat"
 	QWEN7BChat  Model = "qwen-7b-chat"
+	// LLaMa2 系列大语言模型由 Meta 开发并公开发布，其规模从 70 亿到 700 亿参数不等。在灵积上提供的 llama2-7b-chat-v2 和 llama2-13b-chat-v2，分别为 7B 和 13B 规模的 LLaMa2 模型，针对对话场景微调优化后的版本。
+	LLAMA27BCHATV2  Model = "llama2-7b-chat-v2"
+	LLAMA213BCHATV2 Model = "llama2-13b-chat-v2"
 )
 
 var _ llms.LLM = (*DashScope)(nil)

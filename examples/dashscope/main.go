@@ -48,6 +48,14 @@ func main() {
 			panic(err)
 		}
 	}
+	for _, model := range []dashscope.Model{dashscope.LLAMA27BCHATV2, dashscope.LLAMA213BCHATV2} {
+		klog.V(0).Infof("\nChat with %s\n", model)
+		resp, err := sampleChatWithLlama2(apiKey, model)
+		if err != nil {
+			panic(err)
+		}
+		klog.V(0).Infof("Response: \n %s\n", resp)
+	}
 	klog.Infoln("sample chat done")
 }
 
@@ -59,6 +67,14 @@ func sampleChat(apiKey string, model dashscope.Model) (llms.Response, error) {
 		{Role: dashscope.System, Content: "You are a kubernetes expert."},
 		{Role: dashscope.User, Content: samplePrompt},
 	}
+	return client.Call(params.Marshal())
+}
+
+func sampleChatWithLlama2(apiKey string, model dashscope.Model) (llms.Response, error) {
+	client := dashscope.NewDashScope(apiKey, false)
+	params := dashscope.DefaultModelParams()
+	params.Model = model
+	params.Input.Prompt = samplePrompt
 	return client.Call(params.Marshal())
 }
 
