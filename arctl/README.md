@@ -82,8 +82,8 @@ Usage:
 Flags:
       --chunk-overlap int          chunk overlap for embedding (default 30)
       --chunk-size int             chunk size for embedding (default 300)
-      --document string            path of the document to load
       --document-language string   language of the document(Only text,html,csv supported now) (default "text")
+      --documents string           path of the documents/document directories to load(separated by comma and directories supported)
   -h, --help                       help for load
       --llm-apikey string          apiKey to access embedding service
       --llm-type string            llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
@@ -92,13 +92,18 @@ Flags:
 ```
 
 Required Arguments:
-- `--llm-apikey`
-- `--document`
+- `--llm-apikey` : The apikey of llm/embedding service
+- `--documents`: The documents to load. It is a wrapped file path string with comma. A directory is also supported
 
 For example:
-> This will load `./README.md` into vectorstore(chromadb http://localhost:8000) with help of embedding service `zhipuai` and its apikey `26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm`
+> This will load file `./README.md` and directory `./examples/` into vectorstore(chromadb http://localhost:8000) with help of embedding service `zhipuai` and its apikey `26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm`
 ```shell
-arctl load  --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --document ./README.md
+arctl load  --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --documents ./README.md,./examples
+I1011 17:28:37.050701    6759 load.go:113] Load document: ./README.md
+I1011 17:28:47.075638    6759 load.go:126] Time cost 10.02 seconds for loading document: ./README.md
+I1011 17:28:47.080315    6759 load.go:107] Load document: examples/chat_with_document/README.md
+I1011 17:28:52.480834    6759 load.go:126] Time cost 5.40 seconds for loading document: examples/chat_with_document/README.md
+...
 ```
 
 ### Chat with LLM
