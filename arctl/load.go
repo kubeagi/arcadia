@@ -20,6 +20,9 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/documentloaders"
@@ -27,6 +30,7 @@ import (
 	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
+	"k8s.io/klog/v2"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms"
@@ -38,7 +42,9 @@ var (
 	llmType string
 	apiKey  string
 
-	document string
+	// path to documents seperated by comma
+	inputDocuments string
+
 	language string
 
 	nameSpace    string
@@ -53,11 +59,7 @@ func NewLoadCmd() *cobra.Command {
 		Use:   "load [usage]",
 		Short: "Load documents into VectorStore",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			documents, err := LoadAndSplitDocument(context.Background())
-			if err != nil {
-				return err
-			}
-			return EmbedDocuments(context.Background(), documents)
+			return LoadDocuments(context.Background())
 		},
 	}
 
@@ -66,7 +68,7 @@ func NewLoadCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&vectorStore, "vector-store", "http://localhost:8000", "vector stores to use(Only chroma supported now)")
 
-	cmd.Flags().StringVar(&document, "document", "", "path of the document to load")
+	cmd.Flags().StringVar(&inputDocuments, "documents", "", "path of the documents/document directories to load(separated by comma and directories supported)")
 	cmd.Flags().StringVar(&language, "document-language", "text", "language of the document(Only text,html,csv supported now)")
 
 	cmd.Flags().StringVar(&nameSpace, "namespace", "arcadia", "namespace/collection of the document to load into")
@@ -76,17 +78,56 @@ func NewLoadCmd() *cobra.Command {
 	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
-	if err = cmd.MarkFlagRequired("document"); err != nil {
+
+	if err = cmd.MarkFlagRequired("documents"); err != nil {
 		panic(err)
 	}
 
 	return cmd
 }
 
-func LoadAndSplitDocument(ctx context.Context) ([]schema.Document, error) {
+// LoadDocuments loads documents to vector store.
+func LoadDocuments(ctx context.Context) error {
+	for _, document := range strings.Split(inputDocuments, ",") {
+		fileInfo, err := os.Stat(document)
+		if err != nil {
+			return err
+		}
+		// load documents under a document directory
+		if fileInfo.IsDir() {
+			if err = filepath.Walk(document, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				// skip if it is a directory
+				if info.IsDir() {
+					return nil
+				}
+				// process documents
+				klog.Infof("Load document: %s \n", path)
+				return LoadDocument(ctx, path)
+			}); err != nil {
+				return err
+			}
+		} else {
+			klog.Infof("Load document: %s \n", document)
+			err := LoadDocument(ctx, document)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// LoadDocument loads a document from a file and splits it into multiple documents.
+func LoadDocument(ctx context.Context, document string) error {
+	defer func(start time.Time) {
+		klog.Infof("Time cost %.2f seconds for loading document: %s \n", time.Since(start).Seconds(), document)
+	}(time.Now())
 	file, err := os.Open(document)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var loader documentloaders.Loader
@@ -98,17 +139,22 @@ func LoadAndSplitDocument(ctx context.Context) ([]schema.Document, error) {
 	case "html":
 		loader = documentloaders.NewHTML(file)
 	default:
-		return nil, errors.New("unsupported document language")
+		return errors.New("unsupported document language")
 	}
 
 	split := textsplitter.NewRecursiveCharacter()
 	split.ChunkSize = chunkSize
 	split.ChunkOverlap = chunkOverlap
 
-	return loader.LoadAndSplit(ctx, split)
+	documents, err := loader.LoadAndSplit(ctx, split)
+	if err != nil {
+		return err
+	}
+
+	return embedDocuments(context.Background(), documents)
 }
 
-func EmbedDocuments(ctx context.Context, documents []schema.Document) error {
+func embedDocuments(ctx context.Context, documents []schema.Document) error {
 	var embedder embeddings.Embedder
 	var err error
 

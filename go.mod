@@ -110,3 +110,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/amikos-tech/chroma-go => github.com/bjwswang/chroma-go v0.0.0-20231011091545-0041221c9bb3

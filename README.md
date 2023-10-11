@@ -32,7 +32,7 @@ helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia
 kubectl apply -f config/samples/arcadia_v1alpha1_llm.yaml
 ```
 
-### 3. Create a prompt
+3. Create a prompt
 
 ```shell
 kubectl apply -f config/samples/arcadia_v1alpha1_prompt.yaml
