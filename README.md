@@ -68,13 +68,14 @@ To enhace the AI capability in Golang, we developed some packages.Here are the e
 
 > Fully compatible with [langchain embeddings](https://github.com/tmc/langchaingo/tree/main/embeddings)
 
-- ✅[ZhiPuAI(智谱 AI) Embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
+- ✅ [ZhiPuAI(智谱 AI) Embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
+- ✅ [DashScope(灵积模型服务) text-embedding-v1(通用文本向量 同步接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details)
 
 ### VectorStores
 
 > Fully compatible with [langchain vectorstores](https://github.com/tmc/langchaingo/tree/main/vectorstores)
 
-- ✅[ChromaDB](https://docs.trychroma.com/)
+- ✅ [ChromaDB](https://docs.trychroma.com/)
 
 ## Contribute to Arcadia
 
