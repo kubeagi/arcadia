@@ -24,14 +24,17 @@ import (
 
 var _ llms.Response = (*Response)(nil)
 
-type Response struct {
+type CommonResponse struct {
 	// https://help.aliyun.com/zh/dashscope/response-status-codes
 	StatusCode int    `json:"status_code,omitempty"`
 	Code       string `json:"code,omitempty"`
 	Message    string `json:"message,omitempty"`
-	Output     Output `json:"output"`
-	Usage      Usage  `json:"usage"`
 	RequestID  string `json:"request_id"`
+}
+type Response struct {
+	CommonResponse
+	Output Output `json:"output"`
+	Usage  Usage  `json:"usage"`
 }
 
 type Output struct {

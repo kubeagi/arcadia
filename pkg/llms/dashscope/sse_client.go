@@ -49,7 +49,7 @@ func defaultHandler(event *sse.Event, last string) (newData string) {
 	return ""
 }
 func (z *DashScope) StreamCall(ctx context.Context, data []byte, handler func(event *sse.Event, last string) (data string)) error {
-	resp, err := req(ctx, DashScopeChatURL, z.apiKey, data, true)
+	resp, err := req(ctx, DashScopeChatURL, z.apiKey, data, true, false)
 	if err != nil {
 		return err
 	}

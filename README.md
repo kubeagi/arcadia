@@ -68,11 +68,20 @@ To enhace the AI capability in Golang, we developed some packages.Here are the e
 - [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
 - [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows how to inquiry the security risks in your RBAC with AI.
 - [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- [dashscope](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go) shows how to use this [dashscope client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope) to chat with qwen-7b-chat / qwen-14b-chat / llama2-7b-chat-v2 / llama2-13b-chat-v2 and use embedding with dashscope text-embedding-v1 / text-embedding-async-v1
 
 ### LLMs
 
 - ✅ [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
   - [example](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
+- ✅ [DashScope(灵积模型服务)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope), we now support
+  - ✅ [qwen-7b-chat(通义千问开源 7B 模型)](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-quick-start)
+  - ✅ [qwen-14b-chat(通义千问开源 14B 模型)](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-quick-star)
+  - ✅ [llama2-7b-chat-v2(LLaMa2 大语言模型 7B)](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start-4)
+  - ✅ [llama2-13b-chat-v2(LLaMa2 大语言模型 13B)](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start-4)
+  - ✅ [text-embedding-v1(通用文本向量 同步接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details)
+  - ✅ [text-embedding-async-v1(通用文本向量 批处理接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details)
+  - see [example](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go)
 
 ### Embeddings
 
