@@ -2,16 +2,14 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: zhipuai
-  namespace: kubebb-system
 type: Opaque
 data:
-  apiKey: "ZmVkMDk2NWJjZTAxOTBmZjJiYzY4MWFjMzA2ZDVmM2QuZUlwN3NPWHJueG1XSnhPaw==" # replace this with your API key
+  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: LLM
 metadata:
   name: zhipuai
-  namespace: kubebb-system
 spec:
   type: "zhipuai"
   url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)

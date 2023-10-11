@@ -1,15 +1,27 @@
 # Arcadia
 
-Our vision is to make it easier for cloud-native applications to integrate with AI, thereby making the cloud more intelligent and impactful.
+Our vision is to make it easier for cloud-native applications to integrate with AI, thereby making the cloud more intelligent and impactful. We provides two ways for users to develop AI applications :point_down:
+
+- :fire:[Arcadia Operator](https://github.com/kubeagi/arcadia/tree/main/charts/arcadia) provides comprehensive features to develop,build,publish AI applications 
+  - `Dataset`: automatically process `Files` with embedding models,then store vectors into vector stores
+  - `LLMs`
+    - :cloud: LLM service provider 
+    - Local distributed LLMs(OpenAI API compatible)
+  - `Prompts`: call llm and keep results 
+  - `Application`: provide templates and tools to `build,publish`
+  - ...
+- :fire:[Pure Golang toolchains](#pure-go-toolchains)  to develop with your own needs
 
 ## Quick start
 
 1. Install arcadia operator
 
+We recommend that install arcadia under namespace `arcadia`
+
 ```shell
 helm repo add arcadia https://kubeagi.github.io/arcadia
 helm repo update
-helm install arcadia arcadia/arcadia
+helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
 ```
 
 2. Add a LLM along with the auth secret
@@ -48,15 +60,14 @@ Output:
 
 We provide a Command Line Tool `arctl` to interact with `arcadia` and `LLMs`. See [here](./arctl/README.md) for more details.
 
-### Quick install
+## Pure Go Toolchains
 
-```shell
-go install github.com/kubeagi/arcadia/arctl@latest
-```
+To enhace the AI capability in Golang, we developed some packages.Here are the examples of how to use them.
 
-## Packages
-
-To enhace the AI capability in Golang, we developed some packages.
+- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you to chat with your document
+- [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
+- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows how to inquiry the security risks in your RBAC with AI.
+- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
 
 ### LLMs
 
@@ -73,14 +84,7 @@ To enhace the AI capability in Golang, we developed some packages.
 
 > Fully compatible with [langchain vectorstores](https://github.com/tmc/langchaingo/tree/main/vectorstores)
 
-- ✅[ChromaDB](https://github.com/tmc/langchaingo/tree/main/vectorstores)
-
-## Examples
-
-- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you to chat with your document
-- [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
-- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows how to inquiry the security risks in your RBAC with AI.
-- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+- ✅[ChromaDB](https://docs.trychroma.com/)
 
 ## Contribute to Arcadia
 
