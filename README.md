@@ -60,6 +60,8 @@ Output:
 
 We provide a Command Line Tool `arctl` to interact with `arcadia` and `LLMs`. See [here](./arctl/README.md) for more details.
 
+- ✅ local dataset management
+
 ## Pure Go Toolchains
 
 To enhace the AI capability in Golang, we developed some packages.Here are the examples of how to use them.
