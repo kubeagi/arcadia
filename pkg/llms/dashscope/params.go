@@ -42,7 +42,7 @@ var _ llms.ModelParams = (*ModelParams)(nil)
 type ModelParams struct {
 	Model      Model      `json:"model"`
 	Input      Input      `json:"input"`
-	Parameters Parameters `json:"parameters"`
+	Parameters Parameters `json:"parameters,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -50,6 +50,7 @@ type ModelParams struct {
 type Input struct {
 	Messages []Message `json:"messages,omitempty"`
 	Prompt   string    `json:"prompt,omitempty"`
+	History  *[]string `json:"history,omitempty"`
 }
 
 type Parameters struct {
@@ -77,6 +78,14 @@ func DefaultModelParams() ModelParams {
 			TopK:         0,
 			Seed:         1234,
 			ResultFormat: "message",
+		},
+	}
+}
+func DefaultModelParamsSimpleChat() ModelParams {
+	return ModelParams{
+		Model: QWEN14BChat,
+		Input: Input{
+			Prompt: "",
 		},
 	}
 }

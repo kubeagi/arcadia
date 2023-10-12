@@ -17,12 +17,14 @@ limitations under the License.
 package dashscope
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 var _ llms.Response = (*Response)(nil)
+var _ llms.Response = (*ResponseChatGLB6B)(nil)
 
 type CommonResponse struct {
 	// https://help.aliyun.com/zh/dashscope/response-status-codes
@@ -40,6 +42,7 @@ type Response struct {
 type Output struct {
 	Choices []Choice `json:"choices,omitempty"`
 	Text    string   `json:"text,omitempty"`
+	History []string `json:"history,omitempty"`
 }
 
 type FinishReason string
@@ -77,5 +80,43 @@ func (response *Response) Bytes() []byte {
 }
 
 func (response *Response) String() string {
-	return string(response.Bytes())
+	if response.Output.Text != "" {
+		return response.Output.Text
+	}
+	buf := &bytes.Buffer{}
+	for _, c := range response.Output.Choices {
+		buf.WriteString(c.Message.Content)
+	}
+	return buf.String()
+}
+
+type ResponseChatGLB6B struct {
+	CommonResponse
+	Output struct {
+		Text struct {
+			Response string `json:"response,omitempty"`
+		} `json:"text,omitempty"`
+		History []string `json:"history,omitempty"`
+	} `json:"output"`
+	Usage Usage `json:"usage"`
+}
+
+func (r *ResponseChatGLB6B) Type() llms.LLMType {
+	return llms.DashScope
+}
+
+func (r *ResponseChatGLB6B) String() string {
+	return r.Output.Text.Response
+}
+
+func (r *ResponseChatGLB6B) Bytes() []byte {
+	bytes, err := json.Marshal(r)
+	if err != nil {
+		return []byte{}
+	}
+	return bytes
+}
+
+func (r *ResponseChatGLB6B) Unmarshal(bytes []byte) error {
+	return json.Unmarshal(bytes, r)
 }

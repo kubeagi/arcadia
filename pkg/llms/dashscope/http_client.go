@@ -21,6 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 func setHeaders(req *http.Request, token string, sse, async bool) {
@@ -39,8 +41,8 @@ func setHeaders(req *http.Request, token string, sse, async bool) {
 	req.Header.Set("Authorization", "Bearer "+token)
 }
 
-func parseHTTPResponse(resp *http.Response) (data *Response, err error) {
-	if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
+func parseHTTPResponse(resp *http.Response, data llms.Response) (llms.Response, error) {
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -61,11 +63,17 @@ func req(ctx context.Context, apiURL, token string, data []byte, sse, async bool
 
 	return http.DefaultClient.Do(req)
 }
-func do(ctx context.Context, apiURL, token string, data []byte, sse, async bool) (*Response, error) {
+func do(ctx context.Context, apiURL, token string, data []byte, sse, async bool, model Model) (llms.Response, error) {
 	resp, err := req(ctx, apiURL, token, data, sse, async)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return parseHTTPResponse(resp)
+	var respData llms.Response
+	if model == CHATGLM6BV2 {
+		respData = &ResponseChatGLB6B{}
+	} else {
+		respData = &Response{}
+	}
+	return parseHTTPResponse(resp, respData)
 }
