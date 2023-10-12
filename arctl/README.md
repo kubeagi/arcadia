@@ -1,6 +1,6 @@
 # arctl
 
-arctl(arcadia command line tool) 
+arctl(arcadia command line tool) provides comprehensive tools to help you build and deploy AIGC applications.
 
 ## Quick Install
 
@@ -15,17 +15,17 @@ Now have a try!❤️
 Command line tools for Arcadia
 
 Usage:
-  arctl [usage] [flags]
   arctl [command]
 
 Available Commands:
-  load        Load documents into VectorStore
   chat        Do LLM chat with similarity search(optional)
   completion  Generate the autocompletion script for the specified shell
+  dataset     Manage dataset locally
   help        Help about any command
 
 Flags:
-  -h, --help   help for arctl
+  -h, --help          help for arctl
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
 
 Use "arctl [command] --help" for more information about a command.
 ```
@@ -47,64 +47,204 @@ make arctl
 3. Have a try! ❤️ 
 
 ```shell
-❯ ./bin/arctl chat -h
-Do LLM chat with similarity search(optional)
+❯ ./bin/arctl -h
+Command line tools for Arcadia
 
 Usage:
-  arctl chat [usage] [flags]
+  arctl [command]
+
+Available Commands:
+  chat        Do LLM chat with similarity search(optional)
+  completion  Generate the autocompletion script for the specified shell
+  dataset     Manage dataset locally
+  help        Help about any command
 
 Flags:
-      --enable-embedding-search   enable embedding similarity search
-  -h, --help                      help for chat
-      --llm-apikey string         apiKey to access embedding/llm service.Must required when embedding similarity search is enabled
-      --llm-type string           llm type to use for embedding & chat(Only zhipuai,openai supported now) (default "zhipuai")
-      --method string             Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
-      --model string              which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
-      --namespace string          namespace/collection to query from (default "arcadia")
-      --num-docs int              number of documents to be returned with SimilarSearch (default 5)
-      --question string           question text to be asked
-      --score-threshold float     score threshold for similarity search(Higher is better)
-      --temperature float32       temperature for chat (default 0.95)
-      --top-p float32             top-p for chat (default 0.7)
-      --vector-store string       vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+  -h, --help          help for arctl
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+
+Use "arctl [command] --help" for more information about a command.
 ```
 
 ## Usage
-### Load documents into vector store with embedding service
+### Local dataset management
+
+You can use `arctl` to manage your dataset locally with the following commands:
+
+- `arctl dataset list`: list your local datasets
+- `arctl dataset create`: create a new local dataset
+- `arctl dataset delete`: delete a local dataset and reset the vector store
+- `arctl dataset show`: show a local dataset info
+- `arctl dataset execute`: execute a local dataset with additional local files
+
+#### Create a local dataset
+
 
 ```shell
-❯ arctl load -h
-Load documents into VectorStore
+❯ ./bin/arctl dataset create -h
+Create dataset
 
 Usage:
-  arctl load [usage] [flags]
+  arctl dataset create [usage] [flags]
 
 Flags:
       --chunk-overlap int          chunk overlap for embedding (default 30)
       --chunk-size int             chunk size for embedding (default 300)
       --document-language string   language of the document(Only text,html,csv supported now) (default "text")
       --documents string           path of the documents/document directories to load(separated by comma and directories supported)
-  -h, --help                       help for load
+  -h, --help                       help for create
       --llm-apikey string          apiKey to access embedding service
       --llm-type string            llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
-      --namespace string           namespace/collection of the document to load into (default "arcadia")
-      --vector-store string        vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+      --name string                dataset(namespace/collection) of the document to load into
+      --vector-store string        vector stores to use(Only chroma supported now) (default "http://127.0.0.1:8000")
+
+Global Flags:
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
 ```
 
 Required Arguments:
+- `--name`: The name of the dataset 
 - `--llm-apikey` : The apikey of llm/embedding service
 - `--documents`: The documents to load. It is a wrapped file path string with comma. A directory is also supported
 
 For example:
-> This will load file `./README.md` and directory `./examples/` into vectorstore(chromadb http://localhost:8000) with help of embedding service `zhipuai` and its apikey `26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm`
+> This will create a local dataset `arcadia` and load documents `./README.md` & `./examples/` into vectorstore(chromadb http://localhost:8000) with help of embedding service `zhipuai` and its apikey `26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm`
 ```shell
-arctl load  --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --documents ./README.md,./examples
-I1011 17:28:37.050701    6759 load.go:113] Load document: ./README.md
-I1011 17:28:47.075638    6759 load.go:126] Time cost 10.02 seconds for loading document: ./README.md
-I1011 17:28:47.080315    6759 load.go:107] Load document: examples/chat_with_document/README.md
-I1011 17:28:52.480834    6759 load.go:126] Time cost 5.40 seconds for loading document: examples/chat_with_document/README.md
+arctl dataset create --name arcadia  --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --documents ./README.md,./examples
+I1012 17:53:44.541770    7287 dataset.go:132] Execute dataset: arcadia
+I1012 17:53:44.541812    7287 dataset.go:400] Loading document: ./README.md
+I1012 17:53:55.552440    7287 dataset.go:413] Time cost 11.01 seconds for loading document: ./README.md
+I1012 17:53:55.552705    7287 dataset.go:394] Loading document: examples/chat_with_document/README.md
+I1012 17:54:06.595791    7287 dataset.go:413] Time cost 11.04 seconds for loading document: examples/chat_with_document/README.md
+I1012 17:54:06.595822    7287 dataset.go:394] Loading document: examples/chat_with_document/handler.go
+I1012 17:54:24.256721    7287 dataset.go:413] Time cost 17.66 seconds for loading document: examples/chat_with_document/handler.go
+I1012 17:54:24.256749    7287 dataset.go:394] Loading document: examples/chat_with_document/main.go
+I1012 17:54:26.003785    7287 dataset.go:413] Time cost 1.75 seconds for loading document: examples/chat_with_document/main.go
+I1012 17:54:26.003822    7287 dataset.go:394] Loading document: examples/chat_with_document/start.go
 ...
 ```
+
+#### List local datasets
+
+```shell
+❯ arctl dataset list -h
+List dataset
+
+Usage:
+  arctl dataset list [usage] [flags]
+
+Flags:
+  -h, --help   help for list
+
+Global Flags:
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+```
+
+> Note: arctl will list local datasets cached under `/Users/bjwswang/.arcadia/dataset` by default
+
+For example:
+
+```shell
+❯ ./bin/arctl dataset list
+| DATASET | FILES |EMBEDDING MODEL | VECTOR STORE | DOCUMENT LANGUAGE | CHUNK SIZE | CHUNK OVERLAP |
+| arcadia | 4 | zhipuai | http://localhost:8000 | text | 300 | 30 |
+```
+
+#### Show a local dataset info
+
+```shell
+❯ arctl dataset show -h
+Load more documents to dataset
+
+Usage:
+  arctl dataset show [usage] [flags]
+
+Flags:
+  -h, --help          help for show
+      --name string   dataset(namespace/collection) of the document to load into
+
+Global Flags:
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+```
+
+Required Arguments:
+- `--name`: The name of the dataset
+
+
+For example:
+
+```shell
+❯ ./bin/arctl dataset show --name arcadia
+I1012 17:57:17.026985    7609 dataset.go:206]
+{
+  "name": "arcadia",
+  "create_time": "2023-10-12 17:53:44.541654 +0800 CST m=+0.003758739",
+  "llm_type": "zhipuai",
+  "llm_api_key": "4fcceceb1666cd11808c218d6d619950.TCXUvaQCWFyIkxB3",
+  "vector_store": "http://localhost:8000",
+  "document_language": "text",
+  "chunk_size": 300,
+  "chunk_overlap": 30,
+  "files": {
+    "2905cb6e865ce2192369038eaa7f9f8c3d3ba6f2a6ae01b5c23afc21c01e4bd8": {
+      "path": "./README.md",
+      "size": 6176,
+      "chunks": 29,
+      "chunks_loaded": 29
+    },
+    "2b6d423b926936244c6ddb56e7b9a60e3c6d2b866feabc75bb3deda27cd2f94e": {
+      "path": "examples/chat_with_document/main.go",
+      "size": 982,
+      "chunks": 5,
+      "chunks_loaded": 5
+    },
+    "8e7094a9c6a062c6a4e19cb43cc3abef23b0569b51a5f64655d2761c04e5835a": {
+      "path": "examples/chat_with_document/handler.go",
+      "size": 6441,
+      "chunks": 30,
+      "chunks_loaded": 30
+    },
+    "bc0dcb3a672ef35b8e2c915f67ca0c7accd4883148a0506f1749971a22cafa96": {
+      "path": "examples/chat_with_document/README.md",
+      "size": 6267,
+      "chunks": 30,
+      "chunks_loaded": 30
+    }
+  }
+}
+```
+
+#### Delete a local dataset
+
+```shell
+❯ arctl dataset delete -h
+Delete dataset
+
+Usage:
+  arctl dataset delete [usage] [flags]
+
+Flags:
+  -h, --help                 help for delete
+      --name string          dataset(namespace/collection) of the document to load into (default "arcadia")
+      --reset-vector-store   forcely reset dataset from remote vector store
+
+Global Flags:
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+```
+
+Required Arguments:
+- `--name`: The name of the dataset
+
+
+For example:
+
+```shell
+❯ ./bin/arctl dataset delete --name arcadia
+I1012 18:06:04.894410    8786 dataset.go:272] Delete dataset: arcadia
+I1012 18:06:04.894985    8786 dataset.go:303] Successfully delete dataset: arcadia
+```
+
+**NOTE: If you want to remove the vectors as well,you should set `--reset-vector-store` flag**
 
 ### Chat with LLM
 ```shell
@@ -115,19 +255,22 @@ Usage:
   arctl chat [usage] [flags]
 
 Flags:
+      --dataset string            dataset(namespace/collection) to query from (default "arcadia")
       --enable-embedding-search   enable embedding similarity search(false by default)
   -h, --help                      help for chat
       --llm-apikey string         apiKey to access embedding/llm service.Must required when embedding similarity search is enabled
       --llm-type string           llm type to use for embedding & chat(Only zhipuai,openai supported now) (default "zhipuai")
       --method string             Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
       --model string              which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
-      --namespace string          namespace/collection to query from (default "arcadia")
       --num-docs int              number of documents to be returned with SimilarSearch (default 5)
       --question string           question text to be asked
       --score-threshold float     score threshold for similarity search(Higher is better)
       --temperature float32       temperature for chat (default 0.95)
       --top-p float32             top-p for chat (default 0.7)
       --vector-store string       vector stores to use(Only chroma supported now) (default "http://localhost:8000")
+
+Global Flags:
+      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
 ```
 
 Now `arctl chat` has two modes which is controlled by flag `--enable-embedding-search`:
@@ -165,11 +308,11 @@ Arcadia 开发的游戏中最知名的作品之一是《Second Life》（第二�
 > This will chat with LLM `zhipuai` with its apikey by using model `chatglm_pro` with embedding enabled
 
 ```shell
-arctl chat --enable-embedding-search --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
+arctl chat --dataset arcadia--llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
 ```
 
 Required Arguments:
-- `--enable-embedding-search`
+- `--dataset`
 - `--llm-apikey`
 - `--question`
 

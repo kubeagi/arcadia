@@ -17,24 +17,35 @@ limitations under the License.
 package main
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 )
 
 var (
-	err error
+	err  error
+	home string
 )
 
 func NewCLI() *cobra.Command {
 	arctl := &cobra.Command{
 		Use:   "arctl [usage]",
 		Short: "Command line tools for Arcadia",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := os.Stat(home); os.IsNotExist(err) {
+				if err := os.MkdirAll(home, 0700); err != nil {
+					return err
+				}
+			}
 			return nil
 		},
 	}
 
-	arctl.AddCommand(NewLoadCmd())
+	arctl.AddCommand(NewDatasetCmd())
 	arctl.AddCommand(NewChatCmd())
+
+	arctl.PersistentFlags().StringVar(&home, "home", filepath.Join(os.Getenv("HOME"), ".arcadia"), "home directory to use")
 
 	return arctl
 }

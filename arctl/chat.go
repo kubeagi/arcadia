@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/embeddings"
@@ -43,9 +44,8 @@ var (
 	topP        float32
 
 	// similarity search
-	enableSimilaritySearch bool
-	scoreThreshold         float64
-	numDocs                int
+	scoreThreshold float64
+	numDocs        int
 
 	// promptsWithSimilaritySearch = []zhipuai.Prompt{
 	// 	{
@@ -88,7 +88,7 @@ func NewChatCmd() *cobra.Command {
 			var docs []schema.Document
 			var err error
 
-			if enableSimilaritySearch {
+			if dataset != "" {
 				docs, err = SimilaritySearch(context.Background())
 				if err != nil {
 					return err
@@ -100,30 +100,30 @@ func NewChatCmd() *cobra.Command {
 		},
 	}
 
-	// For similarity search
-	cmd.Flags().BoolVar(&enableSimilaritySearch, "enable-embedding-search", false, "enable embedding similarity search(false by default)")
-	cmd.Flags().StringVar(&vectorStore, "vector-store", "http://localhost:8000", "vector stores to use(Only chroma supported now)")
 	// Similarity search params
-	cmd.Flags().StringVar(&nameSpace, "namespace", "arcadia", "namespace/collection to query from")
+	cmd.Flags().StringVar(&dataset, "dataset", "", "dataset(namespace/collection) to query from")
 	cmd.Flags().Float64Var(&scoreThreshold, "score-threshold", 0, "score threshold for similarity search(Higher is better)")
 	cmd.Flags().IntVar(&numDocs, "num-docs", 5, "number of documents to be returned with SimilarSearch")
+	if err = cmd.MarkFlagRequired("dataset"); err != nil {
+		panic(err)
+	}
 
 	// For LLM chat
 	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use for embedding & chat(Only zhipuai,openai supported now)")
-	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access embedding/llm service.Must required when embedding similarity search is enabled")
+	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access llm service.Must required when embedding similarity search is enabled")
 	cmd.Flags().StringVar(&question, "question", "", "question text to be asked")
-	// LLM Chat params
-	cmd.PersistentFlags().StringVar(&model, "model", string(zhipuai.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
-	cmd.PersistentFlags().StringVar(&method, "method", "sse-invoke", "Invoke method used when access LLM service(invoke/sse-invoke)")
-	cmd.PersistentFlags().Float32Var(&temperature, "temperature", 0.95, "temperature for chat")
-	cmd.PersistentFlags().Float32Var(&topP, "top-p", 0.7, "top-p for chat")
-
 	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
 	if err = cmd.MarkFlagRequired("question"); err != nil {
 		panic(err)
 	}
+
+	// LLM Chat params
+	cmd.PersistentFlags().StringVar(&model, "model", string(zhipuai.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
+	cmd.PersistentFlags().StringVar(&method, "method", "sse-invoke", "Invoke method used when access LLM service(invoke/sse-invoke)")
+	cmd.PersistentFlags().Float32Var(&temperature, "temperature", 0.95, "temperature for chat")
+	cmd.PersistentFlags().Float32Var(&topP, "top-p", 0.7, "top-p for chat")
 
 	return cmd
 }
@@ -132,14 +132,18 @@ func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
 	var embedder embeddings.Embedder
 	var err error
 
-	if apiKey == "" {
-		return nil, errors.New("embedding-llm-apikey is required when embedding similarity search is enabled")
+	ds, err := loadCachedDataset(filepath.Join(home, "dataset", dataset))
+	if err != nil {
+		return nil, err
+	}
+	if ds.Name == "" {
+		return nil, fmt.Errorf("dataset %s does not exist", dataset)
 	}
 
-	switch llmType {
+	switch ds.LLMType {
 	case "zhipuai":
 		embedder, err = zhipuaiembeddings.NewZhiPuAI(
-			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
+			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(ds.LLMApiKey)),
 		)
 		if err != nil {
 			return nil, err
@@ -154,9 +158,9 @@ func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
 	}
 
 	chroma, err := chromadb.New(
-		chromadb.WithURL(vectorStore),
+		chromadb.WithURL(ds.VectorStore),
 		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(nameSpace),
+		chromadb.WithNameSpace(dataset),
 	)
 	if err != nil {
 		return nil, err
