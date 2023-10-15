@@ -53,9 +53,9 @@ func main() {
 			panic(err)
 		}
 	}
-	for _, model := range []dashscope.Model{dashscope.LLAMA27BCHATV2, dashscope.LLAMA213BCHATV2} {
+	for _, model := range []dashscope.Model{dashscope.LLAMA27BCHATV2, dashscope.LLAMA213BCHATV2, dashscope.BAICHUAN7BV1, dashscope.CHATGLM6BV2} {
 		klog.V(0).Infof("\nChat with %s\n", model)
-		resp, err := sampleChatWithLlama2(apiKey, model)
+		resp, err := sampleChatWithOthers(apiKey, model)
 		if err != nil {
 			panic(err)
 		}
@@ -107,9 +107,12 @@ func sampleChat(apiKey string, model dashscope.Model) (llms.Response, error) {
 	return client.Call(params.Marshal())
 }
 
-func sampleChatWithLlama2(apiKey string, model dashscope.Model) (llms.Response, error) {
+func sampleChatWithOthers(apiKey string, model dashscope.Model) (llms.Response, error) {
 	client := dashscope.NewDashScope(apiKey, false)
-	params := dashscope.DefaultModelParams()
+	params := dashscope.DefaultModelParamsSimpleChat()
+	if model == dashscope.CHATGLM6BV2 {
+		params.Input.History = &[]string{}
+	}
 	params.Model = model
 	params.Input.Prompt = samplePrompt
 	return client.Call(params.Marshal())
