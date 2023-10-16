@@ -32,6 +32,7 @@ func NewCLI() *cobra.Command {
 	}
 
 	cli.AddCommand(NewStartCmd())
+	cli.AddCommand(NewLoadCmd())
 
 	return cli
 }

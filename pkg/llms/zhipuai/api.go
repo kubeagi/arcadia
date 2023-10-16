@@ -195,17 +195,33 @@ func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][
 
 	embeddings := make([][]float32, 0, len(inputTexts))
 	for _, text := range inputTexts {
-		postResponse, err := EmbeddingPost(url, token, EmbeddingText{
-			Prompt: text,
-		}, ZhipuaiModelDefaultTimeout)
-		if err != nil {
-			return nil, err
+		var retry int
+		startTime := time.Now()
+
+		postResponse := &EmbeddingResponse{}
+
+		for retry < 5 && postResponse.Success == false {
+			time.Sleep(100 * time.Millisecond)
+			retry++
+			if retry > 1 {
+				fmt.Printf("attempt %d... ", retry)
+			}
+			postResponse, err = EmbeddingPost(url, token, EmbeddingText{
+				Prompt: text,
+			}, ZhipuaiModelDefaultTimeout)
+			if err != nil {
+				return nil, err
+			}
 		}
-		if postResponse.Code != 200 {
-			return nil, fmt.Errorf("embedding failed: %s", postResponse.String())
+
+		if !postResponse.Success {
+			return nil, fmt.Errorf("embedding post failed:\n%s\n", postResponse.String())
 		}
 
 		embeddings = append(embeddings, postResponse.Data.Embedding)
+
+		elapsedTime := time.Since(startTime) / time.Millisecond
+		fmt.Printf("embedding post time cost: %dms\n", elapsedTime)
 	}
 
 	return embeddings, nil
