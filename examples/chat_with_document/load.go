@@ -19,15 +19,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/tmc/langchaingo/textsplitter"
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/documentloaders"
+	"github.com/tmc/langchaingo/textsplitter"
+	"github.com/tmc/langchaingo/vectorstores/chroma"
+	"os"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
 )
 
 var (
@@ -93,10 +92,10 @@ func runLoad(ctx context.Context) error {
 	}
 
 	fmt.Println("Connecting vector database...")
-	_, err = chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	_, err = chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return fmt.Errorf("error connecting chroma db: %s", err.Error())
@@ -212,10 +211,10 @@ func loadPDFFiles(ctx context.Context, path string) error {
 		return fmt.Errorf("error creating ZhiPuAI embedder: %s", err.Error())
 	}
 
-	db, err := chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	db, err := chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return fmt.Errorf("error connecting chroma db: %s", err.Error())

@@ -6,6 +6,7 @@ resources:
 - bases/arcadia.kubeagi.k8s.com.cn_llms.yaml
 - bases/arcadia.kubeagi.k8s.com.cn_prompts.yaml
 - bases/arcadia.kubeagi.k8s.com.cn_datasources.yaml
+- bases/arcadia.kubeagi.k8s.com.cn_embedders.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -15,6 +16,7 @@ patchesStrategicMerge:
 #- patches/webhook_in_llms.yaml
 #- patches/webhook_in_prompts.yaml
 #- patches/webhook_in_datasources.yaml
+#- patches/webhook_in_embedders.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -23,6 +25,7 @@ patchesStrategicMerge:
 #- patches/cainjection_in_llms.yaml
 #- patches/cainjection_in_prompts.yaml
 #- patches/cainjection_in_datasources.yaml
+#- patches/cainjection_in_embedders.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
