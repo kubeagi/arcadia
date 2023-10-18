@@ -33,7 +33,7 @@ import (
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
+	"github.com/tmc/langchaingo/vectorstores/chroma"
 )
 
 const (
@@ -79,7 +79,9 @@ func LoadHandler(c *fiber.Ctx) error {
 
 func QueryHandler(c *fiber.Ctx) error {
 	var chat Chat
-	err := c.BodyParser(&chat)
+	if err := c.BodyParser(&chat); err != nil {
+		return fmt.Errorf("error parsing body to chat type: %s", err.Error())
+	}
 	if chat.Content == "" {
 		return errors.New("content cannot be empty")
 	}
@@ -92,10 +94,10 @@ func QueryHandler(c *fiber.Ctx) error {
 	}
 
 	fmt.Println("Connecting vector database...")
-	db, err := chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	db, err := chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return fmt.Errorf("error creating chroma db: %s", err.Error())
@@ -165,10 +167,10 @@ func (w Workload) EmbedAndStoreDocument(ctx context.Context) error {
 		return err
 	}
 
-	chroma, err := chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	chroma, err := chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return err
@@ -184,7 +186,9 @@ func StreamQueryHandler(c *fiber.Ctx) error {
 	c.Set("Transfer-Encoding", "chunked")
 
 	var chat Chat
-	err := c.BodyParser(&chat)
+	if err := c.BodyParser(&chat); err != nil {
+		return fmt.Errorf("error parsing body to chat type: %s", err.Error())
+	}
 	if chat.Content == "" {
 		return errors.New("content cannot be empty")
 	}
@@ -197,10 +201,10 @@ func StreamQueryHandler(c *fiber.Ctx) error {
 	}
 
 	fmt.Println("Connecting vector database...")
-	db, err := chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	db, err := chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return fmt.Errorf("error creating chroma db: %s", err.Error())
@@ -231,8 +235,7 @@ func StreamQueryHandler(c *fiber.Ctx) error {
 		iErr := zhipuai.Stream(apiURL, token, params, _defaultTimeout, func(event *sse.Event) {
 			switch string(event.Event) {
 			case "add":
-				fmt.Fprintf(w, string(event.Data))
-				fmt.Printf(string(event.Data))
+				fmt.Fprint(w, string(event.Data))
 			case "error", "interrupted", "finish":
 				fmt.Fprintf(w, "\n\n %s: %s", event.Event, event.Data)
 			}

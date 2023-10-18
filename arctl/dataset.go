@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	chroma "github.com/amikos-tech/chroma-go"
+	chromago "github.com/amikos-tech/chroma-go"
 	chromaopenapi "github.com/amikos-tech/chroma-go/swagger"
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/documentloaders"
@@ -22,12 +22,12 @@ import (
 	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
+	"github.com/tmc/langchaingo/vectorstores/chroma"
 	"k8s.io/klog/v2"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
 )
 
 var (
@@ -285,10 +285,10 @@ func DatasetDeleteCmd() *cobra.Command {
 				configuration.Servers = chromaopenapi.ServerConfigurations{
 					{
 						URL:         ds.VectorStore,
-						Description: "Chromadb server url for this store",
+						Description: "chroma server url for this store",
 					},
 				}
-				client := &chroma.Client{
+				client := &chromago.Client{
 					ApiClient: chromaopenapi.NewAPIClient(configuration),
 				}
 				_, err := client.Reset()
@@ -501,10 +501,10 @@ func (cachedDS *Dataset) embedDocuments(ctx context.Context, documents []schema.
 		return errors.New("unsupported embedding type")
 	}
 
-	chroma, err := chromadb.New(
-		chromadb.WithURL(cachedDS.VectorStore),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(cachedDS.Name),
+	chroma, err := chroma.New(
+		chroma.WithChromaURL(cachedDS.VectorStore),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(cachedDS.Name),
 	)
 	if err != nil {
 		return err

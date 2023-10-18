@@ -186,14 +186,14 @@ func (z *ZhiPuAI) Embedding(text EmbeddingText) (*EmbeddingResponse, error) {
 
 // CreateEmbedding do batch embedding
 // To compatible with langchaingo/llms
-func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float64, error) {
+func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float32, error) {
 	url := BuildAPIURL(ZhiPuAIEmbedding, ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {
 		return nil, err
 	}
 
-	embeddings := make([][]float64, 0, len(inputTexts))
+	embeddings := make([][]float32, 0, len(inputTexts))
 	for _, text := range inputTexts {
 		postResponse, err := EmbeddingPost(url, token, EmbeddingText{
 			Prompt: text,

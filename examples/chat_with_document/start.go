@@ -23,9 +23,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/vectorstores/chroma"
 )
 
 const (
@@ -49,7 +49,7 @@ func NewStartCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&apiKey, "apikey", "", "used to connect to ZhiPuAI platform(required)")
-	cmd.Flags().StringVar(&url, "vector-store", "", "the chromaDB vector database url(required)")
+	cmd.Flags().StringVar(&url, "vector-store", "", "the chroma vector database url(required)")
 	cmd.Flags().StringVar(&addr, "addr", ":8800", "used to listen and serve GET request, default :8800")
 	cmd.Flags().StringVar(&namespace, "namespace", _defaultNamespace, "the vector database namespace")
 
@@ -71,7 +71,7 @@ func run() error {
 		return fmt.Errorf("ZhiPuAI api key is empty")
 	}
 	if url == "" {
-		return fmt.Errorf("chromaDB scheme is empty")
+		return fmt.Errorf("chroma scheme is empty")
 	}
 
 	fmt.Println("Connecting platform...")
@@ -89,10 +89,10 @@ func run() error {
 	}
 
 	fmt.Println("Connecting vector database...")
-	_, err = chromadb.New(
-		chromadb.WithURL(url),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(namespace),
+	_, err = chroma.New(
+		chroma.WithChromaURL(url),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(namespace),
 	)
 	if err != nil {
 		return fmt.Errorf("error connecting chroma db: %s", err.Error())
