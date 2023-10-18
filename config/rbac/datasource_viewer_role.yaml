@@ -1,0 +1,27 @@
+# permissions for end users to view datasources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: datasource-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: arcadia
+    app.kubernetes.io/part-of: arcadia
+    app.kubernetes.io/managed-by: kustomize
+  name: datasource-viewer-role
+rules:
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasources/status
+  verbs:
+  - get

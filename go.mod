@@ -23,6 +23,16 @@ require (
 )
 
 require (
+	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/minio/md5-simd v1.1.2 // indirect
+	github.com/minio/sha256-simd v1.0.1 // indirect
+	github.com/rs/xid v1.5.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
+)
+
+require (
 	cloud.google.com/go/compute v1.20.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -68,6 +78,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.24 // indirect
+	github.com/minio/minio-go/v7 v7.0.63
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect

@@ -14,7 +14,15 @@ Our vision is to make it easier for cloud-native applications to integrate with 
 
 ## Quick start
 
-1. Install arcadia operator
+1. Install kubebb-core
+
+```
+helm repo add kubebb https://kubebb.github.io/components/
+helm repo update
+helm install -nkubebb-system --create-namespace kubebb-core kubebb/kubebb-core
+```
+
+2. Install arcadia operator
 
 We recommend that install arcadia under namespace `arcadia`
 
@@ -24,7 +32,7 @@ helm repo update
 helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
 ```
 
-2. Add a LLM along with the auth secret
+3. Add a LLM along with the auth secret
 
 > Update apiKey(`Base64 encoded`) in [secret](https://github.com/kubeagi/arcadia/blob/main/config/samples/arcadia_v1alpha1_llm.yaml#L7).
 
@@ -32,7 +40,7 @@ helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia
 kubectl apply -f config/samples/arcadia_v1alpha1_llm.yaml
 ```
 
-3. Create a prompt
+4. Create a prompt
 
 ```shell
 kubectl apply -f config/samples/arcadia_v1alpha1_prompt.yaml

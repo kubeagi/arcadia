@@ -1,0 +1,12 @@
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: ComponentPlan
+metadata:
+  name: my-minio
+  namespace: kubebb-system
+spec:
+  approved: true
+  name: my-minio # similar to helm release name
+  version: 5.0.10
+  component:
+    name: kubebb.minio
+    namespace: kubebb-system
