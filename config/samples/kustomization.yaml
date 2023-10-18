@@ -3,4 +3,5 @@ resources:
 - arcadia_v1alpha1_laboratory.yaml
 - arcadia_v1alpha1_llm.yaml
 - arcadia_v1alpha1_prompt.yaml
+- arcadia_v1alpha1_datasource.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

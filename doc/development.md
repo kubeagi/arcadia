@@ -11,7 +11,7 @@ operator-sdk init --domain kubeagi.k8s.com.cn --component-config true --owner ku
 ## Create a CRD
 
 ```bash
-operator-sdk create api --resource --controller --namespaced=false --group arcadia --version v1alpha1 --kind Laboratory
+operator-sdk create api --resource --controller --namespaced=true --group arcadia --version v1alpha1 --kind Laboratory
 ```
 
 ### Regenerate after changes on CRD
