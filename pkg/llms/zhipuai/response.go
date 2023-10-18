@@ -91,7 +91,7 @@ type EmbeddingData struct {
 	TaskStatus string `json:"task_status,omitempty"`
 	Usage      Usage  `json:"usage,omitempty"`
 
-	Embedding []float64 `json:"embedding,omitempty"` // Vectorized texts, length 1024.
+	Embedding []float32 `json:"embedding,omitempty"` // Vectorized texts, length 1024.
 }
 
 type EmbeddingText struct {

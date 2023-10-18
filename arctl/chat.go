@@ -27,11 +27,11 @@ import (
 	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
+	"github.com/tmc/langchaingo/vectorstores/chroma"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/vectorstores/chromadb"
 )
 
 var (
@@ -44,7 +44,7 @@ var (
 	topP        float32
 
 	// similarity search
-	scoreThreshold float64
+	scoreThreshold float32
 	numDocs        int
 
 	// promptsWithSimilaritySearch = []zhipuai.Prompt{
@@ -102,7 +102,7 @@ func NewChatCmd() *cobra.Command {
 
 	// Similarity search params
 	cmd.Flags().StringVar(&dataset, "dataset", "", "dataset(namespace/collection) to query from")
-	cmd.Flags().Float64Var(&scoreThreshold, "score-threshold", 0, "score threshold for similarity search(Higher is better)")
+	cmd.Flags().Float32Var(&scoreThreshold, "score-threshold", 0, "score threshold for similarity search(Higher is better)")
 	cmd.Flags().IntVar(&numDocs, "num-docs", 5, "number of documents to be returned with SimilarSearch")
 	if err = cmd.MarkFlagRequired("dataset"); err != nil {
 		panic(err)
@@ -157,10 +157,10 @@ func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
 		return nil, errors.New("unsupported embedding type")
 	}
 
-	chroma, err := chromadb.New(
-		chromadb.WithURL(ds.VectorStore),
-		chromadb.WithEmbedder(embedder),
-		chromadb.WithNameSpace(dataset),
+	chroma, err := chroma.New(
+		chroma.WithChromaURL(ds.VectorStore),
+		chroma.WithEmbedder(embedder),
+		chroma.WithNameSpace(dataset),
 	)
 	if err != nil {
 		return nil, err
