@@ -1,72 +1,49 @@
-# Arcadia
+# Arcadia: A diverse, simple, and secure one-stop LLMOps platform
 
-Our vision is to make it easier for cloud-native applications to integrate with AI, thereby making the cloud more intelligent and impactful. We provides two ways for users to develop AI applications :point_down:
+<div align="left">
+  <p>
+    <a href="https://opensource.org/licenses/apache-2-0">
+      <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/kubeagi/arcadia" />
+    </a>
+    <a href="https://opensource.org/licenses/apache-2-0">
+      <img alt="Go Report Card" src="https://goreportcard.com/badge/kubeagi/arcadia?style=flat-square" />
+    </a>
+  </p>
+</div>
 
-- :fire:[Arcadia Operator](https://github.com/kubeagi/arcadia/tree/main/charts/arcadia) provides comprehensive features to develop,build,publish AI applications 
-  - `Dataset`: automatically process `Files` with embedding models,then store vectors into vector stores
-  - `LLMs`
-    - :cloud: LLM service provider 
-    - Local distributed LLMs(OpenAI API compatible)
-  - `Prompts`: call llm and keep results 
-  - `Application`: provide templates and tools to `build,publish`
-  - ...
-- :fire:[Pure Golang toolchains](#pure-go-toolchains)  to develop with your own needs
+## What is Arcadia?
 
-## Quick start
+**Arcadia** comes from [Greek mythology](https://www.greekmythology.com/Myths/Places/Arcadia/arcadia.html)(a tranquil and idyllic region, representing harmony, serenity, and natural beauty).We aim to help everyone find a more perfect integration between humans and AI.
 
-1. Install kubebb-core
+To archieve this goal, we provides this one-stop LLMOps solution:
 
-```
-helm repo add kubebb https://kubebb.github.io/components/
-helm repo update
-helm install -nkubebb-system --create-namespace kubebb-core kubebb/kubebb-core
-```
+- Dataset Management: storage/real-time data,multimodal,pre-processing,vectorization
+- Models Management: local/online LLMs(development,training,deployment),inference acceleration
+- Application Management: development,optimization,deployment with visual editor
 
-2. Install arcadia operator
+Furthermore,we can easily host **Arcadia** at any kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(A kubernetes building blocks),
 
-We recommend that install arcadia under namespace `arcadia`
+## Architecture
 
-```shell
-helm repo add arcadia https://kubeagi.github.io/arcadia
-helm repo update
-helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
-```
+Our design and development in Arcadia design follows operator pattern which extends kubernetes APIs.
 
-3. Add a LLM along with the auth secret
+![Arch](./assets/kubeagi.drawio.png)
 
-> Update apiKey(`Base64 encoded`) in [secret](https://github.com/kubeagi/arcadia/blob/main/config/samples/arcadia_v1alpha1_llm.yaml#L7).
+## Install
 
-```shell
-kubectl apply -f config/samples/arcadia_v1alpha1_llm.yaml
-```
-
-4. Create a prompt
+> Pre-requisites
+> - [kind]( https://kind.sigs.k8s.io/docs/user/quick-start/#installation) (Optional if you already have a k8s cluster)
+> - [helm](https://helm.sh/docs/intro/install/)
 
 ```shell
-kubectl apply -f config/samples/arcadia_v1alpha1_prompt.yaml
-```
-
-After the prompt got created, you can see the prompt in the following command:
-
-```shell
-kubectl get prompt prompt-zhipuai-sample -oyaml
-```
-
-If no error is found, you can use this command to get the prompt response data.
-
-```shell
-kubectl get prompt prompt-zhipuai-sample --output="jsonpath={.status.data}" | base64 --decode
-```
-
-Output:
-
-```shell
-{"code":200,"data":{"choices":[{"content":"\" Kubernetes (also known as K8s) is an open-source container orchestration system for automating the deployment, scaling, and management of containerized applications. It was originally designed by Google, and is now maintained by the Cloud Native Computing Foundation (CNCF).\\n\\nKubernetes provides a platform-as-a-service (PaaS) model, which allows developers to deploy, run, and scale containerized applications with minimal configuration and effort. It does this by abstracting the underlying infrastructure and providing a common set of APIs and tools that can be used to deploy, manage, and scale applications consistently across different environments.\\n\\nKubernetes is widely adopted by organizations of all sizes and has a large, active community of developers contributing to its continued development and improvement. It is available on a variety of platforms, including Linux, Windows, and 移动设备，and can be deployed on-premises, in the cloud, or in a hybrid environment.\"","role":"assistant"}],"request_id":"7865480399259975113","task_id":"7865480399259975113","task_status":"SUCCESS","usage":{"total_tokens":203}},"msg":"操作成功","success":true}
+  helm repo add arcadia https://kubeagi.github.io/arcadia
+  helm repo update
+  helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
 ```
 
 ## CLI
 
-We provide a Command Line Tool `arctl` to interact with `arcadia` and `LLMs`. See [here](./arctl/README.md) for more details.
+We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./arctl/README.md) for more details.
 
 - ✅ local dataset management
 
@@ -84,13 +61,7 @@ To enhace the AI capability in Golang, we developed some packages.Here are the e
 
 - ✅ [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
   - [example](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
-- ✅ [DashScope(灵积模型服务)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope), we now support
-  - ✅ [qwen-7b-chat(通义千问开源 7B 模型)](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-quick-start)
-  - ✅ [qwen-14b-chat(通义千问开源 14B 模型)](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-quick-star)
-  - ✅ [llama2-7b-chat-v2(LLaMa2 大语言模型 7B)](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start-4)
-  - ✅ [llama2-13b-chat-v2(LLaMa2 大语言模型 13B)](https://help.aliyun.com/zh/dashscope/developer-reference/quick-start-4)
-  - ✅ [text-embedding-v1(通用文本向量 同步接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details)
-  - ✅ [text-embedding-async-v1(通用文本向量 批处理接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details)
+- ✅ [DashScope(灵积模型服务)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope)
   - see [example](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go)
 
 ### Embeddings

@@ -2,11 +2,12 @@ apiVersion: v2
 name: arcadia
 description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
 type: application
-version: 0.1.6
+version: 0.1.7
 appVersion: "0.0.0"
 keywords:
   - kubeagi
   - NativeAI
+  - LLMOps
 sources:
   - https://github.com/kubeagi/arcadia
 maintainers:
