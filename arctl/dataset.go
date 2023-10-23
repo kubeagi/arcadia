@@ -41,6 +41,7 @@ var (
 
 	vectorStore      string
 	documentLanguage string
+	textSplitter     string
 	chunkSize        int
 	chunkOverlap     int
 
@@ -78,7 +79,7 @@ func DatasetListCmd() *cobra.Command {
 		Use:   "list [usage]",
 		Short: "List dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("| DATASET | FILES |EMBEDDING MODEL | VECTOR STORE | DOCUMENT LANGUAGE | CHUNK SIZE | CHUNK OVERLAP |\n")
+			fmt.Printf("| DATASET | FILES |EMBEDDING MODEL | VECTOR STORE | DOCUMENT LANGUAGE | TEXT SPLITTER | CHUNK SIZE | CHUNK OVERLAP |\n")
 			err = filepath.Walk(filepath.Join(home, "dataset"), func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
@@ -92,7 +93,7 @@ func DatasetListCmd() *cobra.Command {
 					return fmt.Errorf("failed to load cached dataset %s: %v", info.Name(), err)
 				}
 				// print item
-				fmt.Printf("| %s | %d | %s | %s | %s | %d | %d |\n", ds.Name, len(ds.Files), ds.LLMType, ds.VectorStore, ds.DocumentLanguage, ds.ChunkSize, ds.ChunkOverlap)
+				fmt.Printf("| %s | %d | %s | %s | %s | %s | %d | %d |\n", ds.Name, len(ds.Files), ds.LLMType, ds.VectorStore, ds.DocumentLanguage, ds.TextSplitter, ds.ChunkSize, ds.ChunkOverlap)
 				return nil
 			})
 			if err != nil {
@@ -126,6 +127,7 @@ func DatasetCreateCmd() *cobra.Command {
 			ds.LLMType = llmType
 			ds.VectorStore = vectorStore
 			ds.DocumentLanguage = documentLanguage
+			ds.TextSplitter = textSplitter
 			ds.ChunkSize = chunkSize
 			ds.ChunkOverlap = chunkOverlap
 
@@ -136,7 +138,6 @@ func DatasetCreateCmd() *cobra.Command {
 			}
 
 			// cache the dataset to local
-			klog.Infof("Caching dataset %s", dataset)
 			cache, err := json.Marshal(ds)
 			if err != nil {
 				return fmt.Errorf("failed to marshal dataset %s: %v", dataset, err)
@@ -145,8 +146,9 @@ func DatasetCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			klog.Infof("Successfully created dataset %s", dataset)
-			return nil
+			klog.Infof("Successfully created dataset %s\n", dataset)
+
+			return showDataset(dataset)
 		},
 	}
 	cmd.Flags().StringVar(&dataset, "name", "", "dataset(namespace/collection) of the document to load into")
@@ -167,6 +169,7 @@ func DatasetCreateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&vectorStore, "vector-store", "http://127.0.0.1:8000", "vector stores to use(Only chroma supported now)")
 	cmd.Flags().StringVar(&documentLanguage, "document-language", "text", "language of the document(Only text,html,csv supported now)")
+	cmd.Flags().StringVar(&textSplitter, "text-splitter", "character", "text splitter to use(Only character,token,markdown supported now)")
 	cmd.Flags().IntVar(&chunkSize, "chunk-size", 300, "chunk size for embedding")
 	cmd.Flags().IntVar(&chunkOverlap, "chunk-overlap", 30, "chunk overlap for embedding")
 
@@ -178,34 +181,8 @@ func DatasetShowCmd() *cobra.Command {
 		Use:   "show [usage]",
 		Short: "Load more documents to dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cachedDatasetFile, err := os.OpenFile(filepath.Join(home, "dataset", dataset), os.O_RDWR, 0644)
-			if err != nil {
-				if os.IsNotExist(err) {
-					klog.Errorf("dataset %s does not exist", dataset)
-					return nil
-				} else {
-					return fmt.Errorf("failed to open cached dataset file: %v", err)
-				}
-			}
-			defer cachedDatasetFile.Close()
-
-			data, err := io.ReadAll(cachedDatasetFile)
-			if err != nil {
-				return fmt.Errorf("failed to read cached dataset file: %v", err)
-			}
-			// Create a buffer to store the formatted JSON
-			var formattedJSON bytes.Buffer
-
-			// Indent and format the JSON
-			err = json.Indent(&formattedJSON, data, "", "  ")
-			if err != nil {
-				return fmt.Errorf("failed to format cached dataset file: %v", err)
-			}
-
-			// print dataset
-			klog.Infof("\n%s", formattedJSON.String())
-
-			return nil
+			klog.Infof("Show dataset: %s \n", dataset)
+			return showDataset(dataset)
 		},
 	}
 
@@ -215,6 +192,37 @@ func DatasetShowCmd() *cobra.Command {
 	}
 
 	return cmd
+}
+
+func showDataset(dataset string) error {
+	cachedDatasetFile, err := os.OpenFile(filepath.Join(home, "dataset", dataset), os.O_RDWR, 0644)
+	if err != nil {
+		if os.IsNotExist(err) {
+			klog.Errorf("dataset %s does not exist", dataset)
+			return nil
+		} else {
+			return fmt.Errorf("failed to open cached dataset file: %v", err)
+		}
+	}
+	defer cachedDatasetFile.Close()
+
+	data, err := io.ReadAll(cachedDatasetFile)
+	if err != nil {
+		return fmt.Errorf("failed to read cached dataset file: %v", err)
+	}
+	// Create a buffer to store the formatted JSON
+	var formattedJSON bytes.Buffer
+
+	// Indent and format the JSON
+	err = json.Indent(&formattedJSON, data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to format cached dataset file: %v", err)
+	}
+
+	// print dataset
+	klog.Infof("\n%s", formattedJSON.String())
+
+	return nil
 }
 
 func DatasetExecuteCmd() *cobra.Command {
@@ -326,6 +334,7 @@ type Dataset struct {
 	// Parameters for vectorization
 	VectorStore      string `json:"vector_store"`
 	DocumentLanguage string `json:"document_language"`
+	TextSplitter     string `json:"text_splitter"`
 	ChunkSize        int    `json:"chunk_size"`
 	ChunkOverlap     int    `json:"chunk_overlap"`
 
@@ -448,9 +457,25 @@ func (cachedDS *Dataset) loadDocument(ctx context.Context, document string) erro
 		return errors.New("unsupported document language")
 	}
 
-	split := textsplitter.NewRecursiveCharacter()
-	split.ChunkSize = chunkSize
-	split.ChunkOverlap = chunkOverlap
+	// initliaze text splitter
+	var split textsplitter.TextSplitter
+	switch cachedDS.TextSplitter {
+	case "token":
+		split = textsplitter.NewTokenSplitter(
+			textsplitter.WithChunkSize(chunkSize),
+			textsplitter.WithChunkOverlap(chunkOverlap),
+		)
+	case "markdown":
+		split = textsplitter.NewMarkdownTextSplitter(
+			textsplitter.WithChunkSize(chunkSize),
+			textsplitter.WithChunkOverlap(chunkOverlap),
+		)
+	default:
+		split = textsplitter.NewRecursiveCharacter(
+			textsplitter.WithChunkSize(chunkSize),
+			textsplitter.WithChunkOverlap(chunkOverlap),
+		)
+	}
 
 	documents, err := loader.LoadAndSplit(ctx, split)
 	if err != nil {

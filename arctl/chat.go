@@ -104,9 +104,6 @@ func NewChatCmd() *cobra.Command {
 	cmd.Flags().StringVar(&dataset, "dataset", "", "dataset(namespace/collection) to query from")
 	cmd.Flags().Float32Var(&scoreThreshold, "score-threshold", 0, "score threshold for similarity search(Higher is better)")
 	cmd.Flags().IntVar(&numDocs, "num-docs", 5, "number of documents to be returned with SimilarSearch")
-	if err = cmd.MarkFlagRequired("dataset"); err != nil {
-		panic(err)
-	}
 
 	// For LLM chat
 	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use for embedding & chat(Only zhipuai,openai supported now)")

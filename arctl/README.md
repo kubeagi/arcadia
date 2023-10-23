@@ -81,7 +81,7 @@ You can use `arctl` to manage your dataset locally with the following commands:
 
 
 ```shell
-❯ ./bin/arctl dataset create -h
+❯ arctl dataset create -h
 Create dataset
 
 Usage:
@@ -96,6 +96,7 @@ Flags:
       --llm-apikey string          apiKey to access embedding service
       --llm-type string            llm type to use(Only zhipuai,openai supported now) (default "zhipuai")
       --name string                dataset(namespace/collection) of the document to load into
+      --text-splitter string       text splitter to use(Only character,token,markdown supported now) (default "character")
       --vector-store string        vector stores to use(Only chroma supported now) (default "http://127.0.0.1:8000")
 
 Global Flags:
@@ -145,7 +146,7 @@ Global Flags:
 For example:
 
 ```shell
-❯ ./bin/arctl dataset list
+❯ arctl dataset list
 | DATASET | FILES |EMBEDDING MODEL | VECTOR STORE | DOCUMENT LANGUAGE | CHUNK SIZE | CHUNK OVERLAP |
 | arcadia | 4 | zhipuai | http://localhost:8000 | text | 300 | 30 |
 ```
@@ -174,7 +175,7 @@ Required Arguments:
 For example:
 
 ```shell
-❯ ./bin/arctl dataset show --name arcadia
+❯ arctl dataset show --name arcadia
 I1012 17:57:17.026985    7609 dataset.go:206]
 {
   "name": "arcadia",
@@ -183,6 +184,7 @@ I1012 17:57:17.026985    7609 dataset.go:206]
   "llm_api_key": "4fcceceb1666cd11808c218d6d619950.TCXUvaQCWFyIkxB3",
   "vector_store": "http://localhost:8000",
   "document_language": "text",
+  "text_splitter": "character",
   "chunk_size": 300,
   "chunk_overlap": 30,
   "files": {
@@ -239,7 +241,7 @@ Required Arguments:
 For example:
 
 ```shell
-❯ ./bin/arctl dataset delete --name arcadia
+❯ arctl dataset delete --name arcadia
 I1012 18:06:04.894410    8786 dataset.go:272] Delete dataset: arcadia
 I1012 18:06:04.894985    8786 dataset.go:303] Successfully delete dataset: arcadia
 ```
@@ -255,19 +257,17 @@ Usage:
   arctl chat [usage] [flags]
 
 Flags:
-      --dataset string            dataset(namespace/collection) to query from (default "arcadia")
-      --enable-embedding-search   enable embedding similarity search(false by default)
+      --dataset string            dataset(namespace/collection) to query from
   -h, --help                      help for chat
-      --llm-apikey string         apiKey to access embedding/llm service.Must required when embedding similarity search is enabled
+      --llm-apikey string         apiKey to access llm service.Must required when embedding similarity search is enabled
       --llm-type string           llm type to use for embedding & chat(Only zhipuai,openai supported now) (default "zhipuai")
       --method string             Invoke method used when access LLM service(invoke/sse-invoke) (default "sse-invoke")
       --model string              which model to use: chatglm_lite/chatglm_std/chatglm_pro (default "chatglm_lite")
       --num-docs int              number of documents to be returned with SimilarSearch (default 5)
       --question string           question text to be asked
-      --score-threshold float     score threshold for similarity search(Higher is better)
+      --score-threshold float32   score threshold for similarity search(Higher is better)
       --temperature float32       temperature for chat (default 0.95)
       --top-p float32             top-p for chat (default 0.7)
-      --vector-store string       vector stores to use(Only chroma supported now) (default "http://localhost:8000")
 
 Global Flags:
       --home string   home directory to use (default "/Users/bjwswang/.arcadia")
@@ -308,7 +308,7 @@ Arcadia 开发的游戏中最知名的作品之一是《Second Life》（第二�
 > This will chat with LLM `zhipuai` with its apikey by using model `chatglm_pro` with embedding enabled
 
 ```shell
-arctl chat --dataset arcadia--llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia"
+arctl chat --llm-apikey 26b2bc55fae40752055cadfc4792f9de.wagA4NIwg5aZJWhm --model chatglm_pro  --num-docs 10 --question "介绍一下Arcadia" --dataset arcadia
 ```
 
 Required Arguments:
