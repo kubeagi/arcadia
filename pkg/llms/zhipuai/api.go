@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/r3labs/sse/v2"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
@@ -32,6 +33,7 @@ import (
 const (
 	ZhipuaiModelAPIURL         = "https://open.bigmodel.cn/api/paas/v3/model-api"
 	ZhipuaiModelDefaultTimeout = 300 * time.Second
+	RetryLimit                 = 3
 )
 
 type Model string
@@ -149,7 +151,7 @@ func (z *ZhiPuAI) Validate() (llms.Response, error) {
 	testPrompt := []Prompt{
 		{
 			Role:    "user",
-			Content: "Hello!",
+			Content: "Hello",
 		},
 	}
 
@@ -195,14 +197,28 @@ func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][
 
 	embeddings := make([][]float32, 0, len(inputTexts))
 	for _, text := range inputTexts {
-		postResponse, err := EmbeddingPost(url, token, EmbeddingText{
-			Prompt: text,
-		}, ZhipuaiModelDefaultTimeout)
-		if err != nil {
-			return nil, err
+		var retry int
+		success := false
+		postResponse := &EmbeddingResponse{}
+
+		for retry < RetryLimit && !success {
+			retry++
+			if retry > 1 {
+				time.Sleep(100 * time.Millisecond)
+				klog.Warning("retry embedding post quest:", retry)
+			}
+			postResponse, err = EmbeddingPost(url, token, EmbeddingText{
+				Prompt: text,
+			}, ZhipuaiModelDefaultTimeout)
+			if err != nil || postResponse == nil {
+				klog.Errorf("embedding post failed:\n%s\n", err)
+			} else {
+				success = true
+			}
 		}
-		if postResponse.Code != 200 {
-			return nil, fmt.Errorf("embedding failed: %s", postResponse.String())
+
+		if !postResponse.Success {
+			return nil, fmt.Errorf("embedding post failed:\n%s", postResponse.String())
 		}
 
 		embeddings = append(embeddings, postResponse.Data.Embedding)

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The KubeAGI Authors.
+Copyright 2023 KubeAGI.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package v1alpha1
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewCLI() *cobra.Command {
-	cli := &cobra.Command{
-		Use:   "chat [usage]",
-		Short: "CLI for chat server example",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return nil
-		},
+func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
+	if e.Spec.Auth == "" {
+		return "", nil
 	}
-
-	cli.AddCommand(NewStartCmd())
-	cli.AddCommand(NewLoadCmd())
-
-	return cli
-}
-
-func main() {
-	if err := NewCLI().Execute(); err != nil {
-		fmt.Printf("Run failed, error:\n %v", err)
+	authSecret := &corev1.Secret{}
+	err := c.Get(ctx, types.NamespacedName{Name: e.Spec.Auth, Namespace: e.Namespace}, authSecret)
+	if err != nil {
+		return "", err
 	}
+	return string(authSecret.Data["apiKey"]), nil
 }

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zhipuai
+type: Opaque
+data:
+  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Embedders
+metadata:
+  labels:
+    app.kubernetes.io/name: embedders
+    app.kubernetes.io/instance: embeddings-sample
+    app.kubernetes.io/part-of: arcadia
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: arcadia
+  name: zhipuai-embedders-sample
+spec:
+  serviceType: "zhipuai"
+  url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+  auth: "zhipuai" # replace this with your auth secret
