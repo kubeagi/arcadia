@@ -51,7 +51,7 @@ func (e ZhiPuAI) EmbedDocuments(ctx context.Context, texts []string) ([][]float3
 		e.BatchSize,
 	)
 
-	emb := make([][]float32, len(texts))
+	emb := make([][]float32, 0, len(texts))
 	for _, texts := range batchedTexts {
 		curTextEmbeddings, err := e.client.CreateEmbedding(ctx, texts)
 		if err != nil {
