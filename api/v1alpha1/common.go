@@ -80,3 +80,14 @@ type Endpoint struct {
 	// Insecure if the endpoint needs a secure connection
 	Insecure bool `json:"insecure,omitempty"`
 }
+
+type CommonSpec struct {
+	// Creator defines datasource creator (AUTO-FILLED by webhook)
+	Creator string `json:"creator,omitempty"`
+
+	// DisplayName defines datasource display name
+	DiplayName string `json:"displayName,omitempty"`
+
+	// Description defines datasource description
+	Description string `json:"description,omitempty"`
+}

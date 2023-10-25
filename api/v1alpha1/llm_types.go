@@ -24,7 +24,7 @@ import (
 
 // LLMSpec defines the desired state of LLM
 type LLMSpec struct {
-	DisplayName string `json:"displayName,omitempty"`
+	CommonSpec `json:",inline"`
 	// Type defines the type of llm
 	Type llms.LLMType `json:"type"`
 

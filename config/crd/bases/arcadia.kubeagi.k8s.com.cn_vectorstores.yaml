@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: prompts.arcadia.kubeagi.k8s.com.cn
+  name: vectorstores.arcadia.kubeagi.k8s.com.cn
 spec:
   group: arcadia.kubeagi.k8s.com.cn
   names:
-    kind: Prompt
-    listKind: PromptList
-    plural: prompts
-    singular: prompt
+    kind: VectorStore
+    listKind: VectorStoreList
+    plural: vectorstores
+    singular: vectorstore
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Prompt is the Schema for the prompts API
+        description: VectorStore is the Schema for the vectorstores API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: PromptSpec defines the desired state of Prompt
+            description: VectorStoreSpec defines the desired state of VectorStore
             properties:
               creator:
                 description: Creator defines datasource creator (AUTO-FILLED by webhook)
@@ -44,49 +44,71 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
-              llm:
-                description: LLM serivice name(CRD LLM)
-                type: string
-              zhiPuAIParams:
-                description: ZhiPuAIParams defines the params of ZhiPuAI
+              endpoint:
+                description: Endpoint represents the endpoint used to communicate
+                  with the VectorStore.
                 properties:
-                  incremental:
-                    description: Incremental is only Used for SSE Invoke
+                  authSecret:
+                    description: AuthSecret if the chart repository requires auth
+                      authentication, set the username and password to secret, with
+                      the field user and password respectively.
+                    properties:
+                      apiGroup:
+                        description: APIGroup is the group for the resource being
+                          referenced. If APIGroup is not specified, the specified
+                          Kind must be in the core API group. For any other third-party
+                          types, APIGroup is required.
+                        type: string
+                      kind:
+                        description: Kind is the type of resource being referenced
+                        type: string
+                      name:
+                        description: Name is the name of resource being referenced
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of resource being
+                          referenced
+                        type: string
+                    required:
+                    - kind
+                    - name
+                    type: object
+                  insecure:
+                    description: Insecure if the endpoint needs a secure connection
                     type: boolean
-                  method:
-                    description: Method used for this prompt call
+                  url:
+                    description: URL chart repository address
                     type: string
-                  model:
-                    description: Model used for this prompt call
+                type: object
+              infrastructureRef:
+                description: InfrastructureRef is a reference to a provider-specific
+                  resource that holds the details for provisioning infrastructure
+                  for a VectorStore in said provider.
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
                     type: string
-                  prompt:
-                    description: Contents
-                    items:
-                      description: Prompt defines the content of ZhiPuAI Prompt Call
-                      properties:
-                        content:
-                          type: string
-                        role:
-                          type: string
-                      type: object
-                    type: array
-                  task_id:
-                    description: TaskID is used for getting result of AsyncInvoke
+                  kind:
+                    description: Kind is the type of resource being referenced
                     type: string
-                  temperature:
-                    description: Temperature is float in zhipuai
-                    type: number
-                  top_p:
-                    description: TopP is float in zhipuai
-                    type: number
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced
+                    type: string
                 required:
-                - prompt
+                - kind
+                - name
                 type: object
             required:
-            - llm
+            - endpoint
             type: object
           status:
-            description: PromptStatus defines the observed state of Prompt
+            description: VectorStoreStatus defines the observed state of VectorStore
             properties:
               conditions:
                 description: Conditions of the resource.
@@ -126,12 +148,19 @@ spec:
                   - type
                   type: object
                 type: array
-              data:
-                description: Data retrieved after LLM Call
-                format: byte
+              infrastructureReady:
+                description: InfrastructureReady is the state of the infrastructure
+                  provider.
+                type: boolean
+              observedGeneration:
+                description: ObservedGeneration is the latest generation observed
+                  by the controller.
+                format: int64
+                type: integer
+              phase:
+                description: Phase represents the current phase of cluster actuation.
+                  Pending, Running, Terminating, Failed etc.
                 type: string
-            required:
-            - data
             type: object
         type: object
     served: true

@@ -5,6 +5,6 @@ resources:
 - arcadia_v1alpha1_prompt.yaml
 - arcadia_v1alpha1_datasource.yaml
 - arcadia_v1alpha1_embedders.yaml
-- arcadia_v1alpha1_dataset.yaml
-- arcadia_v1alpha1_versioneddataset.yaml
+- arcadia_v1alpha1_vectorstore.yaml
+- arcadia_v1alpha1_application.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

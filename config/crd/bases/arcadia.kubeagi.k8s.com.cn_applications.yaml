@@ -1,0 +1,335 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: applications.arcadia.kubeagi.k8s.com.cn
+spec:
+  group: arcadia.kubeagi.k8s.com.cn
+  names:
+    kind: Application
+    listKind: ApplicationList
+    plural: applications
+    singular: application
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Application is the Schema for the applications API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ApplicationSpec defines the desired state of Application
+            properties:
+              connections:
+                items:
+                  properties:
+                    sourceNode:
+                      type: string
+                    targetNode:
+                      type: string
+                  required:
+                  - sourceNode
+                  - targetNode
+                  type: object
+                type: array
+              nodes:
+                items:
+                  properties:
+                    EmbedderSpec:
+                      description: EmbedderSpec is a specification of a Embedder.
+                      properties:
+                        creator:
+                          description: Creator defines datasource creator (AUTO-FILLED
+                            by webhook)
+                          type: string
+                        description:
+                          description: Description defines datasource description
+                          type: string
+                        displayName:
+                          description: DisplayName defines datasource display name
+                          type: string
+                        endpoint:
+                          description: Enpoint defines connection info
+                          properties:
+                            authSecret:
+                              description: AuthSecret if the chart repository requires
+                                auth authentication, set the username and password
+                                to secret, with the field user and password respectively.
+                              properties:
+                                apiGroup:
+                                  description: APIGroup is the group for the resource
+                                    being referenced. If APIGroup is not specified,
+                                    the specified Kind must be in the core API group.
+                                    For any other third-party types, APIGroup is required.
+                                  type: string
+                                kind:
+                                  description: Kind is the type of resource being
+                                    referenced
+                                  type: string
+                                name:
+                                  description: Name is the name of resource being
+                                    referenced
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of resource
+                                    being referenced
+                                  type: string
+                              required:
+                              - kind
+                              - name
+                              type: object
+                            insecure:
+                              description: Insecure if the endpoint needs a secure
+                                connection
+                              type: boolean
+                            url:
+                              description: URL chart repository address
+                              type: string
+                          type: object
+                        serviceType:
+                          description: ServiceType indicates the source type of embedding
+                            service
+                          type: string
+                      type: object
+                    VectorStoreSpec:
+                      description: VectorStoreSpec is a specification of a VectorStore.
+                      properties:
+                        creator:
+                          description: Creator defines datasource creator (AUTO-FILLED
+                            by webhook)
+                          type: string
+                        description:
+                          description: Description defines datasource description
+                          type: string
+                        displayName:
+                          description: DisplayName defines datasource display name
+                          type: string
+                        endpoint:
+                          description: Endpoint represents the endpoint used to communicate
+                            with the VectorStore.
+                          properties:
+                            authSecret:
+                              description: AuthSecret if the chart repository requires
+                                auth authentication, set the username and password
+                                to secret, with the field user and password respectively.
+                              properties:
+                                apiGroup:
+                                  description: APIGroup is the group for the resource
+                                    being referenced. If APIGroup is not specified,
+                                    the specified Kind must be in the core API group.
+                                    For any other third-party types, APIGroup is required.
+                                  type: string
+                                kind:
+                                  description: Kind is the type of resource being
+                                    referenced
+                                  type: string
+                                name:
+                                  description: Name is the name of resource being
+                                    referenced
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of resource
+                                    being referenced
+                                  type: string
+                              required:
+                              - kind
+                              - name
+                              type: object
+                            insecure:
+                              description: Insecure if the endpoint needs a secure
+                                connection
+                              type: boolean
+                            url:
+                              description: URL chart repository address
+                              type: string
+                          type: object
+                        infrastructureRef:
+                          description: InfrastructureRef is a reference to a provider-specific
+                            resource that holds the details for provisioning infrastructure
+                            for a VectorStore in said provider.
+                          properties:
+                            apiGroup:
+                              description: APIGroup is the group for the resource
+                                being referenced. If APIGroup is not specified, the
+                                specified Kind must be in the core API group. For
+                                any other third-party types, APIGroup is required.
+                              type: string
+                            kind:
+                              description: Kind is the type of resource being referenced
+                              type: string
+                            name:
+                              description: Name is the name of resource being referenced
+                              type: string
+                            namespace:
+                              description: Namespace is the namespace of resource
+                                being referenced
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          type: object
+                      required:
+                      - endpoint
+                      type: object
+                    chain:
+                      description: Chain is a reference to a chain.
+                      properties:
+                        llmChain:
+                          type: object
+                      type: object
+                    embedderRef:
+                      description: LLMRef is a reference to a llm.
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced. If APIGroup is not specified, the specified
+                            Kind must be in the core API group. For any other third-party
+                            types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                    llmRef:
+                      description: LLMRef is a reference to a llm.
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced. If APIGroup is not specified, the specified
+                            Kind must be in the core API group. For any other third-party
+                            types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                    llmSpec:
+                      description: LLMSpec is a specification of a llm.
+                      properties:
+                        creator:
+                          description: Creator defines datasource creator (AUTO-FILLED
+                            by webhook)
+                          type: string
+                        description:
+                          description: Description defines datasource description
+                          type: string
+                        displayName:
+                          description: DisplayName defines datasource display name
+                          type: string
+                        endpoint:
+                          description: Enpoint defines connection info
+                          properties:
+                            authSecret:
+                              description: AuthSecret if the chart repository requires
+                                auth authentication, set the username and password
+                                to secret, with the field user and password respectively.
+                              properties:
+                                apiGroup:
+                                  description: APIGroup is the group for the resource
+                                    being referenced. If APIGroup is not specified,
+                                    the specified Kind must be in the core API group.
+                                    For any other third-party types, APIGroup is required.
+                                  type: string
+                                kind:
+                                  description: Kind is the type of resource being
+                                    referenced
+                                  type: string
+                                name:
+                                  description: Name is the name of resource being
+                                    referenced
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of resource
+                                    being referenced
+                                  type: string
+                              required:
+                              - kind
+                              - name
+                              type: object
+                            insecure:
+                              description: Insecure if the endpoint needs a secure
+                                connection
+                              type: boolean
+                            url:
+                              description: URL chart repository address
+                              type: string
+                          type: object
+                        type:
+                          description: Type defines the type of llm
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    name:
+                      type: string
+                    vectorStoreRef:
+                      description: LLMRef is a reference to a llm.
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced. If APIGroup is not specified, the specified
+                            Kind must be in the core API group. For any other third-party
+                            types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+          status:
+            description: ApplicationStatus defines the observed state of Application
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

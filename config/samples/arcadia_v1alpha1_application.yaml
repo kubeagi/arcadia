@@ -1,0 +1,27 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: chat-with-openai
+spec:
+  nodes:
+    - name: llm
+      llmRef:
+        name: openai
+        namespace: default
+        apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+        kind: LLM
+    - name: testPrompt
+      promptRef:
+        name: chat-with-openai
+        namespace: default
+        apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+        kind: Prompt
+    - name: llmChain
+      chain:
+        llmChain: {}
+  connections:
+    - sourceNode: llm
+      targetNode: llmChain
+    - sourceNode: testPrompt
+      targetNode: llmChain
+

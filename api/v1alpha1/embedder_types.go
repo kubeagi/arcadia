@@ -27,12 +27,7 @@ import (
 
 // EmbedderSpec defines the desired state of Embedder
 type EmbedderSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Name of the Embedding service
-	DisplayName string `json:"displayName,omitempty"`
-
+	CommonSpec `json:",inline"`
 	// ServiceType indicates the source type of embedding service
 	ServiceType embeddings.EmbeddingType `json:"serviceType,omitempty"`
 

@@ -25,14 +25,10 @@ import (
 
 // DatasourceSpec defines the desired state of Datasource
 type DatasourceSpec struct {
+	CommonSpec `json:",inline"`
+
 	// Creator defines datasource creator(AUTO-FILLED by webhook)
 	Creator string `json:"creator,omitempty"`
-
-	// DisplayName defines datasource display name
-	DiplayName string `json:"displayName"`
-
-	// Description defines datasource description
-	Description string `json:"description,omitempty"`
 
 	// Enpoint defines connection info
 	Enpoint *Endpoint `json:"endpoint,omitempty"`

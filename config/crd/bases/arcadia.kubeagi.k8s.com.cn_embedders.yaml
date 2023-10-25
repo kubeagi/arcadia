@@ -35,8 +35,14 @@ spec:
           spec:
             description: EmbedderSpec defines the desired state of Embedder
             properties:
+              creator:
+                description: Creator defines datasource creator (AUTO-FILLED by webhook)
+                type: string
+              description:
+                description: Description defines datasource description
+                type: string
               displayName:
-                description: Name of the Embedding service
+                description: DisplayName defines datasource display name
                 type: string
               endpoint:
                 description: Enpoint defines connection info

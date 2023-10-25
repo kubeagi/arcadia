@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	vectorstorev1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1/vectorstore"
 	"github.com/kubeagi/arcadia/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -48,6 +49,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(arcadiav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(vectorstorev1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -157,6 +159,20 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Embedder")
+		os.Exit(1)
+	}
+	if err = (&controllers.VectorStoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "VectorStore")
+		os.Exit(1)
+	}
+	if err = (&controllers.ApplicationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Application")
 		os.Exit(1)
 	}
 	if err = (&controllers.DatasetReconciler{
