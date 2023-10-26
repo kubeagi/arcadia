@@ -2,7 +2,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Datasource
 metadata:
   name: datasource-sample
-  namespace: kubebb-system
+  namespace: arcadia
 spec:
-  url: my-minio.kubebb-system.svc.cluster.local:9000
+  url: my-minio.arcadia.svc.cluster.local:9000
   authsecret: my-minio
