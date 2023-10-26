@@ -39,7 +39,7 @@ spec:
                 description: Auth keeps the authentication credentials when access
                   embedding service keeps in k8s secret
                 type: string
-              name:
+              displayName:
                 description: Name of the Embedding service
                 type: string
               serviceType:

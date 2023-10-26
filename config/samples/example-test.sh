@@ -172,14 +172,14 @@ function waitCRDStatusReady() {
 info "1. create kind cluster"
 make kind
 
-info "2. install kubebb core"
-info "2.1 deploy kubebb/core and minio"
+info "2. install minio as arcadia oss"
+info "2.1 add repo kubebb"
 helm repo add kubebb https://kubebb.github.io/components/
 helm repo update
+info "2.2 install minio"
 kubectl create ns arcadia
-helm install -n kubebb-system --create-namespace kubebb-core kubebb/kubebb-core
-helm install my-minio -n arcadia kubebb/minio
-waitPodReady "arcadia" "release=my-minio"
+helm install arcadia-oss -n arcadia kubebb/minio
+waitPodReady "arcadia" "release=arcadia-oss"
 
 info "3. install arcadia"
 docker tag controller:latest controller:example-e2e
@@ -189,6 +189,6 @@ kubectl wait deploy -n arcadia arcadia-controller-manager --for condition=Availa
 
 info "4. CRD datasource check"
 kubectl apply -f config/samples/arcadia_v1alpha1_datasource.yaml
-waitCRDStatusReady "Datasource" "arcadia" "datasource-sample"
+waitCRDStatusReady "Datasource" "arcadia" "arcadia-oss-minio"
 
 info "all finished! ✅"
