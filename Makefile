@@ -148,10 +148,18 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 ##@ Build Dependencies
 
+.PHONY: kind
+kind: ## Install a kind cluster.
+	kind create cluster --config=tests/kind-config.yaml
+
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
+
+.PHONY: unkind
+unkind: ## Uninstall a kind cluster.
+	kind delete cluster --name=kubeagi
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
