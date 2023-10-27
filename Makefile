@@ -246,3 +246,9 @@ catalog-push: ## Push a catalog image.
 .PHONY: arctl
 arctl: fmt vet ## Build manager binary.
 	go build -o bin/arctl arctl/*.go
+
+# graphql-server go
+gql-gen:
+	@go run github.com/99designs/gqlgen@v0.17.40 generate
+build-graphql-server:
+	@CGO_ENABLED=0 GOOS=linux go build -o go-bff-server graphql-server/go-server/main.go

@@ -1,0 +1,59 @@
+scalar Time
+scalar Map
+
+type Condition  {
+    type: String!
+    status: String!
+    lastTransitionTime: Time!
+    lastSuccessfulTime: Time
+    reason: String!
+    message: String
+}
+
+
+type DatasourceStatus {
+    conditions: [Condition!]
+}
+type DatasourceSpec {
+    url: String
+    authsecret: String
+}
+
+type Datasource {
+    kind: String!
+    apiVersion: String!
+    name: String!
+    namespace: String!
+    uid: String!
+    resourceVersion: String!
+    generation: Int!
+    creationTimestamp: Time!
+    deletionTimestamp: Time
+    labels: Map
+    annotations: Map
+    finalizers: [String!]
+    spec: DatasourceSpec
+    status: DatasourceStatus
+}
+
+input QueryDatasource {
+    # 有name直接根据name查询
+    name: String
+    namespace: String!
+    labelSelector: String
+    fieldSelector: String
+}
+type Query {
+    ds(input: QueryDatasource!): [Datasource!]
+}
+
+input CreateDatasource {
+    name: String!
+    namespace: String!
+    url: String
+    authsecret: String    
+}
+
+type Mutation {
+    createDatasource(input: CreateDatasource!): Datasource!
+}

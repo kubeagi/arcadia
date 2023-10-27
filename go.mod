@@ -3,6 +3,7 @@ module github.com/kubeagi/arcadia
 go 1.20
 
 require (
+	github.com/99designs/gqlgen v0.17.40
 	github.com/amikos-tech/chroma-go v0.0.0-20230901221218-d0087270239e
 	github.com/go-logr/logr v1.2.0
 	github.com/gofiber/fiber/v2 v2.49.1
@@ -13,6 +14,7 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/tmc/langchaingo v0.0.0-20231017212009-949349d5ef9c
 	github.com/valyala/fasthttp v1.49.0
+	github.com/vektah/gqlparser/v2 v2.5.10
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v0.24.2
@@ -21,12 +23,17 @@ require (
 )
 
 require (
+	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sosodev/duration v1.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 

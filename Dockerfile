@@ -14,15 +14,17 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
+COPY graphql-server/ graphql-server/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
-
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o go-bff-server graphql-server/go-server/main.go
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/go-bff-server .
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
