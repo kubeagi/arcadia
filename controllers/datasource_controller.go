@@ -18,26 +18,21 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
-)
-
-const (
-	rootUser     = "rootUser"
-	rootPassword = "rootPassword"
+	"github.com/kubeagi/arcadia/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 // DatasourceReconciler reconciles a Datasource object
@@ -72,6 +67,25 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		return reconcile.Result{}, err
 	}
+
+	if instance.DeletionTimestamp != nil {
+		logger.Info("Delete datasource")
+		// remove the finalizer to complete the delete action
+		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
+		err := r.Client.Update(ctx, instance)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to update datasource finializer: %w", err)
+		}
+		return reconcile.Result{}, nil
+	}
+
+	// initialize labels
+	err := r.Initialize(ctx, logger, instance)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to initiali datasource: %w", err)
+	}
+
+	// check datasource
 	if err := r.Checkdatasource(ctx, logger, instance); err != nil {
 		logger.Error(err, "Failed to check datasource")
 		// Update conditioned status
@@ -87,38 +101,67 @@ func (r *DatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) error {
+	instanceDeepCopy := instance.DeepCopy()
+	l := len(instanceDeepCopy.Finalizers)
+
+	var update bool
+
+	instanceDeepCopy.Finalizers = utils.AddString(instanceDeepCopy.Finalizers, arcadiav1alpha1.Finalizer)
+	if l != len(instanceDeepCopy.Finalizers) {
+		logger.V(1).Info("Add Finalizer for datasource", "Finalizer", arcadiav1alpha1.Finalizer)
+		update = true
+	}
+
+	if instanceDeepCopy.Labels == nil {
+		instanceDeepCopy.Labels = make(map[string]string)
+	}
+
+	currentType := string(instanceDeepCopy.Spec.Type())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelDatasourceType]; v != currentType {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelDatasourceType] = currentType
+		update = true
+	}
+
+	if update {
+		return r.Client.Update(ctx, instanceDeepCopy)
+	}
+
+	return nil
+}
+
 // Checkdatasource to update status
 func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) error {
 	logger.Info("check datasource")
-	secret := corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Spec.AuthSecret}, &secret); err != nil {
-		return err
-	}
-	accessKeyID := string(secret.Data[rootUser])
-	secretAccessKey := string(secret.Data[rootPassword])
-	endpoint := instance.Spec.URL
+	var err error
 
-	useSSL := false
-
-	// Initialize minio client object.
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-	})
-	if err != nil {
-		return err
-	}
-	buckets, err := minioClient.ListBuckets(ctx)
-	if err != nil {
-		return err
-	}
-
-	// list bukcets
-	for _, bucket := range buckets {
-		logger.Info(bucket.Name)
+	// create datasource
+	var ds datasource.Datasource
+	switch instance.Spec.Type() {
+	case arcadiav1alpha1.DatasourceTypeOSS:
+		endpoiont := instance.Spec.Enpoint.DeepCopy()
+		// set auth secret's namespace to the datasource's namespace
+		if endpoiont.AuthSecret != nil {
+			endpoiont.AuthSecret.WithNameSpace(instance.Namespace)
+		}
+		ds, err = datasource.NewOSS(ctx, r.Client, endpoiont, instance.Spec.OSS.DeepCopy())
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
+	default:
+		ds, err = datasource.NewUnknown(ctx, r.Client)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
 	}
 
-	return r.UpdateStatus(ctx, instance, err)
+	// check datasource
+	if err := ds.Check(ctx, nil); err != nil {
+		return r.UpdateStatus(ctx, instance, err)
+	}
+
+	// update status
+	return r.UpdateStatus(ctx, instance, nil)
 }
 
 func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Datasource, err error) error {

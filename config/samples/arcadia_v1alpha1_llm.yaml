@@ -12,5 +12,8 @@ metadata:
   name: zhipuai
 spec:
   type: "zhipuai"
-  url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
-  auth: "zhipuai" # replace this with your auth secret
+  endpoint:
+    url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+    authSecret:
+      kind: secret
+      name: zhipuai

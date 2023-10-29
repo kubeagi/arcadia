@@ -177,7 +177,7 @@ info "2.1 add repo kubebb"
 helm repo add kubebb https://kubebb.github.io/components/
 helm repo update
 info "2.2 install minio"
-kubectl create ns arcadia
+kubectl create namespace arcadia
 helm install arcadia-oss -n arcadia kubebb/minio
 waitPodReady "arcadia" "release=arcadia-oss"
 

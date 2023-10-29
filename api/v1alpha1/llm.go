@@ -25,11 +25,11 @@ import (
 )
 
 func (llm LLM) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
-	if llm.Spec.Auth == "" {
+	if llm.Spec.Enpoint == nil || llm.Spec.Enpoint.AuthSecret == nil {
 		return "", nil
 	}
 	authSecret := &corev1.Secret{}
-	err := c.Get(ctx, types.NamespacedName{Name: llm.Spec.Auth, Namespace: llm.Namespace}, authSecret)
+	err := c.Get(ctx, types.NamespacedName{Name: llm.Spec.Enpoint.AuthSecret.Name, Namespace: llm.Namespace}, authSecret)
 	if err != nil {
 		return "", err
 	}

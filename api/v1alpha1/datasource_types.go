@@ -25,10 +25,26 @@ import (
 
 // DatasourceSpec defines the desired state of Datasource
 type DatasourceSpec struct {
-	// URL defines datasource url
-	URL string `json:"url,omitempty"`
-	// AuthSecret defines datasource authsecret
-	AuthSecret string `json:"authsecret,omitempty"`
+	// Creator defines datasource creator(AUTO-FILLED by webhook)
+	Creator string `json:"creator,omitempty"`
+
+	// DisplayName defines datasource display name
+	DiplayName string `json:"displayName,omitempty"`
+
+	// Description defines datasource description
+	Description string `json:"description,omitempty"`
+
+	// Enpoint defines connection info
+	Enpoint Endpoint `json:"endpoint"`
+
+	// OSS defines info for object storage service
+	OSS *OSS `json:"oss,omitempty"`
+}
+
+// OSS defines info for object storage service as datasource
+type OSS struct {
+	Bucket string `json:"bucket,omitempty"`
+	Object string `json:"object,omitempty"`
 }
 
 // DatasourceStatus defines the observed state of Datasource

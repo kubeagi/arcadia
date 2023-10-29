@@ -16,22 +16,22 @@ limitations under the License.
 
 package v1alpha1
 
-import (
-	"context"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+const (
+	LabelDatasourceType = Group + "/datasource-type"
 )
 
-func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
-	if e.Spec.Enpoint == nil || e.Spec.Enpoint.AuthSecret == nil {
-		return "", nil
+type DatasourceType string
+
+const (
+	DatasourceTypeOSS     DatasourceType = "oss"
+	DatasourceTypeUnknown DatasourceType = "unknown"
+)
+
+func (ds DatasourceSpec) Type() DatasourceType {
+	// Object storage service
+	if ds.OSS != nil {
+		return DatasourceTypeOSS
 	}
-	authSecret := &corev1.Secret{}
-	err := c.Get(ctx, types.NamespacedName{Name: e.Spec.Enpoint.AuthSecret.Name, Namespace: e.Namespace}, authSecret)
-	if err != nil {
-		return "", err
-	}
-	return string(authSecret.Data["apiKey"]), nil
+
+	return DatasourceTypeUnknown
 }

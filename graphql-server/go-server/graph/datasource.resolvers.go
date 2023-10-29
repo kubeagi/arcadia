@@ -14,13 +14,17 @@ import (
 // CreateDatasource is the resolver for the createDatasource field.
 func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.CreateDatasource) (*model.Datasource, error) {
 	url, authSecret := "", ""
+	var insecure bool
 	if input.URL != nil {
 		url = *input.URL
 	}
 	if input.Authsecret != nil {
 		authSecret = *input.Authsecret
 	}
-	return datasource.CreateDatasource(ctx, input.Name, input.Namespace, url, authSecret)
+	if input.Insecure != nil {
+		insecure = *input.Insecure
+	}
+	return datasource.CreateDatasource(ctx, input.Name, input.Namespace, url, authSecret, insecure)
 }
 
 // Ds is the resolver for the ds field.
