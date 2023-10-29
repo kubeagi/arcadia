@@ -36,12 +36,8 @@ type EmbedderSpec struct {
 	// ServiceType indicates the source type of embedding service
 	ServiceType embeddings.EmbeddingType `json:"serviceType,omitempty"`
 
-	// URL keeps the URL of the embedding service (Must have)
-	URL string `json:"url,omitempty"`
-
-	// Auth keeps the authentication credentials when access embedding service
-	// keeps in k8s secret
-	Auth string `json:"auth,omitempty"`
+	// Enpoint defines connection info
+	Enpoint *Endpoint `json:"endpoint,omitempty"`
 }
 
 // EmbeddingsStatus defines the observed state of Embedder

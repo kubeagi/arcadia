@@ -3591,7 +3591,7 @@ func (ec *executionContext) unmarshalInputCreateDatasource(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "url", "authsecret"}
+	fieldsInOrder := [...]string{"name", "namespace", "url", "authsecret", "insecure"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3634,6 +3634,15 @@ func (ec *executionContext) unmarshalInputCreateDatasource(ctx context.Context, 
 				return it, err
 			}
 			it.Authsecret = data
+		case "insecure":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("insecure"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Insecure = data
 		}
 	}
 

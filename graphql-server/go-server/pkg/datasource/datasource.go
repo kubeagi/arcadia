@@ -58,7 +58,7 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	return &md
 }
 
-func CreateDatasource(ctx context.Context, name, namespace, url, authsecret string) (*model.Datasource, error) {
+func CreateDatasource(ctx context.Context, name, namespace, url, authsecret string, insecure bool) (*model.Datasource, error) {
 	c := client.GetClient()
 	datasource := v1alpha1.Datasource{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,8 +70,14 @@ func CreateDatasource(ctx context.Context, name, namespace, url, authsecret stri
 			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.DatasourceSpec{
-			URL:        url,
-			AuthSecret: authsecret,
+			Enpoint: v1alpha1.Endpoint{
+				URL: url,
+				AuthSecret: &v1alpha1.TypedObjectReference{
+					Kind: "secret",
+					Name: authsecret,
+				},
+				Insecure: insecure,
+			},
 		},
 	}
 

@@ -27,11 +27,9 @@ type LLMSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 	// Type defines the type of llm
 	Type llms.LLMType `json:"type"`
-	// URL keeps the URL of the llm service(Must required)
-	URL string `json:"url,omitempty"`
-	// Auth keeps the authentication credentials when access llm
-	// keeps in k8s secret
-	Auth string `json:"auth,omitempty"`
+
+	// Enpoint defines connection info
+	Enpoint *Endpoint `json:"endpoint,omitempty"`
 }
 
 // LLMStatus defines the observed state of LLM

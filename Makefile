@@ -147,19 +147,10 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Build Dependencies
-
-.PHONY: kind
-kind: ## Install a kind cluster.
-	kind create cluster --config=tests/kind-config.yaml
-
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
-
-.PHONY: unkind
-unkind: ## Uninstall a kind cluster.
-	kind delete cluster --name=kubeagi
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
@@ -241,6 +232,16 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# Install a kind cluster
+.PHONY: kind
+kind: ## Install a kind cluster.
+	kind create cluster --config=tests/kind-config.yaml
+	
+# Uninstall a kind cluster
+.PHONY: unkind
+unkind: ## Uninstall a kind cluster.
+	kind delete cluster --name=kubeagi
 
 # CLI Arcadia
 .PHONY: arctl

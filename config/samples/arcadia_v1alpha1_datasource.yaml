@@ -4,5 +4,14 @@ metadata:
   name: arcadia-oss-minio
   namespace: arcadia
 spec:
-  url: arcadia-oss-minio.arcadia.svc.cluster.local:9000
-  authsecret: arcadia-oss-minio
+  displayName: "对象存储数据源"
+  description: "这是一个Minio的对象存储数据源"
+  endpoint:
+    url: arcadia-oss-minio.arcadia.svc.cluster.local:9000
+    authSecret:
+      kind: secret
+      name: arcadia-oss-minio
+    insecure: true
+  oss:
+    bucket: "kubebb"
+    object: ""

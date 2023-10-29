@@ -20,6 +20,7 @@ type CreateDatasource struct {
 	Namespace  string  `json:"namespace"`
 	URL        *string `json:"url,omitempty"`
 	Authsecret *string `json:"authsecret,omitempty"`
+	Insecure   *bool   `json:"insecure,omitempty"`
 }
 
 type Datasource struct {

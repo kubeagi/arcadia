@@ -10,10 +10,10 @@ type Condition  {
     message: String
 }
 
-
 type DatasourceStatus {
     conditions: [Condition!]
 }
+
 type DatasourceSpec {
     url: String
     authsecret: String
@@ -51,7 +51,8 @@ input CreateDatasource {
     name: String!
     namespace: String!
     url: String
-    authsecret: String    
+    authsecret: String
+    insecure: Boolean    
 }
 
 type Mutation {

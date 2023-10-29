@@ -184,3 +184,10 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+// TODO: Defines the configuration for the Arcadia controller and implement the config parser
+// Config defines the configuration for the Arcadia controller
+type Config struct {
+	// SystemDatasource specifies the built-in datasource for Arcadia to host data files and model files
+	SystemDatasource arcadiav1alpha1.TypedObjectReference
+}

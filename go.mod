@@ -12,6 +12,7 @@ require (
 	github.com/onsi/gomega v1.18.1
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/cobra v1.4.0
+	github.com/stretchr/testify v1.8.4
 	github.com/tmc/langchaingo v0.0.0-20231017212009-949349d5ef9c
 	github.com/valyala/fasthttp v1.49.0
 	github.com/vektah/gqlparser/v2 v2.5.10
@@ -31,6 +32,7 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sosodev/duration v1.1.0 // indirect
