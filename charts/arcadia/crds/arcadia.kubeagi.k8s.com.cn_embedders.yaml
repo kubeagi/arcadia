@@ -15,85 +15,112 @@ spec:
     singular: embedder
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Embedder is the Schema for the embedders API
-          properties:
-            apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Embedder is the Schema for the embeddings API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-              type: string
-            kind:
-              description: 'Kind is a string value representing the REST resource this
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: EmbedderSpec defines the desired state of embedder.
-              properties:
-                auth:
-                  description: Auth keeps the authentication credentials when access
-                    embedder, keeps in k8s secret.
-                  type: string
-                displayName:
-                  type: string
-                type:
-                  description: Type defines the type of embedder.
-                  type: string
-                url:
-                  description: URL keeps the URL of the embedder service(Must required)
-                  type: string
-              required:
-                - type
-              type: object
-            status:
-              description: EmbedderStatus defines the observed state of embedder.
-              properties:
-                conditions:
-                  description: Conditions of the resource.
-                  items:
-                    description: A Condition that may apply to a resource.
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: EmbedderSpec defines the desired state of Embedder
+            properties:
+              displayName:
+                description: Name of the Embedding service
+                type: string
+              endpoint:
+                description: Enpoint defines connection info
+                properties:
+                  authSecret:
+                    description: AuthSecret if the chart repository requires auth
+                      authentication, set the username and password to secret, with
+                      the field user and password respectively.
                     properties:
-                      lastSuccessfulTime:
-                        description: LastSuccessfulTime is repository Last Successful
-                          Update Time
-                        format: date-time
+                      apiGroup:
+                        description: APIGroup is the group for the resource being
+                          referenced. If APIGroup is not specified, the specified
+                          Kind must be in the core API group. For any other third-party
+                          types, APIGroup is required.
                         type: string
-                      lastTransitionTime:
-                        description: LastTransitionTime is the last time this condition
-                          transitioned from one status to another.
-                        format: date-time
+                      kind:
+                        description: Kind is the type of resource being referenced
                         type: string
-                      message:
-                        description: A Message containing details about this condition's
-                          last transition from one status to another, if any.
+                      name:
+                        description: Name is the name of resource being referenced
                         type: string
-                      reason:
-                        description: A Reason for this condition's last transition from
-                          one status to another.
-                        type: string
-                      status:
-                        description: Status of this condition; is it currently True,
-                          False, or Unknown
-                        type: string
-                      type:
-                        description: Type of this condition. At most one of each condition
-                          type may apply to a resource at any point in time.
+                      namespace:
+                        description: Namespace is the namespace of resource being
+                          referenced
                         type: string
                     required:
-                      - lastTransitionTime
-                      - reason
-                      - status
-                      - type
+                    - kind
+                    - name
                     type: object
-                  type: array
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
+                  insecure:
+                    description: Insecure if the endpoint needs a secure connection
+                    type: boolean
+                  url:
+                    description: URL chart repository address
+                    type: string
+                type: object
+              serviceType:
+                description: ServiceType indicates the source type of embedding service
+                type: string
+            type: object
+          status:
+            description: EmbeddingsStatus defines the observed state of Embedder
+            properties:
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastSuccessfulTime:
+                      description: LastSuccessfulTime is repository Last Successful
+                        Update Time
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

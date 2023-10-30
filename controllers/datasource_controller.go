@@ -44,7 +44,7 @@ type DatasourceReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -80,9 +80,12 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// initialize labels
-	err := r.Initialize(ctx, logger, instance)
+	requeue, err := r.Initialize(ctx, logger, instance)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to initiali datasource: %w", err)
+	}
+	if requeue {
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// check datasource
@@ -101,7 +104,7 @@ func (r *DatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) error {
+func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) (bool, error) {
 	instanceDeepCopy := instance.DeepCopy()
 	l := len(instanceDeepCopy.Finalizers)
 
@@ -124,10 +127,10 @@ func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logge
 	}
 
 	if update {
-		return r.Client.Update(ctx, instanceDeepCopy)
+		return true, r.Client.Update(ctx, instanceDeepCopy)
 	}
 
-	return nil
+	return false, nil
 }
 
 // Checkdatasource to update status
@@ -137,17 +140,24 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 
 	// create datasource
 	var ds datasource.Datasource
+	var info any
 	switch instance.Spec.Type() {
+	case arcadiav1alpha1.DatasourceTypeLocal:
+		// FIXME: implement local datasource check when system datasource defined by https://github.com/kubeagi/arcadia/issues/156
+		// 1. read system datasource endpoint
+		// 2. check against pre-denfined rules for local datasource rules
+		return r.UpdateStatus(ctx, instance, nil)
 	case arcadiav1alpha1.DatasourceTypeOSS:
 		endpoiont := instance.Spec.Enpoint.DeepCopy()
 		// set auth secret's namespace to the datasource's namespace
 		if endpoiont.AuthSecret != nil {
 			endpoiont.AuthSecret.WithNameSpace(instance.Namespace)
 		}
-		ds, err = datasource.NewOSS(ctx, r.Client, endpoiont, instance.Spec.OSS.DeepCopy())
+		ds, err = datasource.NewOSS(ctx, r.Client, endpoiont)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
+		info = instance.Spec.OSS.DeepCopy()
 	default:
 		ds, err = datasource.NewUnknown(ctx, r.Client)
 		if err != nil {
@@ -156,7 +166,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	}
 
 	// check datasource
-	if err := ds.Check(ctx, nil); err != nil {
+	if err := ds.Check(ctx, info); err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}
 

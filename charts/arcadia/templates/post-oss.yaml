@@ -1,0 +1,19 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name:  {{ .Release.Name }}-minio
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+spec:
+  displayName: "内置系统数据源"
+  description: "Arcadia 内置系统数据源"
+  endpoint:
+    url: {{ .Release.Name }}-minio.{{ .Release.Namespace }}.svc.cluster.local:9000
+    authSecret:
+      kind: Secret
+      name: {{ .Release.Name }}-minio
+    insecure: true
+  oss:
+    # pre-defined buckets for arcadia
+    bucket: {{ .Values.global.oss.bucket }}

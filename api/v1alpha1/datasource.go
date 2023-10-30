@@ -23,11 +23,19 @@ const (
 type DatasourceType string
 
 const (
+	DatasourceTypeLocal   DatasourceType = "local"
 	DatasourceTypeOSS     DatasourceType = "oss"
 	DatasourceTypeUnknown DatasourceType = "unknown"
 )
 
 func (ds DatasourceSpec) Type() DatasourceType {
+	// if endpoint is nil,this must be a `Local` datasource which utilize `SystemDatasource` by default to host its data
+	if ds.Enpoint == nil {
+		return DatasourceTypeLocal
+	}
+
+	// For third party datasources
+
 	// Object storage service
 	if ds.OSS != nil {
 		return DatasourceTypeOSS

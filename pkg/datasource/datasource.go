@@ -34,8 +34,10 @@ var (
 )
 
 type Datasource interface {
-	Check(ctx context.Context, options any) error
+	Check(ctx context.Context, info any) error
 }
+
+var _ Datasource = (*Unknown)(nil)
 
 type Unknown struct {
 }
@@ -44,8 +46,29 @@ func NewUnknown(ctx context.Context, c client.Client) (*Unknown, error) {
 	return &Unknown{}, nil
 }
 
-func (u *Unknown) Check(ctx context.Context, options any) error {
+func (u *Unknown) Check(ctx context.Context, info any) error {
 	return ErrUnknowDatasourceType
+}
+
+var _ Datasource = (*Local)(nil)
+
+// Local is a special datasource which use the system datasource as oss to store user-uploaded local files
+// - `oss` in `Local` represents the system datasource oss client along with the `Local`'s oss info
+type Local struct {
+	oss *OSS
+}
+
+func NewLocal(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*Local, error) {
+	oss, err := NewOSS(ctx, c, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	return &Local{oss: oss}, nil
+}
+
+// Check `Local` with `OSS`
+func (local *Local) Check(ctx context.Context, options any) error {
+	return local.oss.Check(ctx, options)
 }
 
 var _ Datasource = (*OSS)(nil)
@@ -54,7 +77,7 @@ type OSS struct {
 	*minio.Client
 }
 
-func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint, ossInfo *v1alpha1.OSS) (*OSS, error) {
+func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
 		secret := corev1.Secret{}
@@ -84,6 +107,16 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint, o
 }
 
 // TODO: implement Check with specific `options`
-func (oss *OSS) Check(ctx context.Context, options any) error {
+func (oss *OSS) Check(ctx context.Context, info any) error {
+	if info == nil {
+		return nil
+	}
+	_, ok := info.(*v1alpha1.OSS)
+	if !ok {
+		return errors.New("invalid check info for OSS")
+	}
+
+	// TODO:check bucket/object exists
+
 	return nil
 }

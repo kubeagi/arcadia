@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright contributors to the Kubebb Core project
+# Copyright contributors to the KubeAGI project
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -32,7 +32,7 @@ KindConfigPath=${TempFilePath}/kind-config.yaml
 InstallDirPath=${TempFilePath}/building-base
 DefaultPassWord=${DefaultPassWord:-'passw0rd'}
 LOG_DIR=${LOG_DIR:-"/tmp/kubeagi-example-test/logs"}
-RootPath=$(dirname -- "$(readlink -f -- "$0")")/../..
+RootPath=$(dirname -- "$(readlink -f -- "$0")")/..
 
 Timeout="${TimeoutSeconds}s"
 mkdir ${TempFilePath} || true
@@ -169,26 +169,28 @@ function waitCRDStatusReady() {
 		sleep 5
 	done
 }
+
 info "1. create kind cluster"
 make kind
 
-info "2. install minio as arcadia oss"
-info "2.1 add repo kubebb"
-helm repo add kubebb https://kubebb.github.io/components/
-helm repo update
-info "2.2 install minio"
-kubectl create namespace arcadia
-helm install arcadia-oss -n arcadia kubebb/minio
-waitPodReady "arcadia" "release=arcadia-oss"
-
-info "3. install arcadia"
+info "2. load arcadia image to kind"
 docker tag controller:latest controller:example-e2e
 kind load docker-image controller:example-e2e --name=$KindName
-make deploy IMG="controller:example-e2e"
-kubectl wait deploy -n arcadia arcadia-controller-manager --for condition=Available=True --timeout=$Timeout
 
-info "4. CRD datasource check"
-kubectl apply -f config/samples/arcadia_v1alpha1_datasource.yaml
-waitCRDStatusReady "Datasource" "arcadia" "arcadia-oss-minio"
+info "3. install arcadia"
+kubectl create namespace arcadia
+helm install -narcadia arcadia charts/arcadia --set deployment.image=controller:example-e2e
+
+info "4. check system datasource arcadia-minio(system datasource)"
+waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"
+
+info "5. create and verify local datasource"
+kubectl apply -f config/samples/arcadia_v1alpha1_local_datasource.yaml
+waitCRDStatusReady "Datasource" "arcadia" "arcadia-local"
+datasourceType=$(kubectl get datasource -n arcadia arcadia-local -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
+if [[ $datasourceType != "local" ]]; then
+	error "Datasource should local but got $datasourceType"
+	exit 1
+fi
 
 info "all finished! ✅"

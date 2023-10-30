@@ -1,3 +1,10 @@
+global:
+  oss:
+    bucket: &default-oss-bucket "arcadia"
+# @section deployment is used as default deployment configurations for arcadia
+# @param image Image to be used
+# @param imagePullPolcy ImagePullPolicy
+# @param resources Resources to be used
 deployment:
   image: kubebb/arcadia:v0.0.1
   imagePullPolcy: IfNotPresent
@@ -8,3 +15,35 @@ deployment:
     requests:
       cpu: 10m
       memory: 64Mi
+
+# @section oss is used as default Object-Storage-Service for arcadia which provides the capability to
+# - host user-uploaded data files as local datasource
+# - host user-uploaded models
+# The following params comes from kubebb/minio in repository https://kubebb.github.io/components
+# @param oss.enabled Enable Object-Storage-Service in arcadia
+# @param oss.buckets List of default buckets in arcadia
+minio:
+  mode: standalone
+  rootUser: "admin"
+  rootPassword: "Passw0rd!"
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 30Gi
+  users:
+    - accessKey: q18aRFqWOAX7pEin
+      secretKey: nCbZIP6q4s8KtQpL7n8CD2N88H6XABGf
+      policy: readwrite
+  buckets:
+    # Name of the bucket
+    - name: *default-oss-bucket
+      # Policy to be set on the
+      # bucket [none|download|upload|public|custom]
+      # if set to custom, customPolicy must be set.
+      policy: "none"
+      # set versioning for
+      # bucket [true|false]
+      versioning: false
+      # set objectlocking for
+      # bucket [true|false] NOTE: versioning is enabled by default if you use locking
+      objectlocking: false
