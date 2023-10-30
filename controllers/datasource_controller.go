@@ -90,7 +90,6 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	// check datasource
 	if err := r.Checkdatasource(ctx, logger, instance); err != nil {
-		logger.Error(err, "Failed to check datasource")
 		// Update conditioned status
 		return reconcile.Result{}, err
 	}

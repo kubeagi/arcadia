@@ -31,6 +31,8 @@ import (
 
 var (
 	ErrUnknowDatasourceType = errors.New("unknow datasource type")
+	ErrAccessPermission     = errors.New("dont have permission")
+	ErrAccessObject         = errors.New("access error object")
 )
 
 type Datasource interface {
@@ -106,7 +108,6 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (
 	return &OSS{Client: mc}, nil
 }
 
-// TODO: implement Check with specific `options`
 func (oss *OSS) Check(ctx context.Context, info any) error {
 	if info == nil {
 		return nil
@@ -116,7 +117,23 @@ func (oss *OSS) Check(ctx context.Context, info any) error {
 		return errors.New("invalid check info for OSS")
 	}
 
-	// TODO:check bucket/object exists
+	if info.(*v1alpha1.OSS).Bucket != "" {
+		_, err := oss.Client.BucketExists(ctx, info.(*v1alpha1.OSS).Bucket)
+		if err != nil {
+			return err
+		}
 
+		if info.(*v1alpha1.OSS).Object != "" {
+			_, err := oss.Client.StatObject(ctx, info.(*v1alpha1.OSS).Bucket, info.(*v1alpha1.OSS).Object, minio.StatObjectOptions{})
+			if err != nil {
+				switch minio.ToErrorResponse(err).Code {
+				case "AccessDenied":
+					return ErrAccessPermission
+				default:
+					return ErrAccessObject
+				}
+			}
+		}
+	}
 	return nil
 }
