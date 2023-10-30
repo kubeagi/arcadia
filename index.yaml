@@ -3,6 +3,28 @@ entries:
   arcadia:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2023-10-30T09:33:11.736686389Z"
+    dependencies:
+    - name: minio
+      repository: ""
+      version: 5.0.10
+    description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
+    digest: 96aa812469b4481a58faa1d0b2cf30b50f407d6fed1acddb4cd16e5b650fcae4
+    keywords:
+    - LLMOps
+    - Kubernetes
+    maintainers:
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    name: arcadia
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.1.10/arcadia-0.1.10.tgz
+    version: 0.1.10
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2023-10-26T06:51:17.610464377Z"
     description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
     digest: b469e4392af3040e2369ced944414ce12a20aecbf267030c9b85655f749a9436
@@ -227,4 +249,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-10-26T06:51:17.610511477Z"
+generated: "2023-10-30T09:33:11.736734892Z"
