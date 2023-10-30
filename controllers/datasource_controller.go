@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -49,6 +50,7 @@ type DatasourceReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -152,17 +154,26 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	var info any
 	switch instance.Spec.Type() {
 	case arcadiav1alpha1.DatasourceTypeLocal:
-		// FIXME: implement local datasource check when system datasource defined by https://github.com/kubeagi/arcadia/issues/156
-		// 1. read system datasource endpoint
-		// 2. check against pre-denfined rules for local datasource rules
-		return r.UpdateStatus(ctx, instance, nil)
-	case arcadiav1alpha1.DatasourceTypeOSS:
-		endpoiont := instance.Spec.Enpoint.DeepCopy()
-		// set auth secret's namespace to the datasource's namespace
-		if endpoiont.AuthSecret != nil {
-			endpoiont.AuthSecret.WithNameSpace(instance.Namespace)
+		system, err := config.GetSystemDatasource(ctx, r.Client)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
 		}
-		ds, err = datasource.NewOSS(ctx, r.Client, endpoiont)
+		endpoint := system.Spec.Enpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(system.Namespace)
+		}
+		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
+		info = &arcadiav1alpha1.OSS{Bucket: instance.Namespace}
+	case arcadiav1alpha1.DatasourceTypeOSS:
+		endpoint := instance.Spec.Enpoint.DeepCopy()
+		// set auth secret's namespace to the datasource's namespace
+		if endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(instance.Namespace)
+		}
+		ds, err = datasource.NewOSS(ctx, r.Client, endpoint)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}

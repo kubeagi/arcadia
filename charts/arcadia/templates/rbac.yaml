@@ -25,11 +25,45 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasets/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
@@ -160,4 +194,29 @@ rules:
   - get
   - patch
   - update
-
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - versioneddatasets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - versioneddatasets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - versioneddatasets/status
+  verbs:
+  - get
+  - patch
+  - update

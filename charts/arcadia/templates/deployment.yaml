@@ -27,6 +27,19 @@ spec:
       containers:
       - command:
         - /manager
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: DEFAULT_CONFIG
+            value: {{ .Release.Name }}-config
         image: {{ .Values.deployment.image }}
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         name: manager
