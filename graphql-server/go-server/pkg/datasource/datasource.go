@@ -23,10 +23,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 )
 
 func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
@@ -58,8 +58,7 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	return &md
 }
 
-func CreateDatasource(ctx context.Context, name, namespace, url, authsecret string, insecure bool) (*model.Datasource, error) {
-	c := client.GetClient()
+func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret string, insecure bool) (*model.Datasource, error) {
 	datasource := v1alpha1.Datasource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -94,9 +93,8 @@ func CreateDatasource(ctx context.Context, name, namespace, url, authsecret stri
 	return ds, nil
 }
 
-func DatasourceList(ctx context.Context, name, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
+func DatasourceList(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
 	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}
-	c := client.GetClient()
 	if name != "" {
 		u, err := c.Resource(dsSchema).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
