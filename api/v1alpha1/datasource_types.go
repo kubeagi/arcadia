@@ -35,7 +35,7 @@ type DatasourceSpec struct {
 	Description string `json:"description,omitempty"`
 
 	// Enpoint defines connection info
-	Enpoint Endpoint `json:"endpoint"`
+	Enpoint *Endpoint `json:"endpoint,omitempty"`
 
 	// OSS defines info for object storage service
 	OSS *OSS `json:"oss,omitempty"`
@@ -56,6 +56,8 @@ type DatasourceStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Namespaced
+//+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
+//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type`
 
 // Datasource is the Schema for the datasources API
 type Datasource struct {

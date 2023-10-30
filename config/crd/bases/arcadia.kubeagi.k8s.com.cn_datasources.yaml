@@ -15,7 +15,14 @@ spec:
     singular: datasource
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.displayName
+      name: display-name
+      type: string
+    - jsonPath: .metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type
+      name: type
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Datasource is the Schema for the datasources API
@@ -87,8 +94,6 @@ spec:
                   object:
                     type: string
                 type: object
-            required:
-            - endpoint
             type: object
           status:
             description: DatasourceStatus defines the observed state of Datasource

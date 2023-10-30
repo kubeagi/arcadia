@@ -70,10 +70,10 @@ func CreateDatasource(ctx context.Context, name, namespace, url, authsecret stri
 			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.DatasourceSpec{
-			Enpoint: v1alpha1.Endpoint{
+			Enpoint: &v1alpha1.Endpoint{
 				URL: url,
 				AuthSecret: &v1alpha1.TypedObjectReference{
-					Kind: "secret",
+					Kind: "Secret",
 					Name: authsecret,
 				},
 				Insecure: insecure,
