@@ -1,0 +1,6 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VersionedDataset
+metadata:
+  name: versioneddataset-sample
+spec:
+  # TODO(user): Add fields here

@@ -42,6 +42,7 @@ type ConditionReason string
 
 // Some common Condition reasons.
 const (
+	ReasonPublished        ConditionReason = "Published"
 	ReasonAvailable        ConditionReason = "Available"
 	ReasonUnavailable      ConditionReason = "Unavailable"
 	ReasonCreating         ConditionReason = "Creating"
