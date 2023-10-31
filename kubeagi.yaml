@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arcadia
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Repository
+metadata:
+  name: kubeagi
+  namespace: arcadia
+spec:
+  url: https://kubeagi.github.io/arcadia
+  pullStategy:
+    intervalSeconds: 120
+    retry: 5
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Subscription
+metadata:
+  name: arcadia
+  namespace: arcadia
+spec:
+  name: arcadia # release name in helm
+  componentPlanInstallMethod: auto
+  component:
+    name: kubeagi.arcadia
+    namespace: arcadia
+  override:
+    set:
+      - deployment.imagePullPolcy=Always
