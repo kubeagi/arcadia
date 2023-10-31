@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -26,8 +27,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
@@ -99,7 +103,13 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.Datasource{}).
+		For(&arcadiav1alpha1.Datasource{}, builder.WithPredicates(predicate.Funcs{
+			UpdateFunc: func(ue event.UpdateEvent) bool {
+				oldDatsource := ue.ObjectOld.(*arcadiav1alpha1.Datasource)
+				newDatasource := ue.ObjectNew.(*arcadiav1alpha1.Datasource)
+				return !reflect.DeepEqual(oldDatsource.Spec, newDatasource.Spec)
+			},
+		})).
 		Complete(r)
 }
 
@@ -173,27 +183,30 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	return r.UpdateStatus(ctx, instance, nil)
 }
 
+// UpdateStatus uppon error
 func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Datasource, err error) error {
 	instanceCopy := instance.DeepCopy()
+	var newCondition arcadiav1alpha1.Condition
 	if err != nil {
-		// Set status to unavailable
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
+		// set condition to False
+		newCondition = arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionFalse,
 			Reason:             arcadiav1alpha1.ReasonUnavailable,
 			Message:            err.Error(),
 			LastTransitionTime: metav1.Now(),
-		})
+		}
 	} else {
-		// Set status to available
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
+		// set condition to True
+		newCondition = arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            "health check success",
+			Message:            "Check Success",
 			LastTransitionTime: metav1.Now(),
 			LastSuccessfulTime: metav1.Now(),
-		})
+		}
 	}
+	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)
 }

@@ -31,8 +31,6 @@ import (
 
 var (
 	ErrUnknowDatasourceType = errors.New("unknow datasource type")
-	ErrAccessPermission     = errors.New("dont have permission")
-	ErrAccessObject         = errors.New("access error object")
 )
 
 type Datasource interface {
@@ -75,6 +73,7 @@ func (local *Local) Check(ctx context.Context, options any) error {
 
 var _ Datasource = (*OSS)(nil)
 
+// OSS is a wrapper to object storage service
 type OSS struct {
 	*minio.Client
 }
@@ -90,7 +89,7 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (
 			return nil, err
 		}
 		accessKeyID = string(secret.Data["rootUser"])
-		secretAccessKey = string(secret.Data["rootUser"])
+		secretAccessKey = string(secret.Data["rootPassword"])
 
 		// TODO: implement https(secure check)
 		// if !endpoint.Insecure {
@@ -108,30 +107,26 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (
 	return &OSS{Client: mc}, nil
 }
 
+// Check oss agains info()
 func (oss *OSS) Check(ctx context.Context, info any) error {
 	if info == nil {
 		return nil
 	}
-	_, ok := info.(*v1alpha1.OSS)
+	ossInfo, ok := info.(*v1alpha1.OSS)
 	if !ok {
 		return errors.New("invalid check info for OSS")
 	}
 
-	if info.(*v1alpha1.OSS).Bucket != "" {
-		_, err := oss.Client.BucketExists(ctx, info.(*v1alpha1.OSS).Bucket)
+	if ossInfo.Bucket != "" {
+		_, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
 		if err != nil {
 			return err
 		}
 
-		if info.(*v1alpha1.OSS).Object != "" {
-			_, err := oss.Client.StatObject(ctx, info.(*v1alpha1.OSS).Bucket, info.(*v1alpha1.OSS).Object, minio.StatObjectOptions{})
+		if ossInfo.Object != "" {
+			_, err := oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.StatObjectOptions{})
 			if err != nil {
-				switch minio.ToErrorResponse(err).Code {
-				case "AccessDenied":
-					return ErrAccessPermission
-				default:
-					return ErrAccessObject
-				}
+				return err
 			}
 		}
 	}
