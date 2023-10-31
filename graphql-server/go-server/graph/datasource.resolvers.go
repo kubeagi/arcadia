@@ -8,11 +8,18 @@ import (
 	"context"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
 )
 
 // CreateDatasource is the resolver for the createDatasource field.
 func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.CreateDatasource) (*model.Datasource, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClientByIDToken(token)
+	if err != nil {
+		return nil, err
+	}
 	url, authSecret := "", ""
 	var insecure bool
 	if input.URL != nil {
@@ -24,11 +31,17 @@ func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.Cre
 	if input.Insecure != nil {
 		insecure = *input.Insecure
 	}
-	return datasource.CreateDatasource(ctx, input.Name, input.Namespace, url, authSecret, insecure)
+	return datasource.CreateDatasource(ctx, c, input.Name, input.Namespace, url, authSecret, insecure)
 }
 
 // Ds is the resolver for the ds field.
 func (r *queryResolver) Ds(ctx context.Context, input model.QueryDatasource) ([]*model.Datasource, error) {
+	token := auth.ForOIDCToken(ctx)
+
+	c, err := client.GetClientByIDToken(token)
+	if err != nil {
+		return nil, err
+	}
 	name := ""
 	labelSelector, fieldSelector := "", ""
 	if input.Name != nil {
@@ -40,7 +53,7 @@ func (r *queryResolver) Ds(ctx context.Context, input model.QueryDatasource) ([]
 	if input.LabelSelector != nil {
 		labelSelector = *input.LabelSelector
 	}
-	return datasource.DatasourceList(ctx, name, input.Namespace, labelSelector, fieldSelector)
+	return datasource.DatasourceList(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
 }
 
 // Mutation returns MutationResolver implementation.

@@ -27,21 +27,29 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 var (
 	host             = flag.String("host", "", "bind to the host, default is 0.0.0.0")
 	port             = flag.Int("port", 8081, "service listening port")
 	enablePlayground = flag.Bool("enable-playgroud", true, "whether to open the graphql playground")
+
+	issuerURL    = flag.String("issuer-url", "", "oidc issuer url")
+	masterURL    = flag.String("master-url", "", "k8s master url")
+	clientSecret = flag.String("client-secret", "", "oidc client secret")
+	clientID     = flag.String("client-id", "", "oidc client id")
 )
 
 func main() {
-	cfg := ctrl.GetConfigOrDie()
-	client.InitClient(cfg)
+	flag.Parse()
+
+	oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
@@ -53,9 +61,10 @@ func main() {
 	})
 
 	if *enablePlayground {
-		http.Handle("/", playground.Handler("Arcadia", "/query"))
+		http.Handle("/", auth.AuthInterceptor(oidc.Verifier, playground.Handler("Arcadia-BFF-Server", "/query")))
 	}
-	http.Handle("/query", srv)
+	http.Handle("/query", auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP))
 
+	klog.Infof("listening server on port: %d", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
 }

@@ -21,6 +21,9 @@ import (
 
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 )
 
 var (
@@ -36,4 +39,12 @@ func InitClient(cfg *rest.Config) {
 
 func GetClient() dynamic.Interface {
 	return c
+}
+
+func GetClientByIDToken(idtoken string) (dynamic.Interface, error) {
+	cfg, err := clientcmd.BuildConfigFromKubeconfigGetter("", oidc.OIDCKubeGetter(idtoken))
+	if err != nil {
+		return nil, err
+	}
+	return dynamic.NewForConfig(cfg)
 }

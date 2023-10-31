@@ -48,3 +48,37 @@ func (r *queryResolver) FindX(ctx context.Context, input string) (string, error)
 The file `model/model_gen.go` has a new structure x that we defined.
 
 All we have to do is just implement the `FindX` function. And the content of the function is up to you to play with.
+
+
+## How to run
+
+in the root dir of the project
+
+```shell
+# 1. build
+make build-graphql-server
+
+# 2. run parameters
+$ ./go-bff-server -h
+Usage of ./main:
+  -client-id string
+    	oidc client id
+  -client-secret string
+    	oidc client secret
+  -enable-playgroud
+    	whether to open the graphql playground (default true)
+  -host string
+    	bind to the host, default is 0.0.0.0
+  -issuer-url string
+    	oidc issuer url
+  -kubeconfig string
+    	Paths to a kubeconfig. Only required if out-of-cluster.
+  -master-url string
+    	k8s master url
+  -port int
+    	service listening port (default 8081)
+
+# 3. run
+./go-bff-server --client-id=bff-client --client-secret=some-secret --master-url=https://k8s-adress --issuer-url=https://oidc-server
+```
+
