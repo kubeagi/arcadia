@@ -4,7 +4,7 @@ services:
   fastchat-controller:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
     image: kubebb/arcadia-llms:latest
     ports:
       - "21001:21001"
@@ -12,7 +12,7 @@ services:
   fastchat-api-server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
     image: kubebb/arcadia-llms:latest
     ports:
       - "8000:8000"
