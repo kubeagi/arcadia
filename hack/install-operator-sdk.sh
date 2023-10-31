@@ -5,7 +5,9 @@ ARCH=$(go env GOARCH)
 OS=$(go env GOOS)
 URL="https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_${OS}_${ARCH}"
 
-operator_sdk_version=$(operator-sdk version)
+if command -v operator-sdk &> /dev/null; then
+    operator_sdk_version=$(operator-sdk version)
+fi
 
 if echo $operator_sdk_version | grep -q "$OPERATOR_SDK_VERSION"; then
     echo "operator-sdk version ${OPERATOR_SDK_VERSION} found, exiting..."
@@ -13,6 +15,7 @@ if echo $operator_sdk_version | grep -q "$OPERATOR_SDK_VERSION"; then
 fi 
 
 echo "Installing operator-sdk version ${OPERATOR_SDK_VERSION} to /usr/local/bin/operator-sdk"
+echo "$URL"
 curl -L $URL > operator-sdk
 chmod +x operator-sdk
 sudo mv operator-sdk /usr/local/bin

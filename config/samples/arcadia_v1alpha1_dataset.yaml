@@ -1,0 +1,6 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Dataset
+metadata:
+  name: dataset-sample
+spec:
+  # TODO(user): Add fields here

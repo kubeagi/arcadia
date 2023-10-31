@@ -23,60 +23,50 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// DatasourceSpec defines the desired state of Datasource
-type DatasourceSpec struct {
-	// Creator defines datasource creator(AUTO-FILLED by webhook)
+// DatasetSpec defines the desired state of Dataset
+type DatasetSpec struct {
+	// Creator defines dataset creator(AUTO-FILLED by webhook)
 	Creator string `json:"creator,omitempty"`
 
-	// DisplayName defines datasource display name
+	// DisplayName defines dataset display name
 	DiplayName string `json:"displayName"`
 
-	// Description defines datasource description
-	Description string `json:"description,omitempty"`
+	// ContentType defines dataset
+	ContentType string `json:"contentType"`
 
-	// Enpoint defines connection info
-	Enpoint *Endpoint `json:"endpoint,omitempty"`
-
-	// OSS defines info for object storage service
-	OSS *OSS `json:"oss,omitempty"`
+	// bestCase defines the best case to use this dataset
+	BestCase string `json:"bestCase,omitempty"`
 }
 
-// OSS defines info for object storage service as datasource
-type OSS struct {
-	Bucket string `json:"bucket,omitempty"`
-	Object string `json:"object,omitempty"`
-}
-
-// DatasourceStatus defines the observed state of Datasource
-type DatasourceStatus struct {
+// DatasetStatus defines the observed state of Dataset
+type DatasetStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Namespaced
 //+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
-//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type`
+//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.spec.contentType`
 
-// Datasource is the Schema for the datasources API
-type Datasource struct {
+// Dataset is the Schema for the datasets API
+type Dataset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DatasourceSpec   `json:"spec,omitempty"`
-	Status DatasourceStatus `json:"status,omitempty"`
+	Spec   DatasetSpec   `json:"spec,omitempty"`
+	Status DatasetStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// DatasourceList contains a list of Datasource
-type DatasourceList struct {
+// DatasetList contains a list of Dataset
+type DatasetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Datasource `json:"items"`
+	Items           []Dataset `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Datasource{}, &DatasourceList{})
+	SchemeBuilder.Register(&Dataset{}, &DatasetList{})
 }
