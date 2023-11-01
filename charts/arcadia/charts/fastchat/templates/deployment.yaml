@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-fastchat
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: {{ .Release.Name }}-fastchat
+spec:
+  selector:
+    matchLabels:
+      control-plane: {{ .Release.Name }}-fastchat
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: {{ .Release.Name }}-fastchat
+    spec:
+      containers:
+        - name: {{ .Values.container.name.controller }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash","-c","python3 -m fastchat.serve.controller --host 0.0.0.0 --port 21001"]
+          ports:
+            - name: controller
+              containerPort: {{ .Values.service.controller.port }}
+              protocol: TCP
+        - name: {{ .Values.container.name.apiServer }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash","-c","python3 -m fastchat.serve.openai_api_server --controller-address http://localhost:21001 --host 0.0.0.0 --port 8000"]
+          ports:
+            - name: api
+              containerPort: {{ .Values.service.apiServer.port }}
+              protocol: TCP

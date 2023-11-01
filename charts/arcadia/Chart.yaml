@@ -19,3 +19,5 @@ maintainers:
 dependencies:
   - name: minio
     version: 5.0.10
+  - name: fastchat
+    version: 0.1.0
