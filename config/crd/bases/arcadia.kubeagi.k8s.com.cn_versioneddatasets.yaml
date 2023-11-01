@@ -64,11 +64,12 @@ spec:
                 - kind
                 - name
                 type: object
-              files:
-                description: Files included in this `VersionedDataset`
+              fileGroups:
+                description: FileGroups included in this `VersionedDataset` Grouped
+                  by Datasource
                 items:
                   properties:
-                    from:
+                    datasource:
                       description: From defines the datasource which provides this
                         `File`
                       properties:
@@ -92,12 +93,15 @@ spec:
                       - kind
                       - name
                       type: object
-                    path:
-                      description: Path defines the detail path to get this `File`
-                      type: string
+                    paths:
+                      description: Paths defines the detail paths to get objects from
+                        above datasource
+                      items:
+                        type: string
+                      type: array
                   required:
-                  - from
-                  - path
+                  - datasource
+                  - paths
                   type: object
                 type: array
               version:
@@ -146,84 +150,6 @@ spec:
                   - reason
                   - status
                   - type
-                  type: object
-                type: array
-              filesStatus:
-                description: FilesStatus contains the status to all files in VersionedDatasetSpec
-                items:
-                  properties:
-                    processCondition:
-                      description: ProcessCondition records the status of data processing
-                      properties:
-                        lastSuccessfulTime:
-                          description: LastSuccessfulTime is repository Last Successful
-                            Update Time
-                          format: date-time
-                          type: string
-                        lastTransitionTime:
-                          description: LastTransitionTime is the last time this condition
-                            transitioned from one status to another.
-                          format: date-time
-                          type: string
-                        message:
-                          description: A Message containing details about this condition's
-                            last transition from one status to another, if any.
-                          type: string
-                        reason:
-                          description: A Reason for this condition's last transition
-                            from one status to another.
-                          type: string
-                        status:
-                          description: Status of this condition; is it currently True,
-                            False, or Unknown
-                          type: string
-                        type:
-                          description: Type of this condition. At most one of each
-                            condition type may apply to a resource at any point in
-                            time.
-                          type: string
-                      required:
-                      - lastTransitionTime
-                      - reason
-                      - status
-                      - type
-                      type: object
-                    uploadCondition:
-                      description: UploadCondition records the status of file upload
-                      properties:
-                        lastSuccessfulTime:
-                          description: LastSuccessfulTime is repository Last Successful
-                            Update Time
-                          format: date-time
-                          type: string
-                        lastTransitionTime:
-                          description: LastTransitionTime is the last time this condition
-                            transitioned from one status to another.
-                          format: date-time
-                          type: string
-                        message:
-                          description: A Message containing details about this condition's
-                            last transition from one status to another, if any.
-                          type: string
-                        reason:
-                          description: A Reason for this condition's last transition
-                            from one status to another.
-                          type: string
-                        status:
-                          description: Status of this condition; is it currently True,
-                            False, or Unknown
-                          type: string
-                        type:
-                          description: Type of this condition. At most one of each
-                            condition type may apply to a resource at any point in
-                            time.
-                          type: string
-                      required:
-                      - lastTransitionTime
-                      - reason
-                      - status
-                      - type
-                      type: object
                   type: object
                 type: array
             type: object
