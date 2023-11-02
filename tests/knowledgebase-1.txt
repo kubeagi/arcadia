@@ -1,0 +1,11 @@
+## What is Arcadia?
+
+**Arcadia** comes from [Greek mythology](https://www.greekmythology.com/Myths/Places/Arcadia/arcadia.html)(a tranquil and idyllic region, representing harmony, serenity, and natural beauty). We aim to help everyone find a more perfect integration between humans and AI.
+
+To archieve this goal, we provide this one-stop LLMOps solution:
+
+- Dataset Management: storage/real-time data,multimodal,pre-processing,vectorization
+- Models Management: local/online LLMs(development,training,deployment),inference acceleration
+- Application Management: development,optimization,deployment with visual editor
+
+Furthermore, we can easily host **Arcadia** at any kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(A kubernetes building blocks),

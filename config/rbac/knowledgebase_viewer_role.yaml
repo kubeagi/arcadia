@@ -1,0 +1,20 @@
+# permissions for end users to view knowledgebases.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knowledgebase-viewer-role
+rules:
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases/status
+  verbs:
+  - get

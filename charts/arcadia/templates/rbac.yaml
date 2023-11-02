@@ -119,6 +119,32 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - knowledgebases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - laboratories
   verbs:
   - create
@@ -141,8 +167,7 @@ rules:
   verbs:
   - get
   - patch
-  - update
-- apiGroups:
+  - update apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - llms
@@ -216,6 +241,32 @@ rules:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - prompts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - vectorstores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - vectorstores/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - vectorstores/status
   verbs:
   - get
   - patch

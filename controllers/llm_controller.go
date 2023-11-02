@@ -22,16 +22,15 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/llms"
@@ -65,23 +64,49 @@ func (r *LLMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Fetch the LLM instance
 	instance := &arcadiav1alpha1.LLM{}
-	err := r.Get(ctx, req.NamespacedName, instance)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// LLM instance has been deleted.
-			return reconcile.Result{}, nil
-		}
+	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
+		// There's no need to requeue if the resource no longer exists.
+		// Otherwise, we'll be requeued implicitly because we return an error.
+		logger.V(1).Info("Failed to get LLM")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	err = r.CheckLLM(ctx, logger, instance)
+	// Add a finalizer.Then, we can define some operations which should
+	// occur before the LLM to be deleted.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
+	if newAdded := controllerutil.AddFinalizer(instance, arcadiav1alpha1.Finalizer); newAdded {
+		logger.Info("Try to add Finalizer for LLM")
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update LLM to add finalizer, will try again later")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Adding Finalizer for LLM done")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Check if the LLM instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if instance.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(instance, arcadiav1alpha1.Finalizer) {
+		logger.Info("Performing Finalizer Operations for LLM before delete CR")
+		// TODO perform the finalizer operations here, for example: remove data?
+		logger.Info("Removing Finalizer for LLM after successfully performing the operations")
+		controllerutil.RemoveFinalizer(instance, arcadiav1alpha1.Finalizer)
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to remove finalizer for LLM")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Remove LLM done")
+		return ctrl.Result{}, nil
+	}
+
+	err := r.CheckLLM(ctx, logger, instance)
 	if err != nil {
 		logger.Error(err, "Failed to check LLM")
 		// Update conditioned status
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: waitMedium}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: waitLonger}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

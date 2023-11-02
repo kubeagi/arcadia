@@ -19,6 +19,7 @@ package datasource
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
@@ -35,11 +36,15 @@ var (
 	ErrBucketNotProvided    = errors.New("no bucket provided")
 	ErrOSSNoSuchBucket      = errors.New("no such bucket")
 	ErrOSSNoSuchObject      = errors.New("no such object in bucket")
+	ErrOSSNoConfig          = errors.New("no bucket or object config")
 )
 
 type Datasource interface {
 	Stat(ctx context.Context, info any) error
 	Remove(ctx context.Context, info any) error
+	ReadFile(ctx context.Context, info any) (io.ReadCloser, error)
+	StatFile(ctx context.Context, info any) (any, error)
+	GetTags(ctx context.Context, info any) (map[string]string, error)
 }
 
 var _ Datasource = (*Unknown)(nil)
@@ -57,6 +62,18 @@ func (u *Unknown) Stat(ctx context.Context, info any) error {
 
 func (u *Unknown) Remove(ctx context.Context, info any) error {
 	return ErrUnknowDatasourceType
+}
+
+func (u *Unknown) ReadFile(ctx context.Context, info any) (io.ReadCloser, error) {
+	return nil, ErrUnknowDatasourceType
+}
+
+func (u *Unknown) StatFile(ctx context.Context, info any) (any, error) {
+	return nil, ErrUnknowDatasourceType
+}
+
+func (u *Unknown) GetTags(ctx context.Context, info any) (map[string]string, error) {
+	return nil, ErrUnknowDatasourceType
 }
 
 var _ Datasource = (*Local)(nil)
@@ -94,12 +111,29 @@ func (local *Local) Remove(ctx context.Context, info any) error {
 	return local.oss.Remove(ctx, info)
 }
 
+func (local *Local) ReadFile(ctx context.Context, info any) (io.ReadCloser, error) {
+	return local.oss.ReadFile(ctx, info)
+}
+
+func (local *Local) StatFile(ctx context.Context, info any) (any, error) {
+	return local.oss.StatFile(ctx, info)
+}
+
+func (local *Local) GetTags(ctx context.Context, info any) (map[string]string, error) {
+	return local.oss.GetTags(ctx, info)
+}
+
 var _ Datasource = (*OSS)(nil)
 
 // OSS is a wrapper to object storage service
 type OSS struct {
 	*minio.Client
 }
+
+var (
+	ossDefaultGetOpt    = minio.GetObjectOptions{}
+	ossDefaultGetTagOpt = minio.GetObjectTaggingOptions{}
+)
 
 func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
@@ -137,7 +171,7 @@ func (oss *OSS) Stat(ctx context.Context, info any) error {
 	}
 	ossInfo, ok := info.(*v1alpha1.OSS)
 	if !ok {
-		return errors.New("invalid check info for OSS")
+		return ErrOSSNoConfig
 	}
 
 	return oss.statObject(ctx, ossInfo)
@@ -185,4 +219,43 @@ func (oss *OSS) statObject(ctx context.Context, ossInfo *v1alpha1.OSS) error {
 	}
 
 	return nil
+}
+
+func (oss *OSS) ReadFile(ctx context.Context, info any) (io.ReadCloser, error) {
+	ossInfo, err := oss.preCheck(info)
+	if err != nil {
+		return nil, err
+	}
+	return oss.Client.GetObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
+}
+
+func (oss *OSS) StatFile(ctx context.Context, info any) (any, error) {
+	ossInfo, err := oss.preCheck(info)
+	if err != nil {
+		return nil, err
+	}
+	return oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
+}
+
+func (oss *OSS) GetTags(ctx context.Context, info any) (map[string]string, error) {
+	ossInfo, err := oss.preCheck(info)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := oss.Client.GetObjectTagging(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetTagOpt)
+	if err != nil {
+		return nil, err
+	}
+	return tags.ToMap(), nil
+}
+
+func (oss *OSS) preCheck(info any) (*v1alpha1.OSS, error) {
+	if info == nil {
+		return nil, ErrOSSNoConfig
+	}
+	ossInfo, ok := info.(*v1alpha1.OSS)
+	if !ok || ossInfo.Bucket == "" || ossInfo.Object == "" {
+		return nil, ErrOSSNoConfig
+	}
+	return ossInfo, nil
 }

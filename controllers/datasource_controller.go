@@ -23,12 +23,12 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -37,7 +37,6 @@ import (
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 // DatasourceReconciler reconciles a Datasource object
@@ -67,22 +66,38 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	instance := &arcadiav1alpha1.Datasource{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
-		if errors.IsNotFound(err) {
-			// datasourcce has been deleted.
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
+		// There's no need to requeue if the resource no longer exists.
+		// Otherwise, we'll be requeued implicitly because we return an error.
+		logger.V(1).Info("Failed to get Datasource")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if instance.DeletionTimestamp != nil {
-		logger.Info("Delete datasource")
-		// remove the finalizer to complete the delete action
-		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
-		err := r.Client.Update(ctx, instance)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to update datasource finializer: %w", err)
+	// Add a finalizer.Then, we can define some operations which should
+	// occur before the Datasource to be deleted.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
+	if newAdded := controllerutil.AddFinalizer(instance, arcadiav1alpha1.Finalizer); newAdded {
+		logger.Info("Try to add Finalizer for Datasource")
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update Datasource to add finalizer, will try again later")
+			return ctrl.Result{}, err
 		}
-		return reconcile.Result{}, nil
+		logger.Info("Adding Finalizer for Datasource done")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Check if the Datasource instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if instance.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(instance, arcadiav1alpha1.Finalizer) {
+		logger.Info("Performing Finalizer Operations for Datasource before delete CR")
+		// TODO perform the finalizer operations here, for example: remove data?
+		logger.Info("Removing Finalizer for Datasource after successfully performing the operations")
+		controllerutil.RemoveFinalizer(instance, arcadiav1alpha1.Finalizer)
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to remove finalizer for Datasource")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Remove Datasource done")
+		return ctrl.Result{}, nil
 	}
 
 	// initialize labels
@@ -97,9 +112,9 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// check datasource
 	if err := r.Checkdatasource(ctx, logger, instance); err != nil {
 		// Update conditioned status
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: waitMedium}, err
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: waitLonger}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -116,18 +131,8 @@ func (r *DatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) (bool, error) {
+func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) (update bool, err error) {
 	instanceDeepCopy := instance.DeepCopy()
-	l := len(instanceDeepCopy.Finalizers)
-
-	var update bool
-
-	instanceDeepCopy.Finalizers = utils.AddString(instanceDeepCopy.Finalizers, arcadiav1alpha1.Finalizer)
-	if l != len(instanceDeepCopy.Finalizers) {
-		logger.V(1).Info("Add Finalizer for datasource", "Finalizer", arcadiav1alpha1.Finalizer)
-		update = true
-	}
-
 	if instanceDeepCopy.Labels == nil {
 		instanceDeepCopy.Labels = make(map[string]string)
 	}

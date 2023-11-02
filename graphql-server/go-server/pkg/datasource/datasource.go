@@ -79,7 +79,9 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 				APIVersion: v1alpha1.GroupVersion.String(),
 			},
 			Spec: v1alpha1.DatasourceSpec{
-				DiplayName: displayname,
+				CommonSpec: v1alpha1.CommonSpec{
+					DisplayName: displayname,
+				},
 				Enpoint: &v1alpha1.Endpoint{
 					URL: url,
 					AuthSecret: &v1alpha1.TypedObjectReference{
@@ -104,7 +106,9 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 				APIVersion: v1alpha1.GroupVersion.String(),
 			},
 			Spec: v1alpha1.DatasourceSpec{
-				DiplayName: displayname,
+				CommonSpec: v1alpha1.CommonSpec{
+					DisplayName: displayname,
+				},
 			},
 		}
 	}
