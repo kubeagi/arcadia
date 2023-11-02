@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-fastchat
   labels:
     control-plane: {{ .Release.Name }}-fastchat
 spec:
