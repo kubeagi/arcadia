@@ -42,7 +42,6 @@ type ConditionReason string
 
 // Some common Condition reasons.
 const (
-	ReasonPublished        ConditionReason = "Published"
 	ReasonAvailable        ConditionReason = "Available"
 	ReasonUnavailable      ConditionReason = "Unavailable"
 	ReasonCreating         ConditionReason = "Creating"
@@ -50,6 +49,32 @@ const (
 	ReasonReconcileSuccess ConditionReason = "ReconcileSuccess"
 	ReasonReconcileError   ConditionReason = "ReconcileError"
 	ReasonReconcilePaused  ConditionReason = "ReconcilePaused"
+)
+
+// Some Data related Condition Types
+const (
+	// Dataset have 3 phases: load -> process -> publish
+	// TypeLoaded resources are believed to be loaded
+	TypeLoaded ConditionType = "Loaded"
+	// TypeProcessed resources are believed to be processed
+	TypeProcessed ConditionType = "Processed"
+	// TypePublished resources are believed to be published
+	TypePublished ConditionType = "Published"
+)
+
+// Some Dataset related Condition reasons
+const (
+	// Load data
+	ReasonDataLoading     ConditionReason = "DataLoading"
+	ReasonDataLoadError   ConditionReason = "DataLoadError"
+	ReasonDataLoadSuccess ConditionReason = "DataLoadSuccess"
+	// Process data
+	ReasonDataProcessing     ConditionReason = "DataProcessing"
+	ReasonDataProcessError   ConditionReason = "DataProcessError"
+	ReasonDataProcessSuccess ConditionReason = "DataProcessSuccess"
+	// Publish dataset
+	ReasonDatasetUnpublished ConditionReason = "DatasetUnpublished"
+	ReasonDatasetPublished   ConditionReason = "DatasetPublished"
 )
 
 // A Condition that may apply to a resource.

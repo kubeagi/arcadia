@@ -23,18 +23,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type File struct {
+type FileGroup struct {
 	// From defines the datasource which provides this `File`
-	From *TypedObjectReference `json:"from"`
-	// Path defines the detail path to get this `File`
-	Path string `json:"path"`
-}
-
-type FileStatus struct {
-	// UploadCondition records the status of file upload
-	UploadCondition Condition `json:"uploadCondition,omitempty"`
-	// ProcessCondition records the status of data processing
-	ProcessCondition Condition `json:"processCondition,omitempty"`
+	Datasource *TypedObjectReference `json:"datasource"`
+	// Paths defines the detail paths to get objects from above datasource
+	Paths []string `json:"paths"`
 }
 
 // VersionedDatasetSpec defines the desired state of VersionedDataset
@@ -45,17 +38,15 @@ type VersionedDatasetSpec struct {
 	// Version
 	Version string `json:"version"`
 
-	// Files included in this `VersionedDataset`
-	Files []File `json:"files,omitempty"`
+	// FileGroups included in this `VersionedDataset`
+	// Grouped by Datasource
+	FileGroups []FileGroup `json:"fileGroups,omitempty"`
 }
 
 // VersionedDatasetStatus defines the observed state of VersionedDataset
 type VersionedDatasetStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
-
-	// FilesStatus contains the status to all files in VersionedDatasetSpec
-	FilesStatus []FileStatus `json:"filesStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true
