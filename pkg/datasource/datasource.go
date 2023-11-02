@@ -31,6 +31,7 @@ import (
 
 var (
 	ErrUnknowDatasourceType = errors.New("unknow datasource type")
+	ErrOSSNoSuchBucket      = errors.New("NoSuchBucket")
 )
 
 type Datasource interface {
@@ -67,8 +68,17 @@ func NewLocal(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint)
 }
 
 // Check `Local` with `OSS`
-func (local *Local) Check(ctx context.Context, options any) error {
-	return local.oss.Check(ctx, options)
+func (local *Local) Check(ctx context.Context, options any) (err error) {
+	err = local.oss.Check(ctx, options)
+	if err != nil && errors.Is(err, ErrOSSNoSuchBucket) {
+		ossInfo, ok := options.(*v1alpha1.OSS)
+		if !ok {
+			return errors.New("invalid check info for OSS")
+		}
+		defautlMakeBucketOptions := minio.MakeBucketOptions{}
+		err = local.oss.MakeBucket(ctx, ossInfo.Bucket, defautlMakeBucketOptions)
+	}
+	return err
 }
 
 var _ Datasource = (*OSS)(nil)
@@ -118,9 +128,12 @@ func (oss *OSS) Check(ctx context.Context, info any) error {
 	}
 
 	if ossInfo.Bucket != "" {
-		_, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
+		exist, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
 		if err != nil {
 			return err
+		}
+		if !exist {
+			return ErrOSSNoSuchBucket
 		}
 
 		if ossInfo.Object != "" {

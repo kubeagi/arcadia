@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  config: |
+    systemDatasource:
+      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+      kind: Datasource
+      name: '{{ .Release.Name }}-minio'
+      namespace: '{{ .Release.Namespace }}'
+kind: ConfigMap
+metadata:
+  labels:
+    control-plane: {{ .Release.Name }}-arcadia
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Release.Namespace }}
