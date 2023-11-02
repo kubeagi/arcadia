@@ -16,6 +16,24 @@ deployment:
       cpu: 10m
       memory: 64Mi
 
+# @section fastchat is used as fastchat configurations for arcadia
+fastchat:
+  ingress:
+    enabled: false
+    className: portal-ingress
+    hosts:
+      - host: fastchat-api.fastchat.arcadia.com
+        paths:
+          - path: /
+            port: 8000
+            pathType: ImplementationSpecific
+      - host: fastchat-controller.fastchat.arcadia.com
+        paths:
+          - path: /
+            port: 21001
+            pathType: ImplementationSpecific
+
+
 # @section oss is used as default Object-Storage-Service for arcadia which provides the capability to
 # - host user-uploaded data files as local datasource
 # - host user-uploaded models
