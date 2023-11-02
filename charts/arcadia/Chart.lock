@@ -4,6 +4,6 @@ dependencies:
   version: 5.0.10
 - name: fastchat
   repository: ""
-  version: 0.0.1
-digest: sha256:f90e95bc7facd1376eb110f2cce9735533dedf08316f83a25a4a6a4d38e6d024
-generated: "2023-11-02T09:07:41.041119+08:00"
+  version: 0.0.2
+digest: sha256:54d12a585a3decd50f82eaffae0224f188f7d715565bd751ffda3435678c2619
+generated: "2023-11-02T06:00:49.531248052Z"
