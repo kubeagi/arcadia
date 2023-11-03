@@ -1,3 +1,7 @@
+# graphql go server
+
+
+
 ## How to develop
 
 **There can only be one Query structure in all schemas, and Mutation can have one or none.**
@@ -52,33 +56,48 @@ All we have to do is just implement the `FindX` function. And the content of the
 
 ## How to run
 
-in the root dir of the project
+At the root dir of the project
+
+1. Build graphql server
 
 ```shell
-# 1. build
 make build-graphql-server
-
-# 2. run parameters
-$ ./go-bff-server -h
-Usage of ./main:
-  -client-id string
-    	oidc client id
-  -client-secret string
-    	oidc client secret
-  -enable-playgroud
-    	whether to open the graphql playground (default true)
-  -host string
-    	bind to the host, default is 0.0.0.0
-  -issuer-url string
-    	oidc issuer url
-  -kubeconfig string
-    	Paths to a kubeconfig. Only required if out-of-cluster.
-  -master-url string
-    	k8s master url
-  -port int
-    	service listening port (default 8081)
-
-# 3. run
-./go-bff-server --client-id=bff-client --client-secret=some-secret --master-url=https://k8s-adress --issuer-url=https://oidc-server
 ```
+
+2. Try graphql-server
+
+```shell
+$ ./bin/graphql-server -h
+Usage of ./bin/graphql-server:
+  -host string
+        bind to the host, default is 0.0.0.0
+  -port int
+        service listening port (default 8081)
+  -enable-playground
+        whether to enable the graphql playground
+  -enable-oidc
+        whether to enable oidc authentication
+  -client-id string
+        oidc client id
+  -client-secret string
+        oidc client secret
+  -master-url string
+        k8s master url
+  -issuer-url string
+        oidc issuer url
+  -kubeconfig string
+        Paths to a kubeconfig. Only required if out-of-cluster.
+```
+
+3. Run graphql-server 
+
+> If you don't want to try playground,do not pass flag `-enable-plaground`
+
+```shell
+./bin/graphql-server -enable-playground --client-id=bff-client --client-secret=some-secret --master-url=https://k8s-adress --issuer-url=https://oidc-server
+```
+
+4. Try apis with plaground
+
+Open http://localhost:8081/ in your browser!
 

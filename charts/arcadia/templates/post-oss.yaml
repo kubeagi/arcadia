@@ -4,7 +4,7 @@ metadata:
   name:  {{ .Release.Name }}-minio
   namespace: {{ .Release.Namespace }}
   annotations:
-    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
 spec:
   displayName: "内置系统数据源"
