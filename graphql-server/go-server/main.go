@@ -36,14 +36,16 @@ import (
 )
 
 var (
-	host             = flag.String("host", "", "bind to the host, default is 0.0.0.0")
-	port             = flag.Int("port", 8081, "service listening port")
-	enablePlayground = flag.Bool("enable-playgroud", true, "whether to open the graphql playground")
+	host = flag.String("host", "", "bind to the host, default is 0.0.0.0")
+	port = flag.Int("port", 8081, "service listening port")
 
-	issuerURL    = flag.String("issuer-url", "", "oidc issuer url")
-	masterURL    = flag.String("master-url", "", "k8s master url")
-	clientSecret = flag.String("client-secret", "", "oidc client secret")
-	clientID     = flag.String("client-id", "", "oidc client id")
+	enablePlayground = flag.Bool("enable-playground", false, "enable the graphql playground")
+
+	// Flags fro oidc client
+	issuerURL    = flag.String("issuer-url", "", "oidc issuer url(required when enable odic)")
+	masterURL    = flag.String("master-url", "", "k8s master url(required when enable odic)")
+	clientID     = flag.String("client-id", "", "oidc client id(required when enable odic)")
+	clientSecret = flag.String("client-secret", "", "oidc client secret(required when enable odic)")
 )
 
 func main() {
@@ -61,7 +63,7 @@ func main() {
 	})
 
 	if *enablePlayground {
-		http.Handle("/", auth.AuthInterceptor(oidc.Verifier, playground.Handler("Arcadia-BFF-Server", "/query")))
+		http.Handle("/", auth.AuthInterceptor(oidc.Verifier, playground.Handler("Arcadia-Graphql-Server", "/query")))
 	}
 	http.Handle("/query", auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP))
 
