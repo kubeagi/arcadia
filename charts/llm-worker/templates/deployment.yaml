@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "llm-worker.fullname" . }}
+  labels:
+    {{- include "llm-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "llm-worker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "llm-worker.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: get-model
+          image: {{ .Values.init.Repository }}
+          env:
+            {{- toYaml .Values.image.env | nindent 12 }}
+            {{- toYaml .Values.init.env | nindent 12}}
+          command:
+            # clone model repo to local
+            - "/bin/sh"
+            - "-c"
+            - |
+              echo "Init object storage service..."
+              mc alias set oss $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --insecure
+              echo "Copy model files..."
+              mc --insecure cp -r oss/kubeagi/models/$FASTCHAT_WORKER_MODEL_NAMES /data/models
+              ls /data/models
+          volumeMounts:
+            - mountPath: /data/models
+              name: {{ .Values.persistentVolume.name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            limits:
+              nvidia.com/gpu: "1" # request 1 GPU
+          env:
+            {{- toYaml .Values.image.env | nindent 12 }}
+          command:
+            - "/bin/bash"
+            - "-c"
+            - |
+              echo "Starting model worker..."
+              python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_WORKER_MODEL_NAMES \
+              --model-path /data/models/$FASTCHAT_WORKER_MODEL_PATH --worker-address $FASTCCHAT_WORKER_ADDRESS \
+              --controller-address $FASTCCHAT_CONTROLLER_ADDRESS \
+              --host 0.0.0.0 --port 21002
+          ports:
+            - name: http
+              containerPort: 21002
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data/models
+              name: {{ .Values.persistentVolume.name }}
+      volumes:
+        - name: {{ .Values.persistentVolume.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
