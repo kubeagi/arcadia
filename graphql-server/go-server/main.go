@@ -30,16 +30,19 @@ import (
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 var (
+	// We should define a structure to store these configurations
 	host = flag.String("host", "", "bind to the host, default is 0.0.0.0")
 	port = flag.Int("port", 8081, "service listening port")
 
 	enablePlayground = flag.Bool("enable-playground", false, "enable the graphql playground")
+	enableOIDC       = flag.Bool("enable-oidc", false, "enable oidc authorization")
 
 	// Flags fro oidc client
 	issuerURL    = flag.String("issuer-url", "", "oidc issuer url(required when enable odic)")
@@ -51,7 +54,11 @@ var (
 func main() {
 	flag.Parse()
 
-	oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
+	client.InitClient(*enableOIDC)
+
+	if *enableOIDC {
+		oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
+	}
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
@@ -63,9 +70,14 @@ func main() {
 	})
 
 	if *enablePlayground {
-		http.Handle("/", auth.AuthInterceptor(oidc.Verifier, playground.Handler("Arcadia-Graphql-Server", "/query")))
+		http.Handle("/", playground.Handler("Arcadia-Graphql-Server", "/bff"))
 	}
-	http.Handle("/query", auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP))
+
+	if *enableOIDC {
+		http.Handle("/bff", auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP))
+	} else {
+		http.Handle("/bff", srv)
+	}
 
 	klog.Infof("listening server on port: %d", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
