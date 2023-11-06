@@ -5,4 +5,4 @@ metadata:
   namespace: arcadia
 spec:
   displayName: "本地存储数据源"
-  description: "这是一个使用系统数据源作为存储的本地数据源"
+  description: "这是一个由本地上传的文件组成的数据源"

@@ -1,0 +1,9 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: chatglm2-6b # name will be used as the obejct
+  namespace: arcadia
+spec:
+  displayName: "chatglm2-6b"
+  description: "清华发布的ChatGLM2-6B模型"
+  type: "llm"

@@ -40,47 +40,53 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-// DatasourceReconciler reconciles a Datasource object
-type DatasourceReconciler struct {
+// ModelReconciler reconciles a Model object
+type ModelReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/finalizers,verbs=update
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=models,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=models/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=models/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Datasource object against the actual cluster state, and then
+// the Model object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("Starting datasource reconcile")
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
+func (r *ModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = log.FromContext(ctx)
 
-	instance := &arcadiav1alpha1.Datasource{}
+	logger := log.FromContext(ctx)
+	logger.Info("Starting model reconcile")
+
+	instance := &arcadiav1alpha1.Model{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
-			// datasourcce has been deleted.
+			// model has been deleted.
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
 	if instance.DeletionTimestamp != nil {
-		logger.Info("Delete datasource")
+		logger.Info("Delete model")
+		// remove all model files from storage service
+		if err := r.RemoveModel(ctx, logger, instance); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to remove model: %w", err)
+		}
 		// remove the finalizer to complete the delete action
 		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
 		err := r.Client.Update(ctx, instance)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to update datasource finializer: %w", err)
+			return reconcile.Result{}, fmt.Errorf("failed to update model finializer: %w", err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -88,35 +94,34 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// initialize labels
 	requeue, err := r.Initialize(ctx, logger, instance)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to initialize datasource: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to initialize model: %w", err)
 	}
 	if requeue {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	// check datasource
-	if err := r.Checkdatasource(ctx, logger, instance); err != nil {
+	if err := r.CheckModel(ctx, logger, instance); err != nil {
 		// Update conditioned status
 		return reconcile.Result{}, err
 	}
+
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.Datasource{}, builder.WithPredicates(predicate.Funcs{
+		For(&arcadiav1alpha1.Model{}, builder.WithPredicates(predicate.Funcs{
 			UpdateFunc: func(ue event.UpdateEvent) bool {
-				oldDatsource := ue.ObjectOld.(*arcadiav1alpha1.Datasource)
-				newDatasource := ue.ObjectNew.(*arcadiav1alpha1.Datasource)
-				return !reflect.DeepEqual(oldDatsource.Spec, newDatasource.Spec) ||
-					newDatasource.DeletionTimestamp != nil
+				oldModel := ue.ObjectOld.(*arcadiav1alpha1.Model)
+				newModel := ue.ObjectNew.(*arcadiav1alpha1.Model)
+				return !reflect.DeepEqual(oldModel.Spec, newModel.Spec) || newModel.DeletionTimestamp != nil
 			},
 		})).
 		Complete(r)
 }
 
-func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) (bool, error) {
+func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) (bool, error) {
 	instanceDeepCopy := instance.DeepCopy()
 	l := len(instanceDeepCopy.Finalizers)
 
@@ -124,17 +129,29 @@ func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logge
 
 	instanceDeepCopy.Finalizers = utils.AddString(instanceDeepCopy.Finalizers, arcadiav1alpha1.Finalizer)
 	if l != len(instanceDeepCopy.Finalizers) {
-		logger.V(1).Info("Add Finalizer for datasource", "Finalizer", arcadiav1alpha1.Finalizer)
+		logger.V(1).Info("Add Finalizer for model", "Finalizer", arcadiav1alpha1.Finalizer)
 		update = true
 	}
 
+	// Initialize Labels
 	if instanceDeepCopy.Labels == nil {
 		instanceDeepCopy.Labels = make(map[string]string)
 	}
+	// For model type
+	currentType := string(instanceDeepCopy.ModelType())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelType]; v != currentType {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelType] = currentType
+		update = true
+	}
 
-	currentType := string(instanceDeepCopy.Spec.Type())
-	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelDatasourceType]; v != currentType {
-		instanceDeepCopy.Labels[arcadiav1alpha1.LabelDatasourceType] = currentType
+	// Initialize annotations
+	if instanceDeepCopy.Annotations == nil {
+		instanceDeepCopy.Annotations = make(map[string]string)
+	}
+	// For model's full storeage path
+	currentFullPath := instanceDeepCopy.FullPath()
+	if v := instanceDeepCopy.Annotations[arcadiav1alpha1.LabelModelFullPath]; v != currentFullPath {
+		instanceDeepCopy.Annotations[arcadiav1alpha1.LabelModelFullPath] = currentFullPath
 		update = true
 	}
 
@@ -145,48 +162,35 @@ func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logge
 	return false, nil
 }
 
-// Checkdatasource to update status
-func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) error {
-	logger.Info("check datasource")
+// CheckModel to update status
+func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) error {
+	logger.Info("check model")
 	var err error
 
-	// create datasource
 	var ds datasource.Datasource
 	var info any
-	switch instance.Spec.Type() {
-	case arcadiav1alpha1.DatasourceTypeLocal:
-		system, err := config.GetSystemDatasource(ctx, r.Client)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
-		endpoint := system.Spec.Enpoint.DeepCopy()
-		if endpoint != nil && endpoint.AuthSecret != nil {
-			endpoint.AuthSecret.WithNameSpace(system.Namespace)
-		}
-		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
-		info = &arcadiav1alpha1.OSS{Bucket: instance.Namespace}
-	case arcadiav1alpha1.DatasourceTypeOSS:
-		endpoint := instance.Spec.Enpoint.DeepCopy()
-		// set auth secret's namespace to the datasource's namespace
-		if endpoint.AuthSecret != nil {
-			endpoint.AuthSecret.WithNameSpace(instance.Namespace)
-		}
-		ds, err = datasource.NewOSS(ctx, r.Client, endpoint)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
-		info = instance.Spec.OSS.DeepCopy()
-	default:
-		ds, err = datasource.NewUnknown(ctx, r.Client)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
+
+	system, err := config.GetSystemDatasource(ctx, r.Client)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, err)
+	}
+	endpoint := system.Spec.Enpoint.DeepCopy()
+	if endpoint != nil && endpoint.AuthSecret != nil {
+		endpoint.AuthSecret.WithNameSpace(system.Namespace)
+	}
+	ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, err)
+	}
+	// oss info:
+	// - bucket: same as the instance namespace
+	// - object: path joined with "model/{instance.name}"
+	info = &arcadiav1alpha1.OSS{
+		Bucket: instance.Namespace,
+		Object: instance.ObjectPath(),
 	}
 
-	// check datasource
+	// check datasource against info
 	if err := ds.Stat(ctx, info); err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}
@@ -195,8 +199,38 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	return r.UpdateStatus(ctx, instance, nil)
 }
 
+// Remove model files from storage
+func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) error {
+	var ds datasource.Datasource
+	var info any
+
+	system, err := config.GetSystemDatasource(ctx, r.Client)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, err)
+	}
+	endpoint := system.Spec.Enpoint.DeepCopy()
+	if endpoint != nil && endpoint.AuthSecret != nil {
+		endpoint.AuthSecret.WithNameSpace(system.Namespace)
+	}
+	ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, err)
+	}
+
+	info = &arcadiav1alpha1.OSS{
+		Bucket: instance.Namespace,
+		Object: instance.ObjectPath(),
+	}
+
+	if err := ds.Stat(ctx, info); err != nil {
+		return nil
+	}
+
+	return ds.Remove(ctx, info)
+}
+
 // UpdateStatus uppon error
-func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Datasource, err error) error {
+func (r *ModelReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Model, err error) error {
 	instanceCopy := instance.DeepCopy()
 	var newCondition arcadiav1alpha1.Condition
 	if err != nil {

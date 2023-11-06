@@ -154,6 +154,32 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - models
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - models/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - models/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - prompts
   verbs:
   - create
@@ -199,6 +225,32 @@ rules:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - versioneddatasets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - workers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - workers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - workers/status
   verbs:
   - get
   - patch
