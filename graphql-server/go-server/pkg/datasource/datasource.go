@@ -38,46 +38,75 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	for k, v := range obj.GetAnnotations() {
 		annotations[k] = v
 	}
-	url, _, _ := unstructured.NestedString(obj.Object, "spec", "url")
-	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "atuhsecret")
-	spec := model.DatasourceSpec{
-		URL:        &url,
-		Authsecret: &authsecret,
+	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
+	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authsecret", "name")
+	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
+	bucket, _, _ := unstructured.NestedString(obj.Object, "spec", "oss", "bucket")
+	insecure, _, _ := unstructured.NestedBool(obj.Object, "spec", "endpoint", "insecure")
+	spec := model.Endpoint{
+		URL: &url,
+		AuthSecret: &model.TypedObjectReference{
+			Kind: "Secret",
+			Name: authsecret,
+		},
+		Insecure: &insecure,
+	}
+	oss := model.Oss{
+		Bucket: &bucket,
 	}
 	md := model.Datasource{
-		Kind:              obj.GetKind(),
-		APIVersion:        obj.GetAPIVersion(),
-		Name:              obj.GetName(),
-		Namespace:         obj.GetNamespace(),
-		UID:               string(obj.GetUID()),
-		ResourceVersion:   obj.GetResourceVersion(),
-		Generation:        int(obj.GetGeneration()),
-		CreationTimestamp: obj.GetCreationTimestamp().Time,
-		Spec:              &spec,
+		Name:        obj.GetName(),
+		Namespace:   obj.GetNamespace(),
+		Labels:      labels,
+		Annotations: annotations,
+		DisplayName: displayName,
+		Endpoint:    &spec,
+		Oss:         &oss,
 	}
 	return &md
 }
 
-func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret string, insecure bool) (*model.Datasource, error) {
-	datasource := v1alpha1.Datasource{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Datasource",
-			APIVersion: v1alpha1.GroupVersion.String(),
-		},
-		Spec: v1alpha1.DatasourceSpec{
-			Enpoint: &v1alpha1.Endpoint{
-				URL: url,
-				AuthSecret: &v1alpha1.TypedObjectReference{
-					Kind: "Secret",
-					Name: authsecret,
-				},
-				Insecure: insecure,
+func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret, bucket, displayname string, insecure bool) (*model.Datasource, error) {
+	var datasource v1alpha1.Datasource
+	if url != "" {
+		datasource = v1alpha1.Datasource{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
 			},
-		},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Datasource",
+				APIVersion: v1alpha1.GroupVersion.String(),
+			},
+			Spec: v1alpha1.DatasourceSpec{
+				DiplayName: displayname,
+				Enpoint: &v1alpha1.Endpoint{
+					URL: url,
+					AuthSecret: &v1alpha1.TypedObjectReference{
+						Kind: "Secret",
+						Name: authsecret,
+					},
+					Insecure: insecure,
+				},
+				OSS: &v1alpha1.OSS{
+					Bucket: bucket,
+				},
+			},
+		}
+	} else {
+		datasource = v1alpha1.Datasource{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Datasource",
+				APIVersion: v1alpha1.GroupVersion.String(),
+			},
+			Spec: v1alpha1.DatasourceSpec{
+				DiplayName: displayname,
+			},
+		}
 	}
 
 	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&datasource)
@@ -93,6 +122,40 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 	return ds, nil
 }
 
+func UpdateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*model.Datasource, error) {
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
+	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
+	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	ds := datasource2model(updatedObject)
+	return ds, nil
+}
+
+func DeleteDatasource(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
+	if name != "" {
+		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+			FieldSelector: fieldSelector,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
 func DatasourceList(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
 	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}
 	if name != "" {
