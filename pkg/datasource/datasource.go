@@ -19,6 +19,7 @@ package datasource
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -31,11 +32,14 @@ import (
 
 var (
 	ErrUnknowDatasourceType = errors.New("unknow datasource type")
-	ErrOSSNoSuchBucket      = errors.New("NoSuchBucket")
+	ErrBucketNotProvided    = errors.New("no bucket provided")
+	ErrOSSNoSuchBucket      = errors.New("no such bucket")
+	ErrOSSNoSuchObject      = errors.New("no such object in bucket")
 )
 
 type Datasource interface {
-	Check(ctx context.Context, info any) error
+	Stat(ctx context.Context, info any) error
+	Remove(ctx context.Context, info any) error
 }
 
 var _ Datasource = (*Unknown)(nil)
@@ -47,7 +51,11 @@ func NewUnknown(ctx context.Context, c client.Client) (*Unknown, error) {
 	return &Unknown{}, nil
 }
 
-func (u *Unknown) Check(ctx context.Context, info any) error {
+func (u *Unknown) Stat(ctx context.Context, info any) error {
+	return ErrUnknowDatasourceType
+}
+
+func (u *Unknown) Remove(ctx context.Context, info any) error {
 	return ErrUnknowDatasourceType
 }
 
@@ -67,18 +75,23 @@ func NewLocal(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint)
 	return &Local{oss: oss}, nil
 }
 
-// Check `Local` with `OSS`
-func (local *Local) Check(ctx context.Context, options any) (err error) {
-	err = local.oss.Check(ctx, options)
+// Stat `Local` with `OSS`
+func (local *Local) Stat(ctx context.Context, options any) (err error) {
+	err = local.oss.Stat(ctx, options)
 	if err != nil && errors.Is(err, ErrOSSNoSuchBucket) {
 		ossInfo, ok := options.(*v1alpha1.OSS)
 		if !ok {
-			return errors.New("invalid check info for OSS")
+			return errors.New("invalid stat info for OSS")
 		}
 		defautlMakeBucketOptions := minio.MakeBucketOptions{}
 		err = local.oss.MakeBucket(ctx, ossInfo.Bucket, defautlMakeBucketOptions)
 	}
 	return err
+}
+
+// Remove object from OSS
+func (local *Local) Remove(ctx context.Context, info any) error {
+	return local.oss.Remove(ctx, info)
 }
 
 var _ Datasource = (*OSS)(nil)
@@ -118,7 +131,7 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (
 }
 
 // Check oss agains info()
-func (oss *OSS) Check(ctx context.Context, info any) error {
+func (oss *OSS) Stat(ctx context.Context, info any) error {
 	if info == nil {
 		return nil
 	}
@@ -127,21 +140,49 @@ func (oss *OSS) Check(ctx context.Context, info any) error {
 		return errors.New("invalid check info for OSS")
 	}
 
-	if ossInfo.Bucket != "" {
-		exist, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return ErrOSSNoSuchBucket
-		}
+	return oss.statObject(ctx, ossInfo)
+}
 
-		if ossInfo.Object != "" {
-			_, err := oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.StatObjectOptions{})
-			if err != nil {
-				return err
+// TODO: implement `Remove` against info
+func (oss *OSS) Remove(ctx context.Context, info any) error {
+	return nil
+}
+
+// StatObject against oss info
+// Q: Why not using client.StatObject() ?
+// A: The `StateObject()` won't treat path(directory) as a valid object
+func (oss *OSS) statObject(ctx context.Context, ossInfo *v1alpha1.OSS) error {
+	if ossInfo.Bucket == "" {
+		return ErrBucketNotProvided
+	}
+
+	// check whether bucket exists
+	isExist, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
+	if err != nil {
+		return err
+	}
+	if !isExist {
+		return ErrOSSNoSuchBucket
+	}
+
+	// check whether object exists
+	if ossInfo.Object != "" {
+		// The object by `ListObjects` will trim "/" automatically,so we also need to trim "/" to make sure name comparision successful
+		ossInfo.Object = strings.TrimPrefix(ossInfo.Object, "/")
+		// When object contains "/" which means it is a directory,'ListObjects' will show all objects under that directory without object itself
+		// After we remove "/", the objects by `ListObjects` will have object itself included.
+		trimmedObjectPath := strings.TrimSuffix(ossInfo.Object, "/")
+		for objInfo := range oss.Client.ListObjects(
+			ctx, ossInfo.Bucket, minio.ListObjectsOptions{
+				Prefix: trimmedObjectPath,
+			},
+		) {
+			if objInfo.Key == ossInfo.Object {
+				return nil
 			}
 		}
+		return ErrOSSNoSuchObject
 	}
+
 	return nil
 }

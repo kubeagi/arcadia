@@ -41,12 +41,12 @@ Our design and development in Arcadia design follows operator pattern which exte
   helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
 ```
 
-More conveniently,you can use [kubebb](https://github.com/kubebb) to install and upgrade arcadia automatically:
-> Pre-requsities
-> - [kubebb](https://kubebb.github.io/website/docs/quick-start/core_quickstart)
-```shell
-kubectl apply -f ./kubeagi.yaml
-```
+> More conveniently,you can use [kubebb](https://github.com/kubebb) to install and upgrade arcadia automatically:
+  > Pre-requsities
+  > - [kubebb](https://kubebb.github.io/website/docs/quick-start/core_quickstart)
+> ```shell
+> kubectl apply -f ./kubeagi.yaml
+> ```
 
 ## CLI
 

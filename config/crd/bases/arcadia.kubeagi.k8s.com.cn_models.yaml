@@ -5,27 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: datasources.arcadia.kubeagi.k8s.com.cn
+  name: models.arcadia.kubeagi.k8s.com.cn
 spec:
   group: arcadia.kubeagi.k8s.com.cn
   names:
-    kind: Datasource
-    listKind: DatasourceList
-    plural: datasources
-    singular: datasource
+    kind: Model
+    listKind: ModelList
+    plural: models
+    singular: model
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.displayName
-      name: display-name
-      type: string
-    - jsonPath: .metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type
-      name: type
-      type: string
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Datasource is the Schema for the datasources API
+        description: Model is the Schema for the models API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -40,66 +33,25 @@ spec:
           metadata:
             type: object
           spec:
-            description: DatasourceSpec defines the desired state of Datasource
+            description: ModelSpec defines the desired state of Model
             properties:
               creator:
-                description: Creator defines datasource creator(AUTO-FILLED by webhook)
+                description: Creator defines dataset creator(AUTO-FILLED by webhook)
                 type: string
               description:
                 description: Description defines datasource description
                 type: string
               displayName:
-                description: DisplayName defines datasource display name
+                description: DisplayName defines dataset display name
                 type: string
-              endpoint:
-                description: Enpoint defines connection info
-                properties:
-                  authSecret:
-                    description: AuthSecret if the chart repository requires auth
-                      authentication, set the username and password to secret, with
-                      the field user and password respectively.
-                    properties:
-                      apiGroup:
-                        description: APIGroup is the group for the resource being
-                          referenced. If APIGroup is not specified, the specified
-                          Kind must be in the core API group. For any other third-party
-                          types, APIGroup is required.
-                        type: string
-                      kind:
-                        description: Kind is the type of resource being referenced
-                        type: string
-                      name:
-                        description: Name is the name of resource being referenced
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of resource being
-                          referenced
-                        type: string
-                    required:
-                    - kind
-                    - name
-                    type: object
-                  insecure:
-                    description: Insecure if the endpoint needs a secure connection
-                    type: boolean
-                  url:
-                    description: URL chart repository address
-                    type: string
-                type: object
-              oss:
-                description: OSS defines info for object storage service
-                properties:
-                  bucket:
-                    type: string
-                  object:
-                    description: Object must end with a slash "/" if it is a directory
-                    type: string
-                type: object
+              type:
+                description: Type defines what kind of model this is
+                type: string
             required:
             - displayName
             type: object
           status:
-            description: DatasourceStatus defines the observed state of Datasource
+            description: ModelStatus defines the observed state of Model
             properties:
               conditions:
                 description: Conditions of the resource.

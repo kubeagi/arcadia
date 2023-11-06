@@ -7,4 +7,6 @@ resources:
 - arcadia_v1alpha1_embedders.yaml
 - arcadia_v1alpha1_dataset.yaml
 - arcadia_v1alpha1_versioneddataset.yaml
+- arcadia_v1alpha1_worker.yaml
+- arcadia_v1alpha1_model.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
