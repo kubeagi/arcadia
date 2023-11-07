@@ -1,0 +1,16 @@
+schema: http://localhost:8081/bff
+documents: '../go-server/**/*.gql'
+generates:
+  ./src/sdk.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-graphql-request
+      - plugin-typescript-swr
+config:
+  autogenSWRKey: true
+  useSWRInfinite:
+    - getRepositories
+    - getComponents
+    - getSubscriptionsPaged
+    - getComponentplansPaged

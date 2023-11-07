@@ -1,0 +1,46 @@
+# create
+mutation createDatasource($input: CreateDatasourceInput!) {
+  createDatasource(
+    input: $input
+  ) {
+    name
+    namespace
+    displayName
+    endpoint {
+      url
+      authSecret {
+        kind
+        Name
+      }
+      insecure
+    }
+    oss {
+      bucket
+    }
+  }
+}
+
+# update
+mutation updateDatasource($input: UpdateDatasourceInput) {
+  updateDatasource(input: $input) {
+    name
+    namespace
+    displayName
+    endpoint {
+      url
+      authSecret {
+        kind
+        Name
+      }
+      insecure
+    }
+    oss {
+      bucket
+    }
+  }
+}
+
+# delete
+mutation deleteDatasource($input: DeleteDatasourceInput!) {
+  deleteDatasource(input: $input)
+}
