@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -41,8 +42,9 @@ var (
 	host = flag.String("host", "", "bind to the host, default is 0.0.0.0")
 	port = flag.Int("port", 8081, "service listening port")
 
-	enablePlayground = flag.Bool("enable-playground", false, "enable the graphql playground")
-	enableOIDC       = flag.Bool("enable-oidc", false, "enable oidc authorization")
+	enablePlayground         = flag.Bool("enable-playground", false, "enable the graphql playground")
+	enableOIDC               = flag.Bool("enable-oidc", false, "enable oidc authorization")
+	playgroundEndpointPrefix = flag.String("playground-endpoint-prefix", "", "this parameter should also be configured when the service is forwarded via ingress and a path prefix is configured to avoid not finding the service, such as /apis")
 
 	// Flags fro oidc client
 	issuerURL    = flag.String("issuer-url", "", "oidc issuer url(required when enable odic)")
@@ -70,7 +72,13 @@ func main() {
 	})
 
 	if *enablePlayground {
-		http.Handle("/", playground.Handler("Arcadia-Graphql-Server", "/bff"))
+		endpoint := "/bff"
+		if *playgroundEndpointPrefix != "" {
+			if prefix := strings.TrimPrefix(strings.TrimSuffix(*playgroundEndpointPrefix, "/"), "/"); prefix != "" {
+				endpoint = fmt.Sprintf("/%s%s", prefix, endpoint)
+			}
+		}
+		http.Handle("/", playground.Handler("Arcadia-Graphql-Server", endpoint))
 	}
 
 	if *enableOIDC {
