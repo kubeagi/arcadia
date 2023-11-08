@@ -65,3 +65,17 @@ minio:
       # set objectlocking for
       # bucket [true|false] NOTE: versioning is enabled by default if you use locking
       objectlocking: false
+
+portal:
+  enabled: false
+  ingress:
+    enabled: false
+    hosts:
+      - host: localhost
+  enableplayground: false
+  oidc:
+    enableoidc: false
+    clientID: bff-client
+    issuerURL: https://portal.172.22.96.167.nip.io/oidc
+    clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
+    masterURL: https://k8s.172.22.96.167.nip.io
