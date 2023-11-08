@@ -1,9 +1,6 @@
 # Default values for llm-worker.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-
-replicaCount: 1
-
 image:
   repository: kubebb/arcadia-llm-worker
   pullPolicy: IfNotPresent
@@ -15,12 +12,14 @@ image:
     - name: FASTCHAT_WORKER_MODEL_PATH
       value: "chatglm3-6b"
     - name: FASTCCHAT_WORKER_ADDRESS
-      value: "http://fastchat-model-worker:21002"
+      value: "http://fastchat-model-worker.arcadia.svc.cluster.local:21002"
     - name: FASTCCHAT_CONTROLLER_ADDRESS
-      value: "http://fastchat-controller:21001"
+      value: "http://arcadia-fastchat.svc.cluster.local:21001"
 
 init:
-  Repository: kubebb/minio-mc:RELEASE.2023-01-28T20-29-38Z
+  image: kubebb/minio-mc
+  pullPolicy: IfNotPresent
+  tag: "RELEASE.2023-01-28T20-29-38Z"
   env:
     - name: MINIO_ENDPOINT
       value: "https://arcadia-minio-api.172.22.96.167.nip.io/"
