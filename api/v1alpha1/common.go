@@ -16,6 +16,10 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	"github.com/kubeagi/arcadia/pkg/utils"
+)
+
 const (
 	// Finalizer is the key of the finalizer
 	Finalizer = Group + "/finalizer"
@@ -67,6 +71,13 @@ func (in *TypedObjectReference) WithNameSpace(namespace string) {
 	in.Namespace = &namespace
 }
 
+func (in *TypedObjectReference) GetNamespace() string {
+	if in.Namespace == nil {
+		return utils.GetSelfNamespace()
+	}
+	return *in.Namespace
+}
+
 // Endpoint represents a reachable API endpoint.
 type Endpoint struct {
 	// URL chart repository address
@@ -79,4 +90,15 @@ type Endpoint struct {
 
 	// Insecure if the endpoint needs a secure connection
 	Insecure bool `json:"insecure,omitempty"`
+}
+
+type CommonSpec struct {
+	// Creator defines datasource creator (AUTO-FILLED by webhook)
+	Creator string `json:"creator,omitempty"`
+
+	// DisplayName defines datasource display name
+	DisplayName string `json:"displayName,omitempty"`
+
+	// Description defines datasource description
+	Description string `json:"description,omitempty"`
 }

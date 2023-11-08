@@ -23,12 +23,12 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -37,7 +37,6 @@ import (
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 // ModelReconciler reconciles a Model object
@@ -62,33 +61,46 @@ type ModelReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
 	logger := log.FromContext(ctx)
 	logger.Info("Starting model reconcile")
 
 	instance := &arcadiav1alpha1.Model{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
-		if errors.IsNotFound(err) {
-			// model has been deleted.
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
+		// There's no need to requeue if the resource no longer exists.
+		// Otherwise, we'll be requeued implicitly because we return an error.
+		logger.V(1).Info("Failed to get Model")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if instance.DeletionTimestamp != nil {
-		logger.Info("Delete model")
+	// Add a finalizer.Then, we can define some operations which should
+	// occur before the Model to be deleted.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
+	if newAdded := controllerutil.AddFinalizer(instance, arcadiav1alpha1.Finalizer); newAdded {
+		logger.Info("Try to add Finalizer for Model")
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update Model to add finalizer, will try again later")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Adding Finalizer for Model done")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Check if the Model instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if instance.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(instance, arcadiav1alpha1.Finalizer) {
+		logger.Info("Performing Finalizer Operations for Model before delete CR")
 		// remove all model files from storage service
 		if err := r.RemoveModel(ctx, logger, instance); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to remove model: %w", err)
 		}
-		// remove the finalizer to complete the delete action
-		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
-		err := r.Client.Update(ctx, instance)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to update model finializer: %w", err)
+		logger.Info("Removing Finalizer for Model after successfully performing the operations")
+		controllerutil.RemoveFinalizer(instance, arcadiav1alpha1.Finalizer)
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to remove finalizer for Model")
+			return ctrl.Result{}, err
 		}
-		return reconcile.Result{}, nil
+		logger.Info("Remove Model done")
+		return ctrl.Result{}, nil
 	}
 
 	// initialize labels
@@ -102,10 +114,10 @@ func (r *ModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if err := r.CheckModel(ctx, logger, instance); err != nil {
 		// Update conditioned status
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: waitMedium}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: waitLonger}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -121,17 +133,8 @@ func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) (bool, error) {
+func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) (update bool, err error) {
 	instanceDeepCopy := instance.DeepCopy()
-	l := len(instanceDeepCopy.Finalizers)
-
-	var update bool
-
-	instanceDeepCopy.Finalizers = utils.AddString(instanceDeepCopy.Finalizers, arcadiav1alpha1.Finalizer)
-	if l != len(instanceDeepCopy.Finalizers) {
-		logger.V(1).Info("Add Finalizer for model", "Finalizer", arcadiav1alpha1.Finalizer)
-		update = true
-	}
 
 	// Initialize Labels
 	if instanceDeepCopy.Labels == nil {

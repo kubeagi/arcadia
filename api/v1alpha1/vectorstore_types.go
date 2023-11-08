@@ -17,25 +17,27 @@ limitations under the License.
 package v1alpha1
 
 import (
+	chromago "github.com/amikos-tech/chroma-go"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// DatasetSpec defines the desired state of Dataset
-type DatasetSpec struct {
+// VectorStoreSpec defines the desired state of VectorStore
+type VectorStoreSpec struct {
 	CommonSpec `json:",inline"`
 
-	// ContentType defines dataset
-	ContentType string `json:"contentType"`
+	// Enpoint defines connection info
+	Enpoint *Endpoint `json:"endpoint,omitempty"`
 
-	// bestCase defines the best case to use this dataset
-	BestCase string `json:"bestCase,omitempty"`
+	Chroma *Chroma `json:"chroma,omitempty"`
 }
 
-// DatasetStatus defines the observed state of Dataset
-type DatasetStatus struct {
+// Chroma defines the configuration of Chroma
+type Chroma struct {
+	DistanceFunction chromago.DistanceFunction `json:"distanceFunction,omitempty"`
+}
+
+// VectorStoreStatus defines the observed state of VectorStore
+type VectorStoreStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
 }
@@ -43,26 +45,25 @@ type DatasetStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
-//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.spec.contentType`
 
-// Dataset is the Schema for the datasets API
-type Dataset struct {
+// VectorStore is the Schema for the vectorstores API
+type VectorStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DatasetSpec   `json:"spec,omitempty"`
-	Status DatasetStatus `json:"status,omitempty"`
+	Spec   VectorStoreSpec   `json:"spec,omitempty"`
+	Status VectorStoreStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// DatasetList contains a list of Dataset
-type DatasetList struct {
+// VectorStoreList contains a list of VectorStore
+type VectorStoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Dataset `json:"items"`
+	Items           []VectorStore `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Dataset{}, &DatasetList{})
+	SchemeBuilder.Register(&VectorStore{}, &VectorStoreList{})
 }

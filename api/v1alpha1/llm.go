@@ -40,7 +40,7 @@ func (llmStatus LLMStatus) LLMReady() (string, bool) {
 	if len(llmStatus.Conditions) == 0 {
 		return "No conditions yet", false
 	}
-	if llmStatus.Conditions[0].Type != TypeReady || llmStatus.Conditions[0].Status != corev1.ConditionTrue {
+	if !llmStatus.IsReady() {
 		return "Bad condition", false
 	}
 	return "", true

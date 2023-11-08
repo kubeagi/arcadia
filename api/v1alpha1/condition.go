@@ -207,3 +207,7 @@ func (s *ConditionedStatus) Equal(other *ConditionedStatus) bool {
 
 	return true
 }
+
+func (s *ConditionedStatus) IsReady() bool {
+	return s.GetCondition(TypeReady).Status == corev1.ConditionTrue
+}

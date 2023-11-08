@@ -19,7 +19,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -27,20 +26,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 const (
 	EnvConfigKey          = "DEFAULT_CONFIG"
 	EnvConfigDefaultValue = "arcadia-config"
-	EnvNamespaceKey       = "POD_NAMESPACE"
-
-	InClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 var (
-	ErrNoConfigEnv    = fmt.Errorf("env:%s is not found", EnvConfigKey)
-	ErrNoConfig       = fmt.Errorf("config in configmap is empty")
-	ErrNoNamespaceEnv = fmt.Errorf("not in cluster and env:%s is not found", EnvNamespaceKey)
+	ErrNoConfigEnv = fmt.Errorf("env:%s is not found", EnvConfigKey)
+	ErrNoConfig    = fmt.Errorf("config in configmap is empty")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -53,10 +49,7 @@ func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1
 	if config.SystemDatasource.Namespace != nil {
 		namespace = *config.SystemDatasource.Namespace
 	} else {
-		namespace, err = GetSelfNamespace()
-		if err != nil {
-			return nil, err
-		}
+		namespace = utils.GetSelfNamespace()
 	}
 	source := &arcadiav1alpha1.Datasource{}
 	if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
@@ -70,10 +63,7 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
-	cmNamespace, err := GetSelfNamespace()
-	if err != nil {
-		return nil, err
-	}
+	cmNamespace := utils.GetSelfNamespace()
 	cm := &corev1.ConfigMap{}
 	if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
 		return nil, err
@@ -86,25 +76,4 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 		return nil, err
 	}
 	return config, nil
-}
-
-func GetSelfNamespace() (string, error) {
-	// Check whether the namespace file exists.
-	// If not, we are not running in cluster so can't guess the namespace.
-	if _, err := os.Stat(InClusterNamespacePath); os.IsNotExist(err) {
-		operatorNamespace := os.Getenv(EnvNamespaceKey)
-		if operatorNamespace == "" {
-			return "", ErrNoNamespaceEnv
-		}
-		return operatorNamespace, nil
-	} else if err != nil {
-		return "", fmt.Errorf("error checking namespace file: %w", err)
-	}
-
-	// Load the namespace file and return its content
-	namespace, err := os.ReadFile(InClusterNamespacePath)
-	if err != nil {
-		return "", fmt.Errorf("error reading namespace file: %w", err)
-	}
-	return string(namespace), nil
 }
