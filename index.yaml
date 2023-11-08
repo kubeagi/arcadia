@@ -459,6 +459,25 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/jupyterlab-0.1.0/jupyterlab-0.1.0.tgz
     version: 0.1.0
+  llm-worker:
+  - apiVersion: v2
+    appVersion: 0.2.32
+    created: "2023-11-08T09:12:41.638892111Z"
+    description: A Helm chart for llm-worker
+    digest: d0ecf8b2123f286246e48de090b3ff0602c5847d062dcf6335e60ee48b6f001e
+    keywords:
+    - kubeagi
+    - LLMOps
+    maintainers:
+    - name: lanture1064
+      url: https://github.com/lanture1064
+    name: llm-worker
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/llm-worker-0.0.1/llm-worker-0.0.1.tgz
+    version: 0.0.1
   llms:
   - apiVersion: v2
     appVersion: 0.2.18
@@ -483,4 +502,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-11-08T09:09:37.704889977Z"
+generated: "2023-11-08T09:12:41.638947012Z"
