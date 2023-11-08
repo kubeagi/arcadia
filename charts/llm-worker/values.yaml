@@ -1,0 +1,74 @@
+# Default values for llm-worker.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: kubebb/arcadia-llm-worker
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v0.0.1"
+  env:
+    - name: FASTCHAT_WORKER_MODEL_NAMES
+      value: "chatglm3-6b"
+    - name: FASTCHAT_WORKER_MODEL_PATH
+      value: "chatglm3-6b"
+    - name: FASTCCHAT_WORKER_ADDRESS
+      value: "http://fastchat-model-worker.arcadia.svc.cluster.local:21002"
+    - name: FASTCCHAT_CONTROLLER_ADDRESS
+      value: "http://arcadia-fastchat.svc.cluster.local:21001"
+
+init:
+  image: kubebb/minio-mc
+  pullPolicy: IfNotPresent
+  tag: "RELEASE.2023-01-28T20-29-38Z"
+  env:
+    - name: MINIO_ENDPOINT
+      value: "https://arcadia-minio-api.172.22.96.167.nip.io/"
+    - name: MINIO_ACCESS_KEY
+      value: "ydKiRfEhz2UTvrn8"
+    - name: MINIO_SECRET_KEY
+      value: "XoJ2X5N2BOYWXgP3BczEGiG3QG5VKOKt"
+
+persistentVolume:
+  enabled: true
+  storageClass: ""
+  name: model-cache
+  size: 30Gi
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+service:
+  type: ClusterIP
+  port: 21002
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: worker.fastchat.arcadia.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
