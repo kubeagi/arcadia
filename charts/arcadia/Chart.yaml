@@ -2,7 +2,7 @@ apiVersion: v2
 name: arcadia
 description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
 type: application
-version: 0.1.16
+version: 0.1.17
 appVersion: "0.0.1"
 
 keywords:
@@ -20,6 +20,6 @@ maintainers:
 
 dependencies:
   - name: minio
-    version: 5.0.10
+    version: 5.0.11
   - name: fastchat
     version: 0.0.2
