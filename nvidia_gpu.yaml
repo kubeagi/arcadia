@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gpu-operator
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Repository
+metadata:
+  name: nvidia
+  namespace: gpu-operator
+spec:
+  url: https://helm.ngc.nvidia.com/nvidia
+  pullStategy:
+    intervalSeconds: 120
+    retry: 5
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: ComponentPlan
+metadata:
+  name: gpu-operator
+  namespace: gpu-operator
+spec:
+  approved: true
+  name: gpu-operator
+  version: "v23.9.0"
+  component:
+    name: nvidia.gpu-operator
+    namespace: gpu-operator
+  override:
+    set:
+      - driver.enabled=false

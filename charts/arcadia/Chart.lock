@@ -1,9 +1,9 @@
 dependencies:
 - name: minio
   repository: ""
-  version: 5.0.11
+  version: 5.0.12
 - name: fastchat
   repository: ""
   version: 0.0.2
-digest: sha256:56d624e532bea8e579719f8d8991f615aac92065a4df82ac101efa3188b7a354
-generated: "2023-11-07T07:00:08.034324976Z"
+digest: sha256:4400bdaeadaa9d752a4add58c2f3b5d11673e25e775e6ce06b344ef5c841cf3c
+generated: "2023-11-09T01:40:50.926435286Z"

@@ -214,7 +214,7 @@ consoleService:
   nodePort: 32001
 
 consoleIngress:
-  enabled: true
+  enabled: false
   ingressClassName: "portal-ingress"
   labels:
     {}
