@@ -1,0 +1,7 @@
+# python
+__pycache__
+.ipynb_checkpoints
+
+mock_data
+
+log
