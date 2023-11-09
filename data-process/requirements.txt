@@ -1,0 +1,7 @@
+pandas==2.1.2
+numpy==1.26.1
+sanic==23.6.0
+sanic_cors==2.2.0
+aiohttp==3.8.6
+ulid==1.1
+minio==7.1.17
