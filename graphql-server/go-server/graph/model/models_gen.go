@@ -2,6 +2,10 @@
 
 package model
 
+import (
+	"time"
+)
+
 type CreateDatasourceInput struct {
 	Name          string                 `json:"name"`
 	Namespace     string                 `json:"namespace"`
@@ -14,16 +18,17 @@ type CreateDatasourceInput struct {
 }
 
 type Datasource struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	Creator     *string                `json:"creator,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Endpoint    *Endpoint              `json:"endpoint,omitempty"`
-	Oss         *Oss                   `json:"oss,omitempty"`
-	Status      *bool                  `json:"status,omitempty"`
-	FileCount   *int                   `json:"fileCount,omitempty"`
+	Name            string                 `json:"name"`
+	Namespace       string                 `json:"namespace"`
+	Labels          map[string]interface{} `json:"labels,omitempty"`
+	Annotations     map[string]interface{} `json:"annotations,omitempty"`
+	Creator         *string                `json:"creator,omitempty"`
+	DisplayName     string                 `json:"displayName"`
+	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
+	Oss             *Oss                   `json:"oss,omitempty"`
+	Status          *bool                  `json:"status,omitempty"`
+	FileCount       *int                   `json:"fileCount,omitempty"`
+	UpdateTimestamp time.Time              `json:"updateTimestamp"`
 }
 
 type DeleteDatasourceInput struct {

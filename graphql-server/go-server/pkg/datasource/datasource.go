@@ -18,6 +18,7 @@ package datasource
 
 import (
 	"context"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -39,11 +40,20 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		annotations[k] = v
 	}
 	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
-	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authsecret", "name")
+	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	bucket, _, _ := unstructured.NestedString(obj.Object, "spec", "oss", "bucket")
 	insecure, _, _ := unstructured.NestedBool(obj.Object, "spec", "endpoint", "insecure")
-	spec := model.Endpoint{
+	updateTime := metav1.Now().Time
+	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	if found && len(conditions) > 0 {
+		condition, ok := conditions[0].(map[string]interface{})
+		if ok {
+			timeStr, _ := condition["lastTransitionTime"].(string)
+			updateTime, _ = time.Parse(time.RFC3339, timeStr)
+		}
+	}
+	endpoint := model.Endpoint{
 		URL: &url,
 		AuthSecret: &model.TypedObjectReference{
 			Kind: "Secret",
@@ -55,13 +65,14 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		Bucket: &bucket,
 	}
 	md := model.Datasource{
-		Name:        obj.GetName(),
-		Namespace:   obj.GetNamespace(),
-		Labels:      labels,
-		Annotations: annotations,
-		DisplayName: displayName,
-		Endpoint:    &spec,
-		Oss:         &oss,
+		Name:            obj.GetName(),
+		Namespace:       obj.GetNamespace(),
+		Labels:          labels,
+		Annotations:     annotations,
+		DisplayName:     displayName,
+		Endpoint:        &endpoint,
+		Oss:             &oss,
+		UpdateTimestamp: updateTime,
 	}
 	return &md
 }

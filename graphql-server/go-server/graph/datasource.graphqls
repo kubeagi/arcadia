@@ -31,7 +31,7 @@ type Datasource {
     # 数据源连接状态
     status: Boolean
     fileCount: Int
-    #updateTimestamp: Time!
+    updateTimestamp: Time!
 }
 
 input TypedObjectReferenceInput {

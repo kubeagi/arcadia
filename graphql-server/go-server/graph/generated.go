@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -48,16 +49,17 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Datasource struct {
-		Annotations func(childComplexity int) int
-		Creator     func(childComplexity int) int
-		DisplayName func(childComplexity int) int
-		Endpoint    func(childComplexity int) int
-		FileCount   func(childComplexity int) int
-		Labels      func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Namespace   func(childComplexity int) int
-		Oss         func(childComplexity int) int
-		Status      func(childComplexity int) int
+		Annotations     func(childComplexity int) int
+		Creator         func(childComplexity int) int
+		DisplayName     func(childComplexity int) int
+		Endpoint        func(childComplexity int) int
+		FileCount       func(childComplexity int) int
+		Labels          func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Namespace       func(childComplexity int) int
+		Oss             func(childComplexity int) int
+		Status          func(childComplexity int) int
+		UpdateTimestamp func(childComplexity int) int
 	}
 
 	Endpoint struct {
@@ -186,6 +188,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Datasource.Status(childComplexity), true
+
+	case "Datasource.updateTimestamp":
+		if e.complexity.Datasource.UpdateTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Datasource.UpdateTimestamp(childComplexity), true
 
 	case "Endpoint.authSecret":
 		if e.complexity.Endpoint.AuthSecret == nil {
@@ -975,6 +984,50 @@ func (ec *executionContext) fieldContext_Datasource_fileCount(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_updateTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_updateTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Endpoint_url(ctx context.Context, field graphql.CollectedField, obj *model.Endpoint) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Endpoint_url(ctx, field)
 	if err != nil {
@@ -1167,6 +1220,8 @@ func (ec *executionContext) fieldContext_Mutation_createDatasource(ctx context.C
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -1244,6 +1299,8 @@ func (ec *executionContext) fieldContext_Mutation_updateDatasource(ctx context.C
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -1452,6 +1509,8 @@ func (ec *executionContext) fieldContext_Query_listDatasources(ctx context.Conte
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -4036,6 +4095,11 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Datasource_status(ctx, field, obj)
 		case "fileCount":
 			out.Values[i] = ec._Datasource_fileCount(ctx, field, obj)
+		case "updateTimestamp":
+			out.Values[i] = ec._Datasource_updateTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4681,6 +4745,21 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
