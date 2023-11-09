@@ -99,6 +99,32 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - applications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - applications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - applications/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - datasets
   verbs:
   - create
@@ -415,6 +441,58 @@ rules:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - workers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - llmchains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - llmchains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - llmchains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - prompt.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - prompts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - prompt.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - prompts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - prompt.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - prompts/status
   verbs:
   - get
   - patch

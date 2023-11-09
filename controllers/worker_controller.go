@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/config"
 	arcadiaworker "github.com/kubeagi/arcadia/pkg/worker"
 )

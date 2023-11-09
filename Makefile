@@ -268,6 +268,7 @@ gql-sdk-generator: run-graphql-server
 config_rule_line_num = $(shell grep -n "rules:" config/rbac/role.yaml | cut -d: -f1)
 chart_rule_line_num = $(shell grep -n "rules:" deploy/charts/arcadia/templates/rbac.yaml | cut -d: -f1)
 prepare-push: manifests generate fmt vet
+	@go mod tidy
 	@echo "install golangci-lint"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "run golangci-lint with auto-fix"

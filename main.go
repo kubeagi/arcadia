@@ -33,8 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/controllers"
+	chaincontrollers "github.com/kubeagi/arcadia/controllers/app-node/chain"
+	promptcontrollers "github.com/kubeagi/arcadia/controllers/app-node/prompt"
 	"github.com/kubeagi/arcadia/pkg/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -52,6 +56,8 @@ func init() {
 
 	utilruntime.Must(arcadiav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(apichain.AddToScheme(scheme))
+	utilruntime.Must(apiprompt.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -211,6 +217,27 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+	if err = (&controllers.ApplicationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Application")
+		os.Exit(1)
+	}
+	if err = (&chaincontrollers.LLMChainReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LLMChain")
+		os.Exit(1)
+	}
+	if err = (&promptcontrollers.PromptReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Prompt")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

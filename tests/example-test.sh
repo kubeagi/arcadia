@@ -238,7 +238,7 @@ waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample"
 info "7.5 check this vectorstore has data"
 kubectl port-forward -n arcadia svc/chroma-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
-info "port-forward chroma in pid: $minio_pid"
+info "port-forward chroma in pid: $chroma_pid"
 sleep 3
 collection_test_id=$(curl http://127.0.0.1:8000/api/v1/collections/arcadia_knowledgebase-sample | jq -r .id)
 collection_test_count=$(curl http://127.0.0.1:8000/api/v1/collections/${collection_test_id}/count)
@@ -248,5 +248,15 @@ else
 	echo "$collection_test_count is not a number"
 	exit 1
 fi
+
+info "8 check app work fine"
+helm upgrade -narcadia arcadia deploy/charts/arcadia --reuse-values --wait --timeout $HelmTimeout --set portal.enabled=true
+kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
+kubectl port-forward svc/arcadia-portal-server -n arcadia 8081:8081 >/dev/null 2>&1 &
+portal_pid=$!
+info "port-forward portal in pid: $portal_pid"
+sleep 3
+curl -XPOST http://127.0.0.1:8081/chat --data '{"query":"hi, how are you?","response_mode":"blocking","conversion_id":"","app_name":"base-chat-english-teacher", "app_namespace":"arcadia"}'
 
 info "all finished! ✅"

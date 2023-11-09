@@ -28,7 +28,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
