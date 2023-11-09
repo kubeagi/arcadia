@@ -237,7 +237,7 @@ catalog-push: ## Push a catalog image.
 .PHONY: kind
 kind: ## Install a kind cluster.
 	kind create cluster --config=tests/kind-config.yaml
-	
+
 # Uninstall a kind cluster
 .PHONY: unkind
 unkind: ## Uninstall a kind cluster.

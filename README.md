@@ -29,24 +29,26 @@ Our design and development in Arcadia design follows operator pattern which exte
 
 ![Arch](./assets/kubeagi.drawio.png)
 
-## Install
+## Quick Start
 
-> Pre-requisites
-> - [kind]( https://kind.sigs.k8s.io/docs/user/quick-start/#installation) (Optional if you already have a k8s cluster)
-> - [helm](https://helm.sh/docs/intro/install/)
+### Pre-requisites
+
+1. [helm](https://helm.sh/docs/intro/install/)
+
+2. [Kubernetes](https://kubernetes.io/)
+
+If you don't have a kubernetes cluster, you can schedule a [kind cluster](https://kind.sigs.k8s.io/). Depends on your choice on CPU or GPU when running LLM worker,you can choose to:
+
+- [Schedule a kind cluster without GPU enabled](./doc/kind.md)
+- [Schedule a kind cluster with GPU enabled](./doc/kind_gpu.md)
+
+### Install Arcadia
 
 ```shell
   helm repo add arcadia https://kubeagi.github.io/arcadia
   helm repo update
   helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
 ```
-
-> More conveniently,you can use [kubebb](https://github.com/kubebb) to install and upgrade arcadia automatically:
-  > Pre-requsities
-  > - [kubebb](https://kubebb.github.io/website/docs/quick-start/core_quickstart)
-> ```shell
-> kubectl apply -f ./kubeagi.yaml
-> ```
 
 ## CLI
 

@@ -10,6 +10,10 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
+    # Reference: https://github.com/kubernetes-sigs/kind/pull/3257#issuecomment-1607287275
+    extraMounts:
+      - hostPath: /dev/null
+        containerPath: /var/run/nvidia-container-devices/all
     extraPortMappings:
       - containerPort: 80
         hostPort: 80

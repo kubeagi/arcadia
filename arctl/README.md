@@ -4,6 +4,10 @@ arctl(arcadia command line tool) provides comprehensive tools to help you build 
 
 ## Quick Install
 
+### Pre-requisites
+
+- Go1.20+
+
 ```shell
 go install github.com/kubeagi/arcadia/arctl@latest
 ```
