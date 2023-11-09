@@ -25,11 +25,7 @@ import (
 
 // WorkerSpec defines the desired state of Worker
 type WorkerSpec struct {
-	// Creator defines dataset creator(AUTO-FILLED by webhook)
-	Creator string `json:"creator,omitempty"`
-
-	// DisplayName defines dataset display name
-	DiplayName string `json:"displayName"`
+	CommonSpec `json:",inline"`
 }
 
 // WorkerStatus defines the observed state of Worker

@@ -179,7 +179,7 @@ kind load docker-image controller:example-e2e --name=$KindName
 
 info "3. install arcadia"
 kubectl create namespace arcadia
-helm install -narcadia arcadia charts/arcadia --set deployment.image=controller:example-e2e
+helm install -narcadia arcadia charts/arcadia --set deployment.image=controller:example-e2e --wait --timeout $HelmTimeout
 
 info "4. check system datasource arcadia-minio(system datasource)"
 waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"
@@ -190,6 +190,55 @@ waitCRDStatusReady "Datasource" "arcadia" "arcadia-local"
 datasourceType=$(kubectl get datasource -n arcadia arcadia-local -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
 if [[ $datasourceType != "local" ]]; then
 	error "Datasource should local but got $datasourceType"
+	exit 1
+fi
+
+info "6. create and verify vectorstore"
+info "6.1. helm install chroma"
+helm repo add chroma https://amikos-tech.github.io/chromadb-chart/
+helm repo update chroma
+helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout
+info "6.2. verify chroma vectorstore status"
+kubectl apply -f config/samples/arcadia_v1alpha1_vectorstore.yaml
+waitCRDStatusReady "VectorStore" "arcadia" "chroma-sample"
+
+info "7. create and verify knowledgebase"
+info "7.1. upload some test file to system datasource"
+bucket=$(kubectl get datasource -n arcadia arcadia-minio -o json | jq -r .spec.oss.bucket)
+s3_key=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootUser" | base64 --decode)
+s3_secret=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootPassword" | base64 --decode)
+resource="/${bucket}/example-test/knowledgebase-1.txt"
+content_type="application/octet-stream"
+date=$(date -R)
+_signature="PUT\n\n${content_type}\n${date}\n${resource}"
+signature=$(echo -en ${_signature} | openssl sha1 -hmac ${s3_secret} -binary | base64)
+kubectl port-forward -n arcadia svc/arcadia-minio 9000:9000 >/dev/null 2>&1 &
+minio_pid=$!
+info "port-forward minio in pid: $minio_pid"
+sleep 3
+curl -X PUT -T "tests/knowledgebase-1.txt" \
+	-H "Host: 127.0.0.1:9000" \
+	-H "Date: ${date}" \
+	-H "Content-Type: ${content_type}" \
+	-H "Authorization: AWS ${s3_key}:${signature}" \
+	http://127.0.0.1:9000${resource}
+info "7.2. create embedder and wait it ready"
+kubectl apply -f config/samples/arcadia_v1alpha1_embedders.yaml
+waitCRDStatusReady "Embedders" "arcadia" "zhipuai-embedders-sample"
+info "7.3. create knowledgebase and wait it ready"
+kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase.yaml
+waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample"
+info "7.4. check this vectorstore has data"
+kubectl port-forward -n arcadia svc/chroma-chromadb 8000:8000 >/dev/null 2>&1 &
+chroma_pid=$!
+info "port-forward chroma in pid: $minio_pid"
+sleep 3
+collection_test_id=$(curl http://127.0.0.1:8000/api/v1/collections/arcadia_knowledgebase-sample | jq -r .id)
+collection_test_count=$(curl http://127.0.0.1:8000/api/v1/collections/${collection_test_id}/count)
+if [[ $collection_test_count =~ ^[0-9]+$ ]]; then
+	info "collection test count: $collection_test_count"
+else
+	echo "$collection_test_count is not a number"
 	exit 1
 fi
 

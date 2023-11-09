@@ -22,13 +22,13 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -67,11 +67,38 @@ func (r *PromptReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Prompt engineering
 	prompt := &arcadiav1alpha1.Prompt{}
 	if err := r.Get(ctx, req.NamespacedName, prompt); err != nil {
-		if errors.IsNotFound(err) {
-			// Prompt has been deleted.
-			return reconcile.Result{}, nil
+		// There's no need to requeue if the resource no longer exists.
+		// Otherwise, we'll be requeued implicitly because we return an error.
+		logger.V(1).Info("Failed to get Prompt")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Add a finalizer.Then, we can define some operations which should
+	// occur before the Prompt to be deleted.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
+	if newAdded := controllerutil.AddFinalizer(prompt, arcadiav1alpha1.Finalizer); newAdded {
+		logger.Info("Try to add Finalizer for Prompt")
+		if err := r.Update(ctx, prompt); err != nil {
+			logger.Error(err, "Failed to update Prompt to add finalizer, will try again later")
+			return ctrl.Result{}, err
 		}
-		return reconcile.Result{}, err
+		logger.Info("Adding Finalizer for Prompt done")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Check if the Prompt instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if prompt.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(prompt, arcadiav1alpha1.Finalizer) {
+		logger.Info("Performing Finalizer Operations for Prompt before delete CR")
+		// TODO perform the finalizer operations here, for example: remove data?
+		logger.Info("Removing Finalizer for Prompt after successfully performing the operations")
+		controllerutil.RemoveFinalizer(prompt, arcadiav1alpha1.Finalizer)
+		if err := r.Update(ctx, prompt); err != nil {
+			logger.Error(err, "Failed to remove finalizer for Prompt")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Remove Prompt done")
+		return ctrl.Result{}, nil
 	}
 
 	err := r.CallLLM(ctx, logger, prompt)

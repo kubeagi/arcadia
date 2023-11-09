@@ -2,56 +2,88 @@
 
 package model
 
-import (
-	"time"
-)
-
-type Condition struct {
-	Type               string     `json:"type"`
-	Status             string     `json:"status"`
-	LastTransitionTime time.Time  `json:"lastTransitionTime"`
-	LastSuccessfulTime *time.Time `json:"lastSuccessfulTime,omitempty"`
-	Reason             string     `json:"reason"`
-	Message            *string    `json:"message,omitempty"`
-}
-
-type CreateDatasource struct {
-	Name       string  `json:"name"`
-	Namespace  string  `json:"namespace"`
-	URL        *string `json:"url,omitempty"`
-	Authsecret *string `json:"authsecret,omitempty"`
-	Insecure   *bool   `json:"insecure,omitempty"`
+type CreateDatasourceInput struct {
+	Name          string                 `json:"name"`
+	Namespace     string                 `json:"namespace"`
+	Labels        map[string]interface{} `json:"labels,omitempty"`
+	Annotations   map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName   string                 `json:"displayName"`
+	Description   *string                `json:"description,omitempty"`
+	Endpointinput *EndpointInput         `json:"endpointinput,omitempty"`
+	Ossinput      *OssInput              `json:"ossinput,omitempty"`
 }
 
 type Datasource struct {
-	Kind              string                 `json:"kind"`
-	APIVersion        string                 `json:"apiVersion"`
-	Name              string                 `json:"name"`
-	Namespace         string                 `json:"namespace"`
-	UID               string                 `json:"uid"`
-	ResourceVersion   string                 `json:"resourceVersion"`
-	Generation        int                    `json:"generation"`
-	CreationTimestamp time.Time              `json:"creationTimestamp"`
-	DeletionTimestamp *time.Time             `json:"deletionTimestamp,omitempty"`
-	Labels            map[string]interface{} `json:"labels,omitempty"`
-	Annotations       map[string]interface{} `json:"annotations,omitempty"`
-	Finalizers        []string               `json:"finalizers,omitempty"`
-	Spec              *DatasourceSpec        `json:"spec,omitempty"`
-	Status            *DatasourceStatus      `json:"status,omitempty"`
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	Creator     *string                `json:"creator,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Endpoint    *Endpoint              `json:"endpoint,omitempty"`
+	Oss         *Oss                   `json:"oss,omitempty"`
+	Status      *bool                  `json:"status,omitempty"`
+	FileCount   *int                   `json:"fileCount,omitempty"`
 }
 
-type DatasourceSpec struct {
-	URL        *string `json:"url,omitempty"`
-	Authsecret *string `json:"authsecret,omitempty"`
-}
-
-type DatasourceStatus struct {
-	Conditions []*Condition `json:"conditions,omitempty"`
-}
-
-type QueryDatasource struct {
+type DeleteDatasourceInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     string  `json:"namespace"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
+type Endpoint struct {
+	URL        *string               `json:"url,omitempty"`
+	AuthSecret *TypedObjectReference `json:"authSecret,omitempty"`
+	Insecure   *bool                 `json:"insecure,omitempty"`
+}
+
+type EndpointInput struct {
+	URL        *string                    `json:"url,omitempty"`
+	AuthSecret *TypedObjectReferenceInput `json:"authSecret,omitempty"`
+	Insecure   *bool                      `json:"insecure,omitempty"`
+}
+
+type ListDatasourceInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	From          *int    `json:"from,omitempty"`
+	Size          *int    `json:"size,omitempty"`
+	Keyword       *string `json:"keyword,omitempty"`
+}
+
+type Oss struct {
+	Bucket *string `json:"bucket,omitempty"`
+	Object *string `json:"Object,omitempty"`
+}
+
+type OssInput struct {
+	Bucket *string `json:"bucket,omitempty"`
+	Object *string `json:"Object,omitempty"`
+}
+
+type TypedObjectReference struct {
+	APIGroup  *string `json:"apiGroup,omitempty"`
+	Kind      string  `json:"kind"`
+	Name      string  `json:"Name"`
+	Namespace *string `json:"Namespace,omitempty"`
+}
+
+type TypedObjectReferenceInput struct {
+	APIGroup  *string `json:"apiGroup,omitempty"`
+	Kind      string  `json:"kind"`
+	Name      string  `json:"Name"`
+	Namespace *string `json:"Namespace,omitempty"`
+}
+
+type UpdateDatasourceInput struct {
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
 }

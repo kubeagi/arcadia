@@ -25,11 +25,7 @@ import (
 
 // DatasetSpec defines the desired state of Dataset
 type DatasetSpec struct {
-	// Creator defines dataset creator(AUTO-FILLED by webhook)
-	Creator string `json:"creator,omitempty"`
-
-	// DisplayName defines dataset display name
-	DiplayName string `json:"displayName"`
+	CommonSpec `json:",inline"`
 
 	// ContentType defines dataset
 	ContentType string `json:"contentType"`

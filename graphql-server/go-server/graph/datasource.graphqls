@@ -1,60 +1,101 @@
 scalar Time
 scalar Map
-
-type Condition  {
-    type: String!
-    status: String!
-    lastTransitionTime: Time!
-    lastSuccessfulTime: Time
-    reason: String!
-    message: String
+scalar Void
+type TypedObjectReference {
+    apiGroup: String
+    kind: String!
+    Name: String!
+    Namespace: String
 }
 
-type DatasourceStatus {
-    conditions: [Condition!]
-}
-
-type DatasourceSpec {
+type Endpoint {
     url: String
-    authsecret: String
+    authSecret: TypedObjectReference
+    insecure: Boolean
+}
+
+type Oss {
+    bucket: String
+    Object: String
 }
 
 type Datasource {
-    kind: String!
-    apiVersion: String!
     name: String!
     namespace: String!
-    uid: String!
-    resourceVersion: String!
-    generation: Int!
-    creationTimestamp: Time!
-    deletionTimestamp: Time
     labels: Map
     annotations: Map
-    finalizers: [String!]
-    spec: DatasourceSpec
-    status: DatasourceStatus
+    creator: String
+    displayName: String!
+    endpoint: Endpoint
+    oss: Oss
+    # 数据源连接状态
+    status: Boolean
+    fileCount: Int
+    #updateTimestamp: Time!
 }
 
-input QueryDatasource {
-    # 有name直接根据name查询
+input TypedObjectReferenceInput {
+    apiGroup: String
+    kind: String!
+    Name: String!
+    Namespace: String
+}
+
+input EndpointInput {
+    url: String
+    authSecret: TypedObjectReferenceInput
+    insecure: Boolean
+}
+
+input OssInput {
+    bucket: String
+    Object: String
+}
+input CreateDatasourceInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+    endpointinput: EndpointInput
+    ossinput: OssInput
+}
+
+input UpdateDatasourceInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+}
+
+input DeleteDatasourceInput {
     name: String
     namespace: String!
     labelSelector: String
     fieldSelector: String
 }
-type Query {
-    ds(input: QueryDatasource!): [Datasource!]
-}
 
-input CreateDatasource {
-    name: String!
+input ListDatasourceInput {
+    name: String
     namespace: String!
-    url: String
-    authsecret: String
-    insecure: Boolean    
+    labelSelector: String
+    fieldSelector: String
+    from: Int
+    size: Int
+    # 搜索，name，displayname, description字段
+    keyword: String
 }
 
+# mutation
 type Mutation {
-    createDatasource(input: CreateDatasource!): Datasource!
+    createDatasource(input: CreateDatasourceInput!): Datasource!
+    updateDatasource(input: UpdateDatasourceInput): Datasource!
+    deleteDatasource(input: DeleteDatasourceInput): Void
+}
+# query
+type Query{
+    listDatasources(input: ListDatasourceInput): [Datasource!]
 }

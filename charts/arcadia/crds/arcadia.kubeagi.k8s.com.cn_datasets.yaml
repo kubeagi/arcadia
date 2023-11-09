@@ -49,14 +49,16 @@ spec:
                 description: ContentType defines dataset
                 type: string
               creator:
-                description: Creator defines dataset creator(AUTO-FILLED by webhook)
+                description: Creator defines datasource creator (AUTO-FILLED by webhook)
+                type: string
+              description:
+                description: Description defines datasource description
                 type: string
               displayName:
-                description: DisplayName defines dataset display name
+                description: DisplayName defines datasource display name
                 type: string
             required:
             - contentType
-            - displayName
             type: object
           status:
             description: DatasetStatus defines the observed state of Dataset

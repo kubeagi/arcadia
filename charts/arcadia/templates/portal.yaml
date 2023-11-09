@@ -1,0 +1,67 @@
+{{- if .Values.portal.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-portal
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-portal
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-portal
+    spec:
+      containers:
+        - name: server
+          image: {{ .Values.deployment.image }}
+          ports:
+            - containerPort: 8081       
+          command: 
+            - "./graphql-server"
+            - "--enable-playground={{ .Values.portal.enableplayground }}"
+          {{- if .Values.portal.oidc.enableoidc -}}
+            - "--enable-oidc={{ .Values.portal.oidc.enableoidc }}"
+            - "--client-id={{ .Values.portal.oidc.clientID }}"
+            - "--client-secret={{ .Values.portal.oidc.clientSecret }}"
+            - "--master-url={{ .Values.portal.oidc.masterURL }}"
+            - "--issuer-url={{ .Values.portal.oidc.issuerURL }}"
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-portal-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-portal
+  ports:
+    - name: api
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+---
+{{- if .Values.portal.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-portal-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+    - host: {{ .Values.portal.ingress.hosts.host}}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ .Release.Name }}-portal-server
+                port:
+                  number: 8081
+{{- end }}
+{{- end }}

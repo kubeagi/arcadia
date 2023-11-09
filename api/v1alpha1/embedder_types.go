@@ -27,11 +27,7 @@ import (
 
 // EmbedderSpec defines the desired state of Embedder
 type EmbedderSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Name of the Embedding service
-	DisplayName string `json:"displayName,omitempty"`
+	CommonSpec `json:",inline"`
 
 	// ServiceType indicates the source type of embedding service
 	ServiceType embeddings.EmbeddingType `json:"serviceType,omitempty"`
@@ -50,6 +46,7 @@ type EmbedderStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
 
 // Embedder is the Schema for the embeddings API
 type Embedder struct {

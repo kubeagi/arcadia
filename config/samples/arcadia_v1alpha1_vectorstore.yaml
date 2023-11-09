@@ -1,0 +1,12 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VectorStore
+metadata:
+  name: chroma-sample
+  namespace: arcadia
+spec:
+  displayName: "测试 Chroma VectorStore，无密码"
+  description: "测试 VectorStore"
+  endpoint:
+    url: http://chroma-chromadb.arcadia.svc:8000
+  chroma:
+    distanceFunction: cosine

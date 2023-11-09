@@ -1,0 +1,24 @@
+# permissions for end users to edit knowledgebases.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knowledgebase-editor-role
+rules:
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebases/status
+  verbs:
+  - get
