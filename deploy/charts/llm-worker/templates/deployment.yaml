@@ -5,7 +5,6 @@ metadata:
   labels:
     {{- include "llm-worker.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "llm-worker.selectorLabels" . | nindent 6 }}
@@ -20,10 +19,27 @@ spec:
     spec:
       initContainers:
         - name: get-model
-          image: {{ .Values.init.Repository }}
+          image: "{{ .Values.init.image }}:{{ .Values.init.tag | default .Chart.AppVersion }}"
           env:
+          # TODO: could be simplified
+          {{- if .Values.image.env }}
             {{- toYaml .Values.image.env | nindent 12 }}
-            {{- toYaml .Values.init.env | nindent 12}}
+          {{- else }}
+            - name: FASTCHAT_WORKER_MODEL_NAMES
+              value: "Baichuan2-7B-Chat"
+          {{- end }}
+          {{- if .Values.init.env }}
+            {{- toYaml .Values.init.env | nindent 12 }}
+          {{- else }}
+            - name: MINIO_MODEL_BUCKET_PATH
+              value: "oss/arcadia/model"
+            - name: MINIO_ENDPOINT
+              value: "http://10.96.241.70:9000"
+            - name: MINIO_ACCESS_KEY
+              value: "os4GDEmSZaJwweoj"
+            - name: MINIO_SECRET_KEY
+              value: "ROVfENZuyUtpRNOT4mtTQicA3CPASQ89"
+          {{- end }}
           command:
             # clone model repo to local
             - "/bin/sh"
@@ -32,7 +48,7 @@ spec:
               echo "Init object storage service..."
               mc alias set oss $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --insecure
               echo "Copy model files..."
-              mc --insecure cp -r oss/kubeagi/models/$FASTCHAT_WORKER_MODEL_NAMES /data/models
+              mc --insecure cp -r $MINIO_MODEL_BUCKET_PATH/$FASTCHAT_MODEL_NAME /data/models
               ls /data/models
           volumeMounts:
             - mountPath: /data/models
@@ -45,18 +61,38 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ with .Values.resources }}
           resources:
-            limits:
-              nvidia.com/gpu: "1" # request 1 GPU
+            {{ toYaml . | nindent 12 }}
+          {{ end }}
           env:
+          {{- if .Values.image.env }}
             {{- toYaml .Values.image.env | nindent 12 }}
+          {{- else }}
+            - name: FASTCHAT_MODEL_NAME
+              value: "baichuan2-7b"
+            - name: FASTCCHAT_WORKER_ADDRESS
+              {{- if .Values.ingress.enabled }}
+              {{- range .Values.ingress.hosts }}
+              value: "{{ .host }}:21002"
+              {{- end }}
+              {{- else }}
+              value: "{{ .Release.Service }}.{{ .Release.Namespace }}.svc.cluster.local:21002"
+              {{- end }}
+            - name: FASTCCHAT_CONTROLLER_ADDRESS
+              value: "http://arcadia-fastchat.{{ .Release.Namespace }}.svc.cluster.local:21001"
+          {{- end }}
+            - name: FASTCHAT_WORKER_NAME
+              value: {{ .Release.Name }}
+            - name: FASTCHAT_WORKER_NAMESPACE
+              value: {{ .Release.Namespace }}
           command:
             - "/bin/bash"
             - "-c"
             - |
               echo "Starting model worker..."
-              python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_WORKER_MODEL_NAMES \
-              --model-path /data/models/$FASTCHAT_WORKER_MODEL_PATH --worker-address $FASTCCHAT_WORKER_ADDRESS \
+              python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_MODEL_NAME-$FASTCHAT_WORKER_NAME-$FASTCHAT_WORKER_NAMESPACE \
+              --model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCCHAT_WORKER_ADDRESS \
               --controller-address $FASTCCHAT_CONTROLLER_ADDRESS \
               --host 0.0.0.0 --port 21002
           ports:

@@ -180,11 +180,22 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	}
 
 	// init runner
-	r, err := NewRunnerFastchat(c, w.DeepCopy())
-	if err != nil {
-		return nil, fmt.Errorf("failed to new a runner with %w", err)
+	switch w.Spec.Type {
+	case arcadiav1alpha1.WorkerTypeFastchatVLLM:
+		r, err := NewRunnerFastchatVLLM(c, w.DeepCopy())
+		if err != nil {
+			return nil, fmt.Errorf("failed to new a runner with %w", err)
+		}
+		worker.r = r
+	case arcadiav1alpha1.WorkerTypeFastchatNormal:
+		r, err := NewRunnerFastchat(c, w.DeepCopy())
+		if err != nil {
+			return nil, fmt.Errorf("failed to new a runner with %w", err)
+		}
+		worker.r = r
+	default:
+		return nil, fmt.Errorf("worker %s with type %s not supported in worker", w.Name, w.Spec.Type)
 	}
-	worker.r = r
 
 	return worker, nil
 }
