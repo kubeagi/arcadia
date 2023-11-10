@@ -20,11 +20,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
-
-	"github.com/spf13/cobra"
 )
 
 var (

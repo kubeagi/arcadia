@@ -19,9 +19,10 @@ package main
 import (
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubeagi/arcadia/arctl/printer"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -63,5 +64,4 @@ func DatasourceListCmd() *cobra.Command {
 	}
 
 	return cmd
-
 }
