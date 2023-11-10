@@ -56,7 +56,10 @@ func AuthInterceptor(oidcVerifier *oidc.IDTokenVerifier, hf http.HandlerFunc) ht
 	}
 }
 
-func ForOIDCToken(ctx context.Context) string {
+func ForOIDCToken(ctx context.Context) *string {
 	v, _ := ctx.Value(idtokenKey{}).(string)
-	return v
+	if v == "" {
+		return nil
+	}
+	return &v
 }

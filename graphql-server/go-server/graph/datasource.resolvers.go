@@ -17,7 +17,7 @@ import (
 // CreateDatasource is the resolver for the createDatasource field.
 func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.CreateDatasourceInput) (*model.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.Cre
 // UpdateDatasource is the resolver for the updateDatasource field.
 func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.UpdateDatasourceInput) (*model.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.Up
 // DeleteDatasource is the resolver for the deleteDatasource field.
 func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.DeleteDatasourceInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}

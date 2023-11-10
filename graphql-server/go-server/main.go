@@ -31,7 +31,6 @@ import (
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -55,8 +54,6 @@ var (
 
 func main() {
 	flag.Parse()
-
-	client.InitClient(*enableOIDC)
 
 	if *enableOIDC {
 		oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
