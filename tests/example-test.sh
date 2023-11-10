@@ -71,8 +71,8 @@ debug=0
 function cecho() {
 	declare -A colors
 	colors=(
-		['black']='\E[0;47m'
-		['red']='\E[0;31m'
+		['black']='\e[0;47m'
+		['red']='\e[0;31m'
 		['green']='\E[0;32m'
 		['yellow']='\E[0;33m'
 		['blue']='\E[0;34m'
@@ -171,7 +171,19 @@ function waitCRDStatusReady() {
 }
 
 info "1. create kind cluster"
-make kind
+read -r -p "Is kind cluster created? [Y/n]" input
+    case $input in 
+	    [yY][eE][sS]|[yY]|"")
+		echo kind cluster created, skip this setp.
+		;;
+		[nN][oO]|[nN])
+        make kind
+		;;
+    *)
+        echo "Invalid input..."
+		exit 1
+        ;;
+esac
 
 info "2. load arcadia image to kind"
 docker tag controller:latest controller:example-e2e
