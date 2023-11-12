@@ -17,8 +17,6 @@ limitations under the License.
 package client
 
 import (
-	"sync"
-
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,32 +25,26 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 )
 
-var (
-	once sync.Once
-)
+var getClient func(*string) (dynamic.Interface, error)
 
-var getClientByIDToken func(string) (dynamic.Interface, error)
-
-func InitClient(enableOIDC bool) {
-	once.Do(func() {
-		getClientByIDToken = func(idtoken string) (dynamic.Interface, error) {
-			var (
-				cfg *rest.Config
-				err error
-			)
-			if !enableOIDC {
-				cfg, err = ctrl.GetConfig()
-			} else {
-				cfg, err = clientcmd.BuildConfigFromKubeconfigGetter("", oidc.OIDCKubeGetter(idtoken))
-			}
-			if err != nil {
-				return nil, err
-			}
-			return dynamic.NewForConfig(cfg)
+func init() {
+	getClient = func(idtoken *string) (dynamic.Interface, error) {
+		var (
+			cfg *rest.Config
+			err error
+		)
+		if idtoken == nil {
+			cfg, err = ctrl.GetConfig()
+		} else {
+			cfg, err = clientcmd.BuildConfigFromKubeconfigGetter("", oidc.OIDCKubeGetter(*idtoken))
 		}
-	})
+		if err != nil {
+			return nil, err
+		}
+		return dynamic.NewForConfig(cfg)
+	}
 }
 
-func GetClientByIDToken(idtoken string) (dynamic.Interface, error) {
-	return getClientByIDToken(idtoken)
+func GetClient(idtoken *string) (dynamic.Interface, error) {
+	return getClient(idtoken)
 }
