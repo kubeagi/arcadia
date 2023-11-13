@@ -71,8 +71,8 @@ debug=0
 function cecho() {
 	declare -A colors
 	colors=(
-		['black']='\e[0;47m'
-		['red']='\e[0;31m'
+		['black']='\E[0;47m'
+		['red']='\E[0;31m'
 		['green']='\E[0;32m'
 		['yellow']='\E[0;33m'
 		['blue']='\E[0;34m'
