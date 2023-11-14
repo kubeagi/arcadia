@@ -44,3 +44,47 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
 mutation deleteDatasource($input: DeleteDatasourceInput!) {
   deleteDatasource(input: $input)
 }
+
+# list datasources by paged
+query getDatasourcesPaged($input: ListDatasourceInput!) {
+  datasourcesPaged(input: $input) {
+    totalCount
+    hasNextPage
+    nodes {
+        name
+      namespace
+      displayName
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
+      }
+      oss {
+        bucket
+      }
+    }
+  }
+}
+
+# get datasource
+query getDatasource($name: String!, $namespace: String!) {
+  datasource(name: $name, namespace: $namespace) {
+    name
+      namespace
+      displayName
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
+      }
+      oss {
+        bucket
+      }
+  }
+}
