@@ -6,7 +6,7 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
@@ -81,9 +81,64 @@ func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.De
 	return datasource.DeleteDatasource(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
 }
 
-// ListDatasources is the resolver for the listDatasources field.
-func (r *queryResolver) ListDatasources(ctx context.Context, input *model.ListDatasourceInput) ([]*model.Datasource, error) {
-	panic(fmt.Errorf("not implemented: ListDatasources - listDatasources"))
+// Datasource is the resolver for the datasource field.
+func (r *queryResolver) Datasource(ctx context.Context, name string, namespace string) (*model.Datasource, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return nil, err
+	}
+	return datasource.ReadDatasource(ctx, c, name, namespace)
+}
+
+// DatasourcesPaged is the resolver for the datasourcesPaged field.
+func (r *queryResolver) DatasourcesPaged(ctx context.Context, input model.ListDatasourceInput) (*model.PaginatedDatasource, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return nil, err
+	}
+	name, displayName, labelSelector, fieldSelector := "", "", "", ""
+	page, pageSize := 1, 10
+	if input.Name != nil {
+		name = *input.Name
+	}
+	if input.DisplayName != nil {
+		displayName = *input.DisplayName
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
+	if input.Page != nil && *input.Page > 0 {
+		page = *input.Page
+	}
+	if input.PageSize != nil && *input.PageSize > 0 {
+		pageSize = *input.PageSize
+	}
+	result, err := datasource.ListDatasources(ctx, c, input.Namespace, labelSelector, fieldSelector)
+	if err != nil {
+		return nil, err
+	}
+	var filteredResult []*model.Datasource
+	for idx, u := range result {
+		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
+			filteredResult = append(filteredResult, result[idx])
+		}
+	}
+
+	totalCount := len(filteredResult)
+	end := page * pageSize
+	if end > totalCount {
+		end = totalCount
+	}
+	return &model.PaginatedDatasource{
+		TotalCount:  totalCount,
+		HasNextPage: end < totalCount,
+		Nodes:       filteredResult[(page-1)*pageSize : end],
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

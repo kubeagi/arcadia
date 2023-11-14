@@ -17,8 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 
 	"github.com/kubeagi/arcadia/arctl/printer"
@@ -45,12 +43,7 @@ func DatasourceListCmd() *cobra.Command {
 		Use:   "list [usage]",
 		Short: "List many datasources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var name string
-			if len(os.Args) == 4 {
-				name = os.Args[3]
-			}
-
-			list, err := datasource.DatasourceList(cmd.Context(), kubeClient, name, namespace, "", "")
+			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, namespace, "", "")
 			if err != nil {
 				return err
 			}
