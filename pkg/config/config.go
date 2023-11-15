@@ -35,8 +35,9 @@ const (
 )
 
 var (
-	ErrNoConfigEnv = fmt.Errorf("env:%s is not found", EnvConfigKey)
-	ErrNoConfig    = fmt.Errorf("config in configmap is empty")
+	ErrNoConfigEnv     = fmt.Errorf("env:%s is not found", EnvConfigKey)
+	ErrNoConfig        = fmt.Errorf("config in configmap is empty")
+	ErrNoConfigGateway = fmt.Errorf("config Gateway in configmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -56,6 +57,17 @@ func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1
 		return nil, err
 	}
 	return source, err
+}
+
+func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
+	config, err := GetConfig(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if config.Gateway == nil {
+		return nil, ErrNoConfigGateway
+	}
+	return config.Gateway, nil
 }
 
 func GetConfig(ctx context.Context, c client.Client) (config *Config, err error) {

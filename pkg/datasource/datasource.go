@@ -138,6 +138,9 @@ var (
 func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
+		if endpoint.AuthSecret.Namespace == nil {
+			return nil, errors.New("no namepsace found for endpoint.authsecret")
+		}
 		secret := corev1.Secret{}
 		if err := c.Get(ctx, types.NamespacedName{
 			Namespace: *endpoint.AuthSecret.Namespace,
