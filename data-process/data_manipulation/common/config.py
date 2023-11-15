@@ -19,3 +19,6 @@ minio_secret_key = os.getenv('MINIO_SECRETKEY', 'minioadmin')
 minio_api_url = os.getenv('MINIO_API_URL', '192.168.90.31:9000')
 # 如果使用HTTP，将secure设置为False；如果使用HTTPS，将其设置为True
 minio_secure = os.getenv('MINIO_SECURE', False)
+
+# zhipuai api_key
+zhipuai_api_key = os.getenv('ZHIPUAI_API_KEY', 'xxxxx')
