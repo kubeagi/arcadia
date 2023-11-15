@@ -72,7 +72,6 @@ async def text_manipulate(opt={}):
 
         logger.info('data')
 
-        clean_text_list = []
         logger.info("start text manipulate!")
         text_data = data['prompt']
 
