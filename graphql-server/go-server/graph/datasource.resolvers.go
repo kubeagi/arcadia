@@ -6,7 +6,7 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
@@ -17,7 +17,7 @@ import (
 // CreateDatasource is the resolver for the createDatasource field.
 func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.CreateDatasourceInput) (*model.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.Cre
 // UpdateDatasource is the resolver for the updateDatasource field.
 func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.UpdateDatasourceInput) (*model.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.Up
 // DeleteDatasource is the resolver for the deleteDatasource field.
 func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.DeleteDatasourceInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClientByIDToken(token)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +81,64 @@ func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.De
 	return datasource.DeleteDatasource(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
 }
 
-// ListDatasources is the resolver for the listDatasources field.
-func (r *queryResolver) ListDatasources(ctx context.Context, input *model.ListDatasourceInput) ([]*model.Datasource, error) {
-	panic(fmt.Errorf("not implemented: ListDatasources - listDatasources"))
+// Datasource is the resolver for the datasource field.
+func (r *queryResolver) Datasource(ctx context.Context, name string, namespace string) (*model.Datasource, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return nil, err
+	}
+	return datasource.ReadDatasource(ctx, c, name, namespace)
+}
+
+// DatasourcesPaged is the resolver for the datasourcesPaged field.
+func (r *queryResolver) DatasourcesPaged(ctx context.Context, input model.ListDatasourceInput) (*model.PaginatedDatasource, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return nil, err
+	}
+	name, displayName, labelSelector, fieldSelector := "", "", "", ""
+	page, pageSize := 1, 10
+	if input.Name != nil {
+		name = *input.Name
+	}
+	if input.DisplayName != nil {
+		displayName = *input.DisplayName
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
+	if input.Page != nil && *input.Page > 0 {
+		page = *input.Page
+	}
+	if input.PageSize != nil && *input.PageSize > 0 {
+		pageSize = *input.PageSize
+	}
+	result, err := datasource.ListDatasources(ctx, c, input.Namespace, labelSelector, fieldSelector)
+	if err != nil {
+		return nil, err
+	}
+	var filteredResult []*model.Datasource
+	for idx, u := range result {
+		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
+			filteredResult = append(filteredResult, result[idx])
+		}
+	}
+
+	totalCount := len(filteredResult)
+	end := page * pageSize
+	if end > totalCount {
+		end = totalCount
+	}
+	return &model.PaginatedDatasource{
+		TotalCount:  totalCount,
+		HasNextPage: end < totalCount,
+		Nodes:       filteredResult[(page-1)*pageSize : end],
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -94,30 +149,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) Ds(ctx context.Context, input model.ListDatasourceInput) ([]*model.Datasource, error) {
-	token := auth.ForOIDCToken(ctx)
-
-	c, err := client.GetClientByIDToken(token)
-	if err != nil {
-		return nil, err
-	}
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	return datasource.DatasourceList(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
-}

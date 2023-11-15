@@ -2,6 +2,10 @@
 
 package model
 
+import (
+	"time"
+)
+
 type CreateDatasourceInput struct {
 	Name          string                 `json:"name"`
 	Namespace     string                 `json:"namespace"`
@@ -14,16 +18,17 @@ type CreateDatasourceInput struct {
 }
 
 type Datasource struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	Creator     *string                `json:"creator,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Endpoint    *Endpoint              `json:"endpoint,omitempty"`
-	Oss         *Oss                   `json:"oss,omitempty"`
-	Status      *bool                  `json:"status,omitempty"`
-	FileCount   *int                   `json:"fileCount,omitempty"`
+	Name            string                 `json:"name"`
+	Namespace       string                 `json:"namespace"`
+	Labels          map[string]interface{} `json:"labels,omitempty"`
+	Annotations     map[string]interface{} `json:"annotations,omitempty"`
+	Creator         *string                `json:"creator,omitempty"`
+	DisplayName     string                 `json:"displayName"`
+	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
+	Oss             *Oss                   `json:"oss,omitempty"`
+	Status          *bool                  `json:"status,omitempty"`
+	FileCount       *int                   `json:"fileCount,omitempty"`
+	UpdateTimestamp time.Time              `json:"updateTimestamp"`
 }
 
 type DeleteDatasourceInput struct {
@@ -48,10 +53,11 @@ type EndpointInput struct {
 type ListDatasourceInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     string  `json:"namespace"`
+	DisplayName   *string `json:"displayName,omitempty"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
-	From          *int    `json:"from,omitempty"`
-	Size          *int    `json:"size,omitempty"`
+	Page          *int    `json:"page,omitempty"`
+	PageSize      *int    `json:"pageSize,omitempty"`
 	Keyword       *string `json:"keyword,omitempty"`
 }
 
@@ -63,6 +69,14 @@ type Oss struct {
 type OssInput struct {
 	Bucket *string `json:"bucket,omitempty"`
 	Object *string `json:"Object,omitempty"`
+}
+
+type PaginatedDatasource struct {
+	HasNextPage bool          `json:"hasNextPage"`
+	Nodes       []*Datasource `json:"nodes,omitempty"`
+	Page        *int          `json:"page,omitempty"`
+	PageSize    *int          `json:"pageSize,omitempty"`
+	TotalCount  int           `json:"totalCount"`
 }
 
 type TypedObjectReference struct {

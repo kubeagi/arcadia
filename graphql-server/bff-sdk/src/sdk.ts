@@ -86,13 +86,14 @@ export type EndpointInput = {
 };
 
 export type ListDatasourceInput = {
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
   fieldSelector?: InputMaybe<Scalars["String"]["input"]>;
-  from?: InputMaybe<Scalars["Int"]["input"]>;
   keyword?: InputMaybe<Scalars["String"]["input"]>;
   labelSelector?: InputMaybe<Scalars["String"]["input"]>;
   name?: InputMaybe<Scalars["String"]["input"]>;
   namespace: Scalars["String"]["input"];
-  size?: InputMaybe<Scalars["Int"]["input"]>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
+  pageSize?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type Mutation = {
@@ -125,13 +126,28 @@ export type OssInput = {
   bucket?: InputMaybe<Scalars["String"]["input"]>;
 };
 
-export type Query = {
-  __typename?: "Query";
-  listDatasources?: Maybe<Array<Datasource>>;
+export type PaginatedDatasource = {
+  __typename?: "PaginatedDatasource";
+  hasNextPage: Scalars["Boolean"]["output"];
+  nodes?: Maybe<Array<Datasource>>;
+  page?: Maybe<Scalars["Int"]["output"]>;
+  pageSize?: Maybe<Scalars["Int"]["output"]>;
+  totalCount: Scalars["Int"]["output"];
 };
 
-export type QueryListDatasourcesArgs = {
-  input?: InputMaybe<ListDatasourceInput>;
+export type Query = {
+  __typename?: "Query";
+  datasource: Datasource;
+  datasourcesPaged: PaginatedDatasource;
+};
+
+export type QueryDatasourceArgs = {
+  name: Scalars["String"]["input"];
+  namespace: Scalars["String"]["input"];
+};
+
+export type QueryDatasourcesPagedArgs = {
+  input: ListDatasourceInput;
 };
 
 export type TypedObjectReference = {
@@ -217,6 +233,62 @@ export type DeleteDatasourceMutation = {
   deleteDatasource?: any | null;
 };
 
+export type GetDatasourcesPagedQueryVariables = Exact<{
+  input: ListDatasourceInput;
+}>;
+
+export type GetDatasourcesPagedQuery = {
+  __typename?: "Query";
+  datasourcesPaged: {
+    __typename?: "PaginatedDatasource";
+    totalCount: number;
+    hasNextPage: boolean;
+    nodes?: Array<{
+      __typename?: "Datasource";
+      name: string;
+      namespace: string;
+      displayName: string;
+      endpoint?: {
+        __typename?: "Endpoint";
+        url?: string | null;
+        insecure?: boolean | null;
+        authSecret?: {
+          __typename?: "TypedObjectReference";
+          kind: string;
+          Name: string;
+        } | null;
+      } | null;
+      oss?: { __typename?: "Oss"; bucket?: string | null } | null;
+    }> | null;
+  };
+};
+
+export type GetDatasourceQueryVariables = Exact<{
+  name: Scalars["String"]["input"];
+  namespace: Scalars["String"]["input"];
+}>;
+
+export type GetDatasourceQuery = {
+  __typename?: "Query";
+  datasource: {
+    __typename?: "Datasource";
+    name: string;
+    namespace: string;
+    displayName: string;
+    endpoint?: {
+      __typename?: "Endpoint";
+      url?: string | null;
+      insecure?: boolean | null;
+      authSecret?: {
+        __typename?: "TypedObjectReference";
+        kind: string;
+        Name: string;
+      } | null;
+    } | null;
+    oss?: { __typename?: "Oss"; bucket?: string | null } | null;
+  };
+};
+
 export const CreateDatasourceDocument = gql`
   mutation createDatasource($input: CreateDatasourceInput!) {
     createDatasource(input: $input) {
@@ -260,6 +332,50 @@ export const UpdateDatasourceDocument = gql`
 export const DeleteDatasourceDocument = gql`
   mutation deleteDatasource($input: DeleteDatasourceInput!) {
     deleteDatasource(input: $input)
+  }
+`;
+export const GetDatasourcesPagedDocument = gql`
+  query getDatasourcesPaged($input: ListDatasourceInput!) {
+    datasourcesPaged(input: $input) {
+      totalCount
+      hasNextPage
+      nodes {
+        name
+        namespace
+        displayName
+        endpoint {
+          url
+          authSecret {
+            kind
+            Name
+          }
+          insecure
+        }
+        oss {
+          bucket
+        }
+      }
+    }
+  }
+`;
+export const GetDatasourceDocument = gql`
+  query getDatasource($name: String!, $namespace: String!) {
+    datasource(name: $name, namespace: $namespace) {
+      name
+      namespace
+      displayName
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
+      }
+      oss {
+        bucket
+      }
+    }
   }
 `;
 
@@ -325,6 +441,35 @@ export function getSdk(
         "mutation",
       );
     },
+    getDatasourcesPaged(
+      variables: GetDatasourcesPagedQueryVariables,
+      requestHeaders?: GraphQLClientRequestHeaders,
+    ): Promise<GetDatasourcesPagedQuery> {
+      return withWrapper(
+        (wrappedRequestHeaders) =>
+          client.request<GetDatasourcesPagedQuery>(
+            GetDatasourcesPagedDocument,
+            variables,
+            { ...requestHeaders, ...wrappedRequestHeaders },
+          ),
+        "getDatasourcesPaged",
+        "query",
+      );
+    },
+    getDatasource(
+      variables: GetDatasourceQueryVariables,
+      requestHeaders?: GraphQLClientRequestHeaders,
+    ): Promise<GetDatasourceQuery> {
+      return withWrapper(
+        (wrappedRequestHeaders) =>
+          client.request<GetDatasourceQuery>(GetDatasourceDocument, variables, {
+            ...requestHeaders,
+            ...wrappedRequestHeaders,
+          }),
+        "getDatasource",
+        "query",
+      );
+    },
   };
 }
 export type Sdk = ReturnType<typeof getSdk>;
@@ -370,6 +515,29 @@ export function getSdkWithHooks(
   ];
   return {
     ...sdk,
+    useGetDatasourcesPaged(
+      variables: GetDatasourcesPagedQueryVariables,
+      config?: SWRConfigInterface<GetDatasourcesPagedQuery, ClientError>,
+    ) {
+      return useSWR<GetDatasourcesPagedQuery, ClientError>(
+        genKey<GetDatasourcesPagedQueryVariables>(
+          "GetDatasourcesPaged",
+          variables,
+        ),
+        () => sdk.getDatasourcesPaged(variables),
+        config,
+      );
+    },
+    useGetDatasource(
+      variables: GetDatasourceQueryVariables,
+      config?: SWRConfigInterface<GetDatasourceQuery, ClientError>,
+    ) {
+      return useSWR<GetDatasourceQuery, ClientError>(
+        genKey<GetDatasourceQueryVariables>("GetDatasource", variables),
+        () => sdk.getDatasource(variables),
+        config,
+      );
+    },
   };
 }
 export type SdkWithHooks = ReturnType<typeof getSdkWithHooks>;

@@ -21,11 +21,18 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/dynamic"
+
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 )
 
 var (
 	err  error
 	home string
+
+	namespace string
+
+	kubeClient dynamic.Interface
 )
 
 func NewCLI() *cobra.Command {
@@ -38,14 +45,23 @@ func NewCLI() *cobra.Command {
 					return err
 				}
 			}
+
+			// initialize a kube client
+			kubeClient, err = client.GetClient(nil)
+			if err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}
 
+	arctl.AddCommand(NewDatasourceCmd())
 	arctl.AddCommand(NewDatasetCmd())
 	arctl.AddCommand(NewChatCmd())
 
 	arctl.PersistentFlags().StringVar(&home, "home", filepath.Join(os.Getenv("HOME"), ".arcadia"), "home directory to use")
+	arctl.PersistentFlags().StringVar(&namespace, "namespace", "default", "namespace to use")
 
 	return arctl
 }

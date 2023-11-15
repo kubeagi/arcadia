@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -48,16 +49,17 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Datasource struct {
-		Annotations func(childComplexity int) int
-		Creator     func(childComplexity int) int
-		DisplayName func(childComplexity int) int
-		Endpoint    func(childComplexity int) int
-		FileCount   func(childComplexity int) int
-		Labels      func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Namespace   func(childComplexity int) int
-		Oss         func(childComplexity int) int
-		Status      func(childComplexity int) int
+		Annotations     func(childComplexity int) int
+		Creator         func(childComplexity int) int
+		DisplayName     func(childComplexity int) int
+		Endpoint        func(childComplexity int) int
+		FileCount       func(childComplexity int) int
+		Labels          func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Namespace       func(childComplexity int) int
+		Oss             func(childComplexity int) int
+		Status          func(childComplexity int) int
+		UpdateTimestamp func(childComplexity int) int
 	}
 
 	Endpoint struct {
@@ -77,8 +79,17 @@ type ComplexityRoot struct {
 		Object func(childComplexity int) int
 	}
 
+	PaginatedDatasource struct {
+		HasNextPage func(childComplexity int) int
+		Nodes       func(childComplexity int) int
+		Page        func(childComplexity int) int
+		PageSize    func(childComplexity int) int
+		TotalCount  func(childComplexity int) int
+	}
+
 	Query struct {
-		ListDatasources func(childComplexity int, input *model.ListDatasourceInput) int
+		Datasource       func(childComplexity int, name string, namespace string) int
+		DatasourcesPaged func(childComplexity int, input model.ListDatasourceInput) int
 	}
 
 	TypedObjectReference struct {
@@ -95,7 +106,8 @@ type MutationResolver interface {
 	DeleteDatasource(ctx context.Context, input *model.DeleteDatasourceInput) (*string, error)
 }
 type QueryResolver interface {
-	ListDatasources(ctx context.Context, input *model.ListDatasourceInput) ([]*model.Datasource, error)
+	Datasource(ctx context.Context, name string, namespace string) (*model.Datasource, error)
+	DatasourcesPaged(ctx context.Context, input model.ListDatasourceInput) (*model.PaginatedDatasource, error)
 }
 
 type executableSchema struct {
@@ -187,6 +199,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datasource.Status(childComplexity), true
 
+	case "Datasource.updateTimestamp":
+		if e.complexity.Datasource.UpdateTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Datasource.UpdateTimestamp(childComplexity), true
+
 	case "Endpoint.authSecret":
 		if e.complexity.Endpoint.AuthSecret == nil {
 			break
@@ -258,17 +277,64 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Oss.Object(childComplexity), true
 
-	case "Query.listDatasources":
-		if e.complexity.Query.ListDatasources == nil {
+	case "PaginatedDatasource.hasNextPage":
+		if e.complexity.PaginatedDatasource.HasNextPage == nil {
 			break
 		}
 
-		args, err := ec.field_Query_listDatasources_args(context.TODO(), rawArgs)
+		return e.complexity.PaginatedDatasource.HasNextPage(childComplexity), true
+
+	case "PaginatedDatasource.nodes":
+		if e.complexity.PaginatedDatasource.Nodes == nil {
+			break
+		}
+
+		return e.complexity.PaginatedDatasource.Nodes(childComplexity), true
+
+	case "PaginatedDatasource.page":
+		if e.complexity.PaginatedDatasource.Page == nil {
+			break
+		}
+
+		return e.complexity.PaginatedDatasource.Page(childComplexity), true
+
+	case "PaginatedDatasource.pageSize":
+		if e.complexity.PaginatedDatasource.PageSize == nil {
+			break
+		}
+
+		return e.complexity.PaginatedDatasource.PageSize(childComplexity), true
+
+	case "PaginatedDatasource.totalCount":
+		if e.complexity.PaginatedDatasource.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PaginatedDatasource.TotalCount(childComplexity), true
+
+	case "Query.datasource":
+		if e.complexity.Query.Datasource == nil {
+			break
+		}
+
+		args, err := ec.field_Query_datasource_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.ListDatasources(childComplexity, args["input"].(*model.ListDatasourceInput)), true
+		return e.complexity.Query.Datasource(childComplexity, args["name"].(string), args["namespace"].(string)), true
+
+	case "Query.datasourcesPaged":
+		if e.complexity.Query.DatasourcesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Query_datasourcesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DatasourcesPaged(childComplexity, args["input"].(model.ListDatasourceInput)), true
 
 	case "TypedObjectReference.apiGroup":
 		if e.complexity.TypedObjectReference.APIGroup == nil {
@@ -489,13 +555,37 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_listDatasources_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_datasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.ListDatasourceInput
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_datasourcesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.ListDatasourceInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOListDatasourceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐListDatasourceInput(ctx, tmp)
+		arg0, err = ec.unmarshalNListDatasourceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐListDatasourceInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -975,6 +1065,50 @@ func (ec *executionContext) fieldContext_Datasource_fileCount(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_updateTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_updateTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Endpoint_url(ctx context.Context, field graphql.CollectedField, obj *model.Endpoint) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Endpoint_url(ctx, field)
 	if err != nil {
@@ -1167,6 +1301,8 @@ func (ec *executionContext) fieldContext_Mutation_createDatasource(ctx context.C
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -1244,6 +1380,8 @@ func (ec *executionContext) fieldContext_Mutation_updateDatasource(ctx context.C
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -1396,8 +1534,8 @@ func (ec *executionContext) fieldContext_Oss_Object(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_listDatasources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_listDatasources(ctx, field)
+func (ec *executionContext) _PaginatedDatasource_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PaginatedDatasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginatedDatasource_hasNextPage(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1410,7 +1548,51 @@ func (ec *executionContext) _Query_listDatasources(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListDatasources(rctx, fc.Args["input"].(*model.ListDatasourceInput))
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginatedDatasource_hasNextPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginatedDatasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginatedDatasource_nodes(ctx context.Context, field graphql.CollectedField, obj *model.PaginatedDatasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginatedDatasource_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nodes, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1424,7 +1606,201 @@ func (ec *executionContext) _Query_listDatasources(ctx context.Context, field gr
 	return ec.marshalODatasource2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐDatasourceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_listDatasources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PaginatedDatasource_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginatedDatasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Datasource_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Datasource_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_Datasource_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_Datasource_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_Datasource_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_Datasource_displayName(ctx, field)
+			case "endpoint":
+				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "oss":
+				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "status":
+				return ec.fieldContext_Datasource_status(ctx, field)
+			case "fileCount":
+				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginatedDatasource_page(ctx context.Context, field graphql.CollectedField, obj *model.PaginatedDatasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginatedDatasource_page(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Page, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginatedDatasource_page(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginatedDatasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginatedDatasource_pageSize(ctx context.Context, field graphql.CollectedField, obj *model.PaginatedDatasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginatedDatasource_pageSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginatedDatasource_pageSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginatedDatasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginatedDatasource_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.PaginatedDatasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginatedDatasource_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginatedDatasource_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginatedDatasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_datasource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_datasource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Datasource(rctx, fc.Args["name"].(string), fc.Args["namespace"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Datasource)
+	fc.Result = res
+	return ec.marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐDatasource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_datasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1452,6 +1828,8 @@ func (ec *executionContext) fieldContext_Query_listDatasources(ctx context.Conte
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "fileCount":
 				return ec.fieldContext_Datasource_fileCount(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
 		},
@@ -1463,7 +1841,74 @@ func (ec *executionContext) fieldContext_Query_listDatasources(ctx context.Conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_listDatasources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_datasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_datasourcesPaged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_datasourcesPaged(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DatasourcesPaged(rctx, fc.Args["input"].(model.ListDatasourceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PaginatedDatasource)
+	fc.Result = res
+	return ec.marshalNPaginatedDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐPaginatedDatasource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_datasourcesPaged(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedDatasource_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedDatasource_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedDatasource_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedDatasource_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedDatasource_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedDatasource", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_datasourcesPaged_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3744,7 +4189,7 @@ func (ec *executionContext) unmarshalInputListDatasourceInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector", "from", "size", "keyword"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "labelSelector", "fieldSelector", "page", "pageSize", "keyword"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3769,6 +4214,15 @@ func (ec *executionContext) unmarshalInputListDatasourceInput(ctx context.Contex
 				return it, err
 			}
 			it.Namespace = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
 		case "labelSelector":
 			var err error
 
@@ -3787,24 +4241,24 @@ func (ec *executionContext) unmarshalInputListDatasourceInput(ctx context.Contex
 				return it, err
 			}
 			it.FieldSelector = data
-		case "from":
+		case "page":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.From = data
-		case "size":
+			it.Page = data
+		case "pageSize":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Size = data
+			it.PageSize = data
 		case "keyword":
 			var err error
 
@@ -4036,6 +4490,11 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Datasource_status(ctx, field, obj)
 		case "fileCount":
 			out.Values[i] = ec._Datasource_fileCount(ctx, field, obj)
+		case "updateTimestamp":
+			out.Values[i] = ec._Datasource_updateTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4197,6 +4656,56 @@ func (ec *executionContext) _Oss(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
+var paginatedDatasourceImplementors = []string{"PaginatedDatasource"}
+
+func (ec *executionContext) _PaginatedDatasource(ctx context.Context, sel ast.SelectionSet, obj *model.PaginatedDatasource) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginatedDatasourceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginatedDatasource")
+		case "hasNextPage":
+			out.Values[i] = ec._PaginatedDatasource_hasNextPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nodes":
+			out.Values[i] = ec._PaginatedDatasource_nodes(ctx, field, obj)
+		case "page":
+			out.Values[i] = ec._PaginatedDatasource_page(ctx, field, obj)
+		case "pageSize":
+			out.Values[i] = ec._PaginatedDatasource_pageSize(ctx, field, obj)
+		case "totalCount":
+			out.Values[i] = ec._PaginatedDatasource_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4216,7 +4725,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "listDatasources":
+		case "datasource":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4225,7 +4734,32 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_listDatasources(ctx, field)
+				res = ec._Query_datasource(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "datasourcesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_datasourcesPaged(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -4674,6 +5208,40 @@ func (ec *executionContext) marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcad
 	return ec._Datasource(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNListDatasourceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐListDatasourceInput(ctx context.Context, v interface{}) (model.ListDatasourceInput, error) {
+	res, err := ec.unmarshalInputListDatasourceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPaginatedDatasource2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐPaginatedDatasource(ctx context.Context, sel ast.SelectionSet, v model.PaginatedDatasource) graphql.Marshaler {
+	return ec._PaginatedDatasource(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPaginatedDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐPaginatedDatasource(ctx context.Context, sel ast.SelectionSet, v *model.PaginatedDatasource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PaginatedDatasource(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4681,6 +5249,21 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -5052,14 +5635,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOListDatasourceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋmodelᚐListDatasourceInput(ctx context.Context, v interface{}) (*model.ListDatasourceInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputListDatasourceInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {

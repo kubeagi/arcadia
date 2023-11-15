@@ -1,4 +1,4 @@
-{{- if .Values.portal.enabled -}}
+{{- if .Values.portal.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,15 +15,19 @@ spec:
         app: {{ .Release.Name }}-portal
     spec:
       containers:
-        - name: server
+        - name: graphql-server
           image: {{ .Values.deployment.image }}
+          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
           ports:
-            - containerPort: 8081       
+            - containerPort: {{ .Values.portal.port }}
           command: 
             - "./graphql-server"
+          args:
             - "--enable-playground={{ .Values.portal.enableplayground }}"
-          {{- if .Values.portal.oidc.enableoidc -}}
-            - "--enable-oidc={{ .Values.portal.oidc.enableoidc }}"
+            - "--port={{ .Values.portal.port }}"
+            - "--playground-endpoint-prefix={{ .Values.portal.ingress.path }}"
+          {{- if .Values.portal.oidc.enabled }}
+            - "--enable-oidc={{ .Values.portal.oidc.enabled }}"
             - "--client-id={{ .Values.portal.oidc.clientID }}"
             - "--client-secret={{ .Values.portal.oidc.clientSecret }}"
             - "--master-url={{ .Values.portal.oidc.masterURL }}"
@@ -41,27 +45,49 @@ spec:
     app: {{ .Release.Name }}-portal
   ports:
     - name: api
-      port: 8081
+      port: {{ .Values.portal.port }}
       protocol: TCP
-      targetPort: 8081
+      targetPort: {{ .Values.portal.port }}
 ---
-{{- if .Values.portal.ingress.enabled -}}
+{{- if .Values.portal.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-portal-ingress
   namespace: {{ .Release.Namespace }}
+  annotations:
+    description: kubeagi-ingress
+    displayName: kubeagi-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_cache static-cache;
+      proxy_cache_valid 404 10m;
+      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+      proxy_cache_bypass $http_x_purge;
+      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+      rewrite ^/({{ .Values.portal.ingress.path }})(/|$)(.*)$ /$3 break;
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
 spec:
   rules:
-    - host: {{ .Values.portal.ingress.hosts.host}}
+    - host: {{ .Values.portal.ingress.host }}
       http:
         paths:
           - pathType: Prefix
-            path: /
+            path: "/{{ .Values.portal.ingress.path }}"
             backend:
               service:
                 name: {{ .Release.Name }}-portal-server
                 port:
-                  number: 8081
+                  number: {{ .Values.portal.port }}
 {{- end }}
 {{- end }}

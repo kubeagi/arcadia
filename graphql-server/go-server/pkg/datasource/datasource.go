@@ -18,6 +18,7 @@ package datasource
 
 import (
 	"context"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -39,11 +40,20 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		annotations[k] = v
 	}
 	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
-	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authsecret", "name")
+	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	bucket, _, _ := unstructured.NestedString(obj.Object, "spec", "oss", "bucket")
 	insecure, _, _ := unstructured.NestedBool(obj.Object, "spec", "endpoint", "insecure")
-	spec := model.Endpoint{
+	updateTime := metav1.Now().Time
+	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	if found && len(conditions) > 0 {
+		condition, ok := conditions[0].(map[string]interface{})
+		if ok {
+			timeStr, _ := condition["lastTransitionTime"].(string)
+			updateTime, _ = time.Parse(time.RFC3339, timeStr)
+		}
+	}
+	endpoint := model.Endpoint{
 		URL: &url,
 		AuthSecret: &model.TypedObjectReference{
 			Kind: "Secret",
@@ -55,13 +65,14 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		Bucket: &bucket,
 	}
 	md := model.Datasource{
-		Name:        obj.GetName(),
-		Namespace:   obj.GetNamespace(),
-		Labels:      labels,
-		Annotations: annotations,
-		DisplayName: displayName,
-		Endpoint:    &spec,
-		Oss:         &oss,
+		Name:            obj.GetName(),
+		Namespace:       obj.GetNamespace(),
+		Labels:          labels,
+		Annotations:     annotations,
+		DisplayName:     displayName,
+		Endpoint:        &endpoint,
+		Oss:             &oss,
+		UpdateTimestamp: updateTime,
 	}
 	return &md
 }
@@ -160,15 +171,8 @@ func DeleteDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 	}
 	return nil, nil
 }
-func DatasourceList(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
+func ListDatasources(ctx context.Context, c dynamic.Interface, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
 	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}
-	if name != "" {
-		u, err := c.Resource(dsSchema).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		return []*model.Datasource{datasource2model(u)}, nil
-	}
 	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
 		FieldSelector: fieldSelector,
@@ -182,4 +186,13 @@ func DatasourceList(ctx context.Context, c dynamic.Interface, name, namespace, l
 		result[idx] = datasource2model(&u)
 	}
 	return result, nil
+}
+
+func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace string) (*model.Datasource, error) {
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
+	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return datasource2model(u), nil
 }

@@ -19,6 +19,14 @@ type Oss {
     Object: String
 }
 
+type PaginatedDatasource {
+    hasNextPage: Boolean!
+    nodes: [Datasource!]
+    page: Int
+    pageSize: Int
+    totalCount: Int!
+}
+
 type Datasource {
     name: String!
     namespace: String!
@@ -31,7 +39,7 @@ type Datasource {
     # 数据源连接状态
     status: Boolean
     fileCount: Int
-    #updateTimestamp: Time!
+    updateTimestamp: Time!
 }
 
 input TypedObjectReferenceInput {
@@ -81,10 +89,11 @@ input DeleteDatasourceInput {
 input ListDatasourceInput {
     name: String
     namespace: String!
+    displayName: String
     labelSelector: String
     fieldSelector: String
-    from: Int
-    size: Int
+    page: Int
+    pageSize: Int
     # 搜索，name，displayname, description字段
     keyword: String
 }
@@ -97,5 +106,6 @@ type Mutation {
 }
 # query
 type Query{
-    listDatasources(input: ListDatasourceInput): [Datasource!]
+    datasource(name: String!, namespace: String!): Datasource!
+    datasourcesPaged(input: ListDatasourceInput!): PaginatedDatasource!
 }
