@@ -33,10 +33,60 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - secrets
   verbs:
   - get
   - list
+- apiGroups:
+  - ""
+  resources:
+  - deployments/status
+  verbs:
+  - get
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims/status
+  - pods/status
+  - services/status
+  verbs:
+  - get
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
@@ -167,7 +217,8 @@ rules:
   verbs:
   - get
   - patch
-  - update apiGroups:
+  - update
+- apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - llms
@@ -323,3 +374,4 @@ rules:
   - get
   - patch
   - update
+

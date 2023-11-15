@@ -24,4 +24,13 @@ import (
 type Config struct {
 	// SystemDatasource specifies the built-in datasource for Arcadia to host data files and model files
 	SystemDatasource arcadiav1alpha1.TypedObjectReference `json:"systemDatasource,omitempty"`
+
+	// Gateway to access LLM api services
+	Gateway *Gateway `json:"gateway,omitempty"`
+}
+
+// Gateway defines the way to access llm apis host by Arcadia
+type Gateway struct {
+	APIServer  string `json:"apiServer,omitempty"`
+	Controller string `json:"controller,omitempty"`
 }

@@ -6,6 +6,9 @@ data:
       kind: Datasource
       name: '{{ .Release.Name }}-minio'
       namespace: '{{ .Release.Namespace }}'
+    gateway:
+      apiServer: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:8000'
+      controller: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:21001'
 kind: ConfigMap
 metadata:
   labels:
