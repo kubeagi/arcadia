@@ -13,22 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+package scheduler
 
-package v1alpha1
+import "github.com/minio/minio-go/v7"
 
-type DatasetContentType string
+type JobPayload struct {
+	Src, Dst             string
+	DatasourceName       string
+	SrcBucket, DstBucket string
 
-const (
-	DatasetContentTypeText  DatasetContentType = "text"
-	DatasetContentTypeImage DatasetContentType = "image"
-	DatasetContentTypeVoice DatasetContentType = "voice"
-	DatasetContentTypeVideo DatasetContentType = "video"
-)
-
-var (
-	// LabelDatasetScene defines the content type of this dataset
-	LabelDatasetContentType = Group + "/content-type"
-	// LabelDatasetBestCase defines the best case to use this dataset
-	LabelDatasetBestCase  = Group + "/best-case"
-	LabelDatasetFinalizer = Group + "/finalizers"
-)
+	Client *minio.Client
+	Remove bool
+}

@@ -41,12 +41,25 @@ type VersionedDatasetSpec struct {
 	// FileGroups included in this `VersionedDataset`
 	// Grouped by Datasource
 	FileGroups []FileGroup `json:"fileGroups,omitempty"`
+
+	// +kubebuilder:validation:Enum=0;1
+	// +kubebuilder:default=0
+	Released uint8 `json:"released"`
+}
+
+type DatasourceFileStatus struct {
+	DatasourceName      string        `json:"datasourceName"`
+	DatasourceNamespace string        `json:"datasourceNamespace"`
+	Status              []FileDetails `json:"status,omitempty"`
 }
 
 // VersionedDatasetStatus defines the observed state of VersionedDataset
 type VersionedDatasetStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
+
+	// DatasourceFiles record the process and results of file processing for each data source
+	DatasourceFiles []DatasourceFileStatus `json:"datasourceFiles,omitempty"`
 }
 
 //+kubebuilder:object:root=true

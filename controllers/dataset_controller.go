@@ -19,12 +19,15 @@ package controllers
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 // DatasetReconciler reconciles a Dataset object
@@ -49,9 +52,48 @@ type DatasetReconciler struct {
 func (r *DatasetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var err error
+	instance := &arcadiav1alpha1.Dataset{}
+	if err = r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+		if errors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if instance.DeletionTimestamp != nil {
+		if err := r.Client.DeleteAllOf(ctx, &arcadiav1alpha1.VersionedDataset{}, client.InNamespace(instance.Namespace), client.MatchingLabels{
+			arcadiav1alpha1.LabelVersionedDatasetVersionOwner: instance.Name,
+		}); err != nil {
+			return reconcile.Result{}, err
+		}
+		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
+		err = r.Client.Update(ctx, instance)
+		return reconcile.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	if instance.Labels == nil {
+		instance.Labels = make(map[string]string)
+	}
+
+	update := false
+	if v, ok := instance.Labels[arcadiav1alpha1.LabelDatasetContentType]; !ok || v != instance.Spec.ContentType {
+		instance.Labels[arcadiav1alpha1.LabelDatasetContentType] = instance.Spec.ContentType
+		update = true
+	}
+	if v, ok := instance.Labels[arcadiav1alpha1.LabelDatasetBestCase]; !ok || v != instance.Spec.BestCase {
+		instance.Labels[arcadiav1alpha1.LabelDatasetBestCase] = instance.Spec.BestCase
+		update = true
+	}
+	if !utils.ContainString(instance.Finalizers, arcadiav1alpha1.Finalizer) {
+		instance.Finalizers = utils.AddString(instance.Finalizers, arcadiav1alpha1.Finalizer)
+		update = true
+	}
+	if update {
+		err = r.Client.Update(ctx, instance)
+		return reconcile.Result{Requeue: true}, err
+	}
+
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.

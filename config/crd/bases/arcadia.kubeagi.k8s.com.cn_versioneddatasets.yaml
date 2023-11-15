@@ -104,11 +104,18 @@ spec:
                   - paths
                   type: object
                 type: array
+              released:
+                default: 0
+                enum:
+                - 0
+                - 1
+                type: integer
               version:
                 description: Version
                 type: string
             required:
             - dataset
+            - released
             - version
             type: object
           status:
@@ -150,6 +157,42 @@ spec:
                   - reason
                   - status
                   - type
+                  type: object
+                type: array
+              datasourceFiles:
+                description: DatasourceFiles record the process and results of file
+                  processing for each data source
+                items:
+                  properties:
+                    datasourceName:
+                      type: string
+                    datasourceNamespace:
+                      type: string
+                    status:
+                      items:
+                        properties:
+                          checksum:
+                            description: Checksum defines the checksum of the file
+                            type: string
+                          errMessage:
+                            description: ErrMessage defines the error message
+                            type: string
+                          lastUpdateTime:
+                            description: The last time this condition was updated.
+                            format: date-time
+                            type: string
+                          path:
+                            description: Path defines the detail path to get objects
+                              from above datasource
+                            type: string
+                          phase:
+                            description: Phase defines the process phase
+                            type: string
+                        type: object
+                      type: array
+                  required:
+                  - datasourceName
+                  - datasourceNamespace
                   type: object
                 type: array
             type: object
