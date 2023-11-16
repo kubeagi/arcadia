@@ -80,8 +80,8 @@ func (r *DatasetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		instance.Labels[arcadiav1alpha1.LabelDatasetContentType] = instance.Spec.ContentType
 		update = true
 	}
-	if v, ok := instance.Labels[arcadiav1alpha1.LabelDatasetBestCase]; !ok || v != instance.Spec.BestCase {
-		instance.Labels[arcadiav1alpha1.LabelDatasetBestCase] = instance.Spec.BestCase
+	if v, ok := instance.Labels[arcadiav1alpha1.LabelDatasetField]; !ok || v != instance.Spec.Field {
+		instance.Labels[arcadiav1alpha1.LabelDatasetField] = instance.Spec.Field
 		update = true
 	}
 	if !utils.ContainString(instance.Finalizers, arcadiav1alpha1.Finalizer) {

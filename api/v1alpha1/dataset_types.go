@@ -30,8 +30,8 @@ type DatasetSpec struct {
 	// ContentType defines dataset
 	ContentType string `json:"contentType"`
 
-	// bestCase defines the best case to use this dataset
-	BestCase string `json:"bestCase,omitempty"`
+	// Model application fields
+	Field string `json:"field,omitempty"`
 }
 
 // DatasetStatus defines the observed state of Dataset

@@ -17,6 +17,16 @@ type CreateDatasourceInput struct {
 	Ossinput      *OssInput              `json:"ossinput,omitempty"`
 }
 
+type CreateModelInput struct {
+	Name            string     `json:"name"`
+	Namespace       string     `json:"namespace"`
+	DisplayName     string     `json:"displayName"`
+	Field           string     `json:"field"`
+	Description     *string    `json:"description,omitempty"`
+	Modeltype       string     `json:"modeltype"`
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+}
+
 type Datasource struct {
 	Name            string                 `json:"name"`
 	Namespace       string                 `json:"namespace"`
@@ -32,6 +42,13 @@ type Datasource struct {
 }
 
 type DeleteDatasourceInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
+type DeleteModelInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     string  `json:"namespace"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
@@ -61,6 +78,30 @@ type ListDatasourceInput struct {
 	Keyword       *string `json:"keyword,omitempty"`
 }
 
+type ListModelInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	DisplayName   *string `json:"displayName,omitempty"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	Page          *int    `json:"page,omitempty"`
+	PageSize      *int    `json:"pageSize,omitempty"`
+	Keyword       *string `json:"keyword,omitempty"`
+}
+
+type Model struct {
+	Name            string                 `json:"name"`
+	Namespace       string                 `json:"namespace"`
+	Labels          map[string]interface{} `json:"labels,omitempty"`
+	Annotations     map[string]interface{} `json:"annotations,omitempty"`
+	Creator         *string                `json:"creator,omitempty"`
+	DisplayName     string                 `json:"displayName"`
+	Description     *string                `json:"description,omitempty"`
+	Field           string                 `json:"field"`
+	Modeltype       string                 `json:"modeltype"`
+	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
+}
+
 type Oss struct {
 	Bucket *string `json:"bucket,omitempty"`
 	Object *string `json:"Object,omitempty"`
@@ -79,6 +120,14 @@ type PaginatedDatasource struct {
 	TotalCount  int           `json:"totalCount"`
 }
 
+type PaginatedModel struct {
+	HasNextPage bool     `json:"hasNextPage"`
+	Nodes       []*Model `json:"nodes,omitempty"`
+	Page        *int     `json:"page,omitempty"`
+	PageSize    *int     `json:"pageSize,omitempty"`
+	TotalCount  int      `json:"totalCount"`
+}
+
 type TypedObjectReference struct {
 	APIGroup  *string `json:"apiGroup,omitempty"`
 	Kind      string  `json:"kind"`
@@ -94,6 +143,15 @@ type TypedObjectReferenceInput struct {
 }
 
 type UpdateDatasourceInput struct {
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
+}
+
+type UpdateModelInput struct {
 	Name        string                 `json:"name"`
 	Namespace   string                 `json:"namespace"`
 	Labels      map[string]interface{} `json:"labels,omitempty"`
