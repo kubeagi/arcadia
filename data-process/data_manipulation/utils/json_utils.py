@@ -13,17 +13,18 @@
 # limitations under the License.
 
 
-import ujson
 from pathlib import Path
+
+import ujson
 
 
 def pretty_print(opt={}):
     data = opt.get('data', {})
 
     print(ujson.dumps(data,
-                     ensure_ascii=False,
-                     escape_forward_slashes=False,
-                     indent=4))
+                      ensure_ascii=False,
+                      escape_forward_slashes=False,
+                      indent=4))
 
 
 def get_str_empty(opt={}):
@@ -38,19 +39,17 @@ def get_str_empty(opt={}):
 
 def write_json_file(opt={}):
     file_name = Path(opt['file_name'])
-    with open(file_name, 'w', encoding = 'utf-8') as outfile:
-         dump(opt['data'], outfile, opt)
+    with open(file_name, 'w', encoding='utf-8') as outfile:
+        dump(opt['data'], outfile, opt)
 
 
 def read_json_file(opt={}):
     file_name = Path(opt['file_name'])
     json_result = None
-    with open(file_name, 'r', encoding = 'utf-8') as f:
+    with open(file_name, 'r', encoding='utf-8') as f:
         json_result = ujson.load(f)
 
     return json_result
-
-
 
 
 def dumps(json_data, opt={}):

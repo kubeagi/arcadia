@@ -19,6 +19,7 @@ import datetime
 def now_str():
     return f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S.%f}"
 
+
 def now_str_for_day():
     return f"{datetime.datetime.now():%Y-%m-%d}"
 
@@ -37,7 +38,7 @@ def timestamp_to_str_second(timestamp):
 
 def chage_datetime_fromat(opt={}):
     my_date_time = datetime.datetime.strptime(
-                        opt['date_time'],
-                        opt['from_format'])
+        opt['date_time'],
+        opt['from_format'])
 
     return my_date_time.strftime(opt.get('to_format', '%Y-%m-%d %H:%M:%S'))

@@ -253,3 +253,12 @@ gql-gen:
 	@go run github.com/99designs/gqlgen@v0.17.40 generate
 build-graphql-server: gql-gen
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/graphql-server graphql-server/go-server/main.go
+
+
+# Commands for Data-Processing
+DATA_PROCESSING_IMAGE ?= kubebb/dp-base
+
+.PHONY: docker-build-dp-base
+docker-build-dp-base:
+	docker build -f ./data-process/Dockerfile.base -t $(DATA_PROCESSING_IMAGE):$(VERSION) ./data-process/
+	

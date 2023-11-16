@@ -26,6 +26,7 @@
 
 import re
 
+
 ###
 # 去除不可见字符
 # @author: wangxinbiao
@@ -38,9 +39,10 @@ import re
 ###
 async def remove_invisible_characters(opt={}):
     text = opt['text']
-    
+
     try:
-        clean_text = re.sub(r'[\x00-\x1F\x7F-\x9F\xAD\r\n\t\b\x0B\x1C\x1D\x1E]', '', text)
+        clean_text = re.sub(
+            r'[\x00-\x1F\x7F-\x9F\xAD\r\n\t\b\x0B\x1C\x1D\x1E]', '', text)
         return {
             'status': 200,
             'message': '',

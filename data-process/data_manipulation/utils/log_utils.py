@@ -12,32 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import logging
-from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
+import os
 import datetime
+import logging
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
-def init_config (opt={}):
+
+def init_config(opt={}):
     source_type = opt['source_type']
+    log_dir = opt['log_dir']
+    os.makedirs(log_dir, exist_ok=True)
     ###
     # 配置全局日志配置
     ###
     file_handler = TimedRotatingFileHandler(
-        f'log/{source_type}/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.log', 
-        when="midnight", 
-        interval=1, 
+        f'{log_dir}/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.log',
+        when="midnight",
+        interval=1,
         backupCount=30
-    ) # 按天生成日志文件，最多保存30天的日志文件
+    )  # 按天生成日志文件，最多保存30天的日志文件
 
     file_handler.setLevel(logging.DEBUG)
 
     # 将error和critical级别的日志单独存放
     error_file_handler = TimedRotatingFileHandler(
-        f'log/{source_type}/error/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.err.log', 
-        when="midnight", 
-        interval=1, 
+        f'log/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.err.log',
+        when="midnight",
+        interval=1,
         backupCount=30
-    ) # 按天生成日志文件，最多保存30天的日志文件
+    )  # 按天生成日志文件，最多保存30天的日志文件
 
     error_file_handler.suffix = "%Y-%m-%d"  # 文件名的时间格式
     error_file_handler.setLevel(logging.ERROR)

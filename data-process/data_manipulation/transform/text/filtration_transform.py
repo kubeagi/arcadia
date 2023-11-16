@@ -26,6 +26,7 @@
 
 import re
 
+
 ###
 # 检查文档的词数目
 # @author: wangxinbiao
@@ -38,5 +39,3 @@ import re
 ###
 async def word_count(opt={}):
     return 49
-    
-
