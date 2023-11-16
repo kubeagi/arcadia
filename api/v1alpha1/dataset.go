@@ -28,7 +28,7 @@ const (
 var (
 	// LabelDatasetScene defines the content type of this dataset
 	LabelDatasetContentType = Group + "/content-type"
-	// LabelDatasetBestCase defines the best case to use this dataset
-	LabelDatasetBestCase  = Group + "/best-case"
+	// LabelDatasetField defines the best field to use this dataset
+	LabelDatasetField     = Group + "/field"
 	LabelDatasetFinalizer = Group + "/finalizers"
 )

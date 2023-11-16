@@ -1,0 +1,68 @@
+type Model {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String!
+    description: String
+    field: String!
+    modeltype: String!
+    updateTimestamp: Time
+}
+
+type PaginatedModel {
+    hasNextPage: Boolean!
+    nodes: [Model!]
+    page: Int
+    pageSize: Int
+    totalCount: Int!
+}
+
+input CreateModelInput{
+    name: String!
+    namespace: String!
+    displayName: String!
+    field: String!
+    description: String
+    modeltype: String!
+    updateTimestamp: Time
+}
+
+input UpdateModelInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+}
+
+input DeleteModelInput {
+    name: String 
+    namespace: String!
+    labelSelector: String
+    fieldSelector: String
+}
+
+input ListModelInput {
+    name: String
+    namespace: String!
+    displayName: String
+    labelSelector: String
+    fieldSelector: String
+    page: Int
+    pageSize: Int
+    # 搜索，name，field字段
+    keyword: String
+}
+extend type Mutation {
+    createModel(input: CreateModelInput!): Model!
+    updateModel(input: UpdateModelInput): Model!
+    deleteModel(input: DeleteModelInput): Void
+}
+
+extend type Query {
+    getModel(name: String!, namespace: String!): Model!
+    listModels(input: ListModelInput!): PaginatedModel!
+}
