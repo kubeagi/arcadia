@@ -44,6 +44,9 @@ spec:
               displayName:
                 description: DisplayName defines dataset display name
                 type: string
+              field:
+                description: Model application fields
+                type: string
               type:
                 description: Type defines what kind of model this is
                 type: string

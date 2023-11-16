@@ -34,6 +34,9 @@ type ModelSpec struct {
 	// Description defines datasource description
 	Description string `json:"description,omitempty"`
 
+	// Model application fields
+	Field string `json:"field,omitempty"`
+
 	// Type defines what kind of model this is
 	Type ModelType `json:"type,omitempty"`
 

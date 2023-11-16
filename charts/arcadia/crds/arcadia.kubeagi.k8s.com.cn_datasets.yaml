@@ -42,9 +42,6 @@ spec:
           spec:
             description: DatasetSpec defines the desired state of Dataset
             properties:
-              bestCase:
-                description: bestCase defines the best case to use this dataset
-                type: string
               contentType:
                 description: ContentType defines dataset
                 type: string
@@ -56,6 +53,9 @@ spec:
                 type: string
               displayName:
                 description: DisplayName defines datasource display name
+                type: string
+              field:
+                description: Model application fields
                 type: string
             required:
             - contentType

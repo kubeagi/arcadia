@@ -255,10 +255,26 @@ build-graphql-server: gql-gen
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/graphql-server graphql-server/go-server/main.go
 
 
+# prepare for git push
+.PHONY: prepare-push
+config_rule_line_num = $(shell grep -n "rules:" config/rbac/role.yaml | cut -d: -f1)
+chart_rule_line_num = $(shell grep -n "rules:" charts/arcadia/templates/rbac.yaml | cut -d: -f1)
+prepare-push: manifests generate fmt vet
+	@echo "install golangci-lint"
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "run golangci-lint with auto-fix"
+	@golangci-lint run --fix -v ./...
+	@echo "copy crds to charts"
+	@cp config/crd/bases/* charts/arcadia/crds
+	@echo "copy role to charts"
+	@sed -n '$(config_rule_line_num),$$p' config/rbac/role.yaml > tmp_role.yaml
+	@sed -i '' '$(chart_rule_line_num),$$d' charts/arcadia/templates/rbac.yaml
+	@cat tmp_role.yaml >> charts/arcadia/templates/rbac.yaml
+	@rm -f tmp_role.yaml
+
 # Commands for Data-Processing
 DATA_PROCESSING_IMAGE ?= kubebb/dp-base
 
 .PHONY: docker-build-dp-base
 docker-build-dp-base:
 	docker build -f ./data-process/Dockerfile.base -t $(DATA_PROCESSING_IMAGE):$(VERSION) ./data-process/
-	
