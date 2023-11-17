@@ -26,6 +26,7 @@
 
 import re
 
+
 ###
 # 去除邮箱地址
 # @author: wangxinbiao
@@ -38,7 +39,7 @@ import re
 ###
 async def remove_email(opt={}):
     text = opt['text']
-    
+
     try:
         email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
 
@@ -50,4 +51,3 @@ async def remove_email(opt={}):
 
     except Exception as ex:
         return ''
-    

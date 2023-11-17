@@ -19,6 +19,7 @@
 
 import os
 
+
 ###
 # 生成文件名称
 # @author: wangxinbiao
@@ -48,8 +49,10 @@ async def get_file_name(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def get_temp_file_path():
-    current_directory = os.getcwd() 
+    current_directory = os.getcwd()
 
     csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
 
@@ -65,5 +68,7 @@ async def get_temp_file_path():
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def delete_file(file_path):
     os.remove(file_path)

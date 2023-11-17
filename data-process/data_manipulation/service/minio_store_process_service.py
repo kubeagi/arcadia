@@ -23,24 +23,17 @@
 # 1) 基本功能实现
 ###
 
-from sanic.response import json, raw
+import io
+import logging
+import os
+
+import pandas as pd
+from file_handle import csv_handle
 from minio import Minio
 from minio.commonconfig import Tags
 from minio.error import S3Error
-import pandas as pd
-import io
-import os
-
-import logging
-
-from file_handle import (
-    csv_handle
-)
-
-from utils import (
-    minio_utils,
-    file_utils
-)
+from sanic.response import json, raw
+from utils import file_utils, minio_utils
 
 logger = logging.getLogger('minio_store_process_service')
 
@@ -54,6 +47,8 @@ logger = logging.getLogger('minio_store_process_service')
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def text_manipulate(request):
 
     request_json = request.json
@@ -63,7 +58,7 @@ async def text_manipulate(request):
 
     # create minio client
     minio_client = await minio_utils.create_client()
-    
+
     # 查询存储桶下的所有对象
     objects = minio_client.list_objects(bucket_name, prefix=folder_prefix)
 
@@ -81,9 +76,9 @@ async def text_manipulate(request):
         if file_extension in ['csv']:
             # 处理CSV文件
             result = await csv_handle.text_manipulate({
-                    'file_name': item,
-                    'support_type': support_type
-                })
+                'file_name': item,
+                'support_type': support_type
+            })
 
     # 将清洗后的文件上传到MinIO中
     # 上传middle文件夹下的文件，并添加tag
@@ -112,7 +107,7 @@ async def text_manipulate(request):
     for item in file_names:
         remove_file_path = await file_utils.get_temp_file_path()
         await file_utils.delete_file(remove_file_path + 'original/' + item)
-    
+
     return json({
         'status': 200,
         'message': '',
@@ -129,6 +124,8 @@ async def text_manipulate(request):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def download(opt={}):
     objects = opt['objects']
     minio_client = opt['minio_client']
@@ -160,17 +157,21 @@ async def download(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def upload_files_to_minio_with_tags(minio_client, local_folder, minio_bucket, minio_prefix="", tags=None):
     for root, dirs, files in os.walk(local_folder):
         for file in files:
             local_file_path = os.path.join(root, file)
-            minio_object_name = os.path.join(minio_prefix, os.path.relpath(local_file_path, local_folder))
-            
+            minio_object_name = os.path.join(
+                minio_prefix, os.path.relpath(local_file_path, local_folder))
+
             try:
-                minio_client.fput_object(minio_bucket, minio_object_name, local_file_path, tags=tags)
-                
+                minio_client.fput_object(
+                    minio_bucket, minio_object_name, local_file_path, tags=tags)
+
                 # 删除本地文件
                 await file_utils.delete_file(local_file_path)
             except S3Error as e:
-                logger.error(f"Error uploading {minio_object_name} to {minio_bucket}: {e}")
-
+                logger.error(
+                    f"Error uploading {minio_object_name} to {minio_bucket}: {e}")

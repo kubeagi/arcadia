@@ -1,2 +1,37 @@
-# Data Process
-The current documentation is only available in Chinese. Please refer to the content in .zh.md for specific details.
+# Data Processing 
+
+## Current Version Main Features
+
+Data Processing is used for data processing through MinIO, databases, Web APIs, etc. The data types handled include:
+- txt
+- json  
+- doc
+- html
+- excel
+- csv
+- pdf
+- markdown
+- ppt
+
+### Current Text Type Processing  
+
+The data processing process includes: cleaning abnormal data, filtering, de-duplication, and anonymization.
+
+## Design
+
+![Design](../assets/data_process.drawio.png)
+
+## Local Development
+### Software Requirements
+
+Before setting up the local data-process environment, please make sure the following software is installed:
+
+- Python 3.10.x
+
+### Environment Setup
+
+Install the Python dependencies in the requirements.txt file
+
+### Running
+
+Run the server.py file in the data_manipulation directory

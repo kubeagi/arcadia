@@ -24,36 +24,22 @@
 # 1) 基本功能实现
 ###
 
-from sanic import Sanic
-from sanic.response import json, text
-from sanic_cors import CORS, cross_origin
-from sanic.exceptions import NotFound
-
 import asyncio
-import aiohttp
-
-import sys
-
 import logging
 
-
-from service import (
-    minio_store_process_service
-)
-
-from transform.text import (
-    support_type
-)
-
-from utils import (
-    log_utils
-)
+from sanic import Sanic
+from sanic.response import json
+from sanic_cors import CORS
+from service import minio_store_process_service
+from transform.text import support_type
+from utils import log_utils
 
 ###
 # 初始化日志配置
 ###
 log_utils.init_config({
-    'source_type': 'manipulate_server'
+    'source_type': 'manipulate_server',
+    'log_dir': "log"
 })
 
 
@@ -62,7 +48,7 @@ logger = logging.getLogger('manipulate_server')
 app = Sanic(name='data_manipulate')
 CORS(app)
 
-app.config['REQUEST_MAX_SIZE'] = 1024 * 1024 * 1024 # 1G
+app.config['REQUEST_MAX_SIZE'] = 1024 * 1024 * 1024  # 1G
 app.config['REQUEST_TIMEOUT'] = 60 * 60 * 60
 app.config['RESPONSE_TIMEOUT'] = 60 * 60 * 60
 app.config['KEEP_ALIVE_TIMEOUT'] = 60 * 60 * 60
@@ -77,6 +63,8 @@ app.config['KEEP_ALIVE_TIMEOUT'] = 60 * 60 * 60
 # content:
 # 1) 基本功能实现
 ###
+
+
 @app.route('text-manipulate', methods=['POST'])
 async def text_manipulate(request):
     """
@@ -87,7 +75,7 @@ async def text_manipulate(request):
             file_path: 文本路径
 
         Returns:
-            
+
     """
 
     await asyncio.create_task(
@@ -110,13 +98,14 @@ async def text_manipulate(request):
 # content:
 # 1) 基本功能实现
 ###
+
+
 @app.route('text-process-type', methods=['POST'])
 async def text_process_type(request):
     """
         获取数据处理支持的类型
 
         Args:
-            
 
         Returns:
             json: 支持的类型
@@ -127,7 +116,6 @@ async def text_process_type(request):
         'message': '',
         'data': support_type.support_types
     })
-    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',

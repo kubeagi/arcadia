@@ -24,20 +24,13 @@
 ###
 
 import csv
-import ulid
-import pandas as pd
-import os
 import logging
+import os
 
-from transform.text import (
-    clean_transform,
-    privacy_transform
-)
-
-from utils import (
-    date_time_utils,
-    file_utils
-)
+import pandas as pd
+import ulid
+from transform.text import clean_transform, privacy_transform
+from utils import date_time_utils, file_utils
 
 logger = logging.getLogger('csv_handle')
 
@@ -51,6 +44,8 @@ logger = logging.getLogger('csv_handle')
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def text_manipulate(opt={}):
     logger.info("csv text manipulate!")
 
@@ -59,7 +54,7 @@ async def text_manipulate(opt={}):
             处理某条数据时，如果某个方式（比如：去除不可见字符）处理失败了，则直接结束，不在处理，整个文件都视作处理失败
             
     """
-    
+
     try:
         file_name = opt['file_name']
         support_type = opt['support_type']
@@ -87,7 +82,6 @@ async def text_manipulate(opt={}):
 
         text_data = clean_result['data']
 
-        
         # 将清洗后的文件保存为final
         new_file_name = await file_utils.get_file_name({
             'file_name': file_name,
@@ -159,7 +153,7 @@ async def data_clean(opt={}):
         })
 
     logger.info("csv text data clean stop!")
-    
+
     return {
         'status': 200,
         'message': '',
@@ -179,8 +173,8 @@ async def data_clean(opt={}):
 ###
 async def remove_invisible_characters(opt={}):
     return await clean_transform.remove_invisible_characters({
-            'text': opt['text']
-        })
+        'text': opt['text']
+    })
 
 ###
 # 去除邮箱地址
@@ -192,10 +186,12 @@ async def remove_invisible_characters(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def remove_email(opt={}):
     return await privacy_transform.remove_email({
-            'text': opt['text']
-        })
+        'text': opt['text']
+    })
 
 ###
 # 将数据存到CSV中
@@ -207,6 +203,8 @@ async def remove_email(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def save_csv(opt={}):
     file_name = opt['file_name']
     phase_value = opt['phase_value']

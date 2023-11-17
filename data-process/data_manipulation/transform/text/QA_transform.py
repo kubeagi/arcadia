@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import zhipuai
 import re
 
-from common import (
-    config
-)
+import zhipuai
+from common import config
 
 ###
 # QA生成
@@ -29,6 +27,7 @@ from common import (
 # content:
 # 1) 基本功能实现
 ###
+
 
 async def generate_QA(opt={}):
     zhipuai.api_key = config.zhipuai_api_key
@@ -76,7 +75,7 @@ async def generate_QA(opt={}):
 # 1) 基本功能实现
 ###
 async def formatSplitText(text):
-    
+
     pattern = re.compile(r'Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)')
 
     # 移除换行符
