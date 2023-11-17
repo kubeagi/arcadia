@@ -114,3 +114,5 @@ Temporary Items
 _output/
 *.bkp
 tmp_role.yaml
+vendor
+

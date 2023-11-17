@@ -108,7 +108,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate fmt vet ## Build arcadia manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
@@ -246,7 +246,7 @@ unkind: ## Uninstall a kind cluster.
 # CLI Arcadia
 .PHONY: arctl
 arctl: fmt vet ## Build manager binary.
-	go build -o bin/arctl arctl/*.go
+	go build -o bin/arctl cmd/arctl/main.go
 
 # graphql-server go
 gql-gen:
