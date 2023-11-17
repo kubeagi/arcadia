@@ -27,4 +27,4 @@ spec:
     namespace: arcadia
   override:
     set:
-      - deployment.imagePullPolcy=Always
+      - deployment.imagePullPolicy=Always
