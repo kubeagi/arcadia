@@ -1,13 +1,3 @@
-scalar Time
-scalar Map
-scalar Void
-type TypedObjectReference {
-    apiGroup: String
-    kind: String!
-    Name: String!
-    Namespace: String
-}
-
 type Endpoint {
     url: String
     authSecret: TypedObjectReference
@@ -17,14 +7,6 @@ type Endpoint {
 type Oss {
     bucket: String
     Object: String
-}
-
-type PaginatedDatasource {
-    hasNextPage: Boolean!
-    nodes: [Datasource!]
-    page: Int
-    pageSize: Int
-    totalCount: Int!
 }
 
 type Datasource {
@@ -40,13 +22,6 @@ type Datasource {
     status: Boolean
     fileCount: Int
     updateTimestamp: Time!
-}
-
-input TypedObjectReferenceInput {
-    apiGroup: String
-    kind: String!
-    Name: String!
-    Namespace: String
 }
 
 input EndpointInput {
@@ -94,18 +69,24 @@ input ListDatasourceInput {
     fieldSelector: String
     page: Int
     pageSize: Int
-    # 搜索，name，displayname, description字段
     keyword: String
 }
 
-# mutation
-type Mutation {
+type DatasourceQuery {
+    getDatasource(name: String!, namespace: String!): Datasource!
+    listDatasources(input: ListDatasourceInput!): PaginatedResult!
+}
+
+type DatasourceMuation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
     deleteDatasource(input: DeleteDatasourceInput): Void
 }
+# mutation
+extend type Mutation {
+    Datasource: DatasourceMuation
+}
 # query
-type Query{
-    datasource(name: String!, namespace: String!): Datasource!
-    datasourcesPaged(input: ListDatasourceInput!): PaginatedDatasource!
+extend type Query{
+    Datasource: DatasourceQuery
 }

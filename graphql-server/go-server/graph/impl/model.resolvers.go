@@ -1,4 +1,4 @@
-package graph
+package impl
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -8,14 +8,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	md "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 )
 
 // CreateModel is the resolver for the createModel field.
-func (r *mutationResolver) CreateModel(ctx context.Context, input model.CreateModelInput) (*model.Model, error) {
+func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.ModelMutation, input generated.CreateModelInput) (*generated.Model, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -40,7 +40,7 @@ func (r *mutationResolver) CreateModel(ctx context.Context, input model.CreateMo
 }
 
 // UpdateModel is the resolver for the updateModel field.
-func (r *mutationResolver) UpdateModel(ctx context.Context, input *model.UpdateModelInput) (*model.Model, error) {
+func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.ModelMutation, input *generated.UpdateModelInput) (*generated.Model, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -58,7 +58,7 @@ func (r *mutationResolver) UpdateModel(ctx context.Context, input *model.UpdateM
 }
 
 // DeleteModel is the resolver for the deleteModel field.
-func (r *mutationResolver) DeleteModel(ctx context.Context, input *model.DeleteModelInput) (*string, error) {
+func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteModelInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -79,7 +79,7 @@ func (r *mutationResolver) DeleteModel(ctx context.Context, input *model.DeleteM
 }
 
 // GetModel is the resolver for the getModel field.
-func (r *queryResolver) GetModel(ctx context.Context, name string, namespace string) (*model.Model, error) {
+func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQuery, name string, namespace string) (*generated.Model, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -89,7 +89,7 @@ func (r *queryResolver) GetModel(ctx context.Context, name string, namespace str
 }
 
 // ListModels is the resolver for the listModels field.
-func (r *queryResolver) ListModels(ctx context.Context, input model.ListModelInput) (*model.PaginatedModel, error) {
+func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListModelInput) (*generated.PaginatedResult, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -119,7 +119,7 @@ func (r *queryResolver) ListModels(ctx context.Context, input model.ListModelInp
 	if err != nil {
 		return nil, err
 	}
-	var filteredResult []*model.Model
+	var filteredResult []generated.PageNode
 	for idx, u := range result {
 		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
 			filteredResult = append(filteredResult, result[idx])
@@ -131,9 +131,28 @@ func (r *queryResolver) ListModels(ctx context.Context, input model.ListModelInp
 	if end > totalCount {
 		end = totalCount
 	}
-	return &model.PaginatedModel{
+	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
 		Nodes:       filteredResult[(page-1)*pageSize : end],
 	}, nil
 }
+
+// Model is the resolver for the Model field.
+func (r *mutationResolver) Model(ctx context.Context) (*generated.ModelMutation, error) {
+	return &generated.ModelMutation{}, nil
+}
+
+// Model is the resolver for the Model field.
+func (r *queryResolver) Model(ctx context.Context) (*generated.ModelQuery, error) {
+	return &generated.ModelQuery{}, nil
+}
+
+// ModelMutation returns generated.ModelMutationResolver implementation.
+func (r *Resolver) ModelMutation() generated.ModelMutationResolver { return &modelMutationResolver{r} }
+
+// ModelQuery returns generated.ModelQueryResolver implementation.
+func (r *Resolver) ModelQuery() generated.ModelQueryResolver { return &modelQueryResolver{r} }
+
+type modelMutationResolver struct{ *Resolver }
+type modelQueryResolver struct{ *Resolver }

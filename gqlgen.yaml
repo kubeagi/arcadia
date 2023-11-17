@@ -1,11 +1,11 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - graphql-server/go-server/graph/*.graphqls
+  - graphql-server/go-server/graph/schema/*.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: graphql-server/go-server/graph/generated.go
-  package: graph
+  filename: graphql-server/go-server/graph/generated/generated.go
+  package: generated
 
 # Uncomment to enable federation
 # federation:
@@ -14,14 +14,14 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: graphql-server/go-server/graph/model/models_gen.go
-  package: model
+  filename: graphql-server/go-server/graph/generated/models_gen.go
+  package: generated
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: graphql-server/go-server/graph
-  package: graph
+  dir: graphql-server/go-server/graph/impl
+  package: impl
   filename_template: "{name}.resolvers.go"
   # Optional: turn on to not generate template comments above resolvers
   # omit_template_comment: false
@@ -85,3 +85,31 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  DatasourceQuery:
+    fields:
+      getDatasource:
+        resolver: true
+      listDatasources:
+        resolver: true
+  DatasourceMuation:
+    fields:
+      createDatasource:
+        resolver: true
+      updateDatasource:
+        resolver: true
+      deleteDatasource:
+        resolver: true
+  ModelQuery:
+    fields:
+      getModel:
+        resolver: true
+      listModels:
+        resolver: true
+  ModelMutation:
+    fields:
+      createModel:
+        resolver: true
+      updateModel:
+        resolver: true
+      deleteModel:
+        resolver: true

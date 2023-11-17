@@ -1,4 +1,4 @@
-package graph
+package impl
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -8,14 +8,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
 )
 
 // CreateDatasource is the resolver for the createDatasource field.
-func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.CreateDatasourceInput) (*model.Datasource, error) {
+func (r *datasourceMuationResolver) CreateDatasource(ctx context.Context, obj *generated.DatasourceMuation, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -43,7 +43,7 @@ func (r *mutationResolver) CreateDatasource(ctx context.Context, input model.Cre
 }
 
 // UpdateDatasource is the resolver for the updateDatasource field.
-func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.UpdateDatasourceInput) (*model.Datasource, error) {
+func (r *datasourceMuationResolver) UpdateDatasource(ctx context.Context, obj *generated.DatasourceMuation, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -61,7 +61,7 @@ func (r *mutationResolver) UpdateDatasource(ctx context.Context, input *model.Up
 }
 
 // DeleteDatasource is the resolver for the deleteDatasource field.
-func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.DeleteDatasourceInput) (*string, error) {
+func (r *datasourceMuationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMuation, input *generated.DeleteDatasourceInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -81,8 +81,8 @@ func (r *mutationResolver) DeleteDatasource(ctx context.Context, input *model.De
 	return datasource.DeleteDatasource(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
 }
 
-// Datasource is the resolver for the datasource field.
-func (r *queryResolver) Datasource(ctx context.Context, name string, namespace string) (*model.Datasource, error) {
+// GetDatasource is the resolver for the getDatasource field.
+func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *generated.DatasourceQuery, name string, namespace string) (*generated.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -91,8 +91,8 @@ func (r *queryResolver) Datasource(ctx context.Context, name string, namespace s
 	return datasource.ReadDatasource(ctx, c, name, namespace)
 }
 
-// DatasourcesPaged is the resolver for the datasourcesPaged field.
-func (r *queryResolver) DatasourcesPaged(ctx context.Context, input model.ListDatasourceInput) (*model.PaginatedDatasource, error) {
+// ListDatasources is the resolver for the listDatasources field.
+func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *generated.DatasourceQuery, input generated.ListDatasourceInput) (*generated.PaginatedResult, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -122,7 +122,7 @@ func (r *queryResolver) DatasourcesPaged(ctx context.Context, input model.ListDa
 	if err != nil {
 		return nil, err
 	}
-	var filteredResult []*model.Datasource
+	var filteredResult []generated.PageNode
 	for idx, u := range result {
 		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
 			filteredResult = append(filteredResult, result[idx])
@@ -134,18 +134,32 @@ func (r *queryResolver) DatasourcesPaged(ctx context.Context, input model.ListDa
 	if end > totalCount {
 		end = totalCount
 	}
-	return &model.PaginatedDatasource{
+	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
 		Nodes:       filteredResult[(page-1)*pageSize : end],
 	}, nil
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Datasource is the resolver for the Datasource field.
+func (r *mutationResolver) Datasource(ctx context.Context) (*generated.DatasourceMuation, error) {
+	return &generated.DatasourceMuation{}, nil
+}
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Datasource is the resolver for the Datasource field.
+func (r *queryResolver) Datasource(ctx context.Context) (*generated.DatasourceQuery, error) {
+	return &generated.DatasourceQuery{}, nil
+}
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
+// DatasourceMuation returns generated.DatasourceMuationResolver implementation.
+func (r *Resolver) DatasourceMuation() generated.DatasourceMuationResolver {
+	return &datasourceMuationResolver{r}
+}
+
+// DatasourceQuery returns generated.DatasourceQueryResolver implementation.
+func (r *Resolver) DatasourceQuery() generated.DatasourceQueryResolver {
+	return &datasourceQueryResolver{r}
+}
+
+type datasourceMuationResolver struct{ *Resolver }
+type datasourceQueryResolver struct{ *Resolver }
