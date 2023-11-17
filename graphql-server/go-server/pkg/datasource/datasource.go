@@ -41,6 +41,7 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	}
 	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
 	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
+	authsecretNamespace, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "namespace")
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	bucket, _, _ := unstructured.NestedString(obj.Object, "spec", "oss", "bucket")
 	insecure, _, _ := unstructured.NestedBool(obj.Object, "spec", "endpoint", "insecure")
@@ -56,8 +57,9 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	endpoint := model.Endpoint{
 		URL: &url,
 		AuthSecret: &model.TypedObjectReference{
-			Kind: "Secret",
-			Name: authsecret,
+			Kind:      "Secret",
+			Name:      authsecret,
+			Namespace: &authsecretNamespace,
 		},
 		Insecure: &insecure,
 	}
@@ -96,8 +98,9 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 				Enpoint: &v1alpha1.Endpoint{
 					URL: url,
 					AuthSecret: &v1alpha1.TypedObjectReference{
-						Kind: "Secret",
-						Name: authsecret,
+						Kind:      "Secret",
+						Name:      authsecret,
+						Namespace: &namespace,
 					},
 					Insecure: insecure,
 				},

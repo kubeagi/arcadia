@@ -33,6 +33,10 @@ var (
 	namespace string
 
 	kubeClient dynamic.Interface
+
+	// common spec to all resources
+	displayName string
+	description string
 )
 
 func NewCLI() *cobra.Command {
@@ -61,7 +65,7 @@ func NewCLI() *cobra.Command {
 	arctl.AddCommand(NewChatCmd())
 
 	arctl.PersistentFlags().StringVar(&home, "home", filepath.Join(os.Getenv("HOME"), ".arcadia"), "home directory to use")
-	arctl.PersistentFlags().StringVar(&namespace, "namespace", "default", "namespace to use")
+	arctl.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "namespace to use")
 
 	return arctl
 }

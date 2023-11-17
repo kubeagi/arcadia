@@ -54,6 +54,7 @@ If you don't have a kubernetes cluster, you can schedule a [kind cluster](https:
 
 We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./arctl/README.md) for more details.
 
+- ✅ datasource management
 - ✅ local dataset management
 
 ## Pure Go Toolchains
