@@ -1,0 +1,34 @@
+type Query {
+    hello(name: String!): String!
+}
+type Mutation{
+    hello(name: String!): String!
+}
+
+scalar Time
+scalar Map
+scalar Void
+
+type PaginatedResult {
+    hasNextPage: Boolean!
+    nodes: [PageNode!]
+    page: Int
+    pageSize: Int
+    totalCount: Int!
+}
+
+input TypedObjectReferenceInput {
+    apiGroup: String
+    kind: String!
+    Name: String!
+    Namespace: String
+}
+
+type TypedObjectReference {
+    apiGroup: String
+    kind: String!
+    Name: String!
+    Namespace: String
+}
+
+union PageNode = Datasource | Model

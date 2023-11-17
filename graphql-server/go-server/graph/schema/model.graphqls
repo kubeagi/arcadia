@@ -11,14 +11,6 @@ type Model {
     updateTimestamp: Time
 }
 
-type PaginatedModel {
-    hasNextPage: Boolean!
-    nodes: [Model!]
-    page: Int
-    pageSize: Int
-    totalCount: Int!
-}
-
 input CreateModelInput{
     name: String!
     namespace: String!
@@ -53,16 +45,23 @@ input ListModelInput {
     fieldSelector: String
     page: Int
     pageSize: Int
-    # 搜索，name，field字段
     keyword: String
 }
-extend type Mutation {
+
+type ModelMutation {
     createModel(input: CreateModelInput!): Model!
     updateModel(input: UpdateModelInput): Model!
     deleteModel(input: DeleteModelInput): Void
 }
 
-extend type Query {
+type ModelQuery {
     getModel(name: String!, namespace: String!): Model!
-    listModels(input: ListModelInput!): PaginatedModel!
+    listModels(input: ListModelInput!): PaginatedResult!
+}
+extend type Mutation {
+    Model: ModelMutation
+}
+
+extend type Query {
+    Model: ModelQuery
 }

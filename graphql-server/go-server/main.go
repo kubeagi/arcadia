@@ -29,7 +29,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/graph"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/impl"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 
@@ -59,7 +60,7 @@ func main() {
 		oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
 	}
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &impl.Resolver{}}))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		rc := graphql.GetFieldContext(ctx)
 		klog.Infoln("Entered", rc.Object, rc.Field.Name)

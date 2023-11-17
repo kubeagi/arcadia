@@ -51,19 +51,22 @@ query getDatasourcesPaged($input: ListDatasourceInput!) {
     totalCount
     hasNextPage
     nodes {
+      __typename
+      ... on Datasource {
         name
-      namespace
-      displayName
-      endpoint {
-        url
-        authSecret {
-          kind
-          Name
+        namespace
+        displayName
+        endpoint {
+          url
+          authSecret {
+            kind
+            Name
+          }
+          insecure
         }
-        insecure
-      }
-      oss {
-        bucket
+        oss {
+          bucket
+        }
       }
     }
   }

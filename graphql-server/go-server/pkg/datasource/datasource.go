@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/model"
+	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 )
 
 func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
