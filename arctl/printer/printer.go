@@ -23,6 +23,8 @@ import (
 	"reflect"
 	"strings"
 	"text/tabwriter"
+
+	"gopkg.in/yaml.v2"
 )
 
 func Print(headers []string, objs []any) {
@@ -63,4 +65,16 @@ func GetByHeader(obj any, s string) string {
 	}
 
 	return "<none>"
+}
+
+func PrintYaml(obj any) error {
+	data, err := yaml.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	_, err = os.Stdout.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }

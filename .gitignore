@@ -113,3 +113,4 @@ Temporary Items
 .vagrant/
 _output/
 *.bkp
+tmp_role.yaml

@@ -25,11 +25,13 @@ Available Commands:
   chat        Do LLM chat with similarity search(optional)
   completion  Generate the autocompletion script for the specified shell
   dataset     Manage dataset locally
+  datasource  Manage datasources
   help        Help about any command
 
 Flags:
-  -h, --help          help for arctl
-      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+  -h, --help               help for arctl
+      --home string        home directory to use (default "/home/bjwswang/.arcadia")
+  -n, --namespace string   namespace to use (default "default")
 
 Use "arctl [command] --help" for more information about a command.
 ```
@@ -61,16 +63,27 @@ Available Commands:
   chat        Do LLM chat with similarity search(optional)
   completion  Generate the autocompletion script for the specified shell
   dataset     Manage dataset locally
+  datasource  Manage datasources
   help        Help about any command
 
 Flags:
-  -h, --help          help for arctl
-      --home string   home directory to use (default "/Users/bjwswang/.arcadia")
+  -h, --help               help for arctl
+      --home string        home directory to use (default "/home/bjwswang/.arcadia")
+  -n, --namespace string   namespace to use (default "default")
 
 Use "arctl [command] --help" for more information about a command.
 ```
 
 ## Usage
+### Datasource management
+
+You can use `arctl` to manage your datasources with the following commands:
+
+- `arctl datasource list`: list your datasources
+- `arctl datasource create`: create a new datasource
+- `arctl datasource delete`: delete datasource along with the auth secret(if set)
+- `arctl datasource get`: get a datasource info
+
 ### Local dataset management
 
 You can use `arctl` to manage your dataset locally with the following commands:
