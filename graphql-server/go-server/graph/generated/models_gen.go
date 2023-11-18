@@ -10,6 +10,24 @@ type PageNode interface {
 	IsPageNode()
 }
 
+type CreateDatasetInput struct {
+	// 数据集的CR名字，要满足k8s的名称规则
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	// 一些标签选择信息，可以不添加
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 一些备注用的注视信息，或者记录一个简单的配置
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名称，用于展示在界面上的，必须填写
+	DisplayName string `json:"displayName"`
+	// 描述信息，可以不写
+	Description *string `json:"description,omitempty"`
+	// 数据集里面的数据的类型，文本，视频，图片
+	ContentType string `json:"contentType"`
+	// 应用场景，可以为空
+	Filed *string `json:"filed,omitempty"`
+}
+
 // 新增数据源时输入条件
 type CreateDatasourceInput struct {
 	// 数据源资源名称（不可同名）
@@ -83,6 +101,89 @@ type CreateModelInput struct {
 	Modeltype string `json:"modeltype"`
 }
 
+type CreateVersionedDatasetInput struct {
+	// 数据集的CR名字，要满足k8s的名称规则
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	// dataset的名字，需要根据这个名字，
+	//     判断是否最新版本不包含任何文件(产品要求，有一个不包含任何文件的版本，不允许创建新的版本)
+	DatasetName string `json:"datasetName"`
+	// 一些标签选择信息，可以不添加
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 一些备注用的注视信息，或者记录一个简单的配置
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名称，用于展示在界面上的，必须填写
+	DisplayName string `json:"displayName"`
+	// 描述信息，可以不写
+	Description *string `json:"description,omitempty"`
+	// 数据集里面的数据的类型，文本，视频，图片
+	Version string `json:"version"`
+	// 是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以
+	Release   int          `json:"release"`
+	FileGrups []*FileGroup `json:"fileGrups,omitempty"`
+}
+
+// Dataset
+// 数据集代表用户纳管的一组相似属性的文件，采用相同的方式进行数据处理并用于后续的
+// 1. 模型训练
+// 2. 知识库
+//
+// 支持多种类型数据:
+// - 文本
+// - 图片
+// - 视频
+//
+// 单个数据集仅允许包含同一类型文件，不同类型文件将被忽略
+// 数据集允许有多个版本，数据处理针对单个版本进行
+// 数据集某个版本完成数据处理后，数据处理服务需要将处理后的存储回 版本数据集
+type Dataset struct {
+	// 数据集名称
+	Name string `json:"name"`
+	// 数据集所在的namespace，也是后续桶的名字
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 创建者，正查给你这个字段是不需要人写的，自动添加
+	Creator *string `json:"creator,omitempty"`
+	// 展示名字， 与metadat.name不一样，这个展示名字是可以用中文的
+	DisplayName string `json:"displayName"`
+	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// 数据集类型，文本，图片，视频
+	ContentType string `json:"contentType"`
+	// 应用场景
+	Field *string `json:"field,omitempty"`
+	// 这个是一个resolver，数据集下面的版本列表。
+	// 支持对名字，类型的完全匹配过滤。
+	// 支持通过标签(somelabel=abc)，字段(metadata.name=abc)进行过滤
+	Versions PaginatedResult `json:"versions"`
+	// 数据集的总版本数量
+	VersionCount int `json:"versionCount"`
+}
+
+func (Dataset) IsPageNode() {}
+
+type DatasetMutation struct {
+	CreateDataset Dataset `json:"createDataset"`
+	UpdateDataset Dataset `json:"updateDataset"`
+	// 删除数据集
+	// 可以提供一个名称列表，会将所有名字在这个列表的dataset全部删除
+	// 支持通过标签进行删除，提供一个标签选择器，将满足标签的dataset全部删除
+	// 如果提供了这两个参数，以名字列表为主。
+	DeleteDatasets *string `json:"deleteDatasets,omitempty"`
+}
+
+type DatasetQuery struct {
+	// 根据名字获取某个具体的数据集
+	GetDataset Dataset `json:"getDataset"`
+	// 获取数据集列表，支持通过标签和字段进行选择。
+	// labelSelector: aa=bbb
+	// fieldSelector= metadata.name=somename
+	ListDatasets PaginatedResult `json:"listDatasets"`
+}
+
 type Datasource struct {
 	Name            string                 `json:"name"`
 	Namespace       string                 `json:"namespace"`
@@ -109,6 +210,13 @@ type DatasourceMutation struct {
 type DatasourceQuery struct {
 	GetDatasource   Datasource      `json:"getDatasource"`
 	ListDatasources PaginatedResult `json:"listDatasources"`
+}
+
+type DeleteDatasetInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
 type DeleteDatasourceInput struct {
@@ -143,6 +251,13 @@ type DeleteModelInput struct {
 	// 标签选择器
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
+type DeleteVersionedDatasetInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
@@ -187,6 +302,40 @@ type EndpointInput struct {
 	Insecure *bool `json:"insecure,omitempty"`
 }
 
+// File
+// 展示某个版本的所有文件。
+type F struct {
+	// 文件名称
+	Datasource TypedObjectReference `json:"datasource"`
+	// 文件在数据源中的路径，a/b/c.txt或者d.txt
+	Path string `json:"path"`
+	// 摘要？摘啥
+	Md5 *string `json:"md5,omitempty"`
+	// 文件成功导入时间，如果没有导入成功，这个字段为空
+	Time *time.Time `json:"time,omitempty"`
+}
+
+func (F) IsPageNode() {}
+
+// 根据条件顾虑版本内的文件，只支持关键词搜索
+type FileFilter struct {
+	// 根据关键词搜索文件，strings.Container(fileName, keyword)
+	Keyword string `json:"keyword"`
+	// 页
+	Page int `json:"page"`
+	// 页内容数量
+	PageSize int `json:"pageSize"`
+	// 根据文件名字或者更新时间排序, file, time
+	SortBy *string `json:"sortBy,omitempty"`
+}
+
+type FileGroup struct {
+	// 数据源的基础信息
+	Datasource TypedObjectReferenceInput `json:"datasource"`
+	// 用到的文件路径，注意⚠️ 一定不要加bucket的名字
+	Paths []string `json:"paths,omitempty"`
+}
+
 type KnowledgeBase struct {
 	Name        string                 `json:"name"`
 	Namespace   string                 `json:"namespace"`
@@ -214,6 +363,19 @@ type KnowledgeBaseMutation struct {
 type KnowledgeBaseQuery struct {
 	GetKnowledgeBase   KnowledgeBase   `json:"getKnowledgeBase"`
 	ListKnowledgeBases PaginatedResult `json:"listKnowledgeBases"`
+}
+
+type ListDatasetInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	DisplayName   *string `json:"displayName,omitempty"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	// 分页页码，从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，默认10
+	PageSize *int    `json:"pageSize,omitempty"`
+	Keyword  *string `json:"keyword,omitempty"`
 }
 
 // 分页查询输入
@@ -268,6 +430,19 @@ type ListModelInput struct {
 	Page          *int    `json:"page,omitempty"`
 	PageSize      *int    `json:"pageSize,omitempty"`
 	Keyword       *string `json:"keyword,omitempty"`
+}
+
+type ListVersionedDatasetInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	DisplayName   *string `json:"displayName,omitempty"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	// 分页页码，从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，默认10
+	PageSize *int    `json:"pageSize,omitempty"`
+	Keyword  *string `json:"keyword,omitempty"`
 }
 
 type Model struct {
@@ -329,6 +504,21 @@ type TypedObjectReferenceInput struct {
 	Namespace *string `json:"Namespace,omitempty"`
 }
 
+type UpdateDatasetInput struct {
+	// name, namespace用来确定资源，不允许修改的。将原数据传递回来即可。
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	// 更新的的标签信息，这里涉及到增加或者删除标签，
+	// 所以，如果标签有任何改动，传递完整的label。
+	// 例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 如果不更新，为空就可以
+	DisplayName *string `json:"displayName,omitempty"`
+	// 同理
+	Description *string `json:"description,omitempty"`
+}
+
 type UpdateDatasourceInput struct {
 	// 数据源资源名称（不可同名）
 	Name string `json:"name"`
@@ -387,6 +577,68 @@ type UpdateModelInput struct {
 	DisplayName string `json:"displayName"`
 	// 模型仓库资源描述
 	Description *string `json:"description,omitempty"`
+}
+
+type UpdateVersionedDatasetInput struct {
+	// 这个名字就是metadat.name, 根据name和namespace确定资源
+	// name，namespac是不可以更新的。
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	// 更新的的标签信息，这里涉及到增加或者删除标签，
+	// 所以，如果标签有任何改动，传递完整的label。
+	// 例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 传递方式同label
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
+	// 更新，删除数据集版本中的文件，传递方式于label相同，完全传递。
+	// 如果传递一个空的数组过去，认为是删除全部文件。
+	FileGroups []*FileGroup `json:"fileGroups,omitempty"`
+}
+
+// VersionedDataset
+// 数据集的版本信息。
+// 主要记录版本名字，数据的来源，以及文件的同步状态
+type VersionedDataset struct {
+	// 数据集名称, 这个应该是前端随机生成就可以，没有实际用途
+	Name string `json:"name"`
+	// 数据集所在的namespace，也是后续桶的名字
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 创建者，正查给你这个字段是不需要人写的，自动添加
+	Creator *string `json:"creator,omitempty"`
+	// 展示名字， 与metadat.name不一样，这个展示名字是可以用中文的
+	DisplayName string `json:"displayName"`
+	// 所属的数据集
+	Dataset TypedObjectReference `json:"dataset"`
+	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
+	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
+	CreationTimestamp time.Time  `json:"creationTimestamp"`
+	// 数据集所包含的文件，对于文件需要支持过滤和分页
+	Files PaginatedResult `json:"files"`
+	// 版本名称
+	Version string `json:"version"`
+	// 该数据集版本所包含的数据总量
+	FileCount int `json:"fileCount"`
+	// 该版本是否已经发布, 0是未发布，1是已经发布
+	Released int `json:"released"`
+}
+
+func (VersionedDataset) IsPageNode() {}
+
+type VersionedDatasetMutation struct {
+	CreateVersionedDataset  VersionedDataset `json:"createVersionedDataset"`
+	UpdateVersionedDataset  VersionedDataset `json:"updateVersionedDataset"`
+	DeleteVersionedDatasets *string          `json:"deleteVersionedDatasets,omitempty"`
+}
+
+type VersionedDatasetQuery struct {
+	GetVersionedDataset   VersionedDataset `json:"getVersionedDataset"`
+	ListVersionedDatasets PaginatedResult  `json:"listVersionedDatasets"`
 }
 
 type Filegroup struct {

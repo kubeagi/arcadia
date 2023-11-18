@@ -42,6 +42,9 @@ spec:
           spec:
             description: VersionedDatasetSpec defines the desired state of VersionedDataset
             properties:
+              creator:
+                description: Creator defines datasource creator (AUTO-FILLED by webhook)
+                type: string
               dataset:
                 description: Dataset which this `VersionedDataset` belongs to
                 properties:
@@ -64,6 +67,12 @@ spec:
                 - kind
                 - name
                 type: object
+              description:
+                description: Description defines datasource description
+                type: string
+              displayName:
+                description: DisplayName defines datasource display name
+                type: string
               fileGroups:
                 description: FileGroups included in this `VersionedDataset` Grouped
                   by Datasource
