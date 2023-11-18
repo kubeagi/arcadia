@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package arctl
 
 import (
 	"bytes"
@@ -65,12 +65,12 @@ var (
 	resetVectorStore bool
 )
 
-func NewDatasetCmd() *cobra.Command {
+func NewDatasetCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dataset [usage]",
 		Short: "Manage dataset locally",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			datasetDir := filepath.Join(home, "dataset")
+			datasetDir := filepath.Join(homePath, "dataset")
 			if _, err := os.Stat(datasetDir); os.IsNotExist(err) {
 				if err := os.MkdirAll(datasetDir, 0700); err != nil {
 					return err
@@ -80,23 +80,23 @@ func NewDatasetCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(DatasetListCmd())
-	cmd.AddCommand(DatasetCreateCmd())
-	cmd.AddCommand(DatasetShowCmd())
-	cmd.AddCommand(DatasetExecuteCmd())
-	cmd.AddCommand(DatasetDeleteCmd())
+	cmd.AddCommand(DatasetListCmd(homePath))
+	cmd.AddCommand(DatasetCreateCmd(homePath))
+	cmd.AddCommand(DatasetShowCmd(homePath))
+	cmd.AddCommand(DatasetExecuteCmd(homePath))
+	cmd.AddCommand(DatasetDeleteCmd(homePath))
 
 	return cmd
 }
 
 // DatasetListCmd returns a Cobra command for listing datasets.
-func DatasetListCmd() *cobra.Command {
+func DatasetListCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list [usage]",
 		Short: "List dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("| DATASET | FILES |EMBEDDING MODEL | VECTOR STORE | DOCUMENT LANGUAGE | TEXT SPLITTER | CHUNK SIZE | CHUNK OVERLAP |\n")
-			err = filepath.Walk(filepath.Join(home, "dataset"), func(path string, info os.FileInfo, err error) error {
+			err := filepath.Walk(filepath.Join(homePath, "dataset"), func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
@@ -123,13 +123,13 @@ func DatasetListCmd() *cobra.Command {
 }
 
 // DatasetCreateCmd returns a new instance of the cobra.Command that is used to create a dataset.
-func DatasetCreateCmd() *cobra.Command {
+func DatasetCreateCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create [usage]",
 		Short: "Create dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Create dataset: %s \n", dataset)
-			ds, err := loadCachedDataset(filepath.Join(home, "dataset", dataset))
+			ds, err := loadCachedDataset(filepath.Join(homePath, "dataset", dataset))
 			if err != nil {
 				return err
 			}
@@ -158,28 +158,28 @@ func DatasetCreateCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to marshal dataset %s: %v", dataset, err)
 			}
-			err = os.WriteFile(filepath.Join(home, "dataset", dataset), cache, 0644)
+			err = os.WriteFile(filepath.Join(homePath, "dataset", dataset), cache, 0644)
 			if err != nil {
 				return err
 			}
 			klog.Infof("Successfully created dataset %s\n", dataset)
 
-			return showDataset(dataset)
+			return showDataset(homePath, dataset)
 		},
 	}
 	cmd.Flags().StringVar(&dataset, "name", "", "dataset(namespace/collection) of the document to load into")
-	if err = cmd.MarkFlagRequired("name"); err != nil {
+	if err := cmd.MarkFlagRequired("name"); err != nil {
 		panic(err)
 	}
 
 	cmd.Flags().StringVar(&inputDocuments, "documents", "", "path of the documents/document directories to load(separated by comma and directories supported)")
-	if err = cmd.MarkFlagRequired("documents"); err != nil {
+	if err := cmd.MarkFlagRequired("documents"); err != nil {
 		panic(err)
 	}
 
 	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use(Only zhipuai,openai supported now)")
 	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access embedding service")
-	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
+	if err := cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
 
@@ -192,26 +192,26 @@ func DatasetCreateCmd() *cobra.Command {
 	return cmd
 }
 
-func DatasetShowCmd() *cobra.Command {
+func DatasetShowCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show [usage]",
 		Short: "Load more documents to dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Show dataset: %s \n", dataset)
-			return showDataset(dataset)
+			return showDataset(homePath, dataset)
 		},
 	}
 
 	cmd.Flags().StringVar(&dataset, "name", "", "dataset(namespace/collection) of the document to load into")
-	if err = cmd.MarkFlagRequired("name"); err != nil {
+	if err := cmd.MarkFlagRequired("name"); err != nil {
 		panic(err)
 	}
 
 	return cmd
 }
 
-func showDataset(dataset string) error {
-	cachedDatasetFile, err := os.OpenFile(filepath.Join(home, "dataset", dataset), os.O_RDWR, 0644)
+func showDataset(homePath, dataset string) error {
+	cachedDatasetFile, err := os.OpenFile(filepath.Join(homePath, "dataset", dataset), os.O_RDWR, 0644)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Errorf("dataset %s does not exist", dataset)
@@ -241,13 +241,13 @@ func showDataset(dataset string) error {
 	return nil
 }
 
-func DatasetExecuteCmd() *cobra.Command {
+func DatasetExecuteCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "execute [usage]",
 		Short: "Execute dataset to load documents to dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Execute dataset: %s \n", dataset)
-			ds, err := loadCachedDataset(filepath.Join(home, "dataset", dataset))
+			ds, err := loadCachedDataset(filepath.Join(homePath, "dataset", dataset))
 			if err != nil {
 				return err
 			}
@@ -267,7 +267,7 @@ func DatasetExecuteCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to marshal dataset %s: %v", dataset, err)
 			}
-			err = os.WriteFile(filepath.Join(home, "dataset", dataset), cache, 0644)
+			err = os.WriteFile(filepath.Join(homePath, "dataset", dataset), cache, 0644)
 			if err != nil {
 				return err
 			}
@@ -277,24 +277,24 @@ func DatasetExecuteCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&dataset, "name", "", "dataset(namespace/collection) of the document to load into")
-	if err = cmd.MarkFlagRequired("name"); err != nil {
+	if err := cmd.MarkFlagRequired("name"); err != nil {
 		panic(err)
 	}
 
 	cmd.Flags().StringVar(&inputDocuments, "documents", "", "path of the documents/document directories to load(separated by comma and directories supported)")
-	if err = cmd.MarkFlagRequired("documents"); err != nil {
+	if err := cmd.MarkFlagRequired("documents"); err != nil {
 		panic(err)
 	}
 
 	return cmd
 }
-func DatasetDeleteCmd() *cobra.Command {
+func DatasetDeleteCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete [usage]",
 		Short: "Delete dataset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Delete dataset: %s \n", dataset)
-			ds, err := loadCachedDataset(filepath.Join(home, "dataset", dataset))
+			ds, err := loadCachedDataset(filepath.Join(homePath, "dataset", dataset))
 			if err != nil {
 				return fmt.Errorf("failed to load cached dataset %s: %v", dataset, err)
 			}
@@ -321,7 +321,7 @@ func DatasetDeleteCmd() *cobra.Command {
 				}
 			}
 			// remove local cache
-			if err := os.Remove(filepath.Join(home, "dataset", dataset)); err != nil {
+			if err := os.Remove(filepath.Join(homePath, "dataset", dataset)); err != nil {
 				panic(err)
 			}
 			klog.Infof("Successfully delete dataset: %s \n", dataset)
@@ -330,7 +330,7 @@ func DatasetDeleteCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&dataset, "name", "arcadia", "dataset(namespace/collection) of the document to load into")
-	if err = cmd.MarkFlagRequired("name"); err != nil {
+	if err := cmd.MarkFlagRequired("name"); err != nil {
 		panic(err)
 	}
 

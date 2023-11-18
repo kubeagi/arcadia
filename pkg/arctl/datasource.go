@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package arctl
 
 import (
 	"errors"
@@ -27,31 +27,36 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/arctl/printer"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/arctl/printer"
 )
 
 var (
 	datasourcePrintHeaders = []string{"name", "displayName", "creator", "endpoint", "oss"}
+
+	// common spec to all resources
+	displayName string
+	description string
 )
 
-func NewDatasourceCmd() *cobra.Command {
+func NewDatasourceCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "datasource [usage]",
 		Short: "Manage datasources",
 	}
 
-	cmd.AddCommand(DatasourceCreateCmd())
-	cmd.AddCommand(DatasourceGetCmd())
-	cmd.AddCommand(DatasourceDeleteCmd())
-	cmd.AddCommand(DatasourceListCmd())
+	cmd.AddCommand(DatasourceCreateCmd(kubeClient, namespace))
+	cmd.AddCommand(DatasourceGetCmd(kubeClient, namespace))
+	cmd.AddCommand(DatasourceDeleteCmd(kubeClient, namespace))
+	cmd.AddCommand(DatasourceListCmd(kubeClient, namespace))
 
 	return cmd
 }
 
-func DatasourceCreateCmd() *cobra.Command {
+func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
 	var empytDatasource bool
 	// endpoint flags
 	var endpointURL, endpointAuthUser, endpointAuthPwd string
@@ -105,7 +110,7 @@ func DatasourceCreateCmd() *cobra.Command {
 				}
 			}
 
-			_, err = datasource.CreateDatasource(cmd.Context(), kubeClient, name, namespace, endpointURL, endpointAuthSecret, ossBucket, displayName, endpointInsecure)
+			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, name, namespace, endpointURL, endpointAuthSecret, ossBucket, displayName, endpointInsecure)
 			if err != nil {
 				return err
 			}
@@ -133,7 +138,7 @@ func DatasourceCreateCmd() *cobra.Command {
 	return cmd
 }
 
-func DatasourceGetCmd() *cobra.Command {
+func DatasourceGetCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get [name]",
 		Short: "Get datasource",
@@ -155,7 +160,7 @@ func DatasourceGetCmd() *cobra.Command {
 	return cmd
 }
 
-func DatasourceListCmd() *cobra.Command {
+func DatasourceListCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list [usage]",
 		Short: "List datasources",
@@ -176,7 +181,7 @@ func DatasourceListCmd() *cobra.Command {
 	return cmd
 }
 
-func DatasourceDeleteCmd() *cobra.Command {
+func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete [name]",
 		Short: "Delete a datasource",

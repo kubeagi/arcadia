@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package arctl
 
 import (
 	"context"
@@ -80,7 +80,7 @@ var (
 	}
 )
 
-func NewChatCmd() *cobra.Command {
+func NewChatCmd(homePath string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chat [usage]",
 		Short: "Do LLM chat with similarity search(optional)",
@@ -89,7 +89,7 @@ func NewChatCmd() *cobra.Command {
 			var err error
 
 			if dataset != "" {
-				docs, err = SimilaritySearch(context.Background())
+				docs, err = SimilaritySearch(context.Background(), homePath)
 				if err != nil {
 					return err
 				}
@@ -109,10 +109,10 @@ func NewChatCmd() *cobra.Command {
 	cmd.Flags().StringVar(&llmType, "llm-type", string(llms.ZhiPuAI), "llm type to use for embedding & chat(Only zhipuai,openai supported now)")
 	cmd.Flags().StringVar(&apiKey, "llm-apikey", "", "apiKey to access llm service.Must required when embedding similarity search is enabled")
 	cmd.Flags().StringVar(&question, "question", "", "question text to be asked")
-	if err = cmd.MarkFlagRequired("llm-apikey"); err != nil {
+	if err := cmd.MarkFlagRequired("llm-apikey"); err != nil {
 		panic(err)
 	}
-	if err = cmd.MarkFlagRequired("question"); err != nil {
+	if err := cmd.MarkFlagRequired("question"); err != nil {
 		panic(err)
 	}
 
@@ -125,11 +125,11 @@ func NewChatCmd() *cobra.Command {
 	return cmd
 }
 
-func SimilaritySearch(ctx context.Context) ([]schema.Document, error) {
+func SimilaritySearch(ctx context.Context, homePath string) ([]schema.Document, error) {
 	var embedder embeddings.Embedder
 	var err error
 
-	ds, err := loadCachedDataset(filepath.Join(home, "dataset", dataset))
+	ds, err := loadCachedDataset(filepath.Join(homePath, "dataset", dataset))
 	if err != nil {
 		return nil, err
 	}
