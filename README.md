@@ -27,7 +27,7 @@ Furthermore,we can easily host **Arcadia** at any kubernetes cluster as producti
 
 Our design and development in Arcadia design follows operator pattern which extends kubernetes APIs.
 
-![Arch](./assets/kubeagi.drawio.png)
+![Arch](./docs/images//kubeagi.drawio.png)
 
 ## Quick Start
 
@@ -39,8 +39,8 @@ Our design and development in Arcadia design follows operator pattern which exte
 
 If you don't have a kubernetes cluster, you can schedule a [kind cluster](https://kind.sigs.k8s.io/). Depends on your choice on CPU or GPU when running LLM worker,you can choose to:
 
-- [Schedule a kind cluster without GPU enabled](./doc/kind.md)
-- [Schedule a kind cluster with GPU enabled](./doc/kind_gpu.md)
+- [Schedule a kind cluster without GPU enabled](./docs/kind.md)
+- [Schedule a kind cluster with GPU enabled](./docs/kind_gpu.md)
 
 ### Install Arcadia
 
@@ -52,7 +52,7 @@ If you don't have a kubernetes cluster, you can schedule a [kind cluster](https:
 
 ## CLI
 
-We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./arctl/README.md) for more details.
+We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./pkg/arctl/README.md) for more details.
 
 - ✅ datasource management
 - ✅ local dataset management

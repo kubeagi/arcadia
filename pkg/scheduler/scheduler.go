@@ -19,11 +19,11 @@ import (
 	"context"
 
 	"github.com/KawashiroNitori/butcher/v2"
-	"github.com/kubeagi/arcadia/api/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeagi/arcadia/api/v1alpha1"
 )
 
 type Scheduler struct {
