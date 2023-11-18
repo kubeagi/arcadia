@@ -17,8 +17,11 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/KawashiroNitori/butcher/v2"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,8 +72,39 @@ func (s *Scheduler) Start() error {
 	}
 
 	if ds.ResourceVersion == s.ds.ResourceVersion {
+		syncCond := true
+		for _, cond := range ds.Status.Conditions {
+			if cond.Type == v1alpha1.TypeReady && cond.Status == corev1.ConditionTrue && cond.Reason == v1alpha1.ReasonFileSuncSuccess {
+				syncCond = false
+			}
+		}
 		deepCopy := ds.DeepCopy()
 		deepCopy.Status.DatasourceFiles = s.ds.Status.DatasourceFiles
+		if syncCond {
+			condition := v1alpha1.Condition{
+				Type:               v1alpha1.TypeReady,
+				Status:             corev1.ConditionTrue,
+				LastTransitionTime: v1.Now(),
+				Reason:             v1alpha1.ReasonFileSuncSuccess,
+				Message:            "",
+			}
+			for _, checker := range s.ds.Status.DatasourceFiles {
+				shouldBreak := false
+				for _, f := range checker.Status {
+					if f.Phase != v1alpha1.FileProcessPhaseSucceeded {
+						condition.Status = corev1.ConditionFalse
+						condition.Reason = v1alpha1.ReasonFileSyncFailed
+						condition.Message = fmt.Sprintf("%s sync failed, %s", f.Path, f.ErrMessage)
+						shouldBreak = true
+					}
+				}
+				if shouldBreak {
+					break
+				}
+			}
+			deepCopy.Status.ConditionedStatus.SetConditions(condition)
+		}
+
 		return s.client.Status().Patch(s.ctx, deepCopy, client.MergeFrom(ds))
 	}
 

@@ -44,11 +44,13 @@ type ConditionReason string
 const (
 	ReasonAvailable        ConditionReason = "Available"
 	ReasonUnavailable      ConditionReason = "Unavailable"
-	ReasonCreating         ConditionReason = "Creating"
-	ReasonDeleting         ConditionReason = "Deleting"
 	ReasonReconcileSuccess ConditionReason = "ReconcileSuccess"
 	ReasonReconcileError   ConditionReason = "ReconcileError"
 	ReasonReconcilePaused  ConditionReason = "ReconcilePaused"
+
+	ReasonFileSyncing     ConditionReason = "FileSyncing"
+	ReasonFileSyncFailed  ConditionReason = "FileSyncFailed"
+	ReasonFileSuncSuccess ConditionReason = "FileSyncSuccess"
 )
 
 // Some Data related Condition Types

@@ -59,16 +59,22 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 
 		ds := &v1alpha1.Datasource{}
 		datasourceNamespace := fs.DatasourceNamespace
-		datasetNamespace := e.instance.Spec.Dataset.GetNamespace()
-		srcBucket := "bucket-" + datasourceNamespace
-		dstBucket := "bucket-" + datasetNamespace
-		klog.V(4).Infof("[Debug] datasourceNamespace: %s, datasetNamespace: %s, srcBucket: %s, dstBucket: %s",
-			datasourceNamespace, datasetNamespace, srcBucket, dstBucket)
-
+		datasetNamespace := e.instance.Namespace
+		if e.instance.Spec.Dataset.Namespace != nil {
+			datasetNamespace = *e.instance.Spec.Dataset.Namespace
+		}
 		if err := e.client.Get(ctx, types.NamespacedName{Namespace: fs.DatasourceNamespace, Name: fs.DatasourceName}, ds); err != nil {
 			klog.Errorf("generateJob: failed to get datasource %s", err)
 			return err
 		}
+
+		srcBucket := datasourceNamespace
+		if ds.Spec.OSS != nil {
+			srcBucket = ds.Spec.OSS.Bucket
+		}
+		dstBucket := datasetNamespace
+		klog.V(4).Infof("[Debug] datasourceNamespace: %s, datasetNamespace: %s, srcBucket: %s, dstBucket: %s",
+			datasourceNamespace, datasetNamespace, srcBucket, dstBucket)
 
 		klog.V(5).Infof("[Debug] get datasource %+v\n", *ds)
 
@@ -92,7 +98,7 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 			}
 		}
 
-		dst := fmt.Sprintf("%s/dataset/%s/%s", datasetNamespace, e.instance.Spec.Dataset.Name, e.instance.Spec.Version)
+		dst := fmt.Sprintf("dataset/%s/%s", e.instance.Spec.Dataset.Name, e.instance.Spec.Version)
 
 		for _, fp := range fs.Status {
 			select {

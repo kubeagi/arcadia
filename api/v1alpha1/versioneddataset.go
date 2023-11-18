@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	"sort"
+
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -50,7 +53,10 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 	// 2. Organize the contents of the fileGroup into this format: {"datasourceNamespace datasourceName": ["file1", "file2"]}
 	fileGroup := make(map[string][]string)
 	for _, fg := range instance.Spec.FileGroups {
-		namespace := fg.Datasource.GetNamespace()
+		namespace := instance.Namespace
+		if fg.Datasource.Namespace != nil {
+			namespace = *fg.Datasource.Namespace
+		}
 		key := fmt.Sprintf("%s %s", namespace, fg.Datasource.Name)
 		if _, ok := fileGroup[key]; !ok {
 			fileGroup[key] = make([]string, 0)
@@ -127,7 +133,31 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 		return targetDatasourceFileStatus[i].DatasourceName < targetDatasourceFileStatus[j].DatasourceName
 	})
 
+	index := -1
+	for idx, item := range instance.Status.Conditions {
+		if item.Type == TypeReady {
+			if item.Status != corev1.ConditionTrue {
+				index = idx
+			}
+			break
+		}
+	}
+	if len(instance.Status.Conditions) == 0 || index != -1 {
+		message := "sync files."
+		if index != -1 {
+			message = "file synchronization failed, try again"
+		}
+		cond := Condition{
+			Type:               TypeReady,
+			Status:             corev1.ConditionFalse,
+			Reason:             ReasonFileSyncing,
+			Message:            message,
+			LastTransitionTime: v1.Now(),
+		}
+		instance.Status.ConditionedStatus.SetConditions(cond)
+	}
 	instance.Status.DatasourceFiles = targetDatasourceFileStatus
+	// update condition to sync
 	return update, deletedFiles
 }
 
@@ -154,6 +184,9 @@ func UpdateFileStatus(ctx context.Context, instance *VersionedDataset, datasourc
 		instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].Phase = syncStatus
 		if syncStatus == FileProcessPhaseFailed {
 			instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].ErrMessage = errMsg
+		}
+		if syncStatus == FileProcessPhaseSucceeded {
+			instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].LastUpdateTime = v1.Now()
 		}
 		return nil
 	}
