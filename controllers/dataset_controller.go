@@ -37,6 +37,7 @@ type DatasetReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=versioneddatasets,verbs=deletecollection
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasets/finalizers,verbs=update
 

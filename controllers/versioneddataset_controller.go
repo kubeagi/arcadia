@@ -126,10 +126,14 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1
 	}
 
 	dataset := &v1alpha1.Dataset{}
+	namespace := instance.Namespace
+	if instance.Spec.Dataset.Namespace != nil {
+		namespace = *instance.Spec.Dataset.Namespace
+	}
 	if err = r.Client.Get(ctx, types.NamespacedName{
-		Namespace: instance.Spec.Dataset.GetNamespace(),
+		Namespace: namespace,
 		Name:      instance.Spec.Dataset.Name}, dataset); err != nil {
-		klog.Errorf("preUpdate: failed to get dataset %s/%s, error %s", instance.Spec.Dataset.GetNamespace(), instance.Spec.Dataset.Name, err)
+		klog.Errorf("preUpdate: failed to get dataset %s/%s, error %s", namespace, instance.Spec.Dataset.Name, err)
 		return false, err
 	}
 
