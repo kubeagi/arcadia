@@ -258,18 +258,18 @@ build-graphql-server: gql-gen
 # prepare for git push
 .PHONY: prepare-push
 config_rule_line_num = $(shell grep -n "rules:" config/rbac/role.yaml | cut -d: -f1)
-chart_rule_line_num = $(shell grep -n "rules:" charts/arcadia/templates/rbac.yaml | cut -d: -f1)
+chart_rule_line_num = $(shell grep -n "rules:" deploy/charts/arcadia/templates/rbac.yaml | cut -d: -f1)
 prepare-push: manifests generate fmt vet
 	@echo "install golangci-lint"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "run golangci-lint with auto-fix"
 	@golangci-lint run --fix -v ./...
 	@echo "copy crds to charts"
-	@cp config/crd/bases/* charts/arcadia/crds
+	@cp config/crd/bases/* deploy/charts/arcadia/crds
 	@echo "copy role to charts"
 	@sed -n '$(config_rule_line_num),$$p' config/rbac/role.yaml > tmp_role.yaml
-	@sed -i '' '$(chart_rule_line_num),$$d' charts/arcadia/templates/rbac.yaml
-	@cat tmp_role.yaml >> charts/arcadia/templates/rbac.yaml
+	@sed -i '' '$(chart_rule_line_num),$$d' deploy/charts/arcadia/templates/rbac.yaml
+	@cat tmp_role.yaml >> deploy/charts/arcadia/templates/rbac.yaml
 	@rm -f tmp_role.yaml
 
 # Commands for Data-Processing

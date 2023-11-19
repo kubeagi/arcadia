@@ -179,7 +179,7 @@ kind load docker-image controller:example-e2e --name=$KindName
 
 info "3. install arcadia"
 kubectl create namespace arcadia
-helm install -narcadia arcadia charts/arcadia --set deployment.image=controller:example-e2e --wait --timeout $HelmTimeout
+helm install -narcadia arcadia deploy/charts/arcadia --set deployment.image=controller:example-e2e --wait --timeout $HelmTimeout
 
 info "4. check system datasource arcadia-minio(system datasource)"
 waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"

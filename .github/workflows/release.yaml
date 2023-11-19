@@ -28,10 +28,10 @@ jobs:
 
       # https://github.com/helm/chart-releaser-action
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.5.0
+        uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: deploy/charts
-          charts_repo_url: https://kubeagi.github.io/arcadia/
+          skip_existing: true
           # FIXME: uncomment this once customized configuration is needed
           # config: cr.yaml
         env:
