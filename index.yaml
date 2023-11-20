@@ -651,6 +651,24 @@ entries:
   llm-worker:
   - apiVersion: v2
     appVersion: 0.2.32
+    created: "2023-11-20T14:23:01.468624201Z"
+    description: A Helm chart for llm-worker
+    digest: 5564affb46ade7723c56b25dc607d53a6ee888cb5aaab9651d0580a47044b0f6
+    keywords:
+    - kubeagi
+    - LLMOps
+    maintainers:
+    - name: lanture1064
+      url: https://github.com/lanture1064
+    name: llm-worker
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/llm-worker-0.0.2/llm-worker-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 0.2.32
     created: "2023-11-08T09:12:41.638892111Z"
     description: A Helm chart for llm-worker
     digest: d0ecf8b2123f286246e48de090b3ff0602c5847d062dcf6335e60ee48b6f001e
@@ -691,4 +709,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-11-20T06:51:15.606751764Z"
+generated: "2023-11-20T14:23:01.46872966Z"
