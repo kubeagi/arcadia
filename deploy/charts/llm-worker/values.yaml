@@ -2,31 +2,31 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 image:
-  repository: kubebb/arcadia-llm-worker
+  repository: kubebb/arcadia-fastchat-worker
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "v0.0.1"
   env:
-    - name: FASTCHAT_WORKER_MODEL_NAMES
-      value: "chatglm3-6b"
-    - name: FASTCHAT_WORKER_MODEL_PATH
-      value: "chatglm3-6b"
-    - name: FASTCCHAT_WORKER_ADDRESS
-      value: "http://fastchat-model-worker.arcadia.svc.cluster.local:21002"
-    - name: FASTCCHAT_CONTROLLER_ADDRESS
-      value: "http://arcadia-fastchat.svc.cluster.local:21001"
+  - name: FASTCHAT_MODEL_NAME
+    value: "baichuan2-7b"
+  - name: FASTCCHAT_WORKER_ADDRESS
+    value: "http://arcadia-llm-worker.arcadia.svc.cluster.local:21002"
+  - name: FASTCCHAT_CONTROLLER_ADDRESS
+    value: "http://arcadia-fastchat.arcadia.svc.cluster.local:21001"
 
 init:
   image: kubebb/minio-mc
   pullPolicy: IfNotPresent
   tag: "RELEASE.2023-01-28T20-29-38Z"
   env:
-    - name: MINIO_ENDPOINT
-      value: "https://arcadia-minio-api.172.22.96.167.nip.io/"
-    - name: MINIO_ACCESS_KEY
-      value: "ydKiRfEhz2UTvrn8"
-    - name: MINIO_SECRET_KEY
-      value: "XoJ2X5N2BOYWXgP3BczEGiG3QG5VKOKt"
+  - name: MINIO_ENDPOINT
+    value: "http://10.96.241.70:9000"
+  - name: MINIO_ACCESS_KEY
+    value: "os4GDEmSZaJwweoj"
+  - name: MINIO_SECRET_KEY
+    value: "ROVfENZuyUtpRNOT4mtTQicA3CPASQ89"
+  - name: MINIO_MODEL_BUCKET_PATH
+    value: "oss/arcadia/model"
 
 persistentVolume:
   enabled: true
@@ -60,7 +60,10 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  limits:
+    # request 1 GPU
+    nvidia.com/gpu: "1"
 
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
