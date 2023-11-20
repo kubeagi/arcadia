@@ -59,8 +59,8 @@ export const responseMiddleware = (response: Response<unknown> | Error) => {
   }
 };
 
-const devEndpoint = "/component-store-apis/bff";
-const prodEndpoint = "/component-store-apis/bff";
+const devEndpoint = "/kubeagi-apis/bff";
+const prodEndpoint = "/kubeagi-apis/bff";
 const endpoint = isProd ? prodEndpoint : devEndpoint;
 
 export const client = new GraphQLClient(endpoint, {
