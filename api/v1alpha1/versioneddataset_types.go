@@ -24,10 +24,10 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type FileGroup struct {
-	// From defines the datasource which provides this `File`
-	Datasource *TypedObjectReference `json:"datasource"`
+	// From defines the source which provides this `File`
+	Source *TypedObjectReference `json:"source,omitempty"`
 	// Paths defines the detail paths to get objects from above datasource
-	Paths []string `json:"paths"`
+	Paths []string `json:"paths,omitempty"`
 }
 
 // VersionedDatasetSpec defines the desired state of VersionedDataset

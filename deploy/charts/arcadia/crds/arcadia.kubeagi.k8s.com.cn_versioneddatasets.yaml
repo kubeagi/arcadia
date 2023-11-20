@@ -69,9 +69,14 @@ spec:
                   by Datasource
                 items:
                   properties:
-                    datasource:
-                      description: From defines the datasource which provides this
-                        `File`
+                    paths:
+                      description: Paths defines the detail paths to get objects from
+                        above datasource
+                      items:
+                        type: string
+                      type: array
+                    source:
+                      description: From defines the source which provides this `File`
                       properties:
                         apiGroup:
                           description: APIGroup is the group for the resource being
@@ -93,15 +98,6 @@ spec:
                       - kind
                       - name
                       type: object
-                    paths:
-                      description: Paths defines the detail paths to get objects from
-                        above datasource
-                      items:
-                        type: string
-                      type: array
-                  required:
-                  - datasource
-                  - paths
                   type: object
                 type: array
               released:

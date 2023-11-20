@@ -74,9 +74,14 @@ spec:
                 description: FileGroups included files Grouped by Datasource
                 items:
                   properties:
-                    datasource:
-                      description: From defines the datasource which provides this
-                        `File`
+                    paths:
+                      description: Paths defines the detail paths to get objects from
+                        above datasource
+                      items:
+                        type: string
+                      type: array
+                    source:
+                      description: From defines the source which provides this `File`
                       properties:
                         apiGroup:
                           description: APIGroup is the group for the resource being
@@ -98,15 +103,6 @@ spec:
                       - kind
                       - name
                       type: object
-                    paths:
-                      description: Paths defines the detail paths to get objects from
-                        above datasource
-                      items:
-                        type: string
-                      type: array
-                  required:
-                  - datasource
-                  - paths
                   type: object
                 type: array
               vectorStore:
@@ -177,30 +173,6 @@ spec:
                 description: FileGroupDetail is the detail of these files
                 items:
                   properties:
-                    datasource:
-                      description: From defines the datasource which provides these
-                        files
-                      properties:
-                        apiGroup:
-                          description: APIGroup is the group for the resource being
-                            referenced. If APIGroup is not specified, the specified
-                            Kind must be in the core API group. For any other third-party
-                            types, APIGroup is required.
-                          type: string
-                        kind:
-                          description: Kind is the type of resource being referenced
-                          type: string
-                        name:
-                          description: Name is the name of resource being referenced
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of resource being
-                            referenced
-                          type: string
-                      required:
-                      - kind
-                      - name
-                      type: object
                     fileDetails:
                       description: FileDetails is the detail files
                       items:
@@ -224,6 +196,29 @@ spec:
                             type: string
                         type: object
                       type: array
+                    source:
+                      description: From defines the source which provides these files
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced. If APIGroup is not specified, the specified
+                            Kind must be in the core API group. For any other third-party
+                            types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
                   type: object
                 type: array
               observedGeneration:
