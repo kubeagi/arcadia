@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
@@ -147,7 +146,7 @@ func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *gene
 
 // Datasource is the resolver for the Datasource field.
 func (r *mutationResolver) Datasource(ctx context.Context) (*generated.DatasourceMutation, error) {
-	panic(fmt.Errorf("not implemented: Datasource - Datasource"))
+	return &generated.DatasourceMutation{}, nil
 }
 
 // Datasource is the resolver for the Datasource field.
