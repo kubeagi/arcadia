@@ -110,7 +110,7 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				}
 			}
 
-			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, name, namespace, endpointURL, endpointAuthSecret, ossBucket, displayName, endpointInsecure)
+			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, name, namespace, endpointURL, endpointAuthSecret, ossBucket, displayName, description, endpointInsecure)
 			if err != nil {
 				return err
 			}

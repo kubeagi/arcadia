@@ -38,7 +38,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	DatasourceMuation() DatasourceMuationResolver
+	DatasourceMutation() DatasourceMutationResolver
 	DatasourceQuery() DatasourceQueryResolver
 	ModelMutation() ModelMutationResolver
 	ModelQuery() ModelQueryResolver
@@ -53,6 +53,7 @@ type ComplexityRoot struct {
 	Datasource struct {
 		Annotations     func(childComplexity int) int
 		Creator         func(childComplexity int) int
+		Description     func(childComplexity int) int
 		DisplayName     func(childComplexity int) int
 		Endpoint        func(childComplexity int) int
 		FileCount       func(childComplexity int) int
@@ -64,7 +65,7 @@ type ComplexityRoot struct {
 		UpdateTimestamp func(childComplexity int) int
 	}
 
-	DatasourceMuation struct {
+	DatasourceMutation struct {
 		CreateDatasource func(childComplexity int, input CreateDatasourceInput) int
 		DeleteDatasource func(childComplexity int, input *DeleteDatasourceInput) int
 		UpdateDatasource func(childComplexity int, input *UpdateDatasourceInput) int
@@ -138,10 +139,10 @@ type ComplexityRoot struct {
 	}
 }
 
-type DatasourceMuationResolver interface {
-	CreateDatasource(ctx context.Context, obj *DatasourceMuation, input CreateDatasourceInput) (*Datasource, error)
-	UpdateDatasource(ctx context.Context, obj *DatasourceMuation, input *UpdateDatasourceInput) (*Datasource, error)
-	DeleteDatasource(ctx context.Context, obj *DatasourceMuation, input *DeleteDatasourceInput) (*string, error)
+type DatasourceMutationResolver interface {
+	CreateDatasource(ctx context.Context, obj *DatasourceMutation, input CreateDatasourceInput) (*Datasource, error)
+	UpdateDatasource(ctx context.Context, obj *DatasourceMutation, input *UpdateDatasourceInput) (*Datasource, error)
+	DeleteDatasource(ctx context.Context, obj *DatasourceMutation, input *DeleteDatasourceInput) (*string, error)
 }
 type DatasourceQueryResolver interface {
 	GetDatasource(ctx context.Context, obj *DatasourceQuery, name string, namespace string) (*Datasource, error)
@@ -158,7 +159,7 @@ type ModelQueryResolver interface {
 }
 type MutationResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
-	Datasource(ctx context.Context) (*DatasourceMuation, error)
+	Datasource(ctx context.Context) (*DatasourceMutation, error)
 	Model(ctx context.Context) (*ModelMutation, error)
 }
 type QueryResolver interface {
@@ -199,6 +200,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Datasource.Creator(childComplexity), true
+
+	case "Datasource.description":
+		if e.complexity.Datasource.Description == nil {
+			break
+		}
+
+		return e.complexity.Datasource.Description(childComplexity), true
 
 	case "Datasource.displayName":
 		if e.complexity.Datasource.DisplayName == nil {
@@ -263,41 +271,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datasource.UpdateTimestamp(childComplexity), true
 
-	case "DatasourceMuation.createDatasource":
-		if e.complexity.DatasourceMuation.CreateDatasource == nil {
+	case "DatasourceMutation.createDatasource":
+		if e.complexity.DatasourceMutation.CreateDatasource == nil {
 			break
 		}
 
-		args, err := ec.field_DatasourceMuation_createDatasource_args(context.TODO(), rawArgs)
+		args, err := ec.field_DatasourceMutation_createDatasource_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.DatasourceMuation.CreateDatasource(childComplexity, args["input"].(CreateDatasourceInput)), true
+		return e.complexity.DatasourceMutation.CreateDatasource(childComplexity, args["input"].(CreateDatasourceInput)), true
 
-	case "DatasourceMuation.deleteDatasource":
-		if e.complexity.DatasourceMuation.DeleteDatasource == nil {
+	case "DatasourceMutation.deleteDatasource":
+		if e.complexity.DatasourceMutation.DeleteDatasource == nil {
 			break
 		}
 
-		args, err := ec.field_DatasourceMuation_deleteDatasource_args(context.TODO(), rawArgs)
+		args, err := ec.field_DatasourceMutation_deleteDatasource_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.DatasourceMuation.DeleteDatasource(childComplexity, args["input"].(*DeleteDatasourceInput)), true
+		return e.complexity.DatasourceMutation.DeleteDatasource(childComplexity, args["input"].(*DeleteDatasourceInput)), true
 
-	case "DatasourceMuation.updateDatasource":
-		if e.complexity.DatasourceMuation.UpdateDatasource == nil {
+	case "DatasourceMutation.updateDatasource":
+		if e.complexity.DatasourceMutation.UpdateDatasource == nil {
 			break
 		}
 
-		args, err := ec.field_DatasourceMuation_updateDatasource_args(context.TODO(), rawArgs)
+		args, err := ec.field_DatasourceMutation_updateDatasource_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.DatasourceMuation.UpdateDatasource(childComplexity, args["input"].(*UpdateDatasourceInput)), true
+		return e.complexity.DatasourceMutation.UpdateDatasource(childComplexity, args["input"].(*UpdateDatasourceInput)), true
 
 	case "DatasourceQuery.getDatasource":
 		if e.complexity.DatasourceQuery.GetDatasource == nil {
@@ -737,54 +745,80 @@ type Datasource {
     annotations: Map
     creator: String
     displayName: String!
+    description: String
     endpoint: Endpoint
     oss: Oss
     # 数据源连接状态
-    status: Boolean
+    status: String
     fileCount: Int
     updateTimestamp: Time!
 }
 
+"""对象存储终端输入"""
 input EndpointInput {
+    """minio URL"""
     url: String
+    """minio 验证密码"""
     authSecret: TypedObjectReferenceInput
+    """创建minio client默认true"""
     insecure: Boolean
 }
 
+"""文件输入"""
 input OssInput {
     bucket: String
     Object: String
 }
+
+"""新增数据源时输入条件"""
 input CreateDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String!
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源类型"""
     labels: Map
+    """数据源资源注释"""
     annotations: Map
+    """数据源资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """数据源资源描述"""
     description: String
+    """提供对象存储时输入条件"""
     endpointinput: EndpointInput
     ossinput: OssInput
 }
 
 input UpdateDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String!
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源类型"""
     labels: Map
+    """数据源资源注释"""
     annotations: Map
+    """数据源资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """数据源资源描述"""
     description: String
 }
 
 input DeleteDatasourceInput {
     name: String
     namespace: String!
+    """筛选器"""
     labelSelector: String
     fieldSelector: String
 }
 
+"""分页查询输入"""
 input ListDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源展示名称"""
     displayName: String
     labelSelector: String
     fieldSelector: String
@@ -798,14 +832,14 @@ type DatasourceQuery {
     listDatasources(input: ListDatasourceInput!): PaginatedResult!
 }
 
-type DatasourceMuation {
+type DatasourceMutation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
     deleteDatasource(input: DeleteDatasourceInput): Void
 }
 # mutation
 extend type Mutation {
-    Datasource: DatasourceMuation
+    Datasource: DatasourceMutation
 }
 # query
 extend type Query{
@@ -921,7 +955,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_DatasourceMuation_createDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_DatasourceMutation_createDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 CreateDatasourceInput
@@ -936,7 +970,7 @@ func (ec *executionContext) field_DatasourceMuation_createDatasource_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_DatasourceMuation_deleteDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_DatasourceMutation_deleteDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *DeleteDatasourceInput
@@ -951,7 +985,7 @@ func (ec *executionContext) field_DatasourceMuation_deleteDatasource_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_DatasourceMuation_updateDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_DatasourceMutation_updateDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *UpdateDatasourceInput
@@ -1427,6 +1461,47 @@ func (ec *executionContext) fieldContext_Datasource_displayName(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_description(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Datasource_endpoint(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Datasource_endpoint(ctx, field)
 	if err != nil {
@@ -1546,9 +1621,9 @@ func (ec *executionContext) _Datasource_status(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Datasource_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1558,7 +1633,7 @@ func (ec *executionContext) fieldContext_Datasource_status(ctx context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1649,8 +1724,8 @@ func (ec *executionContext) fieldContext_Datasource_updateTimestamp(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DatasourceMuation_createDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMuation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DatasourceMuation_createDatasource(ctx, field)
+func (ec *executionContext) _DatasourceMutation_createDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DatasourceMutation_createDatasource(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1663,7 +1738,7 @@ func (ec *executionContext) _DatasourceMuation_createDatasource(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DatasourceMuation().CreateDatasource(rctx, obj, fc.Args["input"].(CreateDatasourceInput))
+		return ec.resolvers.DatasourceMutation().CreateDatasource(rctx, obj, fc.Args["input"].(CreateDatasourceInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1680,9 +1755,9 @@ func (ec *executionContext) _DatasourceMuation_createDatasource(ctx context.Cont
 	return ec.marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DatasourceMuation_createDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DatasourceMutation_createDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DatasourceMuation",
+		Object:     "DatasourceMutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1700,6 +1775,8 @@ func (ec *executionContext) fieldContext_DatasourceMuation_createDatasource(ctx 
 				return ec.fieldContext_Datasource_creator(ctx, field)
 			case "displayName":
 				return ec.fieldContext_Datasource_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
 			case "oss":
@@ -1721,15 +1798,15 @@ func (ec *executionContext) fieldContext_DatasourceMuation_createDatasource(ctx 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_DatasourceMuation_createDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_DatasourceMutation_createDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _DatasourceMuation_updateDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMuation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DatasourceMuation_updateDatasource(ctx, field)
+func (ec *executionContext) _DatasourceMutation_updateDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DatasourceMutation_updateDatasource(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1742,7 +1819,7 @@ func (ec *executionContext) _DatasourceMuation_updateDatasource(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DatasourceMuation().UpdateDatasource(rctx, obj, fc.Args["input"].(*UpdateDatasourceInput))
+		return ec.resolvers.DatasourceMutation().UpdateDatasource(rctx, obj, fc.Args["input"].(*UpdateDatasourceInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1759,9 +1836,9 @@ func (ec *executionContext) _DatasourceMuation_updateDatasource(ctx context.Cont
 	return ec.marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DatasourceMuation_updateDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DatasourceMutation_updateDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DatasourceMuation",
+		Object:     "DatasourceMutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1779,6 +1856,8 @@ func (ec *executionContext) fieldContext_DatasourceMuation_updateDatasource(ctx 
 				return ec.fieldContext_Datasource_creator(ctx, field)
 			case "displayName":
 				return ec.fieldContext_Datasource_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
 			case "oss":
@@ -1800,15 +1879,15 @@ func (ec *executionContext) fieldContext_DatasourceMuation_updateDatasource(ctx 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_DatasourceMuation_updateDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_DatasourceMutation_updateDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _DatasourceMuation_deleteDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMuation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DatasourceMuation_deleteDatasource(ctx, field)
+func (ec *executionContext) _DatasourceMutation_deleteDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DatasourceMutation_deleteDatasource(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1821,7 +1900,7 @@ func (ec *executionContext) _DatasourceMuation_deleteDatasource(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DatasourceMuation().DeleteDatasource(rctx, obj, fc.Args["input"].(*DeleteDatasourceInput))
+		return ec.resolvers.DatasourceMutation().DeleteDatasource(rctx, obj, fc.Args["input"].(*DeleteDatasourceInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1835,9 +1914,9 @@ func (ec *executionContext) _DatasourceMuation_deleteDatasource(ctx context.Cont
 	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DatasourceMuation_deleteDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DatasourceMutation_deleteDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DatasourceMuation",
+		Object:     "DatasourceMutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1852,7 +1931,7 @@ func (ec *executionContext) fieldContext_DatasourceMuation_deleteDatasource(ctx 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_DatasourceMuation_deleteDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_DatasourceMutation_deleteDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1910,6 +1989,8 @@ func (ec *executionContext) fieldContext_DatasourceQuery_getDatasource(ctx conte
 				return ec.fieldContext_Datasource_creator(ctx, field)
 			case "displayName":
 				return ec.fieldContext_Datasource_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
 			case "oss":
@@ -2991,9 +3072,9 @@ func (ec *executionContext) _Mutation_Datasource(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*DatasourceMuation)
+	res := resTmp.(*DatasourceMutation)
 	fc.Result = res
-	return ec.marshalODatasourceMuation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasourceMuation(ctx, field.Selections, res)
+	return ec.marshalODatasourceMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasourceMutation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_Datasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3005,13 +3086,13 @@ func (ec *executionContext) fieldContext_Mutation_Datasource(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "createDatasource":
-				return ec.fieldContext_DatasourceMuation_createDatasource(ctx, field)
+				return ec.fieldContext_DatasourceMutation_createDatasource(ctx, field)
 			case "updateDatasource":
-				return ec.fieldContext_DatasourceMuation_updateDatasource(ctx, field)
+				return ec.fieldContext_DatasourceMutation_updateDatasource(ctx, field)
 			case "deleteDatasource":
-				return ec.fieldContext_DatasourceMuation_deleteDatasource(ctx, field)
+				return ec.fieldContext_DatasourceMutation_deleteDatasource(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type DatasourceMuation", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type DatasourceMutation", field.Name)
 		},
 	}
 	return fc, nil
@@ -6403,6 +6484,8 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "description":
+			out.Values[i] = ec._Datasource_description(ctx, field, obj)
 		case "endpoint":
 			out.Values[i] = ec._Datasource_endpoint(ctx, field, obj)
 		case "oss":
@@ -6439,17 +6522,17 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var datasourceMuationImplementors = []string{"DatasourceMuation"}
+var datasourceMutationImplementors = []string{"DatasourceMutation"}
 
-func (ec *executionContext) _DatasourceMuation(ctx context.Context, sel ast.SelectionSet, obj *DatasourceMuation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, datasourceMuationImplementors)
+func (ec *executionContext) _DatasourceMutation(ctx context.Context, sel ast.SelectionSet, obj *DatasourceMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, datasourceMutationImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("DatasourceMuation")
+			out.Values[i] = graphql.MarshalString("DatasourceMutation")
 		case "createDatasource":
 			field := field
 
@@ -6459,7 +6542,7 @@ func (ec *executionContext) _DatasourceMuation(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._DatasourceMuation_createDatasource(ctx, field, obj)
+				res = ec._DatasourceMutation_createDatasource(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6495,7 +6578,7 @@ func (ec *executionContext) _DatasourceMuation(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._DatasourceMuation_updateDatasource(ctx, field, obj)
+				res = ec._DatasourceMutation_updateDatasource(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6531,7 +6614,7 @@ func (ec *executionContext) _DatasourceMuation(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._DatasourceMuation_deleteDatasource(ctx, field, obj)
+				res = ec._DatasourceMutation_deleteDatasource(ctx, field, obj)
 				return res
 			}
 
@@ -8078,11 +8161,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalODatasourceMuation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasourceMuation(ctx context.Context, sel ast.SelectionSet, v *DatasourceMuation) graphql.Marshaler {
+func (ec *executionContext) marshalODatasourceMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasourceMutation(ctx context.Context, sel ast.SelectionSet, v *DatasourceMutation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._DatasourceMuation(ctx, sel, v)
+	return ec._DatasourceMutation(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODatasourceQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasourceQuery(ctx context.Context, sel ast.SelectionSet, v *DatasourceQuery) graphql.Marshaler {
