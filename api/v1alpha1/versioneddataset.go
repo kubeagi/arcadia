@@ -54,10 +54,10 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 	fileGroup := make(map[string][]string)
 	for _, fg := range instance.Spec.FileGroups {
 		namespace := instance.Namespace
-		if fg.Datasource.Namespace != nil {
-			namespace = *fg.Datasource.Namespace
+		if fg.Source.Namespace != nil {
+			namespace = *fg.Source.Namespace
 		}
-		key := fmt.Sprintf("%s %s", namespace, fg.Datasource.Name)
+		key := fmt.Sprintf("%s %s", namespace, fg.Source.Name)
 		if _, ok := fileGroup[key]; !ok {
 			fileGroup[key] = make([]string, 0)
 		}

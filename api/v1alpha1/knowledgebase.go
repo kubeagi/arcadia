@@ -63,7 +63,7 @@ func (f *FileDetails) UpdateErr(err error) {
 }
 
 func (f *FileGroupDetail) Init(group FileGroup) {
-	f.Datasource = group.Datasource.DeepCopy()
+	f.Source = group.Source.DeepCopy()
 	f.FileDetails = make([]FileDetails, len(group.Paths))
 	for i := range group.Paths {
 		f.FileDetails[i].Path = group.Paths[i]

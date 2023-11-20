@@ -34,8 +34,8 @@ type KnowledgeBaseSpec struct {
 	FileGroups []FileGroup `json:"fileGroups,omitempty"`
 }
 type FileGroupDetail struct {
-	// From defines the datasource which provides these files
-	Datasource *TypedObjectReference `json:"datasource,omitempty"`
+	// From defines the source which provides these files
+	Source *TypedObjectReference `json:"source,omitempty"`
 
 	// FileDetails is the detail files
 	FileDetails []FileDetails `json:"fileDetails,omitempty"`

@@ -17,7 +17,7 @@ spec:
     name: chroma-sample
     namespace: arcadia
   fileGroups:
-  - datasource:
+  - source:
       apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
       kind: Datasources
       name: arcadia-local

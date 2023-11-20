@@ -227,16 +227,16 @@ func (r *KnowledgeBaseReconciler) setCondition(kb *arcadiav1alpha1.KnowledgeBase
 func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase, vectorStore *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder, group arcadiav1alpha1.FileGroup) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("failed to reconcile FileGroup.DataSource: %s: %w", group.Datasource.Name, err)
+			err = fmt.Errorf("failed to reconcile FileGroup.DataSource: %s: %w", group.Source.Name, err)
 		}
 	}()
 
-	if group.Datasource == nil {
+	if group.Source == nil {
 		return errNoDataSource
 	}
 	dataSource := &arcadiav1alpha1.Datasource{}
-	ns := group.Datasource.GetNamespace()
-	if err = r.Get(ctx, types.NamespacedName{Name: group.Datasource.Name, Namespace: ns}, dataSource); err != nil {
+	ns := group.Source.GetNamespace()
+	if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, dataSource); err != nil {
 		if errors.IsNotFound(err) {
 			return errNoDataSource
 		} else {
@@ -257,7 +257,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	var fileGroupDetail *arcadiav1alpha1.FileGroupDetail
 	pathMap := make(map[string]*arcadiav1alpha1.FileDetails, 1)
 	for i, detail := range kb.Status.FileGroupDetail {
-		if detail.Datasource != nil && detail.Datasource.Name == dataSource.Name && detail.Datasource.GetNamespace() == dataSource.GetNamespace() {
+		if detail.Source != nil && detail.Source.Name == dataSource.Name && detail.Source.GetNamespace() == dataSource.GetNamespace() {
 			fileGroupDetail = &kb.Status.FileGroupDetail[i]
 			for i, detail := range fileGroupDetail.FileDetails {
 				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i] // FIXME 这样对不？
