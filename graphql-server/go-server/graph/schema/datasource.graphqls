@@ -27,11 +27,10 @@ type Datasource {
 
 """对象存储终端输入"""
 input EndpointInput {
-    """minio URL"""
     url: String
-    """minio 验证密码"""
+    """secret验证密码"""
     authSecret: TypedObjectReferenceInput
-    """创建minio client默认true"""
+    """默认true"""
     insecure: Boolean
 }
 

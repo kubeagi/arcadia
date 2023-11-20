@@ -1,0 +1,69 @@
+type Embedder {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String!
+    description: String
+    endpoint: Endpoint
+    serviceType: String
+    updateTimestamp: Time
+}
+
+input CreateEmbedderInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+    endpointinput: EndpointInput
+    serviceType: String
+}
+
+input UpdateEmbedderInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+}
+
+input DeleteEmbedderInput {
+    name: String
+    namespace: String!
+    labelSelector: String
+    fieldSelector: String
+}
+
+input ListEmbedderInput {
+    name: String
+    namespace: String!
+    displayName: String
+    labelSelector: String
+    fieldSelector: String
+    page: Int
+    pageSize: Int
+    keyword: String
+}
+
+type EmbedderQuery {
+    getEmbedder(name: String!, namespace: String!): Embedder!
+    listEmbedders(input: ListEmbedderInput!): PaginatedResult!
+}
+
+type EmbedderMutation {
+    createEmbedder(input: CreateEmbedderInput!): Embedder!
+    updateEmbedder(input: UpdateEmbedderInput): Embedder!
+    deleteEmbedder(input: DeleteEmbedderInput): Void
+}
+# mutation
+extend type Mutation {
+    Embedder: EmbedderMutation
+}
+# query
+extend type Query{
+    Embedder: EmbedderQuery
+}
