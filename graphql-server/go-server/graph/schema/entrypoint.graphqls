@@ -31,4 +31,4 @@ type TypedObjectReference {
     Namespace: String
 }
 
-union PageNode = Datasource | Model
+union PageNode = Datasource | Model | Embedder

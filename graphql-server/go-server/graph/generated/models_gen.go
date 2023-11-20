@@ -29,6 +29,17 @@ type CreateDatasourceInput struct {
 	Ossinput      *OssInput      `json:"ossinput,omitempty"`
 }
 
+type CreateEmbedderInput struct {
+	Name          string                 `json:"name"`
+	Namespace     string                 `json:"namespace"`
+	Labels        map[string]interface{} `json:"labels,omitempty"`
+	Annotations   map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName   string                 `json:"displayName"`
+	Description   *string                `json:"description,omitempty"`
+	Endpointinput *EndpointInput         `json:"endpointinput,omitempty"`
+	ServiceType   *string                `json:"serviceType,omitempty"`
+}
+
 type CreateModelInput struct {
 	Name            string     `json:"name"`
 	Namespace       string     `json:"namespace"`
@@ -75,11 +86,44 @@ type DeleteDatasourceInput struct {
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
+type DeleteEmbedderInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
 type DeleteModelInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     string  `json:"namespace"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
+type Embedder struct {
+	Name            string                 `json:"name"`
+	Namespace       string                 `json:"namespace"`
+	Labels          map[string]interface{} `json:"labels,omitempty"`
+	Annotations     map[string]interface{} `json:"annotations,omitempty"`
+	Creator         *string                `json:"creator,omitempty"`
+	DisplayName     string                 `json:"displayName"`
+	Description     *string                `json:"description,omitempty"`
+	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
+	ServiceType     *string                `json:"serviceType,omitempty"`
+	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
+}
+
+func (Embedder) IsPageNode() {}
+
+type EmbedderMutation struct {
+	CreateEmbedder Embedder `json:"createEmbedder"`
+	UpdateEmbedder Embedder `json:"updateEmbedder"`
+	DeleteEmbedder *string  `json:"deleteEmbedder,omitempty"`
+}
+
+type EmbedderQuery struct {
+	GetEmbedder   Embedder        `json:"getEmbedder"`
+	ListEmbedders PaginatedResult `json:"listEmbedders"`
 }
 
 type Endpoint struct {
@@ -105,6 +149,17 @@ type ListDatasourceInput struct {
 	// 数据源创建命名空间
 	Namespace string `json:"namespace"`
 	// 数据源资源展示名称
+	DisplayName   *string `json:"displayName,omitempty"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	Page          *int    `json:"page,omitempty"`
+	PageSize      *int    `json:"pageSize,omitempty"`
+	Keyword       *string `json:"keyword,omitempty"`
+}
+
+type ListEmbedderInput struct {
+	Name          *string `json:"name,omitempty"`
+	Namespace     string  `json:"namespace"`
 	DisplayName   *string `json:"displayName,omitempty"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
@@ -196,6 +251,15 @@ type UpdateDatasourceInput struct {
 	DisplayName string `json:"displayName"`
 	// 数据源资源描述
 	Description *string `json:"description,omitempty"`
+}
+
+type UpdateEmbedderInput struct {
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
 }
 
 type UpdateModelInput struct {

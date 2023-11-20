@@ -40,6 +40,8 @@ type Config struct {
 type ResolverRoot interface {
 	DatasourceMutation() DatasourceMutationResolver
 	DatasourceQuery() DatasourceQueryResolver
+	EmbedderMutation() EmbedderMutationResolver
+	EmbedderQuery() EmbedderQueryResolver
 	ModelMutation() ModelMutationResolver
 	ModelQuery() ModelQueryResolver
 	Mutation() MutationResolver
@@ -76,6 +78,30 @@ type ComplexityRoot struct {
 		ListDatasources func(childComplexity int, input ListDatasourceInput) int
 	}
 
+	Embedder struct {
+		Annotations     func(childComplexity int) int
+		Creator         func(childComplexity int) int
+		Description     func(childComplexity int) int
+		DisplayName     func(childComplexity int) int
+		Endpoint        func(childComplexity int) int
+		Labels          func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Namespace       func(childComplexity int) int
+		ServiceType     func(childComplexity int) int
+		UpdateTimestamp func(childComplexity int) int
+	}
+
+	EmbedderMutation struct {
+		CreateEmbedder func(childComplexity int, input CreateEmbedderInput) int
+		DeleteEmbedder func(childComplexity int, input *DeleteEmbedderInput) int
+		UpdateEmbedder func(childComplexity int, input *UpdateEmbedderInput) int
+	}
+
+	EmbedderQuery struct {
+		GetEmbedder   func(childComplexity int, name string, namespace string) int
+		ListEmbedders func(childComplexity int, input ListEmbedderInput) int
+	}
+
 	Endpoint struct {
 		AuthSecret func(childComplexity int) int
 		Insecure   func(childComplexity int) int
@@ -108,6 +134,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		Datasource func(childComplexity int) int
+		Embedder   func(childComplexity int) int
 		Hello      func(childComplexity int, name string) int
 		Model      func(childComplexity int) int
 	}
@@ -127,6 +154,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Datasource func(childComplexity int) int
+		Embedder   func(childComplexity int) int
 		Hello      func(childComplexity int, name string) int
 		Model      func(childComplexity int) int
 	}
@@ -148,6 +176,15 @@ type DatasourceQueryResolver interface {
 	GetDatasource(ctx context.Context, obj *DatasourceQuery, name string, namespace string) (*Datasource, error)
 	ListDatasources(ctx context.Context, obj *DatasourceQuery, input ListDatasourceInput) (*PaginatedResult, error)
 }
+type EmbedderMutationResolver interface {
+	CreateEmbedder(ctx context.Context, obj *EmbedderMutation, input CreateEmbedderInput) (*Embedder, error)
+	UpdateEmbedder(ctx context.Context, obj *EmbedderMutation, input *UpdateEmbedderInput) (*Embedder, error)
+	DeleteEmbedder(ctx context.Context, obj *EmbedderMutation, input *DeleteEmbedderInput) (*string, error)
+}
+type EmbedderQueryResolver interface {
+	GetEmbedder(ctx context.Context, obj *EmbedderQuery, name string, namespace string) (*Embedder, error)
+	ListEmbedders(ctx context.Context, obj *EmbedderQuery, input ListEmbedderInput) (*PaginatedResult, error)
+}
 type ModelMutationResolver interface {
 	CreateModel(ctx context.Context, obj *ModelMutation, input CreateModelInput) (*Model, error)
 	UpdateModel(ctx context.Context, obj *ModelMutation, input *UpdateModelInput) (*Model, error)
@@ -160,11 +197,13 @@ type ModelQueryResolver interface {
 type MutationResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
 	Datasource(ctx context.Context) (*DatasourceMutation, error)
+	Embedder(ctx context.Context) (*EmbedderMutation, error)
 	Model(ctx context.Context) (*ModelMutation, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
 	Datasource(ctx context.Context) (*DatasourceQuery, error)
+	Embedder(ctx context.Context) (*EmbedderQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
 }
 
@@ -331,6 +370,136 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DatasourceQuery.ListDatasources(childComplexity, args["input"].(ListDatasourceInput)), true
 
+	case "Embedder.annotations":
+		if e.complexity.Embedder.Annotations == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Annotations(childComplexity), true
+
+	case "Embedder.creator":
+		if e.complexity.Embedder.Creator == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Creator(childComplexity), true
+
+	case "Embedder.description":
+		if e.complexity.Embedder.Description == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Description(childComplexity), true
+
+	case "Embedder.displayName":
+		if e.complexity.Embedder.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.Embedder.DisplayName(childComplexity), true
+
+	case "Embedder.endpoint":
+		if e.complexity.Embedder.Endpoint == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Endpoint(childComplexity), true
+
+	case "Embedder.labels":
+		if e.complexity.Embedder.Labels == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Labels(childComplexity), true
+
+	case "Embedder.name":
+		if e.complexity.Embedder.Name == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Name(childComplexity), true
+
+	case "Embedder.namespace":
+		if e.complexity.Embedder.Namespace == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Namespace(childComplexity), true
+
+	case "Embedder.serviceType":
+		if e.complexity.Embedder.ServiceType == nil {
+			break
+		}
+
+		return e.complexity.Embedder.ServiceType(childComplexity), true
+
+	case "Embedder.updateTimestamp":
+		if e.complexity.Embedder.UpdateTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Embedder.UpdateTimestamp(childComplexity), true
+
+	case "EmbedderMutation.createEmbedder":
+		if e.complexity.EmbedderMutation.CreateEmbedder == nil {
+			break
+		}
+
+		args, err := ec.field_EmbedderMutation_createEmbedder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.EmbedderMutation.CreateEmbedder(childComplexity, args["input"].(CreateEmbedderInput)), true
+
+	case "EmbedderMutation.deleteEmbedder":
+		if e.complexity.EmbedderMutation.DeleteEmbedder == nil {
+			break
+		}
+
+		args, err := ec.field_EmbedderMutation_deleteEmbedder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.EmbedderMutation.DeleteEmbedder(childComplexity, args["input"].(*DeleteEmbedderInput)), true
+
+	case "EmbedderMutation.updateEmbedder":
+		if e.complexity.EmbedderMutation.UpdateEmbedder == nil {
+			break
+		}
+
+		args, err := ec.field_EmbedderMutation_updateEmbedder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.EmbedderMutation.UpdateEmbedder(childComplexity, args["input"].(*UpdateEmbedderInput)), true
+
+	case "EmbedderQuery.getEmbedder":
+		if e.complexity.EmbedderQuery.GetEmbedder == nil {
+			break
+		}
+
+		args, err := ec.field_EmbedderQuery_getEmbedder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.EmbedderQuery.GetEmbedder(childComplexity, args["name"].(string), args["namespace"].(string)), true
+
+	case "EmbedderQuery.listEmbedders":
+		if e.complexity.EmbedderQuery.ListEmbedders == nil {
+			break
+		}
+
+		args, err := ec.field_EmbedderQuery_listEmbedders_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.EmbedderQuery.ListEmbedders(childComplexity, args["input"].(ListEmbedderInput)), true
+
 	case "Endpoint.authSecret":
 		if e.complexity.Endpoint.AuthSecret == nil {
 			break
@@ -489,6 +658,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Datasource(childComplexity), true
 
+	case "Mutation.Embedder":
+		if e.complexity.Mutation.Embedder == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Embedder(childComplexity), true
+
 	case "Mutation.hello":
 		if e.complexity.Mutation.Hello == nil {
 			break
@@ -564,6 +740,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Datasource(childComplexity), true
 
+	case "Query.Embedder":
+		if e.complexity.Query.Embedder == nil {
+			break
+		}
+
+		return e.complexity.Query.Embedder(childComplexity), true
+
 	case "Query.hello":
 		if e.complexity.Query.Hello == nil {
 			break
@@ -620,15 +803,19 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateDatasourceInput,
+		ec.unmarshalInputCreateEmbedderInput,
 		ec.unmarshalInputCreateModelInput,
 		ec.unmarshalInputDeleteDatasourceInput,
+		ec.unmarshalInputDeleteEmbedderInput,
 		ec.unmarshalInputDeleteModelInput,
 		ec.unmarshalInputEndpointInput,
 		ec.unmarshalInputListDatasourceInput,
+		ec.unmarshalInputListEmbedderInput,
 		ec.unmarshalInputListModelInput,
 		ec.unmarshalInputOssInput,
 		ec.unmarshalInputTypedObjectReferenceInput,
 		ec.unmarshalInputUpdateDatasourceInput,
+		ec.unmarshalInputUpdateEmbedderInput,
 		ec.unmarshalInputUpdateModelInput,
 	)
 	first := true
@@ -846,6 +1033,76 @@ extend type Query{
     Datasource: DatasourceQuery
 }
 `, BuiltIn: false},
+	{Name: "../schema/embedder.graphqls", Input: `type Embedder {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String!
+    description: String
+    endpoint: Endpoint
+    serviceType: String
+    updateTimestamp: Time
+}
+
+input CreateEmbedderInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+    endpointinput: EndpointInput
+    serviceType: String
+}
+
+input UpdateEmbedderInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String!
+    description: String
+}
+
+input DeleteEmbedderInput {
+    name: String
+    namespace: String!
+    labelSelector: String
+    fieldSelector: String
+}
+
+input ListEmbedderInput {
+    name: String
+    namespace: String!
+    displayName: String
+    labelSelector: String
+    fieldSelector: String
+    page: Int
+    pageSize: Int
+    keyword: String
+}
+
+type EmbedderQuery {
+    getEmbedder(name: String!, namespace: String!): Embedder!
+    listEmbedders(input: ListEmbedderInput!): PaginatedResult!
+}
+
+type EmbedderMutation {
+    createEmbedder(input: CreateEmbedderInput!): Embedder!
+    updateEmbedder(input: UpdateEmbedderInput): Embedder!
+    deleteEmbedder(input: DeleteEmbedderInput): Void
+}
+# mutation
+extend type Mutation {
+    Embedder: EmbedderMutation
+}
+# query
+extend type Query{
+    Embedder: EmbedderQuery
+}
+`, BuiltIn: false},
 	{Name: "../schema/entrypoint.graphqls", Input: `type Query {
     hello(name: String!): String!
 }
@@ -879,7 +1136,7 @@ type TypedObjectReference {
     Namespace: String
 }
 
-union PageNode = Datasource | Model
+union PageNode = Datasource | Model | Embedder
 `, BuiltIn: false},
 	{Name: "../schema/model.graphqls", Input: `type Model {
     name: String!
@@ -1031,6 +1288,90 @@ func (ec *executionContext) field_DatasourceQuery_listDatasources_args(ctx conte
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNListDatasourceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListDatasourceInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_EmbedderMutation_createEmbedder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateEmbedderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNCreateEmbedderInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateEmbedderInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_EmbedderMutation_deleteEmbedder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *DeleteEmbedderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalODeleteEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteEmbedderInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_EmbedderMutation_updateEmbedder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *UpdateEmbedderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUpdateEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐUpdateEmbedderInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_EmbedderQuery_getEmbedder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_EmbedderQuery_listEmbedders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ListEmbedderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNListEmbedderInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListEmbedderInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2086,6 +2427,783 @@ func (ec *executionContext) fieldContext_DatasourceQuery_listDatasources(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _Embedder_name(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_namespace(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_labels(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Labels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_annotations(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_annotations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Annotations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_annotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_creator(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_displayName(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_description(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_endpoint(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_endpoint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Endpoint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Endpoint)
+	fc.Result = res
+	return ec.marshalOEndpoint2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEndpoint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_endpoint(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "url":
+				return ec.fieldContext_Endpoint_url(ctx, field)
+			case "authSecret":
+				return ec.fieldContext_Endpoint_authSecret(ctx, field)
+			case "insecure":
+				return ec.fieldContext_Endpoint_insecure(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Endpoint", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_serviceType(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_serviceType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_serviceType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_updateTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EmbedderMutation_createEmbedder(ctx context.Context, field graphql.CollectedField, obj *EmbedderMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EmbedderMutation_createEmbedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EmbedderMutation().CreateEmbedder(rctx, obj, fc.Args["input"].(CreateEmbedderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Embedder)
+	fc.Result = res
+	return ec.marshalNEmbedder2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EmbedderMutation_createEmbedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EmbedderMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Embedder_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Embedder_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_Embedder_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_Embedder_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_Embedder_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_Embedder_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Embedder_description(ctx, field)
+			case "endpoint":
+				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "serviceType":
+				return ec.fieldContext_Embedder_serviceType(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_EmbedderMutation_createEmbedder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EmbedderMutation_updateEmbedder(ctx context.Context, field graphql.CollectedField, obj *EmbedderMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EmbedderMutation_updateEmbedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EmbedderMutation().UpdateEmbedder(rctx, obj, fc.Args["input"].(*UpdateEmbedderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Embedder)
+	fc.Result = res
+	return ec.marshalNEmbedder2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EmbedderMutation_updateEmbedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EmbedderMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Embedder_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Embedder_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_Embedder_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_Embedder_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_Embedder_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_Embedder_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Embedder_description(ctx, field)
+			case "endpoint":
+				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "serviceType":
+				return ec.fieldContext_Embedder_serviceType(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_EmbedderMutation_updateEmbedder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EmbedderMutation_deleteEmbedder(ctx context.Context, field graphql.CollectedField, obj *EmbedderMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EmbedderMutation_deleteEmbedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EmbedderMutation().DeleteEmbedder(rctx, obj, fc.Args["input"].(*DeleteEmbedderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EmbedderMutation_deleteEmbedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EmbedderMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Void does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_EmbedderMutation_deleteEmbedder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EmbedderQuery_getEmbedder(ctx context.Context, field graphql.CollectedField, obj *EmbedderQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EmbedderQuery_getEmbedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EmbedderQuery().GetEmbedder(rctx, obj, fc.Args["name"].(string), fc.Args["namespace"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Embedder)
+	fc.Result = res
+	return ec.marshalNEmbedder2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EmbedderQuery_getEmbedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EmbedderQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Embedder_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Embedder_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_Embedder_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_Embedder_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_Embedder_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_Embedder_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Embedder_description(ctx, field)
+			case "endpoint":
+				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "serviceType":
+				return ec.fieldContext_Embedder_serviceType(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_EmbedderQuery_getEmbedder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EmbedderQuery_listEmbedders(ctx context.Context, field graphql.CollectedField, obj *EmbedderQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EmbedderQuery_listEmbedders(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EmbedderQuery().ListEmbedders(rctx, obj, fc.Args["input"].(ListEmbedderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EmbedderQuery_listEmbedders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EmbedderQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_EmbedderQuery_listEmbedders_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Endpoint_url(ctx context.Context, field graphql.CollectedField, obj *Endpoint) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Endpoint_url(ctx, field)
 	if err != nil {
@@ -3098,6 +4216,55 @@ func (ec *executionContext) fieldContext_Mutation_Datasource(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_Embedder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_Embedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Embedder(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EmbedderMutation)
+	fc.Result = res
+	return ec.marshalOEmbedderMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedderMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_Embedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "createEmbedder":
+				return ec.fieldContext_EmbedderMutation_createEmbedder(ctx, field)
+			case "updateEmbedder":
+				return ec.fieldContext_EmbedderMutation_updateEmbedder(ctx, field)
+			case "deleteEmbedder":
+				return ec.fieldContext_EmbedderMutation_deleteEmbedder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EmbedderMutation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_Model(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_Model(ctx, field)
 	if err != nil {
@@ -3537,6 +4704,53 @@ func (ec *executionContext) fieldContext_Query_Datasource(ctx context.Context, f
 				return ec.fieldContext_DatasourceQuery_listDatasources(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DatasourceQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_Embedder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_Embedder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Embedder(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EmbedderQuery)
+	fc.Result = res
+	return ec.marshalOEmbedderQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedderQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_Embedder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "getEmbedder":
+				return ec.fieldContext_EmbedderQuery_getEmbedder(ctx, field)
+			case "listEmbedders":
+				return ec.fieldContext_EmbedderQuery_listEmbedders(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EmbedderQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -5753,6 +6967,98 @@ func (ec *executionContext) unmarshalInputCreateDatasourceInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateEmbedderInput(ctx context.Context, obj interface{}) (CreateEmbedderInput, error) {
+	var it CreateEmbedderInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "serviceType"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "endpointinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endpointinput"))
+			data, err := ec.unmarshalOEndpointInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEndpointInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Endpointinput = data
+		case "serviceType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceType"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceType = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, obj interface{}) (CreateModelInput, error) {
 	var it CreateModelInput
 	asMap := map[string]interface{}{}
@@ -5838,6 +7144,62 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 
 func (ec *executionContext) unmarshalInputDeleteDatasourceInput(ctx context.Context, obj interface{}) (DeleteDatasourceInput, error) {
 	var it DeleteDatasourceInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labelSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LabelSelector = data
+		case "fieldSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldSelector = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDeleteEmbedderInput(ctx context.Context, obj interface{}) (DeleteEmbedderInput, error) {
+	var it DeleteEmbedderInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5997,6 +7359,98 @@ func (ec *executionContext) unmarshalInputEndpointInput(ctx context.Context, obj
 
 func (ec *executionContext) unmarshalInputListDatasourceInput(ctx context.Context, obj interface{}) (ListDatasourceInput, error) {
 	var it ListDatasourceInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "labelSelector", "fieldSelector", "page", "pageSize", "keyword"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "labelSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LabelSelector = data
+		case "fieldSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldSelector = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		case "keyword":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Keyword = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputListEmbedderInput(ctx context.Context, obj interface{}) (ListEmbedderInput, error) {
+	var it ListEmbedderInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -6347,6 +7801,80 @@ func (ec *executionContext) unmarshalInputUpdateDatasourceInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Context, obj interface{}) (UpdateEmbedderInput, error) {
+	var it UpdateEmbedderInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateModelInput(ctx context.Context, obj interface{}) (UpdateModelInput, error) {
 	var it UpdateModelInput
 	asMap := map[string]interface{}{}
@@ -6443,6 +7971,13 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._Model(ctx, sel, obj)
+	case Embedder:
+		return ec._Embedder(ctx, sel, &obj)
+	case *Embedder:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Embedder(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -6718,6 +8253,314 @@ func (ec *executionContext) _DatasourceQuery(ctx context.Context, sel ast.Select
 					}
 				}()
 				res = ec._DatasourceQuery_listDatasources(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var embedderImplementors = []string{"Embedder", "PageNode"}
+
+func (ec *executionContext) _Embedder(ctx context.Context, sel ast.SelectionSet, obj *Embedder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, embedderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Embedder")
+		case "name":
+			out.Values[i] = ec._Embedder_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._Embedder_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "labels":
+			out.Values[i] = ec._Embedder_labels(ctx, field, obj)
+		case "annotations":
+			out.Values[i] = ec._Embedder_annotations(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._Embedder_creator(ctx, field, obj)
+		case "displayName":
+			out.Values[i] = ec._Embedder_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Embedder_description(ctx, field, obj)
+		case "endpoint":
+			out.Values[i] = ec._Embedder_endpoint(ctx, field, obj)
+		case "serviceType":
+			out.Values[i] = ec._Embedder_serviceType(ctx, field, obj)
+		case "updateTimestamp":
+			out.Values[i] = ec._Embedder_updateTimestamp(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var embedderMutationImplementors = []string{"EmbedderMutation"}
+
+func (ec *executionContext) _EmbedderMutation(ctx context.Context, sel ast.SelectionSet, obj *EmbedderMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, embedderMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EmbedderMutation")
+		case "createEmbedder":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EmbedderMutation_createEmbedder(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "updateEmbedder":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EmbedderMutation_updateEmbedder(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "deleteEmbedder":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EmbedderMutation_deleteEmbedder(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var embedderQueryImplementors = []string{"EmbedderQuery"}
+
+func (ec *executionContext) _EmbedderQuery(ctx context.Context, sel ast.SelectionSet, obj *EmbedderQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, embedderQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EmbedderQuery")
+		case "getEmbedder":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EmbedderQuery_getEmbedder(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "listEmbedders":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EmbedderQuery_listEmbedders(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -7151,6 +8994,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_Datasource(ctx, field)
 			})
+		case "Embedder":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_Embedder(ctx, field)
+			})
 		case "Model":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_Model(ctx, field)
@@ -7317,6 +9164,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_Datasource(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "Embedder":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_Embedder(ctx, field)
 				return res
 			}
 
@@ -7770,6 +9636,11 @@ func (ec *executionContext) unmarshalNCreateDatasourceInput2githubᚗcomᚋkubea
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateEmbedderInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateEmbedderInput(ctx context.Context, v interface{}) (CreateEmbedderInput, error) {
+	res, err := ec.unmarshalInputCreateEmbedderInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateModelInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateModelInput(ctx context.Context, v interface{}) (CreateModelInput, error) {
 	res, err := ec.unmarshalInputCreateModelInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7789,6 +9660,20 @@ func (ec *executionContext) marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcad
 	return ec._Datasource(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEmbedder2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedder(ctx context.Context, sel ast.SelectionSet, v Embedder) graphql.Marshaler {
+	return ec._Embedder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEmbedder2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedder(ctx context.Context, sel ast.SelectionSet, v *Embedder) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Embedder(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7806,6 +9691,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 
 func (ec *executionContext) unmarshalNListDatasourceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListDatasourceInput(ctx context.Context, v interface{}) (ListDatasourceInput, error) {
 	res, err := ec.unmarshalInputListDatasourceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNListEmbedderInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListEmbedderInput(ctx context.Context, v interface{}) (ListEmbedderInput, error) {
+	res, err := ec.unmarshalInputListEmbedderInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -8183,12 +10073,34 @@ func (ec *executionContext) unmarshalODeleteDatasourceInput2ᚖgithubᚗcomᚋku
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalODeleteEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteEmbedderInput(ctx context.Context, v interface{}) (*DeleteEmbedderInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDeleteEmbedderInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalODeleteModelInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteModelInput(ctx context.Context, v interface{}) (*DeleteModelInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputDeleteModelInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOEmbedderMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedderMutation(ctx context.Context, sel ast.SelectionSet, v *EmbedderMutation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EmbedderMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOEmbedderQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEmbedderQuery(ctx context.Context, sel ast.SelectionSet, v *EmbedderQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EmbedderQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOEndpoint2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEndpoint(ctx context.Context, sel ast.SelectionSet, v *Endpoint) graphql.Marshaler {
@@ -8366,6 +10278,14 @@ func (ec *executionContext) unmarshalOUpdateDatasourceInput2ᚖgithubᚗcomᚋku
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputUpdateDatasourceInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUpdateEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐUpdateEmbedderInput(ctx context.Context, v interface{}) (*UpdateEmbedderInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUpdateEmbedderInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

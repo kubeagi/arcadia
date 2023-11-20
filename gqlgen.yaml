@@ -113,3 +113,17 @@ models:
         resolver: true
       deleteModel:
         resolver: true
+  EmbedderQuery:
+    fields:
+      getEmbedder:
+        resolver: true
+      listEmbedders:
+        resolver: true
+  EmbedderMutation:
+    fields:
+      createEmbedder:
+        resolver: true
+      updateEmbedder:
+        resolver: true
+      deleteEmbedder:
+        resolver: true
