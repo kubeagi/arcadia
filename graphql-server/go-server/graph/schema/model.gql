@@ -1,0 +1,85 @@
+# list
+query listModels($input: ListModelInput!){
+  Model {
+    listModels(input: $input) {
+      totalCount
+      hasNextPage
+      nodes {
+        __typename
+        ... on Model {
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          field
+          modeltype
+          updateTimestamp
+        }
+      }
+    }
+  }
+}
+
+# get
+query getModel($name: String!, $namespace: String!) {
+  Model {
+    getModel(name: $name, namespace: $namespace){
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      field
+      modeltype
+      updateTimestamp
+    }
+  }
+}
+
+# create
+mutation createModel($input: CreateModelInput!) {
+  Model {
+    createModel(input: $input) {
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      field
+      modeltype
+      updateTimestamp
+    }
+  }
+}
+
+# update
+mutation updateModel($input: UpdateModelInput) {
+  Model {
+    updateModel(input: $input){
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      field
+      modeltype
+      updateTimestamp
+    }
+  }
+}
+
+# delete
+mutation deleteModel($input: DeleteModelInput) {
+  Model {
+    deleteModel(input: $input)
+  }
+}

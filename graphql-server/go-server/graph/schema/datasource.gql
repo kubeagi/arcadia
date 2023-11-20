@@ -1,53 +1,58 @@
 # create
 mutation createDatasource($input: CreateDatasourceInput!) {
-  createDatasource(
-    input: $input
-  ) {
-    name
-    namespace
-    displayName
-    endpoint {
-      url
-      authSecret {
-        kind
-        Name
+  Datasource {
+    createDatasource(input: $input) {
+      name
+      namespace
+      displayName
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
       }
-      insecure
-    }
-    oss {
-      bucket
+      oss {
+        bucket
+      }
     }
   }
 }
 
 # update
 mutation updateDatasource($input: UpdateDatasourceInput) {
-  updateDatasource(input: $input) {
-    name
-    namespace
-    displayName
-    endpoint {
-      url
-      authSecret {
-        kind
-        Name
+  Datasource {
+    updateDatasource(input: $input) {
+      name
+      namespace
+      displayName
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
       }
-      insecure
-    }
-    oss {
-      bucket
+      oss {
+        bucket
+      }
     }
   }
 }
 
 # delete
 mutation deleteDatasource($input: DeleteDatasourceInput!) {
-  deleteDatasource(input: $input)
+  Datasource {
+    deleteDatasource(input: $input)
+  }
 }
 
-# list datasources by paged
-query getDatasourcesPaged($input: ListDatasourceInput!) {
-  datasourcesPaged(input: $input) {
+# list datasources
+query listDatasources($input: ListDatasourceInput!) {
+  Datasource {
+    listDatasources(input: $input) {
     totalCount
     hasNextPage
     nodes {
@@ -68,14 +73,16 @@ query getDatasourcesPaged($input: ListDatasourceInput!) {
           bucket
         }
       }
+      }
     }
   }
 }
 
 # get datasource
 query getDatasource($name: String!, $namespace: String!) {
-  datasource(name: $name, namespace: $namespace) {
-    name
+  Datasource {
+    getDatasource(name: $name, namespace: $namespace) {
+      name
       namespace
       displayName
       endpoint {
@@ -89,5 +96,6 @@ query getDatasource($name: String!, $namespace: String!) {
       oss {
         bucket
       }
+    }
   }
 }
