@@ -10,15 +10,23 @@ type PageNode interface {
 	IsPageNode()
 }
 
+// 新增数据源时输入条件
 type CreateDatasourceInput struct {
-	Name          string                 `json:"name"`
-	Namespace     string                 `json:"namespace"`
-	Labels        map[string]interface{} `json:"labels,omitempty"`
-	Annotations   map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName   string                 `json:"displayName"`
-	Description   *string                `json:"description,omitempty"`
-	Endpointinput *EndpointInput         `json:"endpointinput,omitempty"`
-	Ossinput      *OssInput              `json:"ossinput,omitempty"`
+	// 数据源资源名称（不可同名）
+	Name string `json:"name"`
+	// 数据源创建命名空间
+	Namespace string `json:"namespace"`
+	// 数据源资源类型
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 数据源资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 数据源资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 数据源资源描述
+	Description *string `json:"description,omitempty"`
+	// 提供对象存储时输入条件
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	Ossinput      *OssInput      `json:"ossinput,omitempty"`
 }
 
 type CreateModelInput struct {
@@ -38,16 +46,17 @@ type Datasource struct {
 	Annotations     map[string]interface{} `json:"annotations,omitempty"`
 	Creator         *string                `json:"creator,omitempty"`
 	DisplayName     string                 `json:"displayName"`
+	Description     *string                `json:"description,omitempty"`
 	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
 	Oss             *Oss                   `json:"oss,omitempty"`
-	Status          *bool                  `json:"status,omitempty"`
+	Status          *string                `json:"status,omitempty"`
 	FileCount       *int                   `json:"fileCount,omitempty"`
 	UpdateTimestamp time.Time              `json:"updateTimestamp"`
 }
 
 func (Datasource) IsPageNode() {}
 
-type DatasourceMuation struct {
+type DatasourceMutation struct {
 	CreateDatasource Datasource `json:"createDatasource"`
 	UpdateDatasource Datasource `json:"updateDatasource"`
 	DeleteDatasource *string    `json:"deleteDatasource,omitempty"`
@@ -59,8 +68,9 @@ type DatasourceQuery struct {
 }
 
 type DeleteDatasourceInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
+	Name      *string `json:"name,omitempty"`
+	Namespace string  `json:"namespace"`
+	// 筛选器
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
@@ -78,15 +88,23 @@ type Endpoint struct {
 	Insecure   *bool                 `json:"insecure,omitempty"`
 }
 
+// 对象存储终端输入
 type EndpointInput struct {
-	URL        *string                    `json:"url,omitempty"`
+	// minio URL
+	URL *string `json:"url,omitempty"`
+	// minio 验证密码
 	AuthSecret *TypedObjectReferenceInput `json:"authSecret,omitempty"`
-	Insecure   *bool                      `json:"insecure,omitempty"`
+	// 创建minio client默认true
+	Insecure *bool `json:"insecure,omitempty"`
 }
 
+// 分页查询输入
 type ListDatasourceInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
+	// 数据源资源名称（不可同名）
+	Name *string `json:"name,omitempty"`
+	// 数据源创建命名空间
+	Namespace string `json:"namespace"`
+	// 数据源资源展示名称
 	DisplayName   *string `json:"displayName,omitempty"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
@@ -137,6 +155,7 @@ type Oss struct {
 	Object *string `json:"Object,omitempty"`
 }
 
+// 文件输入
 type OssInput struct {
 	Bucket *string `json:"bucket,omitempty"`
 	Object *string `json:"Object,omitempty"`
@@ -165,12 +184,18 @@ type TypedObjectReferenceInput struct {
 }
 
 type UpdateDatasourceInput struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
+	// 数据源资源名称（不可同名）
+	Name string `json:"name"`
+	// 数据源创建命名空间
+	Namespace string `json:"namespace"`
+	// 数据源资源类型
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 数据源资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Description *string                `json:"description,omitempty"`
+	// 数据源资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 数据源资源描述
+	Description *string `json:"description,omitempty"`
 }
 
 type UpdateModelInput struct {

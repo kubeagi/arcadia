@@ -16,54 +16,80 @@ type Datasource {
     annotations: Map
     creator: String
     displayName: String!
+    description: String
     endpoint: Endpoint
     oss: Oss
     # 数据源连接状态
-    status: Boolean
+    status: String
     fileCount: Int
     updateTimestamp: Time!
 }
 
+"""对象存储终端输入"""
 input EndpointInput {
+    """minio URL"""
     url: String
+    """minio 验证密码"""
     authSecret: TypedObjectReferenceInput
+    """创建minio client默认true"""
     insecure: Boolean
 }
 
+"""文件输入"""
 input OssInput {
     bucket: String
     Object: String
 }
+
+"""新增数据源时输入条件"""
 input CreateDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String!
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源类型"""
     labels: Map
+    """数据源资源注释"""
     annotations: Map
+    """数据源资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """数据源资源描述"""
     description: String
+    """提供对象存储时输入条件"""
     endpointinput: EndpointInput
     ossinput: OssInput
 }
 
 input UpdateDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String!
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源类型"""
     labels: Map
+    """数据源资源注释"""
     annotations: Map
+    """数据源资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """数据源资源描述"""
     description: String
 }
 
 input DeleteDatasourceInput {
     name: String
     namespace: String!
+    """筛选器"""
     labelSelector: String
     fieldSelector: String
 }
 
+"""分页查询输入"""
 input ListDatasourceInput {
+    """数据源资源名称（不可同名）"""
     name: String
+    """数据源创建命名空间"""
     namespace: String!
+    """数据源资源展示名称"""
     displayName: String
     labelSelector: String
     fieldSelector: String
@@ -77,14 +103,14 @@ type DatasourceQuery {
     listDatasources(input: ListDatasourceInput!): PaginatedResult!
 }
 
-type DatasourceMuation {
+type DatasourceMutation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
     deleteDatasource(input: DeleteDatasourceInput): Void
 }
 # mutation
 extend type Mutation {
-    Datasource: DatasourceMuation
+    Datasource: DatasourceMutation
 }
 # query
 extend type Query{

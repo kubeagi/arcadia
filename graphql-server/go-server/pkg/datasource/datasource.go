@@ -43,8 +43,10 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
 	authsecretNamespace, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "namespace")
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
+	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
 	bucket, _, _ := unstructured.NestedString(obj.Object, "spec", "oss", "bucket")
 	insecure, _, _ := unstructured.NestedBool(obj.Object, "spec", "endpoint", "insecure")
+	status := "unknow"
 	updateTime := metav1.Now().Time
 	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if found && len(conditions) > 0 {
@@ -52,6 +54,7 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		if ok {
 			timeStr, _ := condition["lastTransitionTime"].(string)
 			updateTime, _ = time.Parse(time.RFC3339, timeStr)
+			status, _ = condition["status"].(string)
 		}
 	}
 	endpoint := model.Endpoint{
@@ -72,14 +75,16 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		Labels:          labels,
 		Annotations:     annotations,
 		DisplayName:     displayName,
+		Description:     &description,
 		Endpoint:        &endpoint,
 		Oss:             &oss,
+		Status:          &status,
 		UpdateTimestamp: updateTime,
 	}
 	return &md
 }
 
-func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret, bucket, displayname string, insecure bool) (*model.Datasource, error) {
+func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret, bucket, displayname, description string, insecure bool) (*model.Datasource, error) {
 	var datasource v1alpha1.Datasource
 	if url != "" {
 		datasource = v1alpha1.Datasource{
@@ -94,6 +99,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 			Spec: v1alpha1.DatasourceSpec{
 				CommonSpec: v1alpha1.CommonSpec{
 					DisplayName: displayname,
+					Description: description,
 				},
 				Enpoint: &v1alpha1.Endpoint{
 					URL: url,
@@ -122,6 +128,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 			Spec: v1alpha1.DatasourceSpec{
 				CommonSpec: v1alpha1.CommonSpec{
 					DisplayName: displayname,
+					Description: description,
 				},
 			},
 		}

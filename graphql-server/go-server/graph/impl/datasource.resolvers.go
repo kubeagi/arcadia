@@ -6,6 +6,7 @@ package impl
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
@@ -15,15 +16,18 @@ import (
 )
 
 // CreateDatasource is the resolver for the createDatasource field.
-func (r *datasourceMuationResolver) CreateDatasource(ctx context.Context, obj *generated.DatasourceMuation, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
+func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *generated.DatasourceMutation, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
 
-	url, authSecret, bucket, displayname := "", "", "", ""
+	url, authSecret, bucket, displayname, description := "", "", "", "", ""
 	var insecure bool
+	if input.Description != nil {
+		description = *input.Description
+	}
 	if input.Endpointinput != nil {
 		if input.Endpointinput.URL != nil {
 			url = *input.Endpointinput.URL
@@ -39,11 +43,11 @@ func (r *datasourceMuationResolver) CreateDatasource(ctx context.Context, obj *g
 	if input.DisplayName != "" {
 		displayname = input.DisplayName
 	}
-	return datasource.CreateDatasource(ctx, c, input.Name, input.Namespace, url, authSecret, bucket, displayname, insecure)
+	return datasource.CreateDatasource(ctx, c, input.Name, input.Namespace, url, authSecret, bucket, displayname, description, insecure)
 }
 
 // UpdateDatasource is the resolver for the updateDatasource field.
-func (r *datasourceMuationResolver) UpdateDatasource(ctx context.Context, obj *generated.DatasourceMuation, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
+func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -61,7 +65,7 @@ func (r *datasourceMuationResolver) UpdateDatasource(ctx context.Context, obj *g
 }
 
 // DeleteDatasource is the resolver for the deleteDatasource field.
-func (r *datasourceMuationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMuation, input *generated.DeleteDatasourceInput) (*string, error) {
+func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteDatasourceInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -142,8 +146,8 @@ func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *gene
 }
 
 // Datasource is the resolver for the Datasource field.
-func (r *mutationResolver) Datasource(ctx context.Context) (*generated.DatasourceMuation, error) {
-	return &generated.DatasourceMuation{}, nil
+func (r *mutationResolver) Datasource(ctx context.Context) (*generated.DatasourceMutation, error) {
+	panic(fmt.Errorf("not implemented: Datasource - Datasource"))
 }
 
 // Datasource is the resolver for the Datasource field.
@@ -151,9 +155,9 @@ func (r *queryResolver) Datasource(ctx context.Context) (*generated.DatasourceQu
 	return &generated.DatasourceQuery{}, nil
 }
 
-// DatasourceMuation returns generated.DatasourceMuationResolver implementation.
-func (r *Resolver) DatasourceMuation() generated.DatasourceMuationResolver {
-	return &datasourceMuationResolver{r}
+// DatasourceMutation returns generated.DatasourceMutationResolver implementation.
+func (r *Resolver) DatasourceMutation() generated.DatasourceMutationResolver {
+	return &datasourceMutationResolver{r}
 }
 
 // DatasourceQuery returns generated.DatasourceQueryResolver implementation.
@@ -161,5 +165,5 @@ func (r *Resolver) DatasourceQuery() generated.DatasourceQueryResolver {
 	return &datasourceQueryResolver{r}
 }
 
-type datasourceMuationResolver struct{ *Resolver }
+type datasourceMutationResolver struct{ *Resolver }
 type datasourceQueryResolver struct{ *Resolver }
