@@ -308,6 +308,20 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - versioneddataset
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - versioneddataset/status
+  verbs:
+  - get
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - versioneddatasets
   verbs:
   - create

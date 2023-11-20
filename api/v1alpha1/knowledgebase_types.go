@@ -30,11 +30,12 @@ type KnowledgeBaseSpec struct {
 	// VectorStore defines the vectorstore to store results
 	VectorStore *TypedObjectReference `json:"vectorStore,omitempty"`
 
-	// FileGroups included files Grouped by Datasource
+	// FileGroups included files Grouped by VersionedDataset
 	FileGroups []FileGroup `json:"fileGroups,omitempty"`
 }
+
 type FileGroupDetail struct {
-	// From defines the source which provides these files
+	// From defines the datasource which provides these files
 	Source *TypedObjectReference `json:"source,omitempty"`
 
 	// FileDetails is the detail files

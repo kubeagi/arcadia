@@ -71,7 +71,7 @@ spec:
                 - name
                 type: object
               fileGroups:
-                description: FileGroups included files Grouped by Datasource
+                description: FileGroups included files Grouped by VersionedDataset
                 items:
                   properties:
                     paths:
@@ -197,7 +197,8 @@ spec:
                         type: object
                       type: array
                     source:
-                      description: From defines the source which provides these files
+                      description: From defines the datasource which provides these
+                        files
                       properties:
                         apiGroup:
                           description: APIGroup is the group for the resource being
