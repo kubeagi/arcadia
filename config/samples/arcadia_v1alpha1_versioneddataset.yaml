@@ -1,6 +1,19 @@
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: VersionedDataset
 metadata:
-  name: versioneddataset-sample
+  name: dataset-playground-v1
+  namespace: arcadia
 spec:
-  # TODO(user): Add fields here
+  dataset:
+    kind: Dataset
+    name: dataset-playground
+    namespace: arcadia
+  fileGroups:
+    - source:
+        kind: Datasource
+        name: arcadia-local
+        namespace: arcadia
+      paths:
+        - qa.csv
+  released: 0
+  version: v1

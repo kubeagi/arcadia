@@ -44,24 +44,25 @@ function debugInfo {
 	if [[ $debug -ne 0 ]]; then
 		exit 1
 	fi
+	if [[ $GITHUB_ACTIONS == "true" ]]; then
+		warning "debugInfo start 🧐"
+		mkdir -p $LOG_DIR
 
-	warning "debugInfo start 🧐"
-	mkdir -p $LOG_DIR
+		warning "1. Try to get all resources "
+		kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get -A --ignore-not-found=true --show-kind=true >$LOG_DIR/get-all-resources-list.log
+		kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get -A -oyaml --ignore-not-found=true --show-kind=true >$LOG_DIR/get-all-resources-yaml.log
 
-	warning "1. Try to get all resources "
-	kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get -A --ignore-not-found=true --show-kind=true >$LOG_DIR/get-all-resources-list.log
-	kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get -A -oyaml --ignore-not-found=true --show-kind=true >$LOG_DIR/get-all-resources-yaml.log
+		warning "2. Try to describe all resources "
+		kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl describe -A >$LOG_DIR/describe-all-resources.log
 
-	warning "2. Try to describe all resources "
-	kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl describe -A >$LOG_DIR/describe-all-resources.log
+		warning "3. Try to export kind logs to $LOG_DIR..."
+		kind export logs --name=${KindName} $LOG_DIR
+		sudo chown -R $USER:$USER $LOG_DIR
 
-	warning "3. Try to export kind logs to $LOG_DIR..."
-	kind export logs --name=${KindName} $LOG_DIR
-	sudo chown -R $USER:$USER $LOG_DIR
-
-	warning "debugInfo finished ! "
-	warning "This means that some tests have failed. Please check the log. 🌚"
-	debug=1
+		warning "debugInfo finished ! "
+		warning "This means that some tests have failed. Please check the log. 🌚"
+		debug=1
+	fi
 	exit 1
 }
 trap 'debugInfo $LINENO' ERR
@@ -197,17 +198,22 @@ info "6. create and verify vectorstore"
 info "6.1. helm install chroma"
 helm repo add chroma https://amikos-tech.github.io/chromadb-chart/
 helm repo update chroma
-helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout
+if [[ $GITHUB_ACTIONS == "true" ]]; then
+	helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout
+else
+	helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout --set image.repository=docker.io/abirdcfly/chroma
+fi
 info "6.2. verify chroma vectorstore status"
 kubectl apply -f config/samples/arcadia_v1alpha1_vectorstore.yaml
 waitCRDStatusReady "VectorStore" "arcadia" "chroma-sample"
 
 info "7. create and verify knowledgebase"
+
 info "7.1. upload some test file to system datasource"
 bucket=$(kubectl get datasource -n arcadia arcadia-minio -o json | jq -r .spec.oss.bucket)
 s3_key=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootUser" | base64 --decode)
 s3_secret=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootPassword" | base64 --decode)
-resource="/${bucket}/example-test/knowledgebase-1.txt"
+resource="/${bucket}/qa.csv"
 content_type="application/octet-stream"
 date=$(date -R)
 _signature="PUT\n\n${content_type}\n${date}\n${resource}"
@@ -216,19 +222,27 @@ kubectl port-forward -n arcadia svc/arcadia-minio 9000:9000 >/dev/null 2>&1 &
 minio_pid=$!
 info "port-forward minio in pid: $minio_pid"
 sleep 3
-curl -X PUT -T "tests/knowledgebase-1.txt" \
+curl -X PUT -T "pkg/documentloaders/testdata/qa.csv" \
 	-H "Host: 127.0.0.1:9000" \
 	-H "Date: ${date}" \
 	-H "Content-Type: ${content_type}" \
 	-H "Authorization: AWS ${s3_key}:${signature}" \
 	http://127.0.0.1:9000${resource}
-info "7.2. create embedder and wait it ready"
+
+info "7.2 create dateset and versioneddataset and wait them ready"
+kubectl apply -f config/samples/arcadia_v1alpha1_dataset.yaml
+kubectl apply -f config/samples/arcadia_v1alpha1_versioneddataset.yaml
+waitCRDStatusReady "VersionedDataset" "arcadia" "dataset-playground-v1"
+
+info "7.3 create embedder and wait it ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_embedders.yaml
 waitCRDStatusReady "Embedders" "arcadia" "zhipuai-embedders-sample"
-info "7.3. create knowledgebase and wait it ready"
+
+info "7.4 create knowledgebase and wait it ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase.yaml
 waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample"
-info "7.4. check this vectorstore has data"
+
+info "7.5 check this vectorstore has data"
 kubectl port-forward -n arcadia svc/chroma-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
 info "port-forward chroma in pid: $minio_pid"

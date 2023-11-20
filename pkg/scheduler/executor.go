@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
@@ -78,7 +79,18 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 
 		klog.V(5).Infof("[Debug] get datasource %+v\n", *ds)
 
-		oss, err := datasource.NewOSS(ctx, e.client, ds.Spec.Enpoint)
+		endpoint := ds.Spec.Enpoint
+		if ds.Spec.Type() == v1alpha1.DatasourceTypeLocal {
+			system, err := config.GetSystemDatasource(ctx, e.client)
+			if err != nil {
+				return err
+			}
+			endpoint = system.Spec.Enpoint.DeepCopy()
+			if endpoint != nil && endpoint.AuthSecret != nil {
+				endpoint.AuthSecret.WithNameSpace(system.Namespace)
+			}
+		}
+		oss, err := datasource.NewOSS(ctx, e.client, endpoint)
 
 		if err != nil {
 			klog.Errorf("generateJob: get oss client error %s", err)

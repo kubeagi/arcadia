@@ -7,20 +7,17 @@ spec:
   displayName: "测试 KnowledgeBase"
   description: "测试 KnowledgeBase"
   embedder:
-    apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
     kind: Embedders
     name: zhipuai-embedders-sample
     namespace: arcadia
   vectorStore:
-    apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
     kind: VectorStores
     name: chroma-sample
     namespace: arcadia
   fileGroups:
   - source:
-      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
-      kind: Datasources
-      name: arcadia-local
+      kind: VersionedDataset
+      name: dataset-playground-v1
       namespace: arcadia
     paths:
-      - example-test/knowledgebase-1.txt
+      - dataset/dataset-playground/v1/qa.csv
