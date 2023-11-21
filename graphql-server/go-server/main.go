@@ -32,6 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/impl"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -84,6 +85,12 @@ func main() {
 	} else {
 		http.Handle("/bff", srv)
 	}
+
+	http.HandleFunc("/minio/get_chunks", minio.GetSuccessChunks)
+	http.HandleFunc("/minio/new_multipart", minio.NewMultipart)
+	http.HandleFunc("/minio/get_multipart_url", minio.GetMultipartUploadURL)
+	http.HandleFunc("/minio/complete_multipart", minio.CompleteMultipart)
+	http.HandleFunc("/minio/update_chunk", minio.UpdateMultipart)
 
 	klog.Infof("listening server on port: %d", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))

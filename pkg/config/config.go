@@ -21,7 +21,11 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,6 +42,7 @@ var (
 	ErrNoConfigEnv     = fmt.Errorf("env:%s is not found", EnvConfigKey)
 	ErrNoConfig        = fmt.Errorf("config in configmap is empty")
 	ErrNoConfigGateway = fmt.Errorf("config Gateway in configmap is not found")
+	ErrNoConfigMinIO   = fmt.Errorf("config MinIO in comfigmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -68,6 +73,41 @@ func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
 		return nil, ErrNoConfigGateway
 	}
 	return config.Gateway, nil
+}
+
+func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
+	config, err := GetConfigDynamic(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if config.MinIO == nil {
+		return nil, ErrNoConfigMinIO
+	}
+	return config.MinIO, nil
+}
+
+func GetConfigDynamic(ctx context.Context, c dynamic.Interface) (config *Config, err error) {
+	cmName := env.GetString(EnvConfigKey, EnvConfigDefaultValue)
+	if cmName == "" {
+		return nil, ErrNoConfigEnv
+	}
+	cmNamespace := utils.GetSelfNamespace()
+	u, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
+	if err != nil {
+		return nil, ErrNoConfig
+	}
+	data, found, err := unstructured.NestedStringMap(u.Object, "data")
+	if err != nil || !found {
+		return nil, ErrNoConfig
+	}
+	value, ok := data["config"]
+	if !ok || len(value) == 0 {
+		return nil, ErrNoConfig
+	}
+	if err = yaml.Unmarshal([]byte(value), &config); err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
 func GetConfig(ctx context.Context, c client.Client) (config *Config, err error) {
