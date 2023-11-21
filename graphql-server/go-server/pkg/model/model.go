@@ -60,13 +60,13 @@ func obj2model(obj *unstructured.Unstructured) *model.Model {
 		DisplayName:     displayName,
 		Description:     &description,
 		Field:           field,
-		Modeltype:       modeltype,
+		Modeltypes:      modeltype,
 		UpdateTimestamp: &updateTime,
 	}
 	return &md
 }
 
-func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, displayName, description, field, modeltype string) (*model.Model, error) {
+func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, displayName, description, field, modeltypes string) (*model.Model, error) {
 	model := v1alpha1.Model{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -80,7 +80,7 @@ func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, disp
 			DiplayName:  displayName,
 			Description: description,
 			Field:       field,
-			Type:        v1alpha1.ModelType(modeltype),
+			Types:       modeltypes,
 		},
 	}
 	unstructuredModel, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&model)

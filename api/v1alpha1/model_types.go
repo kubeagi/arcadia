@@ -38,7 +38,8 @@ type ModelSpec struct {
 	Field string `json:"field,omitempty"`
 
 	// Type defines what kind of model this is
-	Type ModelType `json:"type,omitempty"`
+	// Comma seperated field which can be wrapped by {llm,embdding}
+	Types string `json:"types,omitempty"`
 
 	// TODO: extend model to utilize third party storage sources
 	// Source *TypedObjectReference `json:"source,omitempty"`

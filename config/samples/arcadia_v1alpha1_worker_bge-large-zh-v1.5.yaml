@@ -1,0 +1,20 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: bge-large-zh-v1.5
+  namespace: arcadia
+spec:
+  displayName: "bge-large-zh-v1.5"
+  description: "智源研究员发布的Embedding模型"
+  types: "embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Worker
+metadata:
+  name: worker-bge
+  namespace: arcadia
+spec:
+  type: "fastchat"
+  model:
+    kind: "Models"
+    name: "bge-large-zh-v1.5"

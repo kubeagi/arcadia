@@ -140,10 +140,10 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 	if instanceDeepCopy.Labels == nil {
 		instanceDeepCopy.Labels = make(map[string]string)
 	}
-	// For model type
-	currentType := string(instanceDeepCopy.ModelType())
-	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelType]; v != currentType {
-		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelType] = currentType
+	// For model types
+	currentType := string(instanceDeepCopy.ModelTypes())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelTypes]; v != currentType {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelTypes] = currentType
 		update = true
 	}
 

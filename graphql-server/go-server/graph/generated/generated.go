@@ -143,7 +143,7 @@ type ComplexityRoot struct {
 		DisplayName     func(childComplexity int) int
 		Field           func(childComplexity int) int
 		Labels          func(childComplexity int) int
-		Modeltype       func(childComplexity int) int
+		Modeltypes      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Namespace       func(childComplexity int) int
 		UpdateTimestamp func(childComplexity int) int
@@ -753,12 +753,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.Labels(childComplexity), true
 
-	case "Model.modeltype":
-		if e.complexity.Model.Modeltype == nil {
+	case "Model.modeltypes":
+		if e.complexity.Model.Modeltypes == nil {
 			break
 		}
 
-		return e.complexity.Model.Modeltype(childComplexity), true
+		return e.complexity.Model.Modeltypes(childComplexity), true
 
 	case "Model.name":
 		if e.complexity.Model.Name == nil {
@@ -1494,37 +1494,37 @@ extend type Query{
     displayName: String!
     description: String
     field: String!
-    modeltype: String!
+    modeltypes: String!
     updateTimestamp: Time
 }
 
 input CreateModelInput{
-    """模型仓库资源名称（不可同名）"""
+    """模型资源名称（不可同名）"""
     name: String!
-    """模型仓库创建命名空间"""
+    """模型创建命名空间"""
     namespace: String!
-    """模型仓库资源展示名称作为显示，并提供编辑"""
+    """模型资源展示名称作为显示，并提供编辑"""
     displayName: String!
-    """模型仓库应用领域"""
+    """模型应用领域"""
     field: String!
-    """模型仓库资源描述"""
+    """模型资源描述"""
     description: String
-    """模型仓库类型"""
-    modeltype: String!
+    """模型类型"""
+    modeltypes: String!
 }
 
 input UpdateModelInput {
-    """模型仓库资源名称（不可同名）"""
+    """模型资源名称（不可同名）"""
     name: String!
-    """模型仓库创建命名空间"""
+    """模型创建命名空间"""
     namespace: String!
-    """模型仓库资标签"""
+    """模型资标签"""
     labels: Map
-    """模型仓库资源注释"""
+    """模型资源注释"""
     annotations: Map
-    """模型仓库资源展示名称作为显示，并提供编辑"""
+    """模型资源展示名称作为显示，并提供编辑"""
     displayName: String!
-    """模型仓库资源描述"""
+    """模型资源描述"""
     description: String
 }
 
@@ -5015,8 +5015,8 @@ func (ec *executionContext) fieldContext_Model_field(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Model_modeltype(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Model_modeltype(ctx, field)
+func (ec *executionContext) _Model_modeltypes(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_modeltypes(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5029,7 +5029,7 @@ func (ec *executionContext) _Model_modeltype(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Modeltype, nil
+		return obj.Modeltypes, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5046,7 +5046,7 @@ func (ec *executionContext) _Model_modeltype(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Model_modeltype(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Model_modeltypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Model",
 		Field:      field,
@@ -5155,8 +5155,8 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_description(ctx, field)
 			case "field":
 				return ec.fieldContext_Model_field(ctx, field)
-			case "modeltype":
-				return ec.fieldContext_Model_modeltype(ctx, field)
+			case "modeltypes":
+				return ec.fieldContext_Model_modeltypes(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -5232,8 +5232,8 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_description(ctx, field)
 			case "field":
 				return ec.fieldContext_Model_field(ctx, field)
-			case "modeltype":
-				return ec.fieldContext_Model_modeltype(ctx, field)
+			case "modeltypes":
+				return ec.fieldContext_Model_modeltypes(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -5361,8 +5361,8 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_description(ctx, field)
 			case "field":
 				return ec.fieldContext_Model_field(ctx, field)
-			case "modeltype":
-				return ec.fieldContext_Model_modeltype(ctx, field)
+			case "modeltypes":
+				return ec.fieldContext_Model_modeltypes(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -8693,7 +8693,7 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "displayName", "field", "description", "modeltype"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "field", "description", "modeltypes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8745,15 +8745,15 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 				return it, err
 			}
 			it.Description = data
-		case "modeltype":
+		case "modeltypes":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modeltype"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modeltypes"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Modeltype = data
+			it.Modeltypes = data
 		}
 	}
 
@@ -10889,8 +10889,8 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "modeltype":
-			out.Values[i] = ec._Model_modeltype(ctx, field, obj)
+		case "modeltypes":
+			out.Values[i] = ec._Model_modeltypes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

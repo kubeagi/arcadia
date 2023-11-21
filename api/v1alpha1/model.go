@@ -16,27 +16,21 @@ limitations under the License.
 
 package v1alpha1
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
-	// LabelModelType keeps the spec.type field
-	LabelModelType     = Group + "/model-type"
+	// LabelModelTypes keeps the spec.types field
+	LabelModelTypes    = Group + "/model-types"
 	LabelModelFullPath = Group + "/full-path"
 )
 
-type ModelType string
-
-const (
-	ModelTypeEmbedding ModelType = "embedding"
-	ModelTypeLLM       ModelType = "llm"
-	ModelTypeUnknown   ModelType = "unknown"
-)
-
-func (model Model) ModelType() ModelType {
-	if model.Spec.Type == "" {
-		return ModelTypeUnknown
+func (model Model) ModelTypes() string {
+	if model.Spec.Types == "" {
+		return "unknown"
 	}
-	return model.Spec.Type
+	return model.Spec.Types
 }
 
 // FullPath with bucket and object path
