@@ -12,29 +12,44 @@ type Embedder {
 }
 
 input CreateEmbedderInput {
+    """模型服务资源名称（不可同名）"""
     name: String!
+    """模型服务创建命名空间"""
     namespace: String!
+    """模型服务资源标签"""
     labels: Map
+    """模型服务资源注释"""
     annotations: Map
+    """模型服务资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """模型服务资源描述"""
     description: String
     endpointinput: EndpointInput
+    """模型服务类型"""
     serviceType: String
 }
 
 input UpdateEmbedderInput {
+    """模型服务资源名称（不可同名）"""
     name: String!
+    """模型服务创建命名空间"""
     namespace: String!
+    """模型服务资源标签"""
     labels: Map
+    """模型服务资源注释"""
     annotations: Map
+    """模型服务资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """模型服务资源描述"""
     description: String
 }
 
 input DeleteEmbedderInput {
     name: String
     namespace: String!
+    """标签选择器"""
     labelSelector: String
+    """字段选择器"""
     fieldSelector: String
 }
 
@@ -42,7 +57,9 @@ input ListEmbedderInput {
     name: String
     namespace: String!
     displayName: String
+    """标签选择器"""
     labelSelector: String
+    """字段选择器"""
     fieldSelector: String
     page: Int
     pageSize: Int

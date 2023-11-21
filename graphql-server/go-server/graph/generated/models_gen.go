@@ -16,7 +16,7 @@ type CreateDatasourceInput struct {
 	Name string `json:"name"`
 	// 数据源创建命名空间
 	Namespace string `json:"namespace"`
-	// 数据源资源类型
+	// 数据源资源标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
 	// 数据源资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
@@ -30,24 +30,57 @@ type CreateDatasourceInput struct {
 }
 
 type CreateEmbedderInput struct {
-	Name          string                 `json:"name"`
-	Namespace     string                 `json:"namespace"`
-	Labels        map[string]interface{} `json:"labels,omitempty"`
-	Annotations   map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName   string                 `json:"displayName"`
-	Description   *string                `json:"description,omitempty"`
-	Endpointinput *EndpointInput         `json:"endpointinput,omitempty"`
-	ServiceType   *string                `json:"serviceType,omitempty"`
+	// 模型服务资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型服务创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型服务资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 模型服务资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 模型服务资源描述
+	Description   *string        `json:"description,omitempty"`
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 模型服务类型
+	ServiceType *string `json:"serviceType,omitempty"`
+}
+
+type CreateKnowledgeBaseInput struct {
+	// 知识库资源名称（不可同名）
+	Name string `json:"name"`
+	// 知识库创建命名空间
+	Namespace string `json:"namespace"`
+	// 知识库资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 知识库资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 知识库资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 知识库资源描述
+	Description *string `json:"description,omitempty"`
+	// 模型服务
+	Embedder *TypedObjectReferenceInput `json:"embedder,omitempty"`
+	// "向量数据库(使用默认值)
+	VectorStore *TypedObjectReferenceInput `json:"vectorStore,omitempty"`
+	// 知识库文件
+	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
 }
 
 type CreateModelInput struct {
-	Name            string     `json:"name"`
-	Namespace       string     `json:"namespace"`
-	DisplayName     string     `json:"displayName"`
-	Field           string     `json:"field"`
-	Description     *string    `json:"description,omitempty"`
-	Modeltype       string     `json:"modeltype"`
-	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// 模型仓库资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型仓库创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型仓库资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 模型仓库应用领域
+	Field string `json:"field"`
+	// 模型仓库资源描述
+	Description *string `json:"description,omitempty"`
+	// 模型仓库类型
+	Modeltype string `json:"modeltype"`
 }
 
 type Datasource struct {
@@ -87,16 +120,29 @@ type DeleteDatasourceInput struct {
 }
 
 type DeleteEmbedderInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
+	Name      *string `json:"name,omitempty"`
+	Namespace string  `json:"namespace"`
+	// 标签选择器
 	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
+type DeleteKnowledgeBaseInput struct {
+	Name      *string `json:"name,omitempty"`
+	Namespace string  `json:"namespace"`
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
 type DeleteModelInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
+	Name      *string `json:"name,omitempty"`
+	Namespace string  `json:"namespace"`
+	// 标签选择器
 	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
@@ -134,12 +180,40 @@ type Endpoint struct {
 
 // 对象存储终端输入
 type EndpointInput struct {
-	// minio URL
 	URL *string `json:"url,omitempty"`
-	// minio 验证密码
+	// secret验证密码
 	AuthSecret *TypedObjectReferenceInput `json:"authSecret,omitempty"`
-	// 创建minio client默认true
+	// 默认true
 	Insecure *bool `json:"insecure,omitempty"`
+}
+
+type KnowledgeBase struct {
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	Creator     *string                `json:"creator,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
+	Embedder    *TypedObjectReference  `json:"embedder,omitempty"`
+	VectorStore *TypedObjectReference  `json:"vectorStore,omitempty"`
+	FileGroups  []*Filegroup           `json:"fileGroups,omitempty"`
+	// 知识库连接状态
+	Status          *string   `json:"status,omitempty"`
+	UpdateTimestamp time.Time `json:"updateTimestamp"`
+}
+
+func (KnowledgeBase) IsPageNode() {}
+
+type KnowledgeBaseMutation struct {
+	CreateKnowledgeBase KnowledgeBase `json:"createKnowledgeBase"`
+	UpdateKnowledgeBase KnowledgeBase `json:"updateKnowledgeBase"`
+	DeleteKnowledgeBase *string       `json:"deleteKnowledgeBase,omitempty"`
+}
+
+type KnowledgeBaseQuery struct {
+	GetKnowledgeBase   KnowledgeBase   `json:"getKnowledgeBase"`
+	ListKnowledgeBases PaginatedResult `json:"listKnowledgeBases"`
 }
 
 // 分页查询输入
@@ -158,10 +232,25 @@ type ListDatasourceInput struct {
 }
 
 type ListEmbedderInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
-	DisplayName   *string `json:"displayName,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Namespace   string  `json:"namespace"`
+	DisplayName *string `json:"displayName,omitempty"`
+	// 标签选择器
 	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	Page          *int    `json:"page,omitempty"`
+	PageSize      *int    `json:"pageSize,omitempty"`
+	Keyword       *string `json:"keyword,omitempty"`
+}
+
+type ListKnowledgeBaseInput struct {
+	Name        *string `json:"name,omitempty"`
+	Namespace   string  `json:"namespace"`
+	DisplayName *string `json:"displayName,omitempty"`
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 	Page          *int    `json:"page,omitempty"`
 	PageSize      *int    `json:"pageSize,omitempty"`
@@ -169,10 +258,12 @@ type ListEmbedderInput struct {
 }
 
 type ListModelInput struct {
-	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
-	DisplayName   *string `json:"displayName,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Namespace   string  `json:"namespace"`
+	DisplayName *string `json:"displayName,omitempty"`
+	// 标签选择器
 	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 	Page          *int    `json:"page,omitempty"`
 	PageSize      *int    `json:"pageSize,omitempty"`
@@ -243,7 +334,7 @@ type UpdateDatasourceInput struct {
 	Name string `json:"name"`
 	// 数据源创建命名空间
 	Namespace string `json:"namespace"`
-	// 数据源资源类型
+	// 数据源资源标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
 	// 数据源资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
@@ -254,19 +345,59 @@ type UpdateDatasourceInput struct {
 }
 
 type UpdateEmbedderInput struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型服务创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型服务资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Description *string                `json:"description,omitempty"`
+	// 模型服务资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 模型服务资源描述
+	Description *string `json:"description,omitempty"`
+}
+
+type UpdateKnowledgeBaseInput struct {
+	// 知识库资源名称（不可同名）
+	Name string `json:"name"`
+	// 知识库创建命名空间
+	Namespace string `json:"namespace"`
+	// 知识库资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 知识库资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 知识库资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 知识库资源描述
+	Description *string `json:"description,omitempty"`
 }
 
 type UpdateModelInput struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
+	// 模型仓库资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型仓库创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型仓库资标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型仓库资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Description *string                `json:"description,omitempty"`
+	// 模型仓库资源展示名称作为显示，并提供编辑
+	DisplayName string `json:"displayName"`
+	// 模型仓库资源描述
+	Description *string `json:"description,omitempty"`
+}
+
+type Filegroup struct {
+	Source *TypedObjectReference `json:"source,omitempty"`
+	Path   []string              `json:"path,omitempty"`
+}
+
+// 源文件输入
+type Filegroupinput struct {
+	// 数据源字段
+	Source TypedObjectReferenceInput `json:"source"`
+	// 路径
+	Path []string `json:"path,omitempty"`
 }

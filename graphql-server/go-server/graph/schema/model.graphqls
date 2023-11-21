@@ -12,28 +12,41 @@ type Model {
 }
 
 input CreateModelInput{
+    """模型仓库资源名称（不可同名）"""
     name: String!
+    """模型仓库创建命名空间"""
     namespace: String!
+    """模型仓库资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """模型仓库应用领域"""
     field: String!
+    """模型仓库资源描述"""
     description: String
+    """模型仓库类型"""
     modeltype: String!
-    updateTimestamp: Time
 }
 
 input UpdateModelInput {
+    """模型仓库资源名称（不可同名）"""
     name: String!
+    """模型仓库创建命名空间"""
     namespace: String!
+    """模型仓库资标签"""
     labels: Map
+    """模型仓库资源注释"""
     annotations: Map
+    """模型仓库资源展示名称作为显示，并提供编辑"""
     displayName: String!
+    """模型仓库资源描述"""
     description: String
 }
 
 input DeleteModelInput {
     name: String 
     namespace: String!
+    """标签选择器"""
     labelSelector: String
+    """字段选择器"""
     fieldSelector: String
 }
 
@@ -41,7 +54,9 @@ input ListModelInput {
     name: String
     namespace: String!
     displayName: String
+    """标签选择器"""
     labelSelector: String
+    """字段选择器"""
     fieldSelector: String
     page: Int
     pageSize: Int

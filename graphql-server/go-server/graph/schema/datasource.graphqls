@@ -46,7 +46,7 @@ input CreateDatasourceInput {
     name: String!
     """数据源创建命名空间"""
     namespace: String!
-    """数据源资源类型"""
+    """数据源资源标签"""
     labels: Map
     """数据源资源注释"""
     annotations: Map
@@ -64,7 +64,7 @@ input UpdateDatasourceInput {
     name: String!
     """数据源创建命名空间"""
     namespace: String!
-    """数据源资源类型"""
+    """数据源资源标签"""
     labels: Map
     """数据源资源注释"""
     annotations: Map
