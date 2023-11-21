@@ -27,10 +27,23 @@ type Config struct {
 
 	// Gateway to access LLM api services
 	Gateway *Gateway `json:"gateway,omitempty"`
+
+	// MinIO to access MinIO api services
+	MinIO *MinIO `json:"minIO,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia
 type Gateway struct {
 	APIServer  string `json:"apiServer,omitempty"`
 	Controller string `json:"controller,omitempty"`
+}
+
+// MinIO defines the way to access minio
+type MinIO struct {
+	MinioAddress         string `json:"minioAddress"`
+	MinioAccessKeyID     string `json:"minioAccessKeyId"`
+	MinioSecretAccessKey string `json:"minioSecretAccessKey"`
+	MinioSecure          bool   `json:"minioSecure"`
+	MinioBucket          string `json:"minioBucket"`
+	MinioBasePath        string `json:"minioBasePath"`
 }
