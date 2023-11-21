@@ -1,0 +1,189 @@
+"""
+VersionedDataset
+数据集的版本信息。
+主要记录版本名字，数据的来源，以及文件的同步状态
+"""
+type VersionedDataset {
+    """数据集名称, 这个应该是前端随机生成就可以，没有实际用途"""
+    name: String!
+
+    """数据集所在的namespace，也是后续桶的名字"""
+    namespace: String!
+
+    """一些用于标记，选择的的标签"""
+    labels: Map
+
+    """添加一些辅助性记录信息"""
+    annotations: Map
+
+    """创建者，正查给你这个字段是不需要人写的，自动添加"""
+    creator: String
+
+    """展示名字， 与metadat.name不一样，这个展示名字是可以用中文的"""
+    displayName: String!
+
+    """所属的数据集"""
+    dataset: TypedObjectReference!
+
+    """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
+    updateTimestamp: Time
+    creationTimestamp: Time!
+
+    """数据集所包含的文件，对于文件需要支持过滤和分页"""
+    files(input: FileFilter): PaginatedResult!
+
+    
+    """版本名称"""
+    version: String!
+
+    """该数据集版本所包含的数据总量"""
+    fileCount: Int!
+
+    """该版本是否已经发布, 0是未发布，1是已经发布"""
+    released: Int!
+}
+
+"""
+File
+展示某个版本的所有文件。
+"""
+type F {
+    """文件名称"""
+    datasource: TypedObjectReference!
+
+    "文件在数据源中的路径，a/b/c.txt或者d.txt"
+    path: String!
+
+    """摘要？摘啥"""
+    md5: String
+
+    """文件成功导入时间，如果没有导入成功，这个字段为空"""
+    time: Time
+}
+
+"""
+根据条件顾虑版本内的文件，只支持关键词搜索
+"""
+input FileFilter {
+    """根据关键词搜索文件，strings.Container(fileName, keyword)"""
+    keyword: String!
+
+    """页"""
+    page: Int!
+
+    """页内容数量"""
+    pageSize: Int!
+
+    """根据文件名字或者更新时间排序, file, time"""
+    sortBy: String
+}
+
+input FileGroup {
+    """数据源的基础信息"""
+    datasource: TypedObjectReferenceInput! 
+
+    """用到的文件路径，注意⚠️ 一定不要加bucket的名字"""
+    paths: [String!]
+}
+
+
+input CreateVersionedDatasetInput {
+    """数据集的CR名字，要满足k8s的名称规则"""
+    name: String!
+
+    namespace: String!
+
+    """dataset的名字，需要根据这个名字，
+    判断是否最新版本不包含任何文件(产品要求，有一个不包含任何文件的版本，不允许创建新的版本)
+    """
+    datasetName: String!
+
+    """一些标签选择信息，可以不添加"""
+    labels: Map
+
+    """一些备注用的注视信息，或者记录一个简单的配置"""
+    annotations: Map
+
+    """展示名称，用于展示在界面上的，必须填写"""
+    displayName: String!
+    
+    """描述信息，可以不写"""
+    description: String
+
+    """数据集里面的数据的类型，文本，视频，图片"""
+    version: String!
+
+    """是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以"""
+    release: Int!
+
+    fileGrups: [FileGroup]
+}
+
+input UpdateVersionedDatasetInput {
+    """
+    这个名字就是metadat.name, 根据name和namespace确定资源
+    name，namespac是不可以更新的。
+    """
+    name: String!
+    namespace: String!
+
+    """
+    更新的的标签信息，这里涉及到增加或者删除标签，
+    所以，如果标签有任何改动，传递完整的label。
+    例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+    """
+    labels: Map
+
+    """传递方式同label"""
+    annotations: Map
+    
+    displayName: String!
+    description: String
+
+    """
+    更新，删除数据集版本中的文件，传递方式于label相同，完全传递。
+    如果传递一个空的数组过去，认为是删除全部文件。
+    """
+    fileGroups: [FileGroup!]
+}
+
+
+input DeleteVersionedDatasetInput {
+    name: String
+    namespace: String!
+    labelSelector: String
+    fieldSelector: String
+}
+
+input ListVersionedDatasetInput {
+    name: String
+    namespace: String!
+    displayName: String
+    labelSelector: String
+    fieldSelector: String
+
+    """分页页码，从1开始，默认是1"""
+    page: Int
+
+    """每页数量，默认10"""
+    pageSize: Int
+    keyword: String
+}
+
+type VersionedDatasetQuery {
+    getVersionedDataset(name: String!, namespace: String!): VersionedDataset!
+    listVersionedDatasets(input: ListVersionedDatasetInput!): PaginatedResult! 
+}
+type VersionedDatasetMutation {
+    createVersionedDataset(input: CreateVersionedDatasetInput!): VersionedDataset! 
+    updateVersionedDataset(input: UpdateVersionedDatasetInput!): VersionedDataset!
+    deleteVersionedDatasets(input: DeleteVersionedDatasetInput!): Void
+}
+
+extend type Query {
+    VersionedDataset: VersionedDatasetQuery
+}
+
+extend type Mutation {
+    VersionedDataset: VersionedDatasetMutation
+}

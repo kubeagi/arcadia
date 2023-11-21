@@ -141,3 +141,39 @@ models:
         resolver: true
       listKnowledgeBases:
         resolver: true
+  DatasetQuery:
+    fields:
+      getDataset:
+        resolver: true
+      listDatasets:
+        resolver: true
+  DatasetMutation:
+    fields:
+      createDataset:
+        resolver: true
+      updateDataset:
+        resolver: true
+      deleteDatasets:
+        resolver: true
+  Dataset:
+    fields:
+      versions:
+        resolver: true
+  VersionedDatasetQuery:
+    fields:
+      getVersionedDataset:
+        resolver: true
+      listVersionedDatasets:
+        resolver: true
+  VersionedDatasetMutation:
+    fields:
+      createVersionedDataset:
+        resolver: true
+      updateVersionedDataset:
+        resolver: true
+      deleteVersionedDatasets:
+        resolver: true
+  VersionedDataset:
+    fields:
+      files:
+        resolver: true

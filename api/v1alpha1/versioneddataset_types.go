@@ -48,6 +48,9 @@ type VersionedDatasetSpec struct {
 
 	// Which version of the dataset it inherits from
 	InheritedFrom string `json:"inheritedFrom,omitempty"`
+
+	// DisplayName
+	CommonSpec `json:",inline"`
 }
 
 type FileStatus struct {
