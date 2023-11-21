@@ -47,8 +47,9 @@ spec:
               field:
                 description: Model application fields
                 type: string
-              type:
-                description: Type defines what kind of model this is
+              types:
+                description: Type defines what kind of model this is Comma seperated
+                  field which can be wrapped by {llm,embdding}
                 type: string
             required:
             - displayName

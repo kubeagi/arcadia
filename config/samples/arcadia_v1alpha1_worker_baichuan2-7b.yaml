@@ -1,0 +1,23 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: baichuan2-7b
+  namespace: arcadia
+spec:
+  displayName: "baichuan2-7b"
+  description: "百川智能发布的大语言模型模型,同时提供embedding模型能力"
+  types: "llm,embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Worker
+metadata:
+  name: worker-baichuan
+  namespace: arcadia
+spec:
+  type: "fastchat"
+  model:
+    kind: "Models"
+    name: "baichuan2-7b"
+  resources:
+    limits:
+      nvidia.com/gpu: "1" # request 1 GPU

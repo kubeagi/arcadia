@@ -69,18 +69,18 @@ type CreateKnowledgeBaseInput struct {
 }
 
 type CreateModelInput struct {
-	// 模型仓库资源名称（不可同名）
+	// 模型资源名称（不可同名）
 	Name string `json:"name"`
-	// 模型仓库创建命名空间
+	// 模型创建命名空间
 	Namespace string `json:"namespace"`
-	// 模型仓库资源展示名称作为显示，并提供编辑
+	// 模型资源展示名称作为显示，并提供编辑
 	DisplayName string `json:"displayName"`
-	// 模型仓库应用领域
+	// 模型应用领域
 	Field string `json:"field"`
-	// 模型仓库资源描述
+	// 模型资源描述
 	Description *string `json:"description,omitempty"`
-	// 模型仓库类型
-	Modeltype string `json:"modeltype"`
+	// 模型类型
+	Modeltypes string `json:"modeltypes"`
 }
 
 type Datasource struct {
@@ -279,7 +279,7 @@ type Model struct {
 	DisplayName     string                 `json:"displayName"`
 	Description     *string                `json:"description,omitempty"`
 	Field           string                 `json:"field"`
-	Modeltype       string                 `json:"modeltype"`
+	Modeltypes      string                 `json:"modeltypes"`
 	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
 }
 
@@ -375,17 +375,17 @@ type UpdateKnowledgeBaseInput struct {
 }
 
 type UpdateModelInput struct {
-	// 模型仓库资源名称（不可同名）
+	// 模型资源名称（不可同名）
 	Name string `json:"name"`
-	// 模型仓库创建命名空间
+	// 模型创建命名空间
 	Namespace string `json:"namespace"`
-	// 模型仓库资标签
+	// 模型资标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
-	// 模型仓库资源注释
+	// 模型资源注释
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	// 模型仓库资源展示名称作为显示，并提供编辑
+	// 模型资源展示名称作为显示，并提供编辑
 	DisplayName string `json:"displayName"`
-	// 模型仓库资源描述
+	// 模型资源描述
 	Description *string `json:"description,omitempty"`
 }
 
