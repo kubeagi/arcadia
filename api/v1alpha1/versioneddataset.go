@@ -20,9 +20,14 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
+	"github.com/minio/minio-go/v7"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+
+	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
 
 var (
@@ -30,26 +35,37 @@ var (
 	LabelVersionedDatasetVersionOwner = Group + "/owner"
 )
 
-// CopyedFileGroup2Status the function will eventually return, whether there are new files added. and a list of files that were deleted.
-func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileStatus) {
-	if instance.DeletionTimestamp != nil {
-		source := instance.Status.DatasourceFiles
-		instance.Status.DatasourceFiles = nil
-		return true, source
+const InheritedFromVersionName = "inheritfrom-"
+
+func generateInheriedFileStatus(minioClient *minio.Client, instance *VersionedDataset) []FileStatus {
+	if instance.Spec.InheritedFrom == "" {
+		return nil
 	}
 
-	// 1. First store the information about the status of the file that has been saved in the current status.
-	oldDatasourceFiles := make(map[string]map[string]FileDetails)
-	for _, fileStatus := range instance.Status.DatasourceFiles {
-		key := fmt.Sprintf("%s %s", fileStatus.DatasourceNamespace, fileStatus.DatasourceName)
-		if _, ok := oldDatasourceFiles[key]; !ok {
-			oldDatasourceFiles[key] = make(map[string]FileDetails)
-		}
-		for _, item := range fileStatus.Status {
-			oldDatasourceFiles[key][item.Path] = item
+	srcBucket := instance.Spec.Dataset.Namespace
+	prefix := fmt.Sprintf("dataset/%s/%s/", instance.Spec.Dataset.Name, instance.Spec.InheritedFrom)
+	filePaths := minioutils.ListObjects(context.TODO(), *srcBucket, prefix, minioClient, -1)
+	status := make([]FileDetails, len(filePaths))
+	sort.Strings(filePaths)
+
+	for idx, fp := range filePaths {
+		status[idx] = FileDetails{
+			Path:  strings.TrimPrefix(fp, prefix),
+			Phase: FileProcessPhaseProcessing,
 		}
 	}
+	return []FileStatus{
+		{
+			TypedObjectReference: TypedObjectReference{
+				Name:      InheritedFromVersionName + instance.Spec.InheritedFrom,
+				Namespace: &instance.Namespace,
+				Kind:      "VersionedDataset",
+			},
+			Status: status,
+		}}
+}
 
+func generateDatasourceFileStatus(instance *VersionedDataset) []FileStatus {
 	// 2. Organize the contents of the fileGroup into this format: {"datasourceNamespace datasourceName": ["file1", "file2"]}
 	fileGroup := make(map[string][]string)
 	for _, fg := range instance.Spec.FileGroups {
@@ -65,14 +81,17 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 	}
 
 	// 3. Convert fileGroup to []DatasourceFileStatus format
-	targetDatasourceFileStatus := make([]DatasourceFileStatus, 0)
+	targetDatasourceFileStatus := make([]FileStatus, 0)
 	var namespace, name string
 	for datasource, filePaths := range fileGroup {
 		_, _ = fmt.Sscanf(datasource, "%s %s", &namespace, &name)
-		item := DatasourceFileStatus{
-			DatasourceName:      name,
-			DatasourceNamespace: namespace,
-			Status:              []FileDetails{},
+		item := FileStatus{
+			TypedObjectReference: TypedObjectReference{
+				Name:      name,
+				Namespace: &namespace,
+				Kind:      "Datasource",
+			},
+			Status: []FileDetails{},
 		}
 		for _, fp := range filePaths {
 			item.Status = append(item.Status, FileDetails{
@@ -86,15 +105,40 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 
 		targetDatasourceFileStatus = append(targetDatasourceFileStatus, item)
 	}
+	return targetDatasourceFileStatus
+}
+
+// CopyedFileGroup2Status the function will eventually return, whether there are new files added. and a list of files that were deleted.
+func CopyedFileGroup2Status(minioClient *minio.Client, instance *VersionedDataset) (bool, []FileStatus) {
+	if instance.DeletionTimestamp != nil {
+		source := instance.Status.Files
+		instance.Status.Files = nil
+		return true, source
+	}
+
+	// 1. First store the information about the status of the file that has been saved in the current status.
+	oldDatasourceFiles := make(map[string]map[string]FileDetails)
+	for _, fileStatus := range instance.Status.Files {
+		key := fmt.Sprintf("%s %s", *fileStatus.Namespace, fileStatus.Name)
+		if _, ok := oldDatasourceFiles[key]; !ok {
+			oldDatasourceFiles[key] = make(map[string]FileDetails)
+		}
+		for _, item := range fileStatus.Status {
+			oldDatasourceFiles[key][item.Path] = item
+		}
+	}
+
+	targetDatasourceFileStatus := generateDatasourceFileStatus(instance)
+	targetDatasourceFileStatus = append(targetDatasourceFileStatus, generateInheriedFileStatus(minioClient, instance)...)
 
 	// 4. If a file from a data source is found to exist in oldDatasourceFiles,
 	// replace it with the book inside oldDatasourceFiles.
 	// Otherwise set the file as being processed.
 	update := false
-	deletedFiles := make([]DatasourceFileStatus, 0)
+	deletedFiles := make([]FileStatus, 0)
 	for idx := range targetDatasourceFileStatus {
 		item := targetDatasourceFileStatus[idx]
-		key := fmt.Sprintf("%s %s", item.DatasourceNamespace, item.DatasourceName)
+		key := fmt.Sprintf("%s %s", *item.Namespace, item.Name)
 
 		// if the datasource itself is not in status, then it is a new series of files added.
 		datasourceFiles, ok := oldDatasourceFiles[key]
@@ -116,10 +160,12 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 			delete(datasourceFiles, status.Path)
 		}
 		if len(datasourceFiles) > 0 {
-			ds := DatasourceFileStatus{
-				DatasourceName:      item.DatasourceName,
-				DatasourceNamespace: item.DatasourceNamespace,
-				Status:              make([]FileDetails, 0),
+			ds := FileStatus{
+				TypedObjectReference: TypedObjectReference{
+					Name:      item.Name,
+					Namespace: item.Namespace,
+				},
+				Status: make([]FileDetails, 0),
 			}
 			for _, r := range datasourceFiles {
 				ds.Status = append(ds.Status, r)
@@ -127,10 +173,27 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 			deletedFiles = append(deletedFiles, ds)
 		}
 		targetDatasourceFileStatus[idx] = item
+		delete(oldDatasourceFiles, key)
+	}
+
+	for key, item := range oldDatasourceFiles {
+		var namespace, name string
+		fmt.Sscanf(key, "%s %s", &namespace, &name)
+		ds := FileStatus{
+			TypedObjectReference: TypedObjectReference{
+				Name:      name,
+				Namespace: &namespace,
+			},
+			Status: make([]FileDetails, 0),
+		}
+		for _, r := range item {
+			ds.Status = append(ds.Status, r)
+		}
+		deletedFiles = append(deletedFiles, ds)
 	}
 
 	sort.Slice(targetDatasourceFileStatus, func(i, j int) bool {
-		return targetDatasourceFileStatus[i].DatasourceName < targetDatasourceFileStatus[j].DatasourceName
+		return targetDatasourceFileStatus[i].Name < targetDatasourceFileStatus[j].Name
 	})
 
 	index := -1
@@ -156,37 +219,39 @@ func CopyedFileGroup2Status(instance *VersionedDataset) (bool, []DatasourceFileS
 		}
 		instance.Status.ConditionedStatus.SetConditions(cond)
 	}
-	instance.Status.DatasourceFiles = targetDatasourceFileStatus
+	klog.V(4).Infof("[Debug] delete filestatus %+v\n", deletedFiles)
+
+	instance.Status.Files = targetDatasourceFileStatus
 	// update condition to sync
 	return update, deletedFiles
 }
 
 func UpdateFileStatus(ctx context.Context, instance *VersionedDataset, datasource, srcPath string, syncStatus FileProcessPhase, errMsg string) error {
-	datasourceFileLen := len(instance.Status.DatasourceFiles)
+	datasourceFileLen := len(instance.Status.Files)
 	datasourceIndex := sort.Search(datasourceFileLen, func(i int) bool {
-		return instance.Status.DatasourceFiles[i].DatasourceName >= datasource
+		return instance.Status.Files[i].Name >= datasource
 	})
 	if datasourceIndex == datasourceFileLen {
 		return fmt.Errorf("not found datasource %s in %s/%s.status", datasource, instance.Namespace, instance.Name)
 	}
 
-	filePathLen := len(instance.Status.DatasourceFiles[datasourceIndex].Status)
+	filePathLen := len(instance.Status.Files[datasourceIndex].Status)
 	fileIndex := sort.Search(filePathLen, func(i int) bool {
-		return instance.Status.DatasourceFiles[datasourceIndex].Status[i].Path >= srcPath
+		return instance.Status.Files[datasourceIndex].Status[i].Path >= srcPath
 	})
 	if fileIndex == filePathLen {
 		return fmt.Errorf("not found srcPath %s in datasource %s", srcPath, datasource)
 	}
 
 	// Only this state transfer is allowed
-	curPhase := instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].Phase
+	curPhase := instance.Status.Files[datasourceIndex].Status[fileIndex].Phase
 	if curPhase == FileProcessPhaseProcessing && (syncStatus == FileProcessPhaseSucceeded || syncStatus == FileProcessPhaseFailed) {
-		instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].Phase = syncStatus
+		instance.Status.Files[datasourceIndex].Status[fileIndex].Phase = syncStatus
 		if syncStatus == FileProcessPhaseFailed {
-			instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].ErrMessage = errMsg
+			instance.Status.Files[datasourceIndex].Status[fileIndex].ErrMessage = errMsg
 		}
 		if syncStatus == FileProcessPhaseSucceeded {
-			instance.Status.DatasourceFiles[datasourceIndex].Status[fileIndex].LastUpdateTime = v1.Now()
+			instance.Status.Files[datasourceIndex].Status[fileIndex].LastUpdateTime = v1.Now()
 		}
 		return nil
 	}

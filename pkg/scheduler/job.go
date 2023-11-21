@@ -19,7 +19,7 @@ import "github.com/minio/minio-go/v7"
 
 type JobPayload struct {
 	Src, Dst             string
-	DatasourceName       string
+	SourceName           string
 	SrcBucket, DstBucket string
 
 	Client *minio.Client

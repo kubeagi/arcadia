@@ -32,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/scheduler"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -70,22 +72,56 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		klog.Errorf("reconcile: failed to get versionDataset with req: %v", req.NamespacedName)
 		return reconcile.Result{}, err
 	}
-	updatedObj, err := r.preUpdate(ctx, instance)
+	if instance.DeletionTimestamp == nil {
+		updatedObj, err := r.preUpdate(ctx, instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if updatedObj {
+			return reconcile.Result{}, r.Client.Update(ctx, instance)
+		}
+	}
+
+	deepCopy := instance.DeepCopy()
+	update, deleteFilestatus, err := r.checkStatus(ctx, deepCopy)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if updatedObj {
-		return reconcile.Result{Requeue: true}, r.Client.Update(ctx, instance)
+	if update || len(deleteFilestatus) > 0 {
+		if len(deleteFilestatus) > 0 {
+			klog.V(4).Infof("[Debug] need to delete files%+v\n", deleteFilestatus)
+			s, err := scheduler.NewScheduler(ctx, r.Client, instance, deleteFilestatus, true)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			klog.V(4).Infof("[Debug] start to delete %d group files for %s/%s", len(deleteFilestatus), instance.Namespace, instance.Name)
+			if err = s.Start(); err != nil {
+				klog.Errorf("try to delete files failed, error %s, need retry", err)
+				return reconcile.Result{}, err
+			}
+		}
+		if instance.DeletionTimestamp == nil {
+			err := r.Client.Status().Patch(ctx, deepCopy, client.MergeFrom(instance))
+			if err != nil {
+				klog.Errorf("patch %s/%s status error %s", instance.Namespace, instance.Name, err)
+			}
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
 	}
+
+	klog.V(4).Infof("[Debug] start to add new files")
 
 	key := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
 	v, ok := r.cache.Load(key)
 	if ok {
 		v.(*scheduler.Scheduler).Stop()
 	}
-	s, err := scheduler.NewScheduler(ctx, r.Client, instance)
+	s, err := scheduler.NewScheduler(ctx, r.Client, instance, nil, false)
 	if err != nil {
+		klog.V(4).Infof("generate scheduler error %s", err)
 		return reconcile.Result{}, err
 	}
 	r.cache.Store(key, s)
@@ -153,4 +189,26 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1
 	}
 
 	return update, err
+}
+
+func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus, error) {
+	// TODO: Currently, we think there is only one default minio environment,
+	// so we get the minio client directly through the configuration.
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
+	if err != nil {
+		klog.Errorf("get system datasource error %s", err)
+		return false, nil, err
+	}
+	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	if err != nil {
+		klog.Errorf("generate new minio client error %s", err)
+		return false, nil, err
+	}
+
+	update, deleteFileStatus := v1alpha1.CopyedFileGroup2Status(oss.Client, instance)
+	return update, deleteFileStatus, nil
 }

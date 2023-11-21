@@ -62,11 +62,6 @@ func (r *DatasetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return reconcile.Result{}, err
 	}
 	if instance.DeletionTimestamp != nil {
-		if err := r.Client.DeleteAllOf(ctx, &arcadiav1alpha1.VersionedDataset{}, client.InNamespace(instance.Namespace), client.MatchingLabels{
-			arcadiav1alpha1.LabelVersionedDatasetVersionOwner: instance.Name,
-		}); err != nil {
-			return reconcile.Result{}, err
-		}
 		instance.Finalizers = utils.RemoveString(instance.Finalizers, arcadiav1alpha1.Finalizer)
 		err = r.Client.Update(ctx, instance)
 		return reconcile.Result{}, err
