@@ -6,49 +6,81 @@ package impl
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
 // VersionedDataset is the resolver for the VersionedDataset field.
 func (r *mutationResolver) VersionedDataset(ctx context.Context) (*generated.VersionedDatasetMutation, error) {
-	panic(fmt.Errorf("not implemented: VersionedDataset - VersionedDataset"))
+	return &generated.VersionedDatasetMutation{}, nil
 }
 
 // VersionedDataset is the resolver for the VersionedDataset field.
 func (r *queryResolver) VersionedDataset(ctx context.Context) (*generated.VersionedDatasetQuery, error) {
-	panic(fmt.Errorf("not implemented: VersionedDataset - VersionedDataset"))
+	return &generated.VersionedDatasetQuery{}, nil
 }
 
 // Files is the resolver for the files field.
 func (r *versionedDatasetResolver) Files(ctx context.Context, obj *generated.VersionedDataset, input *generated.FileFilter) (*generated.PaginatedResult, error) {
-	panic(fmt.Errorf("not implemented: Files - files"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.VersionFiles(ctx, c, obj, input)
 }
 
 // CreateVersionedDataset is the resolver for the createVersionedDataset field.
 func (r *versionedDatasetMutationResolver) CreateVersionedDataset(ctx context.Context, obj *generated.VersionedDatasetMutation, input generated.CreateVersionedDatasetInput) (*generated.VersionedDataset, error) {
-	panic(fmt.Errorf("not implemented: CreateVersionedDataset - createVersionedDataset"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.CreateVersionedDataset(ctx, c, &input)
 }
 
 // UpdateVersionedDataset is the resolver for the updateVersionedDataset field.
 func (r *versionedDatasetMutationResolver) UpdateVersionedDataset(ctx context.Context, obj *generated.VersionedDatasetMutation, input generated.UpdateVersionedDatasetInput) (*generated.VersionedDataset, error) {
-	panic(fmt.Errorf("not implemented: UpdateVersionedDataset - updateVersionedDataset"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.UpdateVersionedDataset(ctx, c, &input)
 }
 
 // DeleteVersionedDatasets is the resolver for the deleteVersionedDatasets field.
 func (r *versionedDatasetMutationResolver) DeleteVersionedDatasets(ctx context.Context, obj *generated.VersionedDatasetMutation, input generated.DeleteVersionedDatasetInput) (*string, error) {
-	panic(fmt.Errorf("not implemented: DeleteVersionedDatasets - deleteVersionedDatasets"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.DeleteVersionedDatasets(ctx, c, &input)
 }
 
 // GetVersionedDataset is the resolver for the getVersionedDataset field.
 func (r *versionedDatasetQueryResolver) GetVersionedDataset(ctx context.Context, obj *generated.VersionedDatasetQuery, name string, namespace string) (*generated.VersionedDataset, error) {
-	panic(fmt.Errorf("not implemented: GetVersionedDataset - getVersionedDataset"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.GetVersionedDataset(ctx, c, name, namespace)
 }
 
 // ListVersionedDatasets is the resolver for the listVersionedDatasets field.
 func (r *versionedDatasetQueryResolver) ListVersionedDatasets(ctx context.Context, obj *generated.VersionedDatasetQuery, input generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
-	panic(fmt.Errorf("not implemented: ListVersionedDatasets - listVersionedDatasets"))
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	return versioneddataset.ListVersionedDatasets(ctx, c, &input)
 }
 
 // VersionedDataset returns generated.VersionedDatasetResolver implementation.
@@ -69,13 +101,3 @@ func (r *Resolver) VersionedDatasetQuery() generated.VersionedDatasetQueryResolv
 type versionedDatasetResolver struct{ *Resolver }
 type versionedDatasetMutationResolver struct{ *Resolver }
 type versionedDatasetQueryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *versionedDatasetResolver) FileGroups(ctx context.Context, obj *generated.VersionedDataset, input *generated.FileFilter) (*generated.PaginatedResult, error) {
-	panic(fmt.Errorf("not implemented: FileGroups - fileGroups"))
-}

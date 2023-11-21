@@ -6,28 +6,28 @@ package impl
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataset"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
 // Versions is the resolver for the versions field.
 func (r *datasetResolver) Versions(ctx context.Context, obj *generated.Dataset, input generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
-	/*
-		idtoken := auth.ForOIDCToken(ctx)
-		c, err := client.GetClient(idtoken)
-		if err != nil {
-			return nil, err
-		}
-		input.Name = nil
-		input.Namespace = obj.Namespace
-		labelSelector := fmt.Sprintf("%s=%s", v1alpha1.LabelVersionedDatasetVersionOwner, obj.Name)
-		input.LabelSelector = &labelSelector
-	*/
-	return nil, nil
-	//return versioneddataset.ListVersionedDatasets(ctx, c, &input)
+	idtoken := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(idtoken)
+	if err != nil {
+		return nil, err
+	}
+	input.Name = nil
+	input.Namespace = obj.Namespace
+	labelSelector := fmt.Sprintf("%s=%s", v1alpha1.LabelVersionedDatasetVersionOwner, obj.Name)
+	input.LabelSelector = &labelSelector
+	return versioneddataset.ListVersionedDatasets(ctx, c, &input)
 }
 
 // CreateDataset is the resolver for the createDataset field.

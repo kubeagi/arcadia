@@ -119,8 +119,11 @@ type CreateVersionedDatasetInput struct {
 	// 数据集里面的数据的类型，文本，视频，图片
 	Version string `json:"version"`
 	// 是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以
-	Release   int          `json:"release"`
+	Released int `json:"released"`
+	// 从数据源要上传的文件，目前以及不用了
 	FileGrups []*FileGroup `json:"fileGrups,omitempty"`
+	// 界面上创建新版本选择从某个版本集成的时候，填写version字段
+	InheritedFrom *string `json:"inheritedFrom,omitempty"`
 }
 
 // Dataset
@@ -305,12 +308,12 @@ type EndpointInput struct {
 // File
 // 展示某个版本的所有文件。
 type F struct {
-	// 文件名称
-	Datasource TypedObjectReference `json:"datasource"`
 	// 文件在数据源中的路径，a/b/c.txt或者d.txt
 	Path string `json:"path"`
-	// 摘要？摘啥
-	Md5 *string `json:"md5,omitempty"`
+	// 文件类型
+	FileType string `json:"fileType"`
+	// 数据量
+	Count *int `json:"count,omitempty"`
 	// 文件成功导入时间，如果没有导入成功，这个字段为空
 	Time *time.Time `json:"time,omitempty"`
 }
@@ -331,7 +334,7 @@ type FileFilter struct {
 
 type FileGroup struct {
 	// 数据源的基础信息
-	Datasource TypedObjectReferenceInput `json:"datasource"`
+	Source TypedObjectReferenceInput `json:"source"`
 	// 用到的文件路径，注意⚠️ 一定不要加bucket的名字
 	Paths []string `json:"paths,omitempty"`
 }
@@ -626,6 +629,10 @@ type VersionedDataset struct {
 	FileCount int `json:"fileCount"`
 	// 该版本是否已经发布, 0是未发布，1是已经发布
 	Released int `json:"released"`
+	// 文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败
+	SyncStatus *string `json:"syncStatus,omitempty"`
+	// 数据处理状态，如果为空，表示还没有开始，其他表示
+	DataProcessStatus *string `json:"dataProcessStatus,omitempty"`
 }
 
 func (VersionedDataset) IsPageNode() {}

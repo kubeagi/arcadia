@@ -68,7 +68,7 @@ func init() {
 	minioSecure = minioConfig.MinioSecure
 }
 
-func getClients() (*minio.Client, *minio.Core, error) {
+func GetClients() (*minio.Client, *minio.Core, error) {
 	var client1 *minio.Client
 	var client2 *minio.Core
 	var err error
