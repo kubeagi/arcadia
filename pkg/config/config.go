@@ -18,11 +18,13 @@ package config
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
@@ -64,6 +66,30 @@ func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1
 	return source, err
 }
 
+func GetSystemDatasourceDynamic(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfigDynamic(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	name := config.SystemDatasource.Name
+	var namespace string
+	if config.SystemDatasource.Namespace != nil {
+		namespace = *config.SystemDatasource.Namespace
+	} else {
+		namespace = utils.GetSelfNamespace()
+	}
+	source := &arcadiav1alpha1.Datasource{}
+	obj, err := c.Resource(schema.GroupVersionResource{Group: arcadiav1alpha1.GroupVersion.Group, Version: arcadiav1alpha1.GroupVersion.Version, Resource: "datasources"}).
+		Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, source); err != nil {
+		return nil, err
+	}
+	return source, nil
+}
+
 func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
 	config, err := GetConfig(ctx, c)
 	if err != nil {
@@ -76,14 +102,38 @@ func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
 }
 
 func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
-	config, err := GetConfigDynamic(ctx, c)
+	datasource, err := GetSystemDatasourceDynamic(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	if config.MinIO == nil {
+	if datasource.Spec.Enpoint == nil {
 		return nil, ErrNoConfigMinIO
 	}
-	return config.MinIO, nil
+	m := MinIO{
+		MinioAddress: datasource.Spec.Enpoint.URL,
+	}
+	if datasource.Spec.Enpoint == nil {
+		return nil, ErrNoConfigMinIO
+	}
+	m.MinioSecure = !datasource.Spec.Enpoint.Insecure
+	namespace := datasource.Namespace
+	if datasource.Spec.Enpoint.AuthSecret.Namespace != nil {
+		namespace = *datasource.Spec.Enpoint.AuthSecret.Namespace
+	}
+	secretObj, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
+		Namespace(namespace).Get(ctx, datasource.Spec.Enpoint.AuthSecret.Name, v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	data, found, err := unstructured.NestedStringMap(secretObj.Object, "data")
+	if !found || err != nil {
+		return nil, ErrNoConfigMinIO
+	}
+	password, _ := base64.StdEncoding.DecodeString(data["rootPassword"])
+	user, _ := base64.StdEncoding.DecodeString(data["rootUser"])
+	m.MinioAccessKeyID = string(user)
+	m.MinioSecretAccessKey = string(password)
+	return &m, nil
 }
 
 func GetConfigDynamic(ctx context.Context, c dynamic.Interface) (config *Config, err error) {

@@ -41,6 +41,12 @@ type VersionedDataset {
 
     """该版本是否已经发布, 0是未发布，1是已经发布"""
     released: Int!
+    
+    """文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败"""
+    syncStatus: String
+
+    """数据处理状态，如果为空，表示还没有开始，其他表示"""
+    dataProcessStatus: String
 }
 
 """
@@ -48,14 +54,14 @@ File
 展示某个版本的所有文件。
 """
 type F {
-    """文件名称"""
-    datasource: TypedObjectReference!
-
     "文件在数据源中的路径，a/b/c.txt或者d.txt"
     path: String!
 
-    """摘要？摘啥"""
-    md5: String
+    """文件类型"""
+    fileType: String!
+
+    """数据量"""
+    count: Int
 
     """文件成功导入时间，如果没有导入成功，这个字段为空"""
     time: Time
@@ -80,7 +86,7 @@ input FileFilter {
 
 input FileGroup {
     """数据源的基础信息"""
-    datasource: TypedObjectReferenceInput! 
+    source: TypedObjectReferenceInput! 
 
     """用到的文件路径，注意⚠️ 一定不要加bucket的名字"""
     paths: [String!]
@@ -114,9 +120,13 @@ input CreateVersionedDatasetInput {
     version: String!
 
     """是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以"""
-    release: Int!
+    released: Int!
 
+    """从数据源要上传的文件，目前以及不用了"""
     fileGrups: [FileGroup]
+
+    """界面上创建新版本选择从某个版本集成的时候，填写version字段"""
+    inheritedFrom: String
 }
 
 input UpdateVersionedDatasetInput {

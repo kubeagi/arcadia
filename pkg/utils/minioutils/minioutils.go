@@ -44,3 +44,27 @@ func ListObjects(ctx context.Context, bucket, prefix string, client *minio.Clien
 	}
 	return result
 }
+
+func ListObjectCompleteInfo(ctx context.Context, bucket, prefix string, client *minio.Client, maxDep int) []minio.ObjectInfo {
+	result := make([]minio.ObjectInfo, 0)
+	q := []string{prefix}
+	depth := 0
+	for len(q) > 0 && (maxDep <= 0 || depth < maxDep) {
+		nq := make([]string, 0)
+		for _, p := range q {
+			objList := client.ListObjects(ctx, bucket, minio.ListObjectsOptions{
+				Prefix: p,
+			})
+			for key := range objList {
+				if strings.HasSuffix(key.Key, "/") {
+					nq = append(nq, key.Key)
+					continue
+				}
+				result = append(result, key)
+			}
+		}
+		q = nq
+		depth++
+	}
+	return result
+}

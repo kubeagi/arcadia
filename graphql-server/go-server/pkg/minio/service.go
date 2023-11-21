@@ -33,7 +33,7 @@ import (
 	gouuid "github.com/satori/go.uuid"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio/model"
+	models "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio/model"
 )
 
 type SuccessChunksResult struct {
@@ -129,7 +129,7 @@ func GetSuccessChunks(w http.ResponseWriter, req *http.Request) {
 				}
 			}
 		}
-		_, client, err := getClients()
+		_, client, err := GetClients()
 		if err != nil {
 			klog.Errorf("getClients failed: %s", err)
 			break
@@ -467,7 +467,7 @@ func isObjectExist(ctx context.Context, bucketName string, objectName string) (b
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
-	client, _, err := getClients()
+	client, _, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClients failed: %s", err)
 		return isExist, err
@@ -484,7 +484,7 @@ func isObjectExist(ctx context.Context, bucketName string, objectName string) (b
 }
 
 func newMultiPartUpload(ctx context.Context, uuid string, fileName string) (string, error) {
-	_, minioClient, err := getClients()
+	_, minioClient, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClient failed: %s", err)
 		return "", err
@@ -497,7 +497,7 @@ func newMultiPartUpload(ctx context.Context, uuid string, fileName string) (stri
 }
 
 func genMultiPartSignedURL(ctx context.Context, uuid string, uploadID string, partNumber int, fileName string, partSize int64) (string, error) {
-	_, client, err := getClients()
+	_, client, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClient failed: %s", err)
 		return "", err
@@ -518,7 +518,7 @@ func genMultiPartSignedURL(ctx context.Context, uuid string, uploadID string, pa
 
 func completeMultiPartUpload(ctx context.Context, uuid string, uploadID string, fileName string) (string, error) {
 	var partNumberMarker, maxParts int
-	_, core, err := getClients()
+	_, core, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClient failed: %s", err)
 		return "", err

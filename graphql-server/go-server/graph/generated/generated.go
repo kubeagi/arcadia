@@ -142,10 +142,10 @@ type ComplexityRoot struct {
 	}
 
 	F struct {
-		Datasource func(childComplexity int) int
-		Md5        func(childComplexity int) int
-		Path       func(childComplexity int) int
-		Time       func(childComplexity int) int
+		Count    func(childComplexity int) int
+		FileType func(childComplexity int) int
+		Path     func(childComplexity int) int
+		Time     func(childComplexity int) int
 	}
 
 	KnowledgeBase struct {
@@ -242,6 +242,7 @@ type ComplexityRoot struct {
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
+		DataProcessStatus func(childComplexity int) int
 		Dataset           func(childComplexity int) int
 		DisplayName       func(childComplexity int) int
 		FileCount         func(childComplexity int) int
@@ -250,6 +251,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Released          func(childComplexity int) int
+		SyncStatus        func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
 		Version           func(childComplexity int) int
 	}
@@ -806,19 +808,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Endpoint.URL(childComplexity), true
 
-	case "F.datasource":
-		if e.complexity.F.Datasource == nil {
+	case "F.count":
+		if e.complexity.F.Count == nil {
 			break
 		}
 
-		return e.complexity.F.Datasource(childComplexity), true
+		return e.complexity.F.Count(childComplexity), true
 
-	case "F.md5":
-		if e.complexity.F.Md5 == nil {
+	case "F.fileType":
+		if e.complexity.F.FileType == nil {
 			break
 		}
 
-		return e.complexity.F.Md5(childComplexity), true
+		return e.complexity.F.FileType(childComplexity), true
 
 	case "F.path":
 		if e.complexity.F.Path == nil {
@@ -1314,6 +1316,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VersionedDataset.Creator(childComplexity), true
 
+	case "VersionedDataset.dataProcessStatus":
+		if e.complexity.VersionedDataset.DataProcessStatus == nil {
+			break
+		}
+
+		return e.complexity.VersionedDataset.DataProcessStatus(childComplexity), true
+
 	case "VersionedDataset.dataset":
 		if e.complexity.VersionedDataset.Dataset == nil {
 			break
@@ -1374,6 +1383,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.VersionedDataset.Released(childComplexity), true
+
+	case "VersionedDataset.syncStatus":
+		if e.complexity.VersionedDataset.SyncStatus == nil {
+			break
+		}
+
+		return e.complexity.VersionedDataset.SyncStatus(childComplexity), true
 
 	case "VersionedDataset.updateTimestamp":
 		if e.complexity.VersionedDataset.UpdateTimestamp == nil {
@@ -2226,6 +2242,12 @@ type VersionedDataset {
 
     """该版本是否已经发布, 0是未发布，1是已经发布"""
     released: Int!
+    
+    """文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败"""
+    syncStatus: String
+
+    """数据处理状态，如果为空，表示还没有开始，其他表示"""
+    dataProcessStatus: String
 }
 
 """
@@ -2233,14 +2255,14 @@ File
 展示某个版本的所有文件。
 """
 type F {
-    """文件名称"""
-    datasource: TypedObjectReference!
-
     "文件在数据源中的路径，a/b/c.txt或者d.txt"
     path: String!
 
-    """摘要？摘啥"""
-    md5: String
+    """文件类型"""
+    fileType: String!
+
+    """数据量"""
+    count: Int
 
     """文件成功导入时间，如果没有导入成功，这个字段为空"""
     time: Time
@@ -2265,7 +2287,7 @@ input FileFilter {
 
 input FileGroup {
     """数据源的基础信息"""
-    datasource: TypedObjectReferenceInput! 
+    source: TypedObjectReferenceInput! 
 
     """用到的文件路径，注意⚠️ 一定不要加bucket的名字"""
     paths: [String!]
@@ -2299,9 +2321,13 @@ input CreateVersionedDatasetInput {
     version: String!
 
     """是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以"""
-    release: Int!
+    released: Int!
 
+    """从数据源要上传的文件，目前以及不用了"""
     fileGrups: [FileGroup]
+
+    """界面上创建新版本选择从某个版本集成的时候，填写version字段"""
+    inheritedFrom: String
 }
 
 input UpdateVersionedDatasetInput {
@@ -5635,60 +5661,6 @@ func (ec *executionContext) fieldContext_Endpoint_insecure(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _F_datasource(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_F_datasource(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Datasource, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(TypedObjectReference)
-	fc.Result = res
-	return ec.marshalNTypedObjectReference2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReference(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_F_datasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "F",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "apiGroup":
-				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
-			case "kind":
-				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _F_path(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_F_path(ctx, field)
 	if err != nil {
@@ -5733,8 +5705,8 @@ func (ec *executionContext) fieldContext_F_path(ctx context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _F_md5(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_F_md5(ctx, field)
+func (ec *executionContext) _F_fileType(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_F_fileType(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5747,7 +5719,51 @@ func (ec *executionContext) _F_md5(ctx context.Context, field graphql.CollectedF
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Md5, nil
+		return obj.FileType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_F_fileType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "F",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _F_count(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_F_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5756,19 +5772,19 @@ func (ec *executionContext) _F_md5(ctx context.Context, field graphql.CollectedF
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_F_md5(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_F_count(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "F",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9353,6 +9369,88 @@ func (ec *executionContext) fieldContext_VersionedDataset_released(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _VersionedDataset_syncStatus(ctx context.Context, field graphql.CollectedField, obj *VersionedDataset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SyncStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VersionedDataset_syncStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VersionedDataset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VersionedDataset_dataProcessStatus(ctx context.Context, field graphql.CollectedField, obj *VersionedDataset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataProcessStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VersionedDataset_dataProcessStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VersionedDataset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _VersionedDatasetMutation_createVersionedDataset(ctx context.Context, field graphql.CollectedField, obj *VersionedDatasetMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VersionedDatasetMutation_createVersionedDataset(ctx, field)
 	if err != nil {
@@ -9418,6 +9516,10 @@ func (ec *executionContext) fieldContext_VersionedDatasetMutation_createVersione
 				return ec.fieldContext_VersionedDataset_fileCount(ctx, field)
 			case "released":
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
+			case "syncStatus":
+				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "dataProcessStatus":
+				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -9501,6 +9603,10 @@ func (ec *executionContext) fieldContext_VersionedDatasetMutation_updateVersione
 				return ec.fieldContext_VersionedDataset_fileCount(ctx, field)
 			case "released":
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
+			case "syncStatus":
+				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "dataProcessStatus":
+				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -9636,6 +9742,10 @@ func (ec *executionContext) fieldContext_VersionedDatasetQuery_getVersionedDatas
 				return ec.fieldContext_VersionedDataset_fileCount(ctx, field)
 			case "released":
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
+			case "syncStatus":
+				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "dataProcessStatus":
+				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -12044,7 +12154,7 @@ func (ec *executionContext) unmarshalInputCreateVersionedDatasetInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "datasetName", "labels", "annotations", "displayName", "description", "version", "release", "fileGrups"}
+	fieldsInOrder := [...]string{"name", "namespace", "datasetName", "labels", "annotations", "displayName", "description", "version", "released", "fileGrups", "inheritedFrom"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12123,15 +12233,15 @@ func (ec *executionContext) unmarshalInputCreateVersionedDatasetInput(ctx contex
 				return it, err
 			}
 			it.Version = data
-		case "release":
+		case "released":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("release"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("released"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Release = data
+			it.Released = data
 		case "fileGrups":
 			var err error
 
@@ -12141,6 +12251,15 @@ func (ec *executionContext) unmarshalInputCreateVersionedDatasetInput(ctx contex
 				return it, err
 			}
 			it.FileGrups = data
+		case "inheritedFrom":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inheritedFrom"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.InheritedFrom = data
 		}
 	}
 
@@ -12593,22 +12712,22 @@ func (ec *executionContext) unmarshalInputFileGroup(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"datasource", "paths"}
+	fieldsInOrder := [...]string{"source", "paths"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "datasource":
+		case "source":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("datasource"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalNTypedObjectReferenceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Datasource = data
+			it.Source = data
 		case "paths":
 			var err error
 
@@ -14851,18 +14970,18 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("F")
-		case "datasource":
-			out.Values[i] = ec._F_datasource(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "path":
 			out.Values[i] = ec._F_path(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "md5":
-			out.Values[i] = ec._F_md5(ctx, field, obj)
+		case "fileType":
+			out.Values[i] = ec._F_fileType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._F_count(ctx, field, obj)
 		case "time":
 			out.Values[i] = ec._F_time(ctx, field, obj)
 		default:
@@ -16007,6 +16126,10 @@ func (ec *executionContext) _VersionedDataset(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "syncStatus":
+			out.Values[i] = ec._VersionedDataset_syncStatus(ctx, field, obj)
+		case "dataProcessStatus":
+			out.Values[i] = ec._VersionedDataset_dataProcessStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

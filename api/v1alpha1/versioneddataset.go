@@ -113,7 +113,7 @@ func CopyedFileGroup2Status(minioClient *minio.Client, instance *VersionedDatase
 	if instance.DeletionTimestamp != nil {
 		source := instance.Status.Files
 		instance.Status.Files = nil
-		return true, source
+		return false, source
 	}
 
 	// 1. First store the information about the status of the file that has been saved in the current status.
