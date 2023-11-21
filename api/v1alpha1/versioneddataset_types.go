@@ -45,12 +45,15 @@ type VersionedDatasetSpec struct {
 	// +kubebuilder:validation:Enum=0;1
 	// +kubebuilder:default=0
 	Released uint8 `json:"released"`
+
+	// Which version of the dataset it inherits from
+	InheritedFrom string `json:"inheritedFrom,omitempty"`
 }
 
-type DatasourceFileStatus struct {
-	DatasourceName      string        `json:"datasourceName"`
-	DatasourceNamespace string        `json:"datasourceNamespace"`
-	Status              []FileDetails `json:"status,omitempty"`
+type FileStatus struct {
+	TypedObjectReference `json:",inline"`
+
+	Status []FileDetails `json:"status,omitempty"`
 }
 
 // VersionedDatasetStatus defines the observed state of VersionedDataset
@@ -58,8 +61,8 @@ type VersionedDatasetStatus struct {
 	// ConditionedStatus is the current status
 	ConditionedStatus `json:",inline"`
 
-	// DatasourceFiles record the process and results of file processing for each data source
-	DatasourceFiles []DatasourceFileStatus `json:"datasourceFiles,omitempty"`
+	// Files record the process and results of file processing for each data source
+	Files []FileStatus `json:"files,omitempty"`
 }
 
 //+kubebuilder:object:root=true

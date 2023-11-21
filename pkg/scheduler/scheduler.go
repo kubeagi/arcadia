@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
 type Scheduler struct {
@@ -35,17 +37,39 @@ type Scheduler struct {
 	runner butcher.Butcher
 	client client.Client
 
-	ds *v1alpha1.VersionedDataset
+	ds     *v1alpha1.VersionedDataset
+	remove bool
 }
 
-func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.VersionedDataset) (*Scheduler, error) {
+func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.VersionedDataset, fileStatus []v1alpha1.FileStatus, remove bool) (*Scheduler, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	ctx1, cancel := context.WithCancel(ctx)
-	s := &Scheduler{ctx: ctx1, cancel: cancel, ds: instance, client: c}
-	exectuor, err := butcher.NewButcher[JobPayload](newExecutor(ctx1, c, instance), butcher.BufferSize(bufSize), butcher.MaxWorker(maxWorkers))
+
+	// TODO: Currently, we think there is only one default minio environment,
+	// so we get the minio client directly through the configuration.
+	systemDatasource, err := config.GetSystemDatasource(ctx1, c)
 	if err != nil {
+		klog.Errorf("generate new scheduler error %s", err)
+		cancel()
+		return nil, err
+	}
+	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+	oss, err := datasource.NewOSS(ctx1, c, endpoint)
+	if err != nil {
+		cancel()
+		klog.Errorf("generate new minio client error %s", err)
+		return nil, err
+	}
+
+	s := &Scheduler{ctx: ctx1, cancel: cancel, ds: instance, client: c, remove: remove}
+	exectuor, err := butcher.NewButcher[JobPayload](newExecutor(ctx1, c, oss.Client, instance, fileStatus, remove), butcher.BufferSize(bufSize), butcher.MaxWorker(maxWorkers))
+	if err != nil {
+		cancel()
 		return nil, err
 	}
 	s.runner = exectuor
@@ -70,6 +94,9 @@ func (s *Scheduler) Start() error {
 		klog.Infof("versionDataset %s/%s is being deleted, so we need to update his finalizers to allow the deletion to complete smoothly", ds.Namespace, ds.Name)
 		return s.client.Update(s.ctx, ds)
 	}
+	if s.remove {
+		return nil
+	}
 
 	if ds.ResourceVersion == s.ds.ResourceVersion {
 		syncCond := true
@@ -79,7 +106,7 @@ func (s *Scheduler) Start() error {
 			}
 		}
 		deepCopy := ds.DeepCopy()
-		deepCopy.Status.DatasourceFiles = s.ds.Status.DatasourceFiles
+		deepCopy.Status.Files = s.ds.Status.Files
 		if syncCond {
 			condition := v1alpha1.Condition{
 				Type:               v1alpha1.TypeReady,
@@ -88,7 +115,7 @@ func (s *Scheduler) Start() error {
 				Reason:             v1alpha1.ReasonFileSuncSuccess,
 				Message:            "",
 			}
-			for _, checker := range s.ds.Status.DatasourceFiles {
+			for _, checker := range s.ds.Status.Files {
 				shouldBreak := false
 				for _, f := range checker.Status {
 					if f.Phase != v1alpha1.FileProcessPhaseSucceeded {
@@ -109,6 +136,7 @@ func (s *Scheduler) Start() error {
 	}
 
 	klog.Infof("current resourceversion: %s, previous resourceversion: %s", ds.ResourceVersion, s.ds.ResourceVersion)
+	s.Stop()
 	return nil
 }
 

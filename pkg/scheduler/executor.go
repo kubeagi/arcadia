@@ -27,15 +27,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
 type executor struct {
-	instance *v1alpha1.VersionedDataset
-	client   client.Client
+	instance    *v1alpha1.VersionedDataset
+	client      client.Client
+	minioClient *minio.Client
 
-	deleteFileGroups []v1alpha1.DatasourceFileStatus
+	fileStatus []v1alpha1.FileStatus
+	remove     bool
 }
 
 const (
@@ -43,74 +43,57 @@ const (
 	bufSize    = 5
 )
 
-func newExecutor(ctx context.Context, c client.Client, instance *v1alpha1.VersionedDataset) butcher.Executor[JobPayload] {
-	_, deleteFileGroups := v1alpha1.CopyedFileGroup2Status(instance)
-	klog.V(4).Infof("[Debug] status is: %+v\ndelete filegroups: %+v\n", instance.Status.DatasourceFiles, deleteFileGroups)
+func newExecutor(ctx context.Context, c client.Client, minioClient *minio.Client, instance *v1alpha1.VersionedDataset, fileStatus []v1alpha1.FileStatus, remove bool) butcher.Executor[JobPayload] {
 	klog.V(4).Infof("[Debug] client is nil: %v\n", c == nil)
-	return &executor{instance: instance, deleteFileGroups: deleteFileGroups, client: c}
+	return &executor{instance: instance, fileStatus: fileStatus, client: c, minioClient: minioClient, remove: remove}
 }
 
-func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, datasourceFiles []v1alpha1.DatasourceFileStatus, removeAction bool) error {
+func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, datasourceFiles []v1alpha1.FileStatus, removeAction bool) error {
 	for _, fs := range datasourceFiles {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
 		}
+		dstBucket := e.instance.Namespace
+		dstPrefix := fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, e.instance.Spec.Version)
 
-		ds := &v1alpha1.Datasource{}
-		datasourceNamespace := fs.DatasourceNamespace
-		datasetNamespace := e.instance.Namespace
-		if e.instance.Spec.Dataset.Namespace != nil {
-			datasetNamespace = *e.instance.Spec.Dataset.Namespace
-		}
-		if err := e.client.Get(ctx, types.NamespacedName{Namespace: fs.DatasourceNamespace, Name: fs.DatasourceName}, ds); err != nil {
-			klog.Errorf("generateJob: failed to get datasource %s", err)
-			return err
-		}
-
-		srcBucket := datasourceNamespace
-		if ds.Spec.OSS != nil {
-			srcBucket = ds.Spec.OSS.Bucket
-		}
-		dstBucket := datasetNamespace
-		klog.V(4).Infof("[Debug] datasourceNamespace: %s, datasetNamespace: %s, srcBucket: %s, dstBucket: %s",
-			datasourceNamespace, datasetNamespace, srcBucket, dstBucket)
-
-		klog.V(5).Infof("[Debug] get datasource %+v\n", *ds)
-
-		endpoint := ds.Spec.Enpoint
-		if ds.Spec.Type() == v1alpha1.DatasourceTypeLocal {
-			system, err := config.GetSystemDatasource(ctx, e.client)
-			if err != nil {
+		var srcBucket, srcPrefix string
+		switch fs.Kind {
+		case "Datasource":
+			// Since the data source can be configured with different minio addresses,
+			// it may involve copying of data from different minio,
+			// which may result in the operator memory increasing to be OOM.
+			// so currently it is considered that all operations are in the same minio.
+			ds := &v1alpha1.Datasource{}
+			if err := e.client.Get(ctx, types.NamespacedName{Namespace: *fs.Namespace, Name: fs.Name}, ds); err != nil {
+				klog.Errorf("generateJob: failed to get datasource %s", err)
 				return err
 			}
-			endpoint = system.Spec.Enpoint.DeepCopy()
-			if endpoint != nil && endpoint.AuthSecret != nil {
-				endpoint.AuthSecret.WithNameSpace(system.Namespace)
+			srcBucket = *fs.Namespace
+			if ds.Spec.OSS != nil {
+				srcBucket = ds.Spec.OSS.Bucket
 			}
+		case "VersionedDataset":
+			srcVersion := fs.Name[len(v1alpha1.InheritedFromVersionName):]
+			srcBucket = e.instance.Namespace
+			srcPrefix = fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, srcVersion)
+		default:
+			klog.Errorf("currently, copying data from a data source of the type %s is not supported", fs.Kind)
+			continue
 		}
-		oss, err := datasource.NewOSS(ctx, e.client, endpoint)
 
-		if err != nil {
-			klog.Errorf("generateJob: get oss client error %s", err)
-			return err
-		}
-		klog.V(4).Infof("[Debug] oss client is nil: %v", oss.Client == nil)
-
-		bucketExists, err := oss.Client.BucketExists(ctx, dstBucket)
+		bucketExists, err := e.minioClient.BucketExists(ctx, dstBucket)
 		if err != nil {
 			klog.Errorf("generateJob: check for the presence of a bucket has failed %s.", err)
 			return err
 		}
 		if !bucketExists {
-			if err = oss.Client.MakeBucket(ctx, dstBucket, minio.MakeBucketOptions{}); err != nil {
+			if err = e.minioClient.MakeBucket(ctx, dstBucket, minio.MakeBucketOptions{}); err != nil {
 				klog.Errorf("generateJob: failed to create bucket %s.", dstBucket)
 				return err
 			}
 		}
-
-		dst := fmt.Sprintf("dataset/%s/%s", e.instance.Spec.Dataset.Name, e.instance.Spec.Version)
 
 		for _, fp := range fs.Status {
 			select {
@@ -125,23 +108,20 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 			}
 
 			if strings.HasSuffix(fp.Path, "/") {
-				klog.Warningf("skip %s/%s, because it ends with /. this is not a legal object in oss.", fs.DatasourceName, fp.Path)
+				klog.Warningf("skip %s/%s, because it ends with /. this is not a legal object in oss.", fs.Name, fp.Path)
 				continue
 			}
 
-			dstPath := fp.Path
-			if !strings.HasPrefix(fp.Path, "/") {
-				dstPath = "/" + fp.Path
-			}
+			targetPath := strings.TrimPrefix(fp.Path, "/")
 
 			payload := JobPayload{
-				Src:            fp.Path,
-				Dst:            dst + dstPath,
-				DatasourceName: fs.DatasourceName,
-				SrcBucket:      srcBucket,
-				DstBucket:      dstBucket,
-				Client:         oss.Client,
-				Remove:         removeAction,
+				Src:        srcPrefix + targetPath,
+				Dst:        dstPrefix + targetPath,
+				SourceName: fs.Name,
+				SrcBucket:  srcBucket,
+				DstBucket:  dstBucket,
+				Client:     e.minioClient,
+				Remove:     removeAction,
 			}
 
 			klog.V(4).Infof("[Debug] send %+v to jobch", payload)
@@ -150,12 +130,12 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 	}
 	return nil
 }
+
 func (e *executor) GenerateJob(ctx context.Context, jobCh chan<- JobPayload) error {
-	if err := e.generateJob(ctx, jobCh, e.instance.Status.DatasourceFiles, false); err != nil {
-		klog.Errorf("GenerateJob: error %s", err)
-		return err
+	if e.remove {
+		return e.generateJob(ctx, jobCh, e.fileStatus, true)
 	}
-	return e.generateJob(ctx, jobCh, e.deleteFileGroups, true)
+	return e.generateJob(ctx, jobCh, e.instance.Status.Files, false)
 }
 
 func (e *executor) Task(ctx context.Context, job JobPayload) error {
@@ -190,8 +170,14 @@ func (e *executor) OnFinish(ctx context.Context, job JobPayload, err error) {
 		syncStatus = v1alpha1.FileProcessPhaseFailed
 		errMsg = err.Error()
 	}
-	klog.V(4).Infof("[Debug] change the status of file %s/%s to %s", job.DatasourceName, job.Src, syncStatus)
-	if err = v1alpha1.UpdateFileStatus(ctx, e.instance, job.DatasourceName, job.Src, syncStatus, errMsg); err != nil {
+	src := job.Src
+	if strings.HasPrefix(job.SourceName, v1alpha1.InheritedFromVersionName) {
+		p := fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, e.instance.Spec.InheritedFrom)
+		src = strings.TrimPrefix(src, p)
+	}
+	klog.V(4).Infof("[Debug] change the status of file %s/%s to %s", job.SourceName, src, syncStatus)
+
+	if err = v1alpha1.UpdateFileStatus(ctx, e.instance, job.SourceName, src, syncStatus, errMsg); err != nil {
 		klog.Errorf("the job with payload %v completes, but updating the cr status fails %s.", job, err)
 	}
 }

@@ -100,6 +100,9 @@ spec:
                       type: object
                   type: object
                 type: array
+              inheritedFrom:
+                description: Which version of the dataset it inherits from
+                type: string
               released:
                 default: 0
                 enum:
@@ -155,14 +158,25 @@ spec:
                   - type
                   type: object
                 type: array
-              datasourceFiles:
-                description: DatasourceFiles record the process and results of file
-                  processing for each data source
+              files:
+                description: Files record the process and results of file processing
+                  for each data source
                 items:
                   properties:
-                    datasourceName:
+                    apiGroup:
+                      description: APIGroup is the group for the resource being referenced.
+                        If APIGroup is not specified, the specified Kind must be in
+                        the core API group. For any other third-party types, APIGroup
+                        is required.
                       type: string
-                    datasourceNamespace:
+                    kind:
+                      description: Kind is the type of resource being referenced
+                      type: string
+                    name:
+                      description: Name is the name of resource being referenced
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of resource being referenced
                       type: string
                     status:
                       items:
@@ -187,8 +201,8 @@ spec:
                         type: object
                       type: array
                   required:
-                  - datasourceName
-                  - datasourceNamespace
+                  - kind
+                  - name
                   type: object
                 type: array
             type: object
