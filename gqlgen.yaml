@@ -127,3 +127,17 @@ models:
         resolver: true
       deleteEmbedder:
         resolver: true
+  KnowledgeBaseMutation:
+    fields:
+      createKnowledgeBase:
+        resolver: true
+      updateKnowledgeBase:
+        resolver: true
+      deleteKnowledgeBase:
+        resolver: true
+  KnowledgeBaseQuery:
+    fields:
+      getKnowledgeBase:
+        resolver: true
+      listKnowledgeBases:
+        resolver: true

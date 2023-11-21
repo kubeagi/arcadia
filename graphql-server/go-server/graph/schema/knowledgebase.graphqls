@@ -1,0 +1,107 @@
+type filegroup{
+    source: TypedObjectReference
+    path: [String!]
+}
+
+type KnowledgeBase {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String!
+    description: String
+    embedder: TypedObjectReference
+    vectorStore: TypedObjectReference
+    fileGroups: [filegroup]
+    """知识库连接状态"""
+    status: String
+    updateTimestamp: Time!
+}
+
+"""源文件输入"""
+input filegroupinput {
+    """数据源字段"""
+    source: TypedObjectReferenceInput!
+    """路径"""
+    path: [String!]
+}
+
+
+input CreateKnowledgeBaseInput{
+    """知识库资源名称（不可同名）"""
+    name: String!
+    """知识库创建命名空间"""
+    namespace: String!
+    """知识库资源标签"""
+    labels: Map
+    """知识库资源注释"""
+    annotations: Map
+    """知识库资源展示名称作为显示，并提供编辑"""
+    displayName: String!
+    """知识库资源描述"""
+    description: String
+    """模型服务"""
+    embedder: TypedObjectReferenceInput
+    """"向量数据库(使用默认值)"""
+    vectorStore: TypedObjectReferenceInput
+    """知识库文件"""
+    fileGroups: [filegroupinput!]
+}
+
+input UpdateKnowledgeBaseInput {
+    """知识库资源名称（不可同名）"""
+    name: String!
+    """知识库创建命名空间"""
+    namespace: String!
+    """知识库资源标签"""
+    labels: Map
+    """知识库资源注释"""
+    annotations: Map
+    """知识库资源展示名称作为显示，并提供编辑"""
+    displayName: String!
+    """知识库资源描述"""
+    description: String
+}
+
+input DeleteKnowledgeBaseInput {
+    name: String
+    namespace: String!
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+}
+
+input ListKnowledgeBaseInput {
+    name: String
+    namespace: String!
+    displayName: String
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+    page: Int
+    pageSize: Int
+    keyword: String
+}
+
+type KnowledgeBaseQuery {
+    getKnowledgeBase(name: String!, namespace: String!): KnowledgeBase!
+    listKnowledgeBases(input: ListKnowledgeBaseInput!): PaginatedResult!
+}
+
+type KnowledgeBaseMutation {
+    createKnowledgeBase(input: CreateKnowledgeBaseInput!): KnowledgeBase!
+    updateKnowledgeBase(input: UpdateKnowledgeBaseInput): KnowledgeBase!
+    deleteKnowledgeBase(input: DeleteKnowledgeBaseInput): Void
+}
+
+# mutation
+extend type Mutation {
+    KnowledgeBase: KnowledgeBaseMutation
+}
+# query
+extend type Query{
+    KnowledgeBase: KnowledgeBaseQuery
+}
