@@ -72,7 +72,8 @@ async def text_manipulate(request):
 
         Args:
             type: 对文本数据需要进行那些处理;
-            file_path: 文本路径
+            bucket_name: minio桶名称;
+            folder_prefix: minio中文件目录
 
         Returns:
 

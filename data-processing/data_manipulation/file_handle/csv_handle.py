@@ -65,8 +65,6 @@ async def text_manipulate(opt={}):
         # 获取CSV文件的内容
         data = pd.read_csv(file_path)
 
-        logger.info('data')
-
         logger.info("start text manipulate!")
         text_data = data['prompt']
 
@@ -81,7 +79,7 @@ async def text_manipulate(opt={}):
             return clean_result
 
         text_data = clean_result['data']
-
+        
         # 将清洗后的文件保存为final
         new_file_name = await file_utils.get_file_name({
             'file_name': file_name,
@@ -117,6 +115,8 @@ async def text_manipulate(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def data_clean(opt={}):
     logger.info("csv text data clean start!")
     support_type = opt['support_type']
@@ -138,7 +138,9 @@ async def data_clean(opt={}):
                 }
 
             clean_data.append(result['data'])
+        
         data = clean_data
+        data.insert(0, ['prompt'])
 
         # 将文件存为middle
         file_name = await file_utils.get_file_name({
@@ -171,6 +173,8 @@ async def data_clean(opt={}):
 # content:
 # 1) 基本功能实现
 ###
+
+
 async def remove_invisible_characters(opt={}):
     return await clean_transform.remove_invisible_characters({
         'text': opt['text']
@@ -221,10 +225,6 @@ async def save_csv(opt={}):
 
     with open(file_path, 'w', newline='') as file:
         writer = csv.writer(file)
-
-        writer.writerow(['prompt'])
-
-        for row in data:
-            writer.writerow([row])
+        writer.writerows(data)
 
     return file_path

@@ -28,7 +28,7 @@ import logging
 import os
 
 import pandas as pd
-from file_handle import csv_handle
+from file_handle import csv_handle, pdf_handle
 from minio import Minio
 from minio.commonconfig import Tags
 from minio.error import S3Error
@@ -76,6 +76,13 @@ async def text_manipulate(request):
         if file_extension in ['csv']:
             # 处理CSV文件
             result = await csv_handle.text_manipulate({
+                'file_name': item,
+                'support_type': support_type
+            })
+
+        elif file_extension in ['pdf']:
+            # 处理PDF文件
+            result = await pdf_handle.text_manipulate(request, {
                 'file_name': item,
                 'support_type': support_type
             })
@@ -135,14 +142,16 @@ async def download(opt={}):
     for obj in objects:
         file_name = obj.object_name[len(folder_prefix):]
 
-        data = minio_client.get_object(bucket_name, obj.object_name)
-        df = pd.read_csv(data)
+        csv_file_path = await file_utils.get_temp_file_path()
 
-        await csv_handle.save_csv({
-            'file_name': file_name,
-            'phase_value': 'original',
-            'data': df['prompt']
-        })
+        # 如果文件夹不存在，则创建
+        directory_path = csv_file_path + 'original'
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+
+        file_path = directory_path + '/' + file_name
+
+        minio_client.fget_object(bucket_name, obj.object_name, file_path)
         file_names.append(file_name)
 
     return file_names
