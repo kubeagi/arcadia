@@ -9,11 +9,12 @@ import (
 	"fmt"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataprocessing"
 )
 
 // AllDataProcessListByPage is the resolver for the allDataProcessListByPage field.
 func (r *dataProcessQueryResolver) AllDataProcessListByPage(ctx context.Context, obj *generated.DataProcessQuery, input *generated.AllDataProcessListByPageInput) (*generated.PaginatedDataProcessItem, error) {
-	panic(fmt.Errorf("not implemented: AllDataProcessListByPage - allDataProcessListByPage"))
+	return dataprocessing.ListDataprocessing(ctx, obj, input)
 }
 
 // DataProcess is the resolver for the dataProcess field.
