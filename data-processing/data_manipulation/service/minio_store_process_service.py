@@ -26,14 +26,15 @@
 import io
 import logging
 import os
-import pandas as pd
 
-from db import data_process_task
-from file_handle import csv_handle, pdf_handle
+import pandas as pd
 from minio import Minio
 from minio.commonconfig import Tags
 from minio.error import S3Error
 from sanic.response import json, raw
+
+from db import data_process_task
+from file_handle import csv_handle, pdf_handle
 from utils import file_utils, minio_utils
 
 logger = logging.getLogger('minio_store_process_service')

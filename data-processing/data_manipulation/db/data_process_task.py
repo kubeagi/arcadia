@@ -24,12 +24,13 @@
 # 1) 基本功能实现
 ###
 
-import ulid
-import ujson
-
 from datetime import datetime
-from utils import pg_utils
+
+import ujson
+import ulid
 from sanic.response import json
+
+from utils import pg_utils
 
 
 async def list_by_page(request, opt={}):

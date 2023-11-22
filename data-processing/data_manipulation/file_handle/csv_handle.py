@@ -23,14 +23,14 @@
 # 1) 基本功能实现
 ###
 
+import asyncio
 import csv
 import logging
 import os
 
-import asyncio
-
 import pandas as pd
 import ulid
+
 from transform.text import clean_transform, privacy_transform
 from utils import date_time_utils, file_utils
 
