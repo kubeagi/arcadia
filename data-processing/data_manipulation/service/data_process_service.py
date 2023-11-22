@@ -25,10 +25,11 @@
 
 import asyncio
 import logging
+
 import ulid
+from sanic.response import json
 
 from db import data_process_task
-from sanic.response import json
 from service import minio_store_process_service
 
 logger = logging.getLogger('data_process_service')

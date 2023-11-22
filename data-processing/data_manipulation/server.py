@@ -26,15 +26,25 @@
 
 import asyncio
 import logging
-import psycopg2
 
-from common import config
+import psycopg2
 from sanic import Sanic
 from sanic.response import json
 from sanic_cors import CORS
-from service import minio_store_process_service, data_process_service
+
+from common import config
+from kube import client
+from service import data_process_service, minio_store_process_service
 from transform.text import support_type
 from utils import log_utils
+
+###
+# Initialize kubernetes client
+###
+kube = client.KubeEnv()
+# have a try!
+# print(kube.list_versioneddatasets("arcadia"))
+
 
 ###
 # 初始化日志配置
@@ -54,6 +64,7 @@ app.config['REQUEST_MAX_SIZE'] = 1024 * 1024 * 1024  # 1G
 app.config['REQUEST_TIMEOUT'] = 60 * 60 * 60
 app.config['RESPONSE_TIMEOUT'] = 60 * 60 * 60
 app.config['KEEP_ALIVE_TIMEOUT'] = 60 * 60 * 60
+
 
 @app.listener('before_server_start')
 async def init_web_server(app, loop):
@@ -220,7 +231,8 @@ def get_connection():
     :param database:
     :return:
     '''
-    conn = psycopg2.connect(database=config.pg_database, user=config.pg_user, password=config.pg_password, host=config.pg_host, port=config.pg_port)
+    conn = psycopg2.connect(database=config.pg_database, user=config.pg_user,
+                            password=config.pg_password, host=config.pg_host, port=config.pg_port)
 
     # while True:
     #     cur = conn.cursor()
@@ -229,6 +241,7 @@ def get_connection():
     #     time.sleep(3600)  # 每隔5分钟发送一次查询
 
     return conn
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',

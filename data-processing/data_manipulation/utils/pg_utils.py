@@ -19,6 +19,7 @@
 
 import psycopg2.extras
 
+
 async def execute_sql(conn,sql,record_to_select):
     '''
     执行sql语句

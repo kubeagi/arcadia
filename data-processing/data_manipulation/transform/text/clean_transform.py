@@ -25,7 +25,9 @@
 ###
 
 import re
+
 from common import special_characters
+
 
 ###
 # 去除不可见字符

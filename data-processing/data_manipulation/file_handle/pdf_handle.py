@@ -25,17 +25,16 @@
 
 import logging
 import os
-import pandas as pd
 
-from common import config
-from file_handle import csv_handle
+import pandas as pd
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import SpacyTextSplitter
 from pypdf import PdfReader
-from transform.text import clean_transform, privacy_transform, QA_transform
+
+from common import config
+from file_handle import csv_handle
+from transform.text import QA_transform, clean_transform, privacy_transform
 from utils import file_utils
-
-
 
 logger = logging.getLogger('pdf_handle')
 

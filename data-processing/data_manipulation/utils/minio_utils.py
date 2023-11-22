@@ -16,8 +16,9 @@
 # MinIO
 ###
 
-from common import config
 from minio import Minio
+
+from common import config
 
 
 async def create_client():

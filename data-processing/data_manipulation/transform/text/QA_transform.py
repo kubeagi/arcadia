@@ -15,6 +15,7 @@
 import re
 
 import zhipuai
+
 from common import config
 
 ###
