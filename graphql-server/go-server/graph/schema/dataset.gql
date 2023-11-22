@@ -1,0 +1,80 @@
+query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatasetInput!, $filesInput: FileFilter){
+  Dataset {
+   	listDatasets(input: $input) {
+      nodes {
+        ... on Dataset {
+          name
+          namespace
+          creator
+          displayName
+          updateTimestamp
+          contentType
+          field
+          versionCount
+          versions(input: $versionsInput) {
+            nodes {
+              ... on VersionedDataset {
+                name
+                namespace
+                displayName
+                files(input: $filesInput) {
+                  nodes {
+                    ... on F {
+                      path
+                      fileType
+                      count
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query getDataset($name: String!, $namespace: String!){
+  Dataset {
+    getDataset(name:$name, namespace:$namespace) {
+      name
+      namespace
+      creator
+      displayName
+      updateTimestamp
+      contentType
+      field
+      versionCount
+    }
+  }
+}
+
+
+
+mutation createDataset($input: CreateDatasetInput){
+  Dataset {
+    createDataset(input: $input){
+      name
+      displayName
+      labels
+    }
+  }
+}
+
+
+mutation updateDataset($input: UpdateDatasetInput){
+  Dataset {
+    updateDataset(input: $input){
+      name
+      displayName
+      labels
+    }
+  }
+}
+
+mutation deleteDatasets($input: DeleteDatasetInput){
+  Dataset {
+		deleteDatasets(input: $input)
+  }
+}

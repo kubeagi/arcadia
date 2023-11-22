@@ -15,7 +15,7 @@ query listModels($input: ListModelInput!){
           displayName
           description
           field
-          modeltype
+          modeltypes
           updateTimestamp
         }
       }
@@ -35,7 +35,7 @@ query getModel($name: String!, $namespace: String!) {
       displayName
       description
       field
-      modeltype
+      modeltypes
       updateTimestamp
     }
   }
@@ -53,7 +53,7 @@ mutation createModel($input: CreateModelInput!) {
       displayName
       description
       field
-      modeltype
+      modeltypes
       updateTimestamp
     }
   }
@@ -71,7 +71,7 @@ mutation updateModel($input: UpdateModelInput) {
       displayName
       description
       field
-      modeltype
+      modeltypes
       updateTimestamp
     }
   }
