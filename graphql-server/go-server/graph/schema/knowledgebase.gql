@@ -1,0 +1,140 @@
+# list
+query listKnowledgeBases($input: ListKnowledgeBaseInput!){
+  KnowledgeBase {
+    listKnowledgeBases(input: $input) {
+      totalCount
+      hasNextPage
+      nodes {
+        ... on KnowledgeBase {
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          embedder {
+            kind
+            Name
+          }
+          vectorstore{
+            kind
+            Name
+          }
+          fileGroups {
+            ... on file{
+                source {
+                    kind
+                    Name
+                }
+                path
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# get
+query getKnowledgeBase($name: String!, $namespace: String!) {
+  KnowledgeBase {
+    getKnowledgeBase(name: $name, namespace: $namespace){
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          embedder {
+            kind
+            Name
+          }
+          vectorstore{
+            kind
+            Name
+          }
+          fileGroups {
+            ... on file{
+                source {
+                    kind
+                    Name
+                }
+                path
+            }
+          }
+    }
+  }
+}
+
+# create
+mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
+  KnowledgeBase {
+    createKnowledgeBase(input: $input) {
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          embedder {
+            kind
+            Name
+          }
+          vectorstore{
+            kind
+            Name
+          }
+          fileGroups {
+            ... on file{
+                source {
+                    kind
+                    Name
+                }
+                path
+            }
+          }
+    }
+  }
+}
+
+# update
+mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
+  KnowledgeBase {
+    updateKnowledgeBase(input: $input){
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          embedder {
+            kind
+            Name
+          }
+          vectorstore{
+            kind
+            Name
+          }
+          fileGroups {
+            ... on file{
+                source {
+                    kind
+                    Name
+                }
+                path
+            }
+          }
+    }
+  }
+}
+
+# delete
+mutation deleteKnowledgeBase($input: DeleteKnowledgeBaseInput) {
+  KnowledgeBase {
+    deleteKnowledgeBase(input: $input)
+  }
+}

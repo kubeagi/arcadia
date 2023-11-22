@@ -1,0 +1,108 @@
+# create
+mutation createEmbedder($input: CreateEmbedderInput!) {
+  Embedder {
+    createEmbedder(input: $input) {
+      name
+      namespace
+      labels
+      annotations
+      displayName
+      description
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
+      }
+      serviceType
+      updateTimestamp
+    }
+  }
+}
+
+# update
+mutation updateEmbedder($input: UpdateEmbedderInput) {
+  Embedder {
+    updateEmbedder(input: $input) {
+      name
+      namespace
+      labels
+      annotations
+      displayName
+      description
+      endpoint {
+        url
+        authSecret {
+          kind
+          Name
+        }
+        insecure
+      }
+      serviceType
+      updateTimestamp
+    }
+  }
+}
+
+# delete
+mutation deleteEmbedder($input: DeleteEmbedderInput!) {
+  Embedder {
+    deleteEmbedder(input: $input)
+  }
+}
+
+# list embedders
+query listEmbedders($input: ListEmbedderInput!) {
+  Embedder {
+    listEmbedders(input: $input) {
+    totalCount
+    hasNextPage
+    nodes {
+      ... on Embedder {
+        name
+        namespace
+        labels
+        annotations
+        displayName
+        description
+        endpoint {
+          url
+          authSecret {
+            kind
+            Name
+          }
+          insecure
+        }
+        serviceType
+        updateTimestamp
+      }
+      }
+    }
+  }
+}
+
+# get embedder
+query getEmbedder($name: String!, $namespace: String!) {
+  Embedder {
+    getEmbedder(name: $name, namespace: $namespace) {
+        name
+        namespace
+        labels
+        annotations
+        displayName
+        description
+        endpoint {
+          url
+          authSecret {
+            kind
+            Name
+          }
+          insecure
+        }
+        serviceType
+        updateTimestamp
+    }
+  }
+}
