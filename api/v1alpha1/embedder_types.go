@@ -34,6 +34,9 @@ type EmbedderSpec struct {
 
 	// Enpoint defines connection info
 	Enpoint *Endpoint `json:"endpoint,omitempty"`
+
+	// Worker defines the worker instance that this embedder comes from
+	Worker *TypedObjectReference `json:"worker,omitempty"`
 }
 
 // EmbeddingsStatus defines the observed state of Embedder

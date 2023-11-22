@@ -31,6 +31,9 @@ type LLMSpec struct {
 
 	// Enpoint defines connection info
 	Enpoint *Endpoint `json:"endpoint,omitempty"`
+
+	// Worker defines the worker instance that this embedder comes from
+	Worker *TypedObjectReference `json:"worker,omitempty"`
 }
 
 // LLMStatus defines the observed state of LLM
