@@ -210,24 +210,17 @@ waitCRDStatusReady "VectorStore" "arcadia" "chroma-sample"
 info "7. create and verify knowledgebase"
 
 info "7.1. upload some test file to system datasource"
+kubectl port-forward -n arcadia svc/arcadia-minio 9000:9000 >/dev/null 2>&1 &
+minio_pid=$!
+sleep 3
+info "port-forward minio in pid: $minio_pid"
 bucket=$(kubectl get datasource -n arcadia arcadia-minio -o json | jq -r .spec.oss.bucket)
 s3_key=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootUser" | base64 --decode)
 s3_secret=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootPassword" | base64 --decode)
-resource="/${bucket}/qa.csv"
-content_type="application/octet-stream"
-date=$(date -R)
-_signature="PUT\n\n${content_type}\n${date}\n${resource}"
-signature=$(echo -en ${_signature} | openssl sha1 -hmac ${s3_secret} -binary | base64)
-kubectl port-forward -n arcadia svc/arcadia-minio 9000:9000 >/dev/null 2>&1 &
-minio_pid=$!
-info "port-forward minio in pid: $minio_pid"
-sleep 3
-curl -X PUT -T "pkg/documentloaders/testdata/qa.csv" \
-	-H "Host: 127.0.0.1:9000" \
-	-H "Date: ${date}" \
-	-H "Content-Type: ${content_type}" \
-	-H "Authorization: AWS ${s3_key}:${signature}" \
-	http://127.0.0.1:9000${resource}
+export MC_HOST_arcadiatest=http://${s3_key}:${s3_secret}@127.0.0.1:9000
+mc cp pkg/documentloaders/testdata/qa.csv arcadiatest/${bucket}/qa.csv
+info "add tags to these files"
+mc tag set arcadiatest/${bucket}/qa.csv "object_type=QA"
 
 info "7.2 create dateset and versioneddataset and wait them ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_dataset.yaml
