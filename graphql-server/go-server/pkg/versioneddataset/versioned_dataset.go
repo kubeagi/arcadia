@@ -104,6 +104,9 @@ func versionedDataset2model(ctx context.Context, c dynamic.Interface, obj *unstr
 }
 
 func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.VersionedDataset, filter *generated.FileFilter) (*generated.PaginatedResult, error) {
+	if input == nil {
+		return &defaultobject.DefaultPaginatedResult, nil
+	}
 	prefix := fmt.Sprintf("dataset/%s/%s/", input.Dataset.Name, input.Version)
 	minioClient, _, err := minio.GetClients()
 	if err != nil {

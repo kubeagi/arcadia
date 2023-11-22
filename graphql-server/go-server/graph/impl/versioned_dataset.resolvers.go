@@ -31,6 +31,9 @@ func (r *versionedDatasetResolver) Files(ctx context.Context, obj *generated.Ver
 	if err != nil {
 		return &defaultobject.DefaultPaginatedResult, err
 	}
+	if obj == nil {
+		return &defaultobject.DefaultPaginatedResult, nil
+	}
 	return versioneddataset.VersionFiles(ctx, c, obj, input)
 }
 

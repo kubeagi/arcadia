@@ -26,73 +26,65 @@ var (
 	DefaultString  = ""
 	DefaultTime    = time.Now()
 	DefaultDataset = generated.Dataset{
-		Labels:          map[string]interface{}{},
-		Annotations:     map[string]interface{}{},
-		Creator:         &DefaultString,
-		UpdateTimestamp: &DefaultTime,
-		Field:           &DefaultString,
+		Name:        DefaultString,
+		Namespace:   DefaultString,
+		DisplayName: DefaultString,
+		ContentType: DefaultString,
+		Versions: generated.PaginatedResult{
+			HasNextPage: false,
+			TotalCount:  DefaultInt,
+		},
+		VersionCount: DefaultInt,
 	}
 
 	DefaultVersioneddataset = generated.VersionedDataset{
-		Labels:            map[string]interface{}{},
-		Annotations:       map[string]interface{}{},
-		Creator:           &DefaultString,
-		UpdateTimestamp:   &DefaultTime,
-		SyncStatus:        &DefaultString,
-		DataProcessStatus: &DefaultString,
+		Name:        DefaultString,
+		Namespace:   DefaultString,
+		DisplayName: DefaultString,
+		Dataset: generated.TypedObjectReference{
+			Kind: DefaultString,
+			Name: DefaultString,
+		},
+		CreationTimestamp: DefaultTime,
+		Files: generated.PaginatedResult{
+			HasNextPage: false,
+			TotalCount:  DefaultInt,
+		},
+		Version:   DefaultString,
+		FileCount: DefaultInt,
+		Released:  DefaultInt,
 	}
 
 	DefaultPaginatedResult = generated.PaginatedResult{
 		HasNextPage: false,
 		Nodes:       []generated.PageNode{},
-		Page:        &DefaultInt,
-		PageSize:    &DefaultInt,
 		TotalCount:  0,
 	}
 
 	DefaultDatasource = generated.Datasource{
-		Labels:      map[string]interface{}{},
-		Annotations: map[string]interface{}{},
-		Creator:     &DefaultString,
-		Description: &DefaultString,
-		Endpoint:    &generated.Endpoint{},
-		Oss:         &generated.Oss{},
-		Status:      &DefaultString,
-		FileCount:   &DefaultInt,
+		Name:            DefaultString,
+		Namespace:       DefaultString,
+		DisplayName:     DefaultString,
+		UpdateTimestamp: DefaultTime,
 	}
 
 	DefaultEmbedder = generated.Embedder{
-		Labels:          map[string]interface{}{},
-		Annotations:     map[string]interface{}{},
-		Creator:         &DefaultString,
-		Description:     &DefaultString,
-		Endpoint:        &generated.Endpoint{},
-		ServiceType:     &DefaultString,
-		UpdateTimestamp: &DefaultTime,
+		Name:        DefaultString,
+		Namespace:   DefaultString,
+		DisplayName: DefaultString,
 	}
 
 	DefaultKnowledgebase = generated.KnowledgeBase{
-		Labels:      map[string]interface{}{},
-		Annotations: map[string]interface{}{},
-		Creator:     &DefaultString,
-		Description: &DefaultString,
-		Embedder: &generated.TypedObjectReference{
-			APIGroup:  &DefaultString,
-			Namespace: &DefaultString,
-		},
-		VectorStore: &generated.TypedObjectReference{
-			APIGroup:  &DefaultString,
-			Namespace: &DefaultString,
-		},
-		FileGroups: []*generated.Filegroup{},
-		Status:     &DefaultString,
+		Name:            DefaultString,
+		Namespace:       DefaultString,
+		DisplayName:     DefaultString,
+		UpdateTimestamp: DefaultTime,
 	}
 
 	DefaultModel = generated.Model{
-		Labels:          map[string]interface{}{},
-		Annotations:     map[string]interface{}{},
-		Creator:         &DefaultString,
-		Description:     &DefaultString,
-		UpdateTimestamp: &DefaultTime,
+		Name:        DefaultString,
+		Namespace:   DefaultString,
+		DisplayName: DefaultString,
+		Modeltypes:  DefaultString,
 	}
 )
