@@ -32,6 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/impl"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataprocessing"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 
@@ -52,6 +53,9 @@ var (
 	masterURL    = flag.String("master-url", "", "k8s master url(required when enable odic)")
 	clientID     = flag.String("client-id", "", "oidc client id(required when enable odic)")
 	clientSecret = flag.String("client-secret", "", "oidc client secret(required when enable odic)")
+
+	// Flags to data-processing server
+	dataProcessingURL = flag.String("data-processing-url", "http://127.0.0.1:28888", "url to access data processing server")
 )
 
 func main() {
@@ -60,6 +64,9 @@ func main() {
 	if *enableOIDC {
 		oidc.InitOIDCArgs(*issuerURL, *masterURL, *clientSecret, *clientID)
 	}
+
+	// initialize dataprocessing
+	dataprocessing.Init(*dataProcessingURL)
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &impl.Resolver{}}))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
