@@ -26,11 +26,13 @@
 
 import asyncio
 import logging
+import psycopg2
 
+from common import config
 from sanic import Sanic
 from sanic.response import json
 from sanic_cors import CORS
-from service import minio_store_process_service
+from service import minio_store_process_service, data_process_service
 from transform.text import support_type
 from utils import log_utils
 
@@ -52,6 +54,83 @@ app.config['REQUEST_MAX_SIZE'] = 1024 * 1024 * 1024  # 1G
 app.config['REQUEST_TIMEOUT'] = 60 * 60 * 60
 app.config['RESPONSE_TIMEOUT'] = 60 * 60 * 60
 app.config['KEEP_ALIVE_TIMEOUT'] = 60 * 60 * 60
+
+@app.listener('before_server_start')
+async def init_web_server(app, loop):
+    app.config['conn'] = get_connection()
+
+
+###
+# 分页查询列表
+# @author: wangxinbiao
+# @date: 2023-11-21 11:31:01
+# modify history
+# ==== 2023-11-21 11:31:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+@app.route('list-by-page', methods=['POST'])
+async def list_by_page(request):
+    return await data_process_service.list_by_page(request, {
+        'conn': app.config['conn']
+    })
+
+###
+# 列表总记录数
+# @author: wangxinbiao
+# @date: 2023-11-21 15:45:01
+# modify history
+# ==== 2023-11-21 15:45:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+@app.route('list-by-count', methods=['POST'])
+async def list_by_count(request):
+    return await data_process_service.list_by_count(request, {
+        'conn': app.config['conn']
+    })
+
+###
+# 新增
+# @author: wangxinbiao
+# @date: 2023-11-21 15:45:01
+# modify history
+# ==== 2023-11-21 15:45:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+@app.route('add', methods=['POST'])
+async def add(request):
+    return await data_process_service.add(request, {
+        'conn': app.config['conn']
+    })
+
+###
+# 删除
+# @author: wangxinbiao
+# @date: 2023-11-21 15:45:01
+# modify history
+# ==== 2023-11-21 15:45:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+@app.route('delete-by-id', methods=['POST'])
+async def delete_by_id(request):
+    return await data_process_service.delete_by_id(request, {
+        'conn': app.config['conn']
+    })
 
 ###
 # 文本数据处理
@@ -79,7 +158,7 @@ async def text_manipulate(request):
 
     """
 
-    await asyncio.create_task(
+    asyncio.create_task(
         minio_store_process_service.text_manipulate(request)
     )
 
@@ -117,6 +196,39 @@ async def text_process_type(request):
         'message': '',
         'data': support_type.support_types
     })
+
+
+###
+# 数据库链接
+# @author: wangxinbiao
+# @date: 2023-11-02 14:42:01
+# modify history
+# ==== 2023-11-02 14:42:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+def get_connection():
+    '''
+    获取postgresql连接
+    :param host:
+    :param port:
+    :param user:
+    :param password:
+    :param database:
+    :return:
+    '''
+    conn = psycopg2.connect(database=config.pg_database, user=config.pg_user, password=config.pg_password, host=config.pg_host, port=config.pg_port)
+
+    # while True:
+    #     cur = conn.cursor()
+    #     cur.execute("SELECT 1")
+    #     cur.close()
+    #     time.sleep(3600)  # 每隔5分钟发送一次查询
+
+    return conn
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',

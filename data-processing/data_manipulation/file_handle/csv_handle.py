@@ -27,6 +27,8 @@ import csv
 import logging
 import os
 
+import asyncio
+
 import pandas as pd
 import ulid
 from transform.text import clean_transform, privacy_transform

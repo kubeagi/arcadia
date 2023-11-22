@@ -54,12 +54,6 @@ logger = logging.getLogger('pdf_handle')
 async def text_manipulate(request, opt={}):
     logger.info("pdf text manipulate!")
 
-    """
-        数据处理逻辑：
-            处理某条数据时，如果某个方式（比如：去除不可见字符）处理失败了，则直接结束，不在处理，整个文件都视作处理失败
-            
-    """
-
     try:
         
         file_name = opt['file_name']
@@ -85,14 +79,23 @@ async def text_manipulate(request, opt={}):
 
         if clean_result['status'] != 200:
             return clean_result
-
-        content = clean_result['data']
+        else:
+            content = clean_result['data']
 
         # 去隐私
-        
+        clean_result = await privacy_erosion({
+            'support_type': support_type,
+            'file_name': file_name,
+            'data': content
+        })
+
+        if clean_result['status'] != 200:
+            return clean_result
+        else:
+            content = clean_result['data']
 
         # QA拆分
-        if 'qa_split' in support_type:
+        if any(d.get('type') == 'qa_split' for d in support_type):
             qa_data = await generate_QA(request, {
                 'support_type': support_type,
                 'data': content
@@ -142,7 +145,7 @@ async def data_clean(opt={}):
     data = opt['data']
 
     # 去除不可见字符
-    if 'remove_invisible_characters' in support_type:
+    if any(d.get('type') == 'remove_invisible_characters' for d in support_type):
         result = await clean_transform.remove_invisible_characters({
             'text': data
         })
@@ -151,6 +154,21 @@ async def data_clean(opt={}):
             return {
                 'status': 400,
                 'message': '去除不可见字符失败',
+                'data': ''
+            }            
+        
+        data = result['data']
+    
+    # 空格处理
+    if any(d.get('type') == 'space_standardization' for d in support_type):
+        result = await clean_transform.space_standardization({
+            'text': data
+        })
+
+        if result['status'] != 200:
+            return {
+                'status': 400,
+                'message': '空格处理失败',
                 'data': ''
             }            
         
@@ -164,6 +182,46 @@ async def data_clean(opt={}):
         'data': data
     }
 
+
+###
+# 去隐私
+# @author: wangxinbiao
+# @date: 2023-11-17 16:14:01
+# modify history
+# ==== 2023-11-17 16:14:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+async def privacy_erosion(opt={}):
+    logger.info("pdf text privacy erosion start!")
+    support_type = opt['support_type']
+    data = opt['data']
+
+    # 去邮箱
+    if any(d.get('type') == 'remove_email' for d in support_type):
+        result = await privacy_transform.remove_email({
+            'text': data
+        })
+
+        if result['status'] != 200:
+            return {
+                'status': 400,
+                'message': '去邮箱',
+                'data': ''
+            }            
+        
+        data = result['data']
+
+    logger.info("pdf text privacy erosion stop!")
+
+    return {
+        'status': 200,
+        'message': '',
+        'data': data
+    }
 
 ###
 # 获取PDF内容
@@ -235,3 +293,29 @@ async def generate_QA(request, opt={}):
         qa_list.extend(data)
         
     return qa_list
+
+###
+# 文本分段
+# @author: wangxinbiao
+# @date: 2023-11-17 16:14:01
+# modify history
+# ==== 2023-11-17 16:14:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+
+
+async def document_chunk(request, opt={}):
+
+    separator = "\n\n"
+
+    text_splitter = SpacyTextSplitter(
+        separator=separator,
+        pipeline="zh_core_web_sm",
+        chunk_size=opt['chunk_size'],
+        chunk_overlap=opt['chunk_overlap']
+    )
+    texts = text_splitter.split_text(opt['data'])
+        
+    return texts

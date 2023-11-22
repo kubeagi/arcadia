@@ -26,8 +26,9 @@
 import io
 import logging
 import os
-
 import pandas as pd
+
+from db import data_process_task
 from file_handle import csv_handle, pdf_handle
 from minio import Minio
 from minio.commonconfig import Tags
@@ -49,41 +50,41 @@ logger = logging.getLogger('minio_store_process_service')
 ###
 
 
-async def text_manipulate(request):
+async def text_manipulate(request, opt={}):
 
     request_json = request.json
     bucket_name = request_json['bucket_name']
-    support_type = request_json['type']
-    folder_prefix = request_json['folder_prefix']
+    support_type = request_json['data_process_config_info']
+    file_names = request_json['file_names']
+    folder_prefix = '/' + request_json['pre_data_set_name'] + '/' + request_json['pre_data_set_version']
 
     # create minio client
     minio_client = await minio_utils.create_client()
 
-    # 查询存储桶下的所有对象
-    objects = minio_client.list_objects(bucket_name, prefix=folder_prefix)
-
     # 将文件都下载到本地
-    file_names = await download({
-        'minio_client': minio_client,
-        'bucket_name': bucket_name,
-        'folder_prefix': folder_prefix,
-        'objects': objects
-    })
+    for file_name in file_names:
+        await download({
+            'minio_client': minio_client,
+            'bucket_name': bucket_name,
+            'folder_prefix': folder_prefix,
+            'file_name': file_name['name']
+        })
 
     # 文件处理
     for item in file_names:
-        file_extension = item.split('.')[-1].lower()
+        file_name = item['name']
+        file_extension = file_name.split('.')[-1].lower()
         if file_extension in ['csv']:
             # 处理CSV文件
             result = await csv_handle.text_manipulate({
-                'file_name': item,
+                'file_name': file_name,
                 'support_type': support_type
             })
 
         elif file_extension in ['pdf']:
             # 处理PDF文件
             result = await pdf_handle.text_manipulate(request, {
-                'file_name': item,
+                'file_name': file_name,
                 'support_type': support_type
             })
 
@@ -115,6 +116,13 @@ async def text_manipulate(request):
         remove_file_path = await file_utils.get_temp_file_path()
         await file_utils.delete_file(remove_file_path + 'original/' + item)
 
+    # 数据库更新任务状态
+    await data_process_task.update_status_by_id({
+        'id': opt['id'],
+        'status': 'process_complete',
+        'conn': opt['conn']
+    })
+
     return json({
         'status': 200,
         'message': '',
@@ -134,27 +142,23 @@ async def text_manipulate(request):
 
 
 async def download(opt={}):
-    objects = opt['objects']
+    folder_prefix = opt['folder_prefix']
     minio_client = opt['minio_client']
     bucket_name = opt['bucket_name']
-    folder_prefix = opt['folder_prefix']
-    file_names = []
-    for obj in objects:
-        file_name = obj.object_name[len(folder_prefix):]
+    file_name = opt['file_name']
 
-        csv_file_path = await file_utils.get_temp_file_path()
+    file_path = await file_utils.get_temp_file_path()
 
-        # 如果文件夹不存在，则创建
-        directory_path = csv_file_path + 'original'
-        if not os.path.exists(directory_path):
-            os.makedirs(directory_path)
+    # 如果文件夹不存在，则创建
+    directory_path = file_path + 'original'
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
 
-        file_path = directory_path + '/' + file_name
+    file_path = directory_path + '/' + file_name
 
-        minio_client.fget_object(bucket_name, obj.object_name, file_path)
-        file_names.append(file_name)
+    minio_client.fget_object(bucket_name, folder_prefix + '/' + file_name, file_path)
 
-    return file_names
+
 
 ###
 # 文件上传至MinIO，添加Tags

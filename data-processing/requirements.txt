@@ -9,3 +9,6 @@ zhipuai==1.0.7
 langchain==0.0.336
 spacy==3.5.4
 pypdf==3.17.1
+emoji==2.2.0
+ftfy==6.1.1
+psycopg2_binary==2.9.9

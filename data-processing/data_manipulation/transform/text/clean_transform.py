@@ -25,7 +25,7 @@
 ###
 
 import re
-
+from common import special_characters
 
 ###
 # 去除不可见字符
@@ -53,5 +53,35 @@ async def remove_invisible_characters(opt={}):
         return {
             'status': 400,
             'message': '去除不可见字符失败：' + str(ex),
+            'data': ''
+        }
+
+###
+# 空格处理
+# @author: wangxinbiao
+# @date: 2023-11-20 16:53:01
+# modify history
+# ==== 2023-11-20 16:53:01 ====
+# author: wangxinbiao
+# content:
+# 1) 基本功能实现
+###
+async def space_standardization(opt={}):
+    text = opt['text']
+
+    try:
+        clean_text = ''.join([
+            char if char not in special_characters.VARIOUS_WHITESPACES else ' ' for char in text
+        ])
+        return {
+            'status': 200,
+            'message': '',
+            'data': clean_text
+        }
+
+    except Exception as ex:
+        return {
+            'status': 400,
+            'message': '空格处理失败：' + str(ex),
             'data': ''
         }
