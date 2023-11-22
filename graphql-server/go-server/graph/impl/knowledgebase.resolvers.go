@@ -12,6 +12,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/knowledgebase"
 )
 
@@ -20,7 +21,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 
 	var filegroups []v1alpha1.FileGroup
@@ -63,7 +64,7 @@ func (r *knowledgeBaseMutationResolver) UpdateKnowledgeBase(ctx context.Context,
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	name, displayname := "", ""
 	if input.DisplayName != "" {
@@ -81,7 +82,7 @@ func (r *knowledgeBaseMutationResolver) DeleteKnowledgeBase(ctx context.Context,
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultString, err
 	}
 	name := ""
 	labelSelector, fieldSelector := "", ""
@@ -102,7 +103,7 @@ func (r *knowledgeBaseQueryResolver) GetKnowledgeBase(ctx context.Context, obj *
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	return knowledgebase.ReadKnowledgeBase(ctx, c, name, namespace)
 }
@@ -112,7 +113,7 @@ func (r *knowledgeBaseQueryResolver) ListKnowledgeBases(ctx context.Context, obj
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	name, displayName, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
@@ -136,7 +137,7 @@ func (r *knowledgeBaseQueryResolver) ListKnowledgeBases(ctx context.Context, obj
 	}
 	result, err := knowledgebase.ListKnowledgeBases(ctx, c, input.Namespace, labelSelector, fieldSelector)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	var filteredResult []generated.PageNode
 	for idx, u := range result {

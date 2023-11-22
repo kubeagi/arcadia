@@ -10,6 +10,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
@@ -28,7 +29,7 @@ func (r *versionedDatasetResolver) Files(ctx context.Context, obj *generated.Ver
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	return versioneddataset.VersionFiles(ctx, c, obj, input)
 }
@@ -38,7 +39,7 @@ func (r *versionedDatasetMutationResolver) CreateVersionedDataset(ctx context.Co
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultVersioneddataset, err
 	}
 	return versioneddataset.CreateVersionedDataset(ctx, c, &input)
 }
@@ -48,7 +49,7 @@ func (r *versionedDatasetMutationResolver) UpdateVersionedDataset(ctx context.Co
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &generated.VersionedDataset{}, err
 	}
 	return versioneddataset.UpdateVersionedDataset(ctx, c, &input)
 }
@@ -58,7 +59,7 @@ func (r *versionedDatasetMutationResolver) DeleteVersionedDatasets(ctx context.C
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultString, err
 	}
 	return versioneddataset.DeleteVersionedDatasets(ctx, c, &input)
 }
@@ -68,7 +69,7 @@ func (r *versionedDatasetQueryResolver) GetVersionedDataset(ctx context.Context,
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultVersioneddataset, err
 	}
 	return versioneddataset.GetVersionedDataset(ctx, c, name, namespace)
 }
@@ -78,7 +79,7 @@ func (r *versionedDatasetQueryResolver) ListVersionedDatasets(ctx context.Contex
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	return versioneddataset.ListVersionedDatasets(ctx, c, &input)
 }

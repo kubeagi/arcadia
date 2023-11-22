@@ -11,6 +11,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 	md "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 )
 
@@ -19,7 +20,7 @@ func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 
 	displayname, description, filed, modeltypes := "", "", "", ""
@@ -44,7 +45,7 @@ func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	name, displayname := "", ""
 	if input.DisplayName != "" {
@@ -62,7 +63,7 @@ func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultString, err
 	}
 	name := ""
 	labelSelector, fieldSelector := "", ""
@@ -83,7 +84,7 @@ func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQ
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	return md.ReadModel(ctx, c, name, namespace)
 }
@@ -93,7 +94,7 @@ func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.Mode
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	name, displayName, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
@@ -117,7 +118,7 @@ func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.Mode
 	}
 	result, err := md.ListModels(ctx, c, input.Namespace, labelSelector, fieldSelector)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	var filteredResult []generated.PageNode
 	for idx, u := range result {

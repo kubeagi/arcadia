@@ -12,6 +12,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 )
 
 // CreateDatasource is the resolver for the createDatasource field.
@@ -19,7 +20,7 @@ func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 
 	url, authSecret, bucket, displayname, description := "", "", "", "", ""
@@ -50,7 +51,7 @@ func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	name, displayname := "", ""
 	if input.DisplayName != "" {
@@ -68,7 +69,7 @@ func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultString, err
 	}
 	name := ""
 	labelSelector, fieldSelector := "", ""
@@ -89,7 +90,7 @@ func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *genera
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	return datasource.ReadDatasource(ctx, c, name, namespace)
 }
@@ -99,7 +100,7 @@ func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *gene
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	name, displayName, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
@@ -123,7 +124,7 @@ func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *gene
 	}
 	result, err := datasource.ListDatasources(ctx, c, input.Namespace, labelSelector, fieldSelector)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	var filteredResult []generated.PageNode
 	for idx, u := range result {

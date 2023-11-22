@@ -28,6 +28,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
 	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 )
 
 func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
@@ -128,12 +129,12 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 
 	unstructuredKnowledgeBase, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&knowledgebase)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
 		Namespace(namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredKnowledgeBase}, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	kb := knowledgebase2model(obj)
 	return kb, nil
@@ -143,13 +144,13 @@ func UpdateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"})
 	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 
 	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
 	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	kb := knowledgebase2model(updatedObject)
 	return kb, nil
@@ -160,7 +161,7 @@ func DeleteKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	if name != "" {
 		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	} else {
 		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
@@ -168,17 +169,17 @@ func DeleteKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 			FieldSelector: fieldSelector,
 		})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	}
-	return nil, nil
+	return &defaultobject.DefaultString, nil
 }
 
 func ReadKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace string) (*model.KnowledgeBase, error) {
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"})
 	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultKnowledgebase, err
 	}
 	return knowledgebase2model(u), nil
 }
@@ -191,7 +192,7 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, namespace, lab
 	}
 	us, err := c.Resource(dsSchema).Namespace(namespace).List(ctx, listOptions)
 	if err != nil {
-		return nil, err
+		return []*model.KnowledgeBase{}, err
 	}
 	result := make([]*model.KnowledgeBase, len(us.Items))
 	for idx, u := range us.Items {

@@ -28,6 +28,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
 	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 )
 
 func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
@@ -136,12 +137,12 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 
 	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&datasource)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}).
 		Namespace(namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	ds := datasource2model(obj)
 	return ds, nil
@@ -151,13 +152,13 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
 	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 
 	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
 	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	ds := datasource2model(updatedObject)
 	return ds, nil
@@ -168,7 +169,7 @@ func DeleteDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 	if name != "" {
 		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	} else {
 		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
@@ -176,11 +177,12 @@ func DeleteDatasource(ctx context.Context, c dynamic.Interface, name, namespace,
 			FieldSelector: fieldSelector,
 		})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	}
-	return nil, nil
+	return &defaultobject.DefaultString, nil
 }
+
 func ListDatasources(ctx context.Context, c dynamic.Interface, namespace, labelSelector, fieldSelector string) ([]*model.Datasource, error) {
 	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}
 	listOptions := metav1.ListOptions{
@@ -189,7 +191,7 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, namespace, labelS
 	}
 	us, err := c.Resource(dsSchema).Namespace(namespace).List(ctx, listOptions)
 	if err != nil {
-		return nil, err
+		return []*model.Datasource{}, err
 	}
 	result := make([]*model.Datasource, len(us.Items))
 	for idx, u := range us.Items {
@@ -202,7 +204,7 @@ func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace st
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
 	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDatasource, err
 	}
 	return datasource2model(u), nil
 }

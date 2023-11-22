@@ -29,6 +29,8 @@ import (
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
 var datasetSchema = schema.GroupVersionResource{
@@ -37,7 +39,7 @@ var datasetSchema = schema.GroupVersionResource{
 	Resource: "datasets",
 }
 
-func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
+func dataset2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds := &generated.Dataset{}
 	ds.Name = obj.GetName()
 	ds.Namespace = obj.GetNamespace()
@@ -63,6 +65,11 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds.DisplayName = dataset.Spec.DisplayName
 	ds.ContentType = dataset.Spec.ContentType
 	ds.Field = &dataset.Spec.Field
+	if result, err := versioneddataset.ListVersionedDatasets(ctx, c, &generated.ListVersionedDatasetInput{
+		Name: &ds.Name, Namespace: ds.Namespace,
+	}); err == nil {
+		ds.VersionCount = result.TotalCount
+	}
 	return ds, nil
 }
 
@@ -109,7 +116,7 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 	if err != nil {
 		return nil, err
 	}
-	return dataset2model(obj)
+	return dataset2model(ctx, c, obj)
 }
 
 func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.ListDatasetInput) (*generated.PaginatedResult, error) {
@@ -137,7 +144,7 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	}
 	result := make([]generated.PageNode, 0)
 	for _, u := range datastList.Items {
-		uu, _ := dataset2model(&u)
+		uu, _ := dataset2model(ctx, c, &u)
 		if input.DisplayName != nil && uu.DisplayName != *input.DisplayName {
 			continue
 		}
@@ -208,7 +215,7 @@ func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.Up
 	if err != nil {
 		return nil, err
 	}
-	return dataset2model(obj)
+	return dataset2model(ctx, c, obj)
 }
 
 func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.DeleteDatasetInput) (*string, error) {
@@ -228,13 +235,13 @@ func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.D
 		}
 	}
 	err := c.Resource(datasetSchema).Namespace(input.Namespace).DeleteCollection(ctx, v1.DeleteOptions{}, listOptions)
-	return &none, err
+	return &defaultobject.DefaultString, err
 }
 
 func GetDataset(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Dataset, error) {
 	obj, err := c.Resource(datasetSchema).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDataset, err
 	}
-	return dataset2model(obj)
+	return dataset2model(ctx, c, obj)
 }

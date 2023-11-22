@@ -11,6 +11,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/embedder"
 )
 
@@ -19,7 +20,7 @@ func (r *embedderMutationResolver) CreateEmbedder(ctx context.Context, obj *gene
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultEmbedder, err
 	}
 
 	url, authSecret, displayname, description, servicetype := "", "", "", "", ""
@@ -49,7 +50,7 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultEmbedder, err
 	}
 	name, displayname := "", ""
 	if input.DisplayName != "" {
@@ -67,7 +68,7 @@ func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *gene
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultString, err
 	}
 	name := ""
 	labelSelector, fieldSelector := "", ""
@@ -88,7 +89,7 @@ func (r *embedderQueryResolver) GetEmbedder(ctx context.Context, obj *generated.
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultEmbedder, err
 	}
 	return embedder.ReadEmbedder(ctx, c, name, namespace)
 }
@@ -98,7 +99,7 @@ func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generate
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	name, displayName, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
@@ -122,7 +123,7 @@ func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generate
 	}
 	result, err := embedder.ListEmbedders(ctx, c, input.Namespace, labelSelector, fieldSelector)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	var filteredResult []generated.PageNode
 	for idx, u := range result {

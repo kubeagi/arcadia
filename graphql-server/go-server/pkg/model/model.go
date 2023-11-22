@@ -28,6 +28,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/v1alpha1"
 	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 )
 
 func obj2model(obj *unstructured.Unstructured) *model.Model {
@@ -85,12 +86,12 @@ func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, disp
 	}
 	unstructuredModel, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&model)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"}).
 		Namespace(namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredModel}, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	md := obj2model(obj)
 	return md, nil
@@ -100,13 +101,13 @@ func UpdateModel(ctx context.Context, c dynamic.Interface, name, namespace, disp
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
 	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 
 	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
 	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	md := obj2model(updatedObject)
 	return md, nil
@@ -117,7 +118,7 @@ func DeleteModel(ctx context.Context, c dynamic.Interface, name, namespace, labe
 	if name != "" {
 		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	} else {
 		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
@@ -125,10 +126,10 @@ func DeleteModel(ctx context.Context, c dynamic.Interface, name, namespace, labe
 			FieldSelector: fieldSelector,
 		})
 		if err != nil {
-			return nil, err
+			return &defaultobject.DefaultString, err
 		}
 	}
-	return nil, nil
+	return &defaultobject.DefaultString, nil
 }
 
 func ListModels(ctx context.Context, c dynamic.Interface, namespace, labelSelector, fieldSelector string) ([]*model.Model, error) {
@@ -139,7 +140,7 @@ func ListModels(ctx context.Context, c dynamic.Interface, namespace, labelSelect
 	}
 	us, err := c.Resource(dsSchema).Namespace(namespace).List(ctx, listOptions)
 	if err != nil {
-		return nil, err
+		return []*model.Model{}, err
 	}
 	result := make([]*model.Model, len(us.Items))
 	for idx, u := range us.Items {
@@ -152,7 +153,7 @@ func ReadModel(ctx context.Context, c dynamic.Interface, name, namespace string)
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
 	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultModel, err
 	}
 	return obj2model(u), nil
 }

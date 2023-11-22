@@ -13,6 +13,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataset"
+	defaultobject "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/default_object"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
@@ -21,7 +22,7 @@ func (r *datasetResolver) Versions(ctx context.Context, obj *generated.Dataset, 
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	input.Name = nil
 	input.Namespace = obj.Namespace
@@ -35,7 +36,7 @@ func (r *datasetMutationResolver) CreateDataset(ctx context.Context, obj *genera
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDataset, err
 	}
 	return dataset.CreateDataset(ctx, c, input)
 }
@@ -45,7 +46,7 @@ func (r *datasetMutationResolver) UpdateDataset(ctx context.Context, obj *genera
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDataset, err
 	}
 	return dataset.UpdateDataset(ctx, c, input)
 }
@@ -54,8 +55,9 @@ func (r *datasetMutationResolver) UpdateDataset(ctx context.Context, obj *genera
 func (r *datasetMutationResolver) DeleteDatasets(ctx context.Context, obj *generated.DatasetMutation, input *generated.DeleteDatasetInput) (*string, error) {
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
+	none := ""
 	if err != nil {
-		return nil, err
+		return &none, err
 	}
 	return dataset.DeleteDatasets(ctx, c, input)
 }
@@ -65,7 +67,7 @@ func (r *datasetQueryResolver) GetDataset(ctx context.Context, obj *generated.Da
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultDataset, err
 	}
 	return dataset.GetDataset(ctx, c, name, namespace)
 }
@@ -75,7 +77,7 @@ func (r *datasetQueryResolver) ListDatasets(ctx context.Context, obj *generated.
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {
-		return nil, err
+		return &defaultobject.DefaultPaginatedResult, err
 	}
 	return dataset.ListDatasets(ctx, c, input)
 }
