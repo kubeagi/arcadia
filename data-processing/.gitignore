@@ -5,3 +5,5 @@ __pycache__
 mock_data
 
 log
+
+file_handle/temp_file
