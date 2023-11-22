@@ -52,6 +52,9 @@ const (
 	waitLonger  = time.Minute
 	waitSmaller = time.Second * 3
 	waitMedium  = time.Second * 30
+
+	ObjectTypeTag = "object_type"
+	ObjectTypeQA  = "QA"
 )
 
 var (
@@ -227,7 +230,7 @@ func (r *KnowledgeBaseReconciler) setCondition(kb *arcadiav1alpha1.KnowledgeBase
 func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase, vectorStore *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder, group arcadiav1alpha1.FileGroup) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("failed to reconcile FileGroup.Source: %s: %w", group.Source.Name, err)
+			err = fmt.Errorf("failed to reconcile FileGroup: %w", err)
 		}
 	}()
 
@@ -342,6 +345,15 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 }
 
 func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logger, file io.ReadCloser, fileName string, tags map[string]string, kb *arcadiav1alpha1.KnowledgeBase, store *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder) (err error) {
+	if tags == nil {
+		log.Info("file tags is nil, ignore", "fileName", fileName)
+		return nil
+	}
+	v, ok := tags[ObjectTypeTag]
+	if !ok {
+		log.Info("file tags object type not found, ignore", "fileName", fileName, "tags", tags)
+		return nil
+	}
 	if !embedder.Status.IsReady() {
 		return errEmbedderNotReady
 	}
@@ -367,14 +379,17 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if err != nil {
 		return err
 	}
-	log.Info("file tags", "tags", tags) // TODO use tags to handle file
 	dataReader := bytes.NewReader(data)
 	var loader documentloaders.Loader
 	switch filepath.Ext(fileName) {
 	case "txt":
 		loader = documentloaders.NewText(dataReader)
 	case "csv":
-		loader = pkgdocumentloaders.NewQACSV(dataReader, fileName, "q", "a")
+		if v == ObjectTypeQA {
+			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName, "q", "a")
+		} else {
+			loader = documentloaders.NewCSV(dataReader)
+		}
 	case "html", "htm":
 		loader = documentloaders.NewHTML(dataReader)
 	default:
