@@ -1,0 +1,78 @@
+mutation createVersionedDataset($input:CreateVersionedDatasetInput!){
+  VersionedDataset{
+    createVersionedDataset(input: $input) {
+      name
+      displayName
+      creator
+      namespace
+      version
+      updateTimestamp
+      creationTimestamp
+      fileCount
+      released
+      syncStatus
+      dataProcessStatus
+    }
+  }
+}
+
+mutation updateVersionedDataset($input: UpdateVersionedDatasetInput!){
+  VersionedDataset{
+    updateVersionedDataset(input: $input) {
+      name
+      displayName
+    }
+  }
+}
+
+mutation deleteVersionedDatasets($input: DeleteVersionedDatasetInput!){
+  VersionedDataset{
+    deleteVersionedDatasets(input: $input)
+  }
+}
+
+query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileFilter){
+  VersionedDataset{
+    getVersionedDataset(name: $name, namespace: $namespace) {
+      name
+      displayName
+      namespace
+      creator
+      files(input: $fileInput){
+        nodes {
+          ... on F {
+            path
+            time
+            fileType
+            count
+          }
+        }
+      }
+    }
+  }
+}
+
+query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: FileFilter) {
+  VersionedDataset{
+      listVersionedDatasets(input: $input) {
+      	nodes {
+        ... on VersionedDataset {
+          name
+          displayName
+          namespace
+          creator
+          files(input: $fileInput){
+            nodes {
+              ... on F {
+                path
+                time
+                fileType
+                count
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
