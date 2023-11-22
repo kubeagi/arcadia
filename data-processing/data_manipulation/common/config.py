@@ -22,3 +22,6 @@ minio_secure = os.getenv('MINIO_SECURE', False)
 
 # zhipuai api_key
 zhipuai_api_key = os.getenv('ZHIPUAI_API_KEY', 'xxxxx')
+
+knowledge_chunk_size = os.getenv("KNOWLEDGE_CHUNK_SIZE", 500)
+knowledge_chunk_overlap = os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50)

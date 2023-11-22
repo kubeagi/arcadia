@@ -10,6 +10,12 @@ type PageNode interface {
 	IsPageNode()
 }
 
+type AllDataProcessListByPageInput struct {
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+	Keyword  string `json:"keyword"`
+}
+
 type CreateDatasetInput struct {
 	// 数据集的CR名字，要满足k8s的名称规则
 	Name      string `json:"name"`
@@ -124,6 +130,29 @@ type CreateVersionedDatasetInput struct {
 	FileGrups []*FileGroup `json:"fileGrups,omitempty"`
 	// 界面上创建新版本选择从某个版本集成的时候，填写version字段
 	InheritedFrom *string `json:"inheritedFrom,omitempty"`
+}
+
+type DataProcessItem struct {
+	ID                 string  `json:"id"`
+	Name               string  `json:"name"`
+	Status             string  `json:"status"`
+	Predatasetname     string  `json:"predatasetname"`
+	Predatasetversion  string  `json:"predatasetversion"`
+	Postdatasetname    string  `json:"postdatasetname"`
+	Postdatasetversion *string `json:"postdatasetversion,omitempty"`
+	StartDatetime      string  `json:"start_datetime"`
+}
+
+type DataProcessMutation struct {
+	CreateDataProcessTask  *string `json:"createDataProcessTask,omitempty"`
+	DeleteDataProcessTask  *string `json:"deleteDataProcessTask,omitempty"`
+	ExecuteDataProcessTask *string `json:"executeDataProcessTask,omitempty"`
+}
+
+type DataProcessQuery struct {
+	AllDataProcessListByPage    *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
+	AllDataProcessListByCount   int                       `json:"allDataProcessListByCount"`
+	DetailInfoByDataProcessTask *string                   `json:"detailInfoByDataProcessTask,omitempty"`
 }
 
 // Dataset
@@ -483,6 +512,12 @@ type Oss struct {
 type OssInput struct {
 	Bucket *string `json:"bucket,omitempty"`
 	Object *string `json:"Object,omitempty"`
+}
+
+type PaginatedDataProcessItem struct {
+	Status  int                `json:"status"`
+	Data    []*DataProcessItem `json:"data,omitempty"`
+	Message string             `json:"message"`
 }
 
 type PaginatedResult struct {

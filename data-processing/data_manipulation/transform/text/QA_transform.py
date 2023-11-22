@@ -87,9 +87,6 @@ async def formatSplitText(text):
         q = match[1]
         a = match[4]
         if q and a:
-            result.append({
-                'q': q,
-                'a': a
-            })
+            result.append([q, a])
 
     return result

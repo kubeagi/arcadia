@@ -141,6 +141,10 @@ models:
         resolver: true
       listKnowledgeBases:
         resolver: true
+  DataProcessQuery:
+    fields:
+      allDataProcessListByPage:
+        resolver: true
   DatasetQuery:
     fields:
       getDataset:

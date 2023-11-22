@@ -6,3 +6,6 @@ aiohttp==3.8.6
 ulid==1.1
 minio==7.1.17
 zhipuai==1.0.7
+langchain==0.0.336
+spacy==3.5.4
+pypdf==3.17.1
