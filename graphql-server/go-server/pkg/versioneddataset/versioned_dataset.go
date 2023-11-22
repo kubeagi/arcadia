@@ -100,10 +100,14 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	if err != nil {
 		return nil, err
 	}
+	keyword := ""
+	if filter != nil && filter.Keyword != nil {
+		keyword = *filter.Keyword
+	}
 	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient, -1)
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
-		if filter.Keyword != "" && strings.Contains(obj.Key, filter.Keyword) {
+		if keyword != "" && strings.Contains(obj.Key, keyword) {
 			result = append(result, generated.F{
 				Path:     obj.Key,
 				FileType: obj.ContentType,
@@ -113,11 +117,11 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 		}
 	}
 	page, size := 1, 10
-	if filter.Page > 0 {
-		page = filter.Page
+	if filter != nil && filter.Page != nil && *filter.Page > 0 {
+		page = *filter.Page
 	}
-	if filter.PageSize > 0 {
-		size = filter.PageSize
+	if filter != nil && filter.PageSize != nil && *filter.PageSize > 0 {
+		size = *filter.PageSize
 	}
 
 	total := len(result)

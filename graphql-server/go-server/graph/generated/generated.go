@@ -2521,13 +2521,13 @@ type F {
 """
 input FileFilter {
     """根据关键词搜索文件，strings.Container(fileName, keyword)"""
-    keyword: String!
+    keyword: String
 
     """页"""
-    page: Int!
+    page: Int
 
     """页内容数量"""
-    pageSize: Int!
+    pageSize: Int
 
     """根据文件名字或者更新时间排序, file, time"""
     sortBy: String
@@ -13865,7 +13865,7 @@ func (ec *executionContext) unmarshalInputFileFilter(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13874,7 +13874,7 @@ func (ec *executionContext) unmarshalInputFileFilter(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13883,7 +13883,7 @@ func (ec *executionContext) unmarshalInputFileFilter(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
