@@ -1,0 +1,123 @@
+{{- if .Values.dataprocess.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-dataprocess
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: {{ .Release.Name }}-dataprocess
+spec:
+  selector:
+    matchLabels:
+      control-plane: {{ .Release.Name }}-dataprocess
+  template:
+    metadata:
+      labels:
+        control-plane: {{ .Release.Name }}-dataprocess
+    spec:
+      containers:
+        - name: data-process
+          image: {{ .Values.dataprocess.repository }}:{{ .Values.dataprocess.tag }}
+          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.dataprocess.port }}
+          env:
+            - name: MINIO_ACCESSKEY
+              value: {{ .Values.dataprocess.env.minio.accessKey }}
+            - name: MINIO_SECRETKEY
+              value: {{ .Values.dataprocess.env.minio.secretKey }}
+            - name: MINIO_API_URL
+              value: {{ .Values.dataprocess.env.minio.apiURL }}
+            - name: MINIO_SECURE
+              value: "{{ .Values.dataprocess.env.minio.secure }}"
+            - name: ZHIPU_AI_KEY
+              value: {{ .Values.dataprocess.env.zhipu.key }}
+            - name: KNOWLEDGE_CHUNK_SIZE
+              value: "{{ .Values.dataprocess.env.zhipu.knowledge.chunkSize }}"
+            - name: KNOWLEDGE_CHUNK_OVERLAP
+              value: "{{ .Values.dataprocess.env.zhipu.knowledge.chunkOverlap }}"
+            - name: PG_HOST
+              value: {{ .Values.dataprocess.env.postgres.host }}
+            - name: PG_PORT
+              value: "{{ .Values.dataprocess.env.postgres.port }}"
+            - name: PG_USER
+              value: {{ .Values.dataprocess.env.postgres.user }}
+            - name: PG_PASSWORD
+              value: {{ .Values.dataprocess.env.postgres.password }}
+            - name: PG_DATABASE
+              value: {{ .Values.dataprocess.env.postgres.database }}
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "python /arcadia_app/data_manipulation/server.py"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-dataprocess
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: {{ .Release.Name }}-dataprocess
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.dataprocess.port }}
+      targetPort: {{ .Values.dataprocess.port }}
+  selector:
+    control-plane: {{ .Release.Name }}-dataprocess
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-dataprocess
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-dataprocess
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-dataprocess
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-dataprocess
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-dataprocess
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "arcadia.kubeagi.k8s.com.cn"
+    resources:
+      - versioneddataset
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - "arcadia.kubeagi.k8s.com.cn"
+    resources:
+      - datasources
+      - secrets
+    verbs:
+      - get
+  - apiGroups:
+      - "arcadia.kubeagi.k8s.com.cn"
+    resources:
+      - versioneddataset/versioneddataset
+    verbs:
+      - update
+{{- end }}
