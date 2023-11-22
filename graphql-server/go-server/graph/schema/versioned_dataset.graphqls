@@ -72,13 +72,13 @@ type F {
 """
 input FileFilter {
     """根据关键词搜索文件，strings.Container(fileName, keyword)"""
-    keyword: String!
+    keyword: String
 
     """页"""
-    page: Int!
+    page: Int
 
     """页内容数量"""
-    pageSize: Int!
+    pageSize: Int
 
     """根据文件名字或者更新时间排序, file, time"""
     sortBy: String

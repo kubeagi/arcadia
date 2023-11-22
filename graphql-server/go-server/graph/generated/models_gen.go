@@ -352,11 +352,11 @@ func (F) IsPageNode() {}
 // 根据条件顾虑版本内的文件，只支持关键词搜索
 type FileFilter struct {
 	// 根据关键词搜索文件，strings.Container(fileName, keyword)
-	Keyword string `json:"keyword"`
+	Keyword *string `json:"keyword,omitempty"`
 	// 页
-	Page int `json:"page"`
+	Page *int `json:"page,omitempty"`
 	// 页内容数量
-	PageSize int `json:"pageSize"`
+	PageSize *int `json:"pageSize,omitempty"`
 	// 根据文件名字或者更新时间排序, file, time
 	SortBy *string `json:"sortBy,omitempty"`
 }
