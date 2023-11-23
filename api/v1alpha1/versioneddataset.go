@@ -38,12 +38,16 @@ var (
 const InheritedFromVersionName = "inheritfrom-"
 
 func generateInheriedFileStatus(minioClient *minio.Client, instance *VersionedDataset) []FileStatus {
-	if instance.Spec.InheritedFrom == "" {
-		return nil
-	}
-
 	srcBucket := instance.Spec.Dataset.Namespace
 	prefix := fmt.Sprintf("dataset/%s/%s/", instance.Spec.Dataset.Name, instance.Spec.InheritedFrom)
+	name := InheritedFromVersionName + instance.Spec.InheritedFrom
+	phase := FileProcessPhaseProcessing
+	if instance.Spec.InheritedFrom == "" {
+		prefix = fmt.Sprintf("dataset/%s/%s/", instance.Spec.Dataset.Name, instance.Spec.Version)
+		name = InheritedFromVersionName + instance.Spec.Version
+		phase = FileProcessPhaseSucceeded
+	}
+
 	filePaths := minioutils.ListObjects(context.TODO(), *srcBucket, prefix, minioClient, -1)
 	status := make([]FileDetails, len(filePaths))
 	sort.Strings(filePaths)
@@ -51,13 +55,14 @@ func generateInheriedFileStatus(minioClient *minio.Client, instance *VersionedDa
 	for idx, fp := range filePaths {
 		status[idx] = FileDetails{
 			Path:  strings.TrimPrefix(fp, prefix),
-			Phase: FileProcessPhaseProcessing,
+			Phase: phase,
 		}
 	}
+
 	return []FileStatus{
 		{
 			TypedObjectReference: TypedObjectReference{
-				Name:      InheritedFromVersionName + instance.Spec.InheritedFrom,
+				Name:      name,
 				Namespace: &instance.Namespace,
 				Kind:      "VersionedDataset",
 			},
