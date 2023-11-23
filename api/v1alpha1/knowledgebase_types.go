@@ -66,6 +66,7 @@ const (
 	FileProcessPhaseProcessing FileProcessPhase = "Processing"
 	FileProcessPhaseSucceeded  FileProcessPhase = "Succeeded"
 	FileProcessPhaseFailed     FileProcessPhase = "Failed"
+	FileProcessPhaseSkipped    FileProcessPhase = "Skipped"
 )
 
 // KnowledgeBaseStatus defines the observed state of KnowledgeBase

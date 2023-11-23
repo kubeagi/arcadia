@@ -52,13 +52,11 @@ func (kb *KnowledgeBase) ReadyCondition() Condition {
 	}
 }
 
-func (f *FileDetails) UpdateErr(err error) {
+func (f *FileDetails) UpdateErr(err error, phase FileProcessPhase) {
 	f.LastUpdateTime = metav1.Now()
+	f.Phase = phase
 	if err != nil {
 		f.ErrMessage = err.Error()
-		f.Phase = FileProcessPhaseFailed
-	} else if f.Phase != FileProcessPhaseSucceeded {
-		f.Phase = FileProcessPhaseSucceeded
 	}
 }
 
