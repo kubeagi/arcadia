@@ -35,9 +35,12 @@ from sanic.response import json, raw
 
 from db import data_process_task
 from file_handle import csv_handle, pdf_handle
+# from kube import client
 from utils import file_utils, minio_utils
 
 logger = logging.getLogger('minio_store_process_service')
+
+# kube = client.KubeEnv()
 
 ###
 # 文本数据处理
@@ -57,7 +60,7 @@ async def text_manipulate(request, opt={}):
     bucket_name = request_json['bucket_name']
     support_type = request_json['data_process_config_info']
     file_names = request_json['file_names']
-    folder_prefix = '/' + request_json['pre_data_set_name'] + '/' + request_json['pre_data_set_version']
+    folder_prefix = request_json['pre_data_set_name'] + '/' + request_json['pre_data_set_version']
 
     # create minio client
     minio_client = await minio_utils.create_client()
@@ -103,7 +106,11 @@ async def text_manipulate(request, opt={}):
     )
 
     # 上传final文件夹下的文件，并添加tag
-    tags["phase"] = "final"
+    if any(d.get('type') == 'qa_split' for d in support_type):
+        tags["object_type"] = "QA"
+    else:
+        tags["phase"] = "final"
+
     await upload_files_to_minio_with_tags(
         minio_client,
         file_path + 'final',
@@ -115,7 +122,8 @@ async def text_manipulate(request, opt={}):
     # 将本地临时文件删除
     for item in file_names:
         remove_file_path = await file_utils.get_temp_file_path()
-        await file_utils.delete_file(remove_file_path + 'original/' + item)
+        local_file_path = remove_file_path + 'original/' + item['name']
+        await file_utils.delete_file(local_file_path)
 
     # 数据库更新任务状态
     await data_process_task.update_status_by_id({
@@ -123,6 +131,9 @@ async def text_manipulate(request, opt={}):
         'status': 'process_complete',
         'conn': opt['conn']
     })
+
+    # 更新数据集CR状态
+    # kube.patch_versioneddatasets_status(request_json[])
 
     return json({
         'status': 200,
@@ -178,12 +189,14 @@ async def upload_files_to_minio_with_tags(minio_client, local_folder, minio_buck
         for file in files:
             local_file_path = os.path.join(root, file)
             minio_object_name = os.path.join(
-                minio_prefix, os.path.relpath(local_file_path, local_folder))
+                minio_prefix, os.path.relpath(local_file_path, local_folder)
+            )
 
             try:
                 minio_client.fput_object(
-                    minio_bucket, minio_object_name, local_file_path, tags=tags)
-
+                    minio_bucket, minio_object_name, local_file_path, tags=tags
+                )
+                
                 # 删除本地文件
                 await file_utils.delete_file(local_file_path)
             except S3Error as e:

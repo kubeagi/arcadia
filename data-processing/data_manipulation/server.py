@@ -33,7 +33,7 @@ from sanic.response import json
 from sanic_cors import CORS
 
 from common import config
-from kube import client
+# from kube import client
 from service import data_process_service, minio_store_process_service
 from transform.text import support_type
 from utils import log_utils
@@ -41,7 +41,7 @@ from utils import log_utils
 ###
 # Initialize kubernetes client
 ###
-kube = client.KubeEnv()
+# kube = client.KubeEnv()
 # have a try!
 # print(kube.list_versioneddatasets("arcadia"))
 

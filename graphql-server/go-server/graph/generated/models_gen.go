@@ -10,10 +10,32 @@ type PageNode interface {
 	IsPageNode()
 }
 
+type AddDataProcessInput struct {
+	Name                  string                   `json:"name"`
+	FileType              string                   `json:"file_type"`
+	PreDataSetName        string                   `json:"pre_data_set_name"`
+	PreDataSetVersion     string                   `json:"pre_data_set_version"`
+	FileNames             []*FileItem              `json:"file_names,omitempty"`
+	PostDataSetName       string                   `json:"post_data_set_name"`
+	PostDataSetVersion    string                   `json:"post_data_set_version"`
+	DataProcessConfigInfo []*DataProcessConfigItem `json:"data_process_config_info,omitempty"`
+	BucketName            string                   `json:"bucket_name"`
+}
+
+type AllDataProcessListByCountInput struct {
+	Keyword string `json:"keyword"`
+}
+
 type AllDataProcessListByPageInput struct {
-	Page     int    `json:"page"`
-	PageSize int    `json:"pageSize"`
-	Keyword  string `json:"keyword"`
+	PageIndex int    `json:"pageIndex"`
+	PageSize  int    `json:"pageSize"`
+	Keyword   string `json:"keyword"`
+}
+
+type CountDataProcessItem struct {
+	Status  int    `json:"status"`
+	Data    int    `json:"data"`
+	Message string `json:"message"`
 }
 
 type CreateDatasetInput struct {
@@ -132,27 +154,54 @@ type CreateVersionedDatasetInput struct {
 	InheritedFrom *string `json:"inheritedFrom,omitempty"`
 }
 
+type DataProcessConfigItem struct {
+	Type string `json:"type"`
+}
+
 type DataProcessItem struct {
 	ID                 string  `json:"id"`
 	Name               string  `json:"name"`
 	Status             string  `json:"status"`
-	Predatasetname     string  `json:"predatasetname"`
-	Predatasetversion  string  `json:"predatasetversion"`
-	Postdatasetname    string  `json:"postdatasetname"`
-	Postdatasetversion *string `json:"postdatasetversion,omitempty"`
+	PreDataSetName     string  `json:"pre_data_set_name"`
+	PreDataSetVersion  string  `json:"pre_data_set_version"`
+	PostDataSetName    string  `json:"post_data_set_name"`
+	PostDataSetVersion *string `json:"post_data_set_version,omitempty"`
 	StartDatetime      string  `json:"start_datetime"`
 }
 
 type DataProcessMutation struct {
-	CreateDataProcessTask  *string `json:"createDataProcessTask,omitempty"`
-	DeleteDataProcessTask  *string `json:"deleteDataProcessTask,omitempty"`
-	ExecuteDataProcessTask *string `json:"executeDataProcessTask,omitempty"`
+	CreateDataProcessTask *DataProcessResponse `json:"createDataProcessTask,omitempty"`
+	DeleteDataProcessTask *DataProcessResponse `json:"deleteDataProcessTask,omitempty"`
 }
 
 type DataProcessQuery struct {
-	AllDataProcessListByPage    *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
-	AllDataProcessListByCount   int                       `json:"allDataProcessListByCount"`
-	DetailInfoByDataProcessTask *string                   `json:"detailInfoByDataProcessTask,omitempty"`
+	AllDataProcessListByPage  *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
+	AllDataProcessListByCount *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
+	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
+}
+
+type DataProcessResponse struct {
+	Status  int    `json:"status"`
+	Data    string `json:"data"`
+	Message string `json:"message"`
+}
+
+type DataProcessSupportType struct {
+	Status  int                           `json:"status"`
+	Data    []*DataProcessSupportTypeItem `json:"data,omitempty"`
+	Message string                        `json:"message"`
+}
+
+type DataProcessSupportTypeChildren struct {
+	Name        string `json:"name"`
+	ZhName      string `json:"zh_name"`
+	Description string `json:"description"`
+}
+
+type DataProcessSupportTypeItem struct {
+	Name        string                            `json:"name"`
+	Description string                            `json:"description"`
+	Children    []*DataProcessSupportTypeChildren `json:"children,omitempty"`
 }
 
 // Dataset
@@ -242,6 +291,10 @@ type DatasourceMutation struct {
 type DatasourceQuery struct {
 	GetDatasource   Datasource      `json:"getDatasource"`
 	ListDatasources PaginatedResult `json:"listDatasources"`
+}
+
+type DeleteDataProcessInput struct {
+	ID string `json:"id"`
 }
 
 type DeleteDatasetInput struct {
@@ -366,6 +419,10 @@ type FileGroup struct {
 	Source TypedObjectReferenceInput `json:"source"`
 	// 用到的文件路径，注意⚠️ 一定不要加bucket的名字
 	Paths []string `json:"paths,omitempty"`
+}
+
+type FileItem struct {
+	Name string `json:"name"`
 }
 
 type KnowledgeBase struct {
