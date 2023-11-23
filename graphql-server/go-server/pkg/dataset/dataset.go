@@ -172,10 +172,16 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	if end > total {
 		end = total
 	}
+	start := (page - 1) * size
+	if start < total {
+		result = result[start:end]
+	} else {
+		result = make([]generated.PageNode, 0)
+	}
 	return &generated.PaginatedResult{
 		TotalCount:  total,
 		HasNextPage: end < total,
-		Nodes:       result[(page-1)*size : end],
+		Nodes:       result,
 		Page:        &page,
 		PageSize:    &size,
 	}, nil
