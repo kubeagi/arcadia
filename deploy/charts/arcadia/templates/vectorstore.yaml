@@ -1,0 +1,13 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VectorStore
+metadata:
+  name:  {{ .Release.Name }}-vectorstore
+  namespace: {{ .Release.Namespace }}
+spec:
+  displayName: "向量数据库"
+  description: "默认系统向量数据库"
+  endpoint:
+    url: {{ .Values.vectorstore.url}}
+  chroma:
+    distanceFunction: {{ .Values.vectorstore.chroma.distanceFunction}}
+

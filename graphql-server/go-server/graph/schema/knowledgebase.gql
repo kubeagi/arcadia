@@ -22,7 +22,7 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
             Name
           }
           fileGroups {
-            ... on file{
+            ... on filegroup{
                 source {
                     kind
                     Name
@@ -56,7 +56,7 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
             Name
           }
           fileGroups {
-            ... on file{
+            ... on filegroup{
                 source {
                     kind
                     Name
@@ -88,7 +88,7 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
             Name
           }
           fileGroups {
-            ... on file{
+            ... on filegroup{
                 source {
                     kind
                     Name
@@ -120,7 +120,7 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
             Name
           }
           fileGroups {
-            ... on file{
+            ... on filegroup{
                 source {
                     kind
                     Name

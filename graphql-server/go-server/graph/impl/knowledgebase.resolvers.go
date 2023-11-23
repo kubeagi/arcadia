@@ -13,6 +13,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/knowledgebase"
+	"github.com/kubeagi/arcadia/pkg/config"
 )
 
 // CreateKnowledgeBase is the resolver for the createKnowledgeBase field.
@@ -25,7 +26,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 
 	var filegroups []v1alpha1.FileGroup
 	var vectorstore, embedder v1alpha1.TypedObjectReference
-	apiversion := v1alpha1.GroupVersion.String()
+	vector, _ := config.GetVectorStore(ctx, c)
 	displayname, description := "", ""
 	if input.DisplayName != "" {
 		displayname = input.DisplayName
@@ -36,12 +37,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 	if input.VectorStore != nil {
 		vectorstore = v1alpha1.TypedObjectReference(*input.VectorStore)
 	} else {
-		vectorstore = v1alpha1.TypedObjectReference{
-			APIGroup:  &apiversion,
-			Kind:      "VectorStores",
-			Name:      "chroma-sample",
-			Namespace: &input.Namespace,
-		}
+		vectorstore = *vector
 	}
 	if input.Embedder != nil {
 		embedder = v1alpha1.TypedObjectReference(*input.Embedder)

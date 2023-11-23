@@ -30,6 +30,9 @@ type Config struct {
 
 	// MinIO to access MinIO api services
 	MinIO *MinIO `json:"minIO,omitempty"`
+
+	// VectorStore to access VectorStore api services
+	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia
