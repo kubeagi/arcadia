@@ -20,32 +20,35 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	gouuid "github.com/satori/go.uuid"
 	"k8s.io/klog/v2"
 
 	models "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio/model"
 )
 
+const (
+	bucketQuery     = "bucket"
+	bucketPathQuery = "bucket_path"
+	md5Query        = "md5"
+)
+
 type SuccessChunksResult struct {
 	ResultCode int    `json:"resultCode"`
-	UUID       string `json:"uuid"`
 	Uploaded   string `json:"uploaded"`
 	UploadID   string `json:"uploadID"`
 	Chunks     string `json:"chunks"`
 }
 
 type NewMultipartResult struct {
-	UUID     string `json:"uuid"`
 	UploadID string `json:"uploadID"`
 }
 
@@ -74,13 +77,14 @@ const (
 func GetSuccessChunks(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	var res = -1
-	var uuid, uploaded, uploadID, chunks, fileName string
+	var uploaded, uploadID, chunks string
 	var partNumberMarker, maxParts int
 
 	query := req.URL.Query()
-	fileMD5 := query.Get("md5")
+	fileMD5 := query.Get(md5Query)
 	if fileMD5 == "" {
-		klog.Error("GetFileChunkByMD5 failed: md5 is required")
+		klog.Error("GetSuccessChunks failed: md5 is required")
+		w.WriteHeader(http.StatusBadRequest)
 		_, err := w.Write([]byte("md5 is required"))
 		if err != nil {
 			klog.Errorf("w.Write failed: %s", err)
@@ -94,13 +98,12 @@ func GetSuccessChunks(w http.ResponseWriter, req *http.Request) {
 			klog.Infof("GetFileChunkByMD5 failed: %s", err)
 			break
 		}
-		uuid = fileChunk.UUID
 		uploaded = strconv.Itoa(fileChunk.IsUploaded)
 		uploadID = fileChunk.UploadID
-		fileName = fileChunk.FileName
 
-		bucketName := minioBucket
-		objectName := strings.TrimPrefix(path.Join(minioBasePath, path.Join(uuid[0:5], fileName)), "/")
+		bucketName := query.Get(bucketQuery)
+		bucktPath := query.Get(bucketPathQuery)
+		objectName := fmt.Sprintf("%s/%s", bucktPath, fileChunk.FileName)
 
 		isExist, err := isObjectExist(ctx, bucketName, objectName)
 		if err != nil {
@@ -150,13 +153,11 @@ func GetSuccessChunks(w http.ResponseWriter, req *http.Request) {
 	result := SuccessChunksResult{
 		ResultCode: res,
 		Uploaded:   uploaded,
-		UUID:       uuid,
 		UploadID:   uploadID,
 		Chunks:     chunks,
 	}
 	message, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	_, err := w.Write(message)
 	if err != nil {
 		klog.Errorf("w.Write failed: %s", err)
@@ -165,7 +166,7 @@ func GetSuccessChunks(w http.ResponseWriter, req *http.Request) {
 
 func NewMultipart(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	var uuid, uploadID string
+	var uploadID string
 	query := req.URL.Query()
 	queryTotalChunkCounts := query.Get("totalChunkCounts")
 	if queryTotalChunkCounts == "" {
@@ -219,7 +220,7 @@ func NewMultipart(w http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	md5 := query.Get("md5")
+	md5 := query.Get(md5Query)
 	if md5 == "" {
 		klog.Error("md5 is illegal.")
 		_, err := w.Write([]byte("md5 is required."))
@@ -239,8 +240,10 @@ func NewMultipart(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	uuid = gouuid.NewV4().String()
-	uploadID, err = newMultiPartUpload(ctx, uuid, fileName)
+	bucket := query.Get(bucketQuery)
+	bucktPath := query.Get(bucketPathQuery)
+
+	uploadID, err = newMultiPartUpload(ctx, bucket, bucktPath, fileName)
 	if err != nil {
 		klog.Errorf("newMultiPartUpload failed: %s", err)
 		_, err := w.Write([]byte("newMultiPartUpload failed."))
@@ -250,7 +253,6 @@ func NewMultipart(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	_, err = models.InsetFileChunk(&models.FileChunk{
-		UUID:        uuid,
 		UploadID:    uploadID,
 		Md5:         md5,
 		Size:        fileSize,
@@ -267,12 +269,10 @@ func NewMultipart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	result := NewMultipartResult{
-		UUID:     uuid,
 		UploadID: uploadID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	message, _ := json.Marshal(result)
 	_, err = w.Write(message)
 	if err != nil {
@@ -284,10 +284,10 @@ func GetMultipartUploadURL(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	var url string
 	query := req.URL.Query()
-	uuid := query.Get("uuid")
-	if uuid == "" {
-		klog.Error("uuid is required.")
-		_, err := w.Write([]byte("uuid is required."))
+	md5 := query.Get(md5Query)
+	if md5 == "" {
+		klog.Error("md5 is required.")
+		_, err := w.Write([]byte("md5 is required."))
 		if err != nil {
 			klog.Errorf("w.Write failed: %s", err)
 		}
@@ -347,17 +347,19 @@ func GetMultipartUploadURL(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fileChunk, err := models.GetFileChunkByUUID(uuid)
+	fileChunk, err := models.GetFileChunkByMD5(md5)
 	if err != nil {
-		klog.Errorf("GetFileChunkByUUID failed: %s", err)
-		_, err := w.Write([]byte("GetFileChunkByUUID failed."))
+		klog.Errorf("GetFileChunkByUMD5 failed: %s", err)
+		_, err := w.Write([]byte("GetFileChunkByMD5 failed."))
 		if err != nil {
 			klog.Errorf("w.Write failed: %s", err)
 		}
 		return
 	}
 
-	url, err = genMultiPartSignedURL(ctx, uuid, uploadID, partNumber, fileChunk.FileName, size)
+	bucket := query.Get(bucketQuery)
+	bucketPath := query.Get(bucketPathQuery)
+	url, err = genMultiPartSignedURL(ctx, bucket, bucketPath, uploadID, partNumber, fileChunk.FileName, size)
 	if err != nil {
 		klog.Errorf("genMultiPartSignedURL failed: %s", err)
 		_, err := w.Write([]byte("genMultiPartSignedURL failed."))
@@ -371,7 +373,6 @@ func GetMultipartUploadURL(w http.ResponseWriter, req *http.Request) {
 		URL: url,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	message, _ := json.Marshal(result)
 	_, err = w.Write(message)
 	if err != nil {
@@ -385,18 +386,20 @@ func CompleteMultipart(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		klog.Errorf("req.ParseForm failed: %s", err)
 	}
-	uuid := req.Form.Get("uuid")
+	md5 := req.Form.Get(md5Query)
 	uploadID := req.Form.Get("uploadID")
-	fileChunk, err := models.GetFileChunkByUUID(uuid)
+	fileChunk, err := models.GetFileChunkByMD5(md5)
 	if err != nil {
-		klog.Errorf("GetFileChunkByUUID failed: %s", err)
-		_, err := w.Write([]byte("GetFileChunkByUUID failed."))
+		klog.Errorf("GetFileChunkByMD5 failed: %s", err)
+		_, err := w.Write([]byte("GetFileChunkByMD5 failed."))
 		if err != nil {
 			klog.Errorf("w.Write failed: %s", err)
 		}
 		return
 	}
-	_, err = completeMultiPartUpload(ctx, uuid, uploadID, fileChunk.FileName)
+	bucket := req.Form.Get(bucketQuery)
+	bucketPath := req.Form.Get(bucketPathQuery)
+	_, err = completeMultiPartUpload(ctx, bucket, bucketPath, uploadID, fileChunk.FileName)
 	if err != nil {
 		klog.Errorf("completeMultiPartUpload failed: %s", err)
 		_, err := w.Write([]byte("completeMultiPartUpload failed."))
@@ -419,7 +422,6 @@ func CompleteMultipart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	_, err = w.Write([]byte("success"))
 	if err != nil {
 		klog.Errorf("w.Write failed: %s", err)
@@ -431,13 +433,13 @@ func UpdateMultipart(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		klog.Errorf("req.ParseForm failed: %s", err)
 	}
-	uuid := req.Form.Get("uuid")
+	md5 := req.Form.Get(md5Query)
 	etag := req.Form.Get("etag")
 	chunkNumber := req.Form.Get("chunkNumber")
-	fileChunk, err := models.GetFileChunkByUUID(uuid)
+	fileChunk, err := models.GetFileChunkByMD5(md5)
 	if err != nil {
-		log.Println("GetFileChunkByUUID failed")
-		_, err := w.Write([]byte("GetFileChunkByUUID failed."))
+		log.Println("GetFileChunkByMD5 failed")
+		_, err := w.Write([]byte("GetFileChunkByMD5failed."))
 		if err != nil {
 			klog.Errorf("w.Write failed: %s", err)
 		}
@@ -483,29 +485,27 @@ func isObjectExist(ctx context.Context, bucketName string, objectName string) (b
 	return isExist, nil
 }
 
-func newMultiPartUpload(ctx context.Context, uuid string, fileName string) (string, error) {
+func newMultiPartUpload(ctx context.Context, bucketName, bucktPath, fileName string) (string, error) {
 	_, minioClient, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClient failed: %s", err)
 		return "", err
 	}
 
-	bucketName := minioBucket
-	objectName := strings.TrimPrefix(path.Join(minioBasePath, path.Join(uuid[0:5], fileName)), "/")
+	objectName := fmt.Sprintf("%s/%s", bucktPath, fileName)
 
 	return minioClient.NewMultipartUpload(ctx, bucketName, objectName, minio.PutObjectOptions{})
 }
 
-func genMultiPartSignedURL(ctx context.Context, uuid string, uploadID string, partNumber int, fileName string, partSize int64) (string, error) {
+func genMultiPartSignedURL(ctx context.Context, bucket, bucketPath string, uploadID string, partNumber int, fileName string, partSize int64) (string, error) {
 	_, client, err := GetClients()
 	if err != nil {
 		klog.Errorf("getClient failed: %s", err)
 		return "", err
 	}
 
-	bucketName := minioBucket
-	objectName := strings.TrimPrefix(path.Join(minioBasePath, path.Join(uuid[0:5], fileName)), "/")
-	u, err := client.Presign(ctx, http.MethodPut, bucketName, objectName, PresignedUploadPartURLExpireTime, url.Values{
+	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
+	u, err := client.Presign(ctx, http.MethodPut, bucket, objectName, PresignedUploadPartURLExpireTime, url.Values{
 		"uploadId":   []string{uploadID},
 		"partNumber": []string{strconv.Itoa(partNumber)},
 	})
@@ -516,7 +516,7 @@ func genMultiPartSignedURL(ctx context.Context, uuid string, uploadID string, pa
 	return u.String(), nil
 }
 
-func completeMultiPartUpload(ctx context.Context, uuid string, uploadID string, fileName string) (string, error) {
+func completeMultiPartUpload(ctx context.Context, bucket, bucketPath string, uploadID string, fileName string) (string, error) {
 	var partNumberMarker, maxParts int
 	_, core, err := GetClients()
 	if err != nil {
@@ -524,11 +524,10 @@ func completeMultiPartUpload(ctx context.Context, uuid string, uploadID string, 
 		return "", err
 	}
 
-	bucketName := minioBucket
-	objectName := strings.TrimPrefix(path.Join(minioBasePath, path.Join(uuid[0:5], fileName)), "/")
+	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
 
 	// TODO ? partNumberMarker, maxParts
-	listObjectPartsResult, err := core.ListObjectParts(ctx, bucketName, objectName, uploadID, partNumberMarker, maxParts)
+	listObjectPartsResult, err := core.ListObjectParts(ctx, bucket, objectName, uploadID, partNumberMarker, maxParts)
 	if err != nil {
 		klog.Errorf("ListObjectParts failed: %s", err)
 		return "", err
@@ -542,7 +541,7 @@ func completeMultiPartUpload(ctx context.Context, uuid string, uploadID string, 
 	}
 	sort.Sort(completedParts(completeMultipartUpload.Parts))
 
-	uploadInfo, err := core.CompleteMultipartUpload(ctx, bucketName, objectName, uploadID, completeMultipartUpload.Parts, minio.PutObjectOptions{})
+	uploadInfo, err := core.CompleteMultipartUpload(ctx, bucket, objectName, uploadID, completeMultipartUpload.Parts, minio.PutObjectOptions{})
 	if err != nil {
 		klog.Errorf("CompleteMultipartUpload failed: %s", err)
 		return "", err

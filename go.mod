@@ -13,7 +13,6 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
 	github.com/r3labs/sse/v2 v2.10.0
-	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tmc/langchaingo v0.0.0-20231017212009-949349d5ef9c

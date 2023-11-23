@@ -17,7 +17,8 @@ limitations under the License.
 package models
 
 import (
-	"errors"
+	"fmt"
+	"sync"
 )
 
 const (
@@ -37,7 +38,6 @@ const MaxMultipartPutObjectSize = 1024 * 1024 * 1024 * 1024 * 5
 const MinPartSize = 1024 * 1024 * 64
 
 type FileChunk struct {
-	UUID           string
 	Md5            string
 	IsUploaded     int
 	UploadID       string
@@ -47,55 +47,31 @@ type FileChunk struct {
 	CompletedParts string
 }
 
-var fileChunks = make([]*FileChunk, 0, 250)
+var fileChunks = sync.Map{}
 
 func GetFileChunkByMD5(md5 string) (*FileChunk, error) {
-	fileChunk := new(FileChunk)
-	matched := false
-	for _, chunk := range fileChunks {
-		if chunk.Md5 == md5 {
-			fileChunk = chunk
-			matched = true
-		}
+	v, ok := fileChunks.Load(md5)
+	if !ok {
+		return nil, fmt.Errorf("not found chunk with md5 %s", md5)
 	}
-	if !matched {
-		return nil, errors.New("GetFileChunksByUUID failed")
+	vv, ok := v.(*FileChunk)
+	if !ok {
+		return nil, fmt.Errorf("error object")
 	}
-	return fileChunk, nil
-}
-
-func GetFileChunkByUUID(uuid string) (*FileChunk, error) {
-	fileChunk := new(FileChunk)
-	matched := false
-	for _, chunk := range fileChunks {
-		if chunk.UUID == uuid {
-			fileChunk = chunk
-			matched = true
-			break
-		}
-	}
-	if !matched {
-		return nil, errors.New("GetFileChunksByUUID failed")
-	}
-	return fileChunk, nil
+	return vv, nil
 }
 
 func UpdateFileChunk(fileChunk *FileChunk) error {
-	updated := false
-	for _, chunk := range fileChunks {
-		if chunk.UUID == fileChunk.UUID && chunk.Md5 == fileChunk.Md5 {
-			chunk.IsUploaded = fileChunk.IsUploaded
-			chunk.CompletedParts = fileChunk.CompletedParts
-			updated = true
-		}
+	v, err := GetFileChunkByMD5(fileChunk.Md5)
+	if err != nil {
+		return err
 	}
-	if !updated {
-		return errors.New("UpdateFileChunk failed")
-	}
+	v.IsUploaded = fileChunk.IsUploaded
+	v.CompletedParts = fileChunk.CompletedParts
 	return nil
 }
 
 func InsetFileChunk(fileChunk *FileChunk) (_ *FileChunk, err error) {
-	fileChunks = append(fileChunks, fileChunk)
+	fileChunks.Store(fileChunk.Md5, fileChunk)
 	return fileChunk, nil
 }
