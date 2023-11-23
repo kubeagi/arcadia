@@ -85,3 +85,26 @@ vectorstore:
   url: http://chroma-chromadb.arcadia.svc:8000
   chroma:
     distanceFunction: cosine
+
+dataprocess:
+  enabled: true
+  repository: kubebb/arcadia-data-processing
+  tag: "v0.0.1"
+  port: 28888
+  env:
+    minio:
+      accessKey: minio_access_key
+      secretKey: minio_secret_key
+      apiURL: localhost:9000
+      secure: false
+    zhipu:
+      key: zhipu
+      knowledge:
+        chunkSize: 500
+        chunkOverlap: 50
+    postgres:
+      host: 172.22.96.136
+      port: 30030
+      user: admin
+      password: Passw0rd!
+      database: arcadia
