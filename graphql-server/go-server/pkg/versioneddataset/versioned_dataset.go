@@ -69,6 +69,7 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 	vds.CreationTimestamp = obj.GetCreationTimestamp().Time
 	vds.Creator = &versioneddataset.Spec.Creator
 	vds.DisplayName = versioneddataset.Spec.DisplayName
+	vds.Description = &versioneddataset.Spec.Description
 	vds.Dataset = generated.TypedObjectReference{
 		APIGroup:  versioneddataset.Spec.Dataset.APIGroup,
 		Kind:      versioneddataset.Spec.Dataset.Kind,
@@ -80,17 +81,21 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 
 	vds.Version = versioneddataset.Spec.Version
 
+	first := true
 	for _, cond := range versioneddataset.Status.Conditions {
 		if cond.Type == v1alpha1.TypeReady {
 			syncStatus := string(cond.Reason)
 			vds.SyncStatus = &syncStatus
 		}
+		if !cond.LastTransitionTime.IsZero() {
+			if first || vds.UpdateTimestamp.Before(cond.LastSuccessfulTime.Time) {
+				vds.UpdateTimestamp = &cond.LastTransitionTime.Time
+				first = false
+			}
+		}
 	}
 
 	vds.Released = int(versioneddataset.Spec.Released)
-	for _, fg := range versioneddataset.Spec.FileGroups {
-		vds.FileCount += len(fg.Paths)
-	}
 	return vds, nil
 }
 
@@ -107,7 +112,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient, -1)
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
-		if keyword != "" && strings.Contains(obj.Key, keyword) {
+		if keyword == "" || strings.Contains(obj.Key, keyword) {
 			result = append(result, generated.F{
 				Path:     obj.Key,
 				FileType: obj.ContentType,
@@ -150,7 +155,11 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 			listOptions.FieldSelector = *input.FieldSelector
 		}
 	}
-	list, err := c.Resource(versioneddatasetSchem).Namespace(input.Namespace).List(ctx, listOptions)
+	ns := "default"
+	if input.Namespace != nil {
+		ns = *input.Namespace
+	}
+	list, err := c.Resource(versioneddatasetSchem).Namespace(ns).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -245,6 +254,9 @@ func UpdateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	}
 	obj.SetLabels(l)
 	obj.SetAnnotations(a)
+	if input.Released != nil {
+		_ = unstructured.SetNestedField(obj.Object, *input.Released, "spec", "released")
+	}
 	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
 	if input.DisplayName != "" && input.DisplayName != displayname {

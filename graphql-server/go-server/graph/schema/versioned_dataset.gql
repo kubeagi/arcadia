@@ -8,7 +8,6 @@ mutation createVersionedDataset($input:CreateVersionedDatasetInput!){
       version
       updateTimestamp
       creationTimestamp
-      fileCount
       released
       syncStatus
       dataProcessStatus
@@ -36,9 +35,17 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
     getVersionedDataset(name: $name, namespace: $namespace) {
       name
       displayName
-      namespace
+      description
       creator
+      namespace
+      version
+      updateTimestamp
+      creationTimestamp
+      released
+      syncStatus
+      dataProcessStatus
       files(input: $fileInput){
+        totalCount
         nodes {
           ... on F {
             path
@@ -55,19 +62,28 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
 query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: FileFilter) {
   VersionedDataset{
       listVersionedDatasets(input: $input) {
-      	nodes {
-        ... on VersionedDataset {
-          name
-          displayName
-          namespace
-          creator
-          files(input: $fileInput){
-            nodes {
-              ... on F {
-                path
-                time
-                fileType
-                count
+        totalCount
+        nodes {
+          ... on VersionedDataset {
+            name
+            displayName
+            description
+            creator
+            namespace
+            version
+            updateTimestamp
+            creationTimestamp
+            released
+            syncStatus
+            dataProcessStatus
+            files(input: $fileInput){
+              totalCount
+              nodes {
+                ... on F {
+                  path
+                  time
+                  fileType
+                  count
               }
             }
           }

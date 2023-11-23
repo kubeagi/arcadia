@@ -1,6 +1,7 @@
 query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatasetInput!, $filesInput: FileFilter){
   Dataset {
-   	listDatasets(input: $input) {
+    listDatasets(input: $input) {
+      totalCount
       nodes {
         ... on Dataset {
           name
@@ -8,23 +9,24 @@ query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatase
           creator
           displayName
           updateTimestamp
+          creationTimestamp
           contentType
           field
-          versionCount
           versions(input: $versionsInput) {
+            totalCount
             nodes {
               ... on VersionedDataset {
                 name
                 namespace
                 displayName
+                description
+                syncStatus
+                released
+                dataProcessStatus
+                updateTimestamp
+                version
                 files(input: $filesInput) {
-                  nodes {
-                    ... on F {
-                      path
-                      fileType
-                      count
-                    }
-                  }
+                  totalCount
                 }
               }
             }
@@ -35,7 +37,7 @@ query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatase
   }
 }
 
-query getDataset($name: String!, $namespace: String!){
+query getDataset($name: String!, $namespace: String!, $versionsInput: ListVersionedDatasetInput!, $filesInput: FileFilter){
   Dataset {
     getDataset(name:$name, namespace:$namespace) {
       name
@@ -43,13 +45,31 @@ query getDataset($name: String!, $namespace: String!){
       creator
       displayName
       updateTimestamp
+      creationTimestamp
       contentType
       field
-      versionCount
+      versions(input: $versionsInput) {
+        totalCount
+        nodes {
+          ... on VersionedDataset {
+            name
+            namespace
+            displayName
+            description
+            syncStatus
+            released
+            dataProcessStatus
+            updateTimestamp
+            version
+            files(input: $filesInput) {
+              totalCount
+            }
+          }
+        }
+      }
     }
   }
 }
-
 
 
 mutation createDataset($input: CreateDatasetInput){
@@ -75,6 +95,6 @@ mutation updateDataset($input: UpdateDatasetInput){
 
 mutation deleteDatasets($input: DeleteDatasetInput){
   Dataset {
-		deleteDatasets(input: $input)
+	deleteDatasets(input: $input)
   }
 }
