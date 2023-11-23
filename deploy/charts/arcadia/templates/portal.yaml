@@ -14,12 +14,26 @@ spec:
       labels:
         app: {{ .Release.Name }}-portal
     spec:
+      serviceAccountName: {{ .Release.Name }}
       containers:
         - name: graphql-server
           image: {{ .Values.deployment.image }}
           imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
           ports:
             - containerPort: {{ .Values.portal.port }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: DEFAULT_CONFIG
+              value: {{ .Release.Name }}-config
           command: 
             - "./graphql-server"
           args:
@@ -32,6 +46,9 @@ spec:
             - "--client-secret={{ .Values.portal.oidc.clientSecret }}"
             - "--master-url={{ .Values.portal.oidc.masterURL }}"
             - "--issuer-url={{ .Values.portal.oidc.issuerURL }}"
+          {{- end }}
+          {{- if .Values.dataprocess.enabled }}
+            - "--data-processing-url={{ .Values.portal.dataProcessURL }}"
           {{- end }}
 ---
 apiVersion: v1

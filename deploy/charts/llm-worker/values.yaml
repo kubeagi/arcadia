@@ -20,7 +20,7 @@ init:
   tag: "RELEASE.2023-01-28T20-29-38Z"
   env:
   - name: MINIO_ENDPOINT
-    value: "http://10.96.241.70:9000"
+    value: "http://arcadia-minio-api.172.22.96.167.nip.io/"
   - name: MINIO_ACCESS_KEY
     value: "os4GDEmSZaJwweoj"
   - name: MINIO_SECRET_KEY
