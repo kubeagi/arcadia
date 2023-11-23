@@ -1,0 +1,66 @@
+query allDataProcessListByPage($input: AllDataProcessListByPageInput!){
+  dataProcess {
+    allDataProcessListByPage(input: $input) {
+      status
+      data {
+        id
+        name
+        status
+        pre_data_set_name
+        pre_data_set_version
+        post_data_set_name
+        post_data_set_version
+        start_datetime
+      }
+      message
+    }
+  }
+}
+
+query allDataProcessListByCount($input: AllDataProcessListByCountInput!){
+  dataProcess {
+    allDataProcessListByCount(input: $input) {
+      status
+      data
+      message
+    }
+  }
+}
+
+query dataProcessSupportType{
+  dataProcess {
+    dataProcessSupportType {
+      status
+      data {
+        name
+        description
+        children {
+          name
+          zh_name
+          description
+        }
+      }
+      message
+    }
+  }
+}
+
+mutation createDataProcessTask($input: AddDataProcessListInput!) {
+  dataProcess {
+    createDataProcessTask(input: $input) {
+      status
+      data
+      message
+    }
+  }
+}
+
+mutation deleteDataProcessTask($input: DeleteDataProcessListInput!) {
+  dataProcess {
+    deleteDataProcessTask(input: $input) {
+      status
+      data
+      message
+    }
+  }
+}

@@ -40,7 +40,7 @@ async def list_by_page(request, opt={}):
 
     params = {
         'keyword': '%' + req_json['keyword'] + '%',
-        'page': int(req_json['page']),
+        'pageIndex': int(req_json['pageIndex']),
         'pageSize': int(req_json['pageSize'])
     }
 
@@ -58,7 +58,7 @@ async def list_by_page(request, opt={}):
           public.data_process_task
         where
           name like %(keyword)s
-        limit %(pageSize)s offset %(page)s
+        limit %(pageSize)s offset %(pageIndex)s
     """.strip()
 
     res = await pg_utils.execute_sql(conn,sql,params)
@@ -195,8 +195,8 @@ async def update_status_by_id(opt={}):
     }
 
     sql = """
-        UPDATE public.dataset set
-          status = %(status)s
+        UPDATE public.data_process_task set
+          status = %(status)s,
           update_datetime = %(update_datetime)s,
           update_program = %(update_program)s,
           update_user = %(update_user)s

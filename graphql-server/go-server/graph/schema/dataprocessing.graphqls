@@ -1,0 +1,131 @@
+# 数据处理 Mutation
+type DataProcessMutation {
+  # 创建数据处理任务
+  createDataProcessTask(input: AddDataProcessInput): DataProcessResponse
+  # 删除数据处理任务
+  deleteDataProcessTask(input: DeleteDataProcessInput): DataProcessResponse
+}
+
+
+# 数据处理 Query
+type DataProcessQuery {
+  # 数据处理列表 分页
+  allDataProcessListByPage(input: AllDataProcessListByPageInput): PaginatedDataProcessItem
+  # 数据处理列表 总记录数
+  allDataProcessListByCount(input: AllDataProcessListByCountInput): CountDataProcessItem
+  # 数据处理支持类型
+  dataProcessSupportType: DataProcessSupportType
+}
+
+
+input AllDataProcessListByPageInput {
+  pageIndex: Int!
+  pageSize: Int!
+  keyword: String!
+}
+
+input AllDataProcessListByCountInput {
+  keyword: String!
+}
+
+input AddDataProcessInput {
+  name: String!
+  file_type: String!
+  pre_data_set_name: String!
+  pre_data_set_version: String!
+  file_names: [FileItem!]
+  post_data_set_name: String!
+  post_data_set_version: String!
+  data_process_config_info: [DataProcessConfigItem!]
+  bucket_name: String!
+}
+
+# 文件条目
+input FileItem {
+  name: String!
+}
+
+# 数据处理配置条目
+input DataProcessConfigItem {
+  type: String!
+}
+
+input DeleteDataProcessInput {
+  id: String!
+}
+
+
+# 数据处理列表分页
+type PaginatedDataProcessItem {
+  status: Int!
+  data: [DataProcessItem!]
+  message: String!
+}
+
+# 数据处理列表总记录数
+type CountDataProcessItem {
+  status: Int!
+  data: Int!
+  message: String!
+}
+
+# 数据处理条目
+type DataProcessItem {
+  # 主键
+  id: String!
+  # 任务名称
+  name: String!
+  # 状态
+  status: String!
+  # 处理前数据集
+  pre_data_set_name: String!
+  # 处理前数据集版本
+  pre_data_set_version: String!
+  # 处理后数据集
+  post_data_set_name:String!
+  # 处理后数据集版本
+  post_data_set_version: String
+  # 开始时间
+  start_datetime: String!
+}
+
+# 数据处理支持类型
+type DataProcessSupportType {
+  status: Int!
+  data: [DataProcessSupportTypeItem!]
+  message: String!
+}
+
+# 数据处理支持类型条目
+type DataProcessSupportTypeItem {
+  name: String!
+  description: String!
+  children: [DataProcessSupportTypeChildren!]
+}
+
+# 数据处理支持类型条目
+type DataProcessSupportTypeChildren {
+  name: String!
+  zh_name: String!
+  enable: String!
+  description: String!
+}
+
+# 数据处理列表总记录数
+type DataProcessResponse {
+  status: Int!
+  data: String!
+  message: String!
+}
+
+
+
+# mutation
+extend type Mutation {
+  dataProcess: DataProcessMutation
+}
+
+# query
+extend type Query {
+  dataProcess: DataProcessQuery
+}

@@ -145,6 +145,16 @@ models:
     fields:
       allDataProcessListByPage:
         resolver: true
+      allDataProcessListByCount:
+        resolver: true
+      dataProcessSupportType:
+        resolver: true
+  DataProcessMutation:
+    fields:
+      createDataProcessTask:
+        resolver: true
+      deleteDataProcessTask:
+        resolver: true
   DatasetQuery:
     fields:
       getDataset:

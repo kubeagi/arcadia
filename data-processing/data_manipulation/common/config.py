@@ -16,7 +16,7 @@ import os
 
 minio_access_key = os.getenv('MINIO_ACCESSKEY', 'minioadmin')
 minio_secret_key = os.getenv('MINIO_SECRETKEY', 'minioadmin')
-minio_api_url = os.getenv('MINIO_API_URL', '192.168.90.31:9000')
+minio_api_url = os.getenv('MINIO_API_URL', 'localhost:9000')
 # 如果使用HTTP，将secure设置为False；如果使用HTTPS，将其设置为True
 minio_secure = os.getenv('MINIO_SECURE', False)
 
@@ -30,5 +30,5 @@ knowledge_chunk_overlap = os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50)
 pg_host = os.getenv("PG_HOST", "localhost")
 pg_port = os.getenv("PG_PORT", 5432)
 pg_user = os.getenv("PG_USER", "postgres")
-pg_password = os.getenv("PG_PASSWORD", "xxxxx")
+pg_password = os.getenv("PG_PASSWORD", "xxxxxx")
 pg_database = os.getenv("PG_DATABASE", "data_process")

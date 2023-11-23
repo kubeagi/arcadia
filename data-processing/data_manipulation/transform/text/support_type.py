@@ -26,36 +26,60 @@
 
 support_types = [
     {
+        'name': 'chunk_processing',
+        'description': '拆分处理',
+        'children': [
+            {
+                'name': 'qa_split',
+                'enable': 'true',
+                'zh_name': 'QA拆分',
+                'description': '根据文件中的文章与图表标题，自动将文件做 QA 拆分处理。'
+            },
+            {
+                'name': 'document_chunk',
+                'enable': 'false',
+                'zh_name': '文本分段',
+                'description': ''
+            }
+        ]
+    },
+    {
         'name': 'clean',
         'description': '异常清洗',
         'children': [
             {
                 'name': 'remove_invisible_characters',
+                'enable': 'true',
                 'zh_name': '移除不可见字符',
                 'description': '移除ASCII中的一些不可见字符, 如0-32 和127-160这两个范围'
             },
             {
                 'name': 'space_standardization',
+                'enable': 'true',
                 'zh_name': '规范化空格',
                 'description': '将不同的unicode空格比如u2008, 转成正常的空格'
             },
             {
                 'name': 'remove_garbled_text',
+                'enable': 'false',
                 'zh_name': '去除乱码',
                 'description': '去除乱码和无意义的unicode'
             },
             {
                 'name': 'traditional_to_simplified',
+                'enable': 'false',
                 'zh_name': '繁体转简体',
                 'description': '繁体转简体，如“不經意，妳的笑容”清洗成“不经意，你的笑容”'
             },
             {
                 'name': 'remove_html_tag',
+                'enable': 'false',
                 'zh_name': '去除网页标识符',
                 'description': '移除文档中的html标签, 如<html>,<dev>,<p>等'
             },
             {
                 'name': 'remove_emojis',
+                'enable': 'false',
                 'zh_name': '去除表情',
                 'description': '去除文档中的表情，如‘🐰’, ‘🧑🏼’等'
             }
@@ -67,36 +91,43 @@ support_types = [
         'children': [
             {
                 'name': 'word_count',
+                'enable': 'false',
                 'zh_name': '检查文档的词数目',
                 'description': '词数目不在指定范围会被过滤掉，如中文[1,1000000]'
             },
             {
                 'name': 'character_duplication_rate',
+                'enable': 'false',
                 'zh_name': '检查文档的字重复率',
                 'description': '如果字重复率太高，意味着文档中重复的字太多，文档会被过滤掉'
             },
             {
                 'name': 'word_duplication_rate',
+                'enable': 'false',
                 'zh_name': '检查文档的词重复率',
                 'description': '如果词重复率太高，意味着文档中重复的词太多，文档会被过滤掉'
             },
             {
                 'name': 'special_character_rate',
+                'enable': 'false',
                 'zh_name': '检查文档的特殊字符率',
                 'description': '如果特殊字符率太高，意味着文档中特殊字符太多，文档会被过滤掉'
             },
             {
                 'name': 'pornography_violence_word_rate',
+                'enable': 'false',
                 'zh_name': '检查文档的色情暴力词率',
                 'description': '如果色情暴力词率太高，文档会被过滤掉'
             },
             {
                 'name': 'language_probability',
+                'enable': 'false',
                 'zh_name': '检查文档的语言概率',
                 'description': '如果语言概率太低，文档会被过滤掉'
             },
             {
                 'name': 'perplexity',
+                'enable': 'false',
                 'zh_name': '检查文档的困惑度',
                 'description': '如果困惑度太高，文档会被过滤掉'
             }
@@ -108,6 +139,7 @@ support_types = [
         'children': [
             {
                 'name': 'simhash_operator',
+                'enable': 'false',
                 'zh_name': 'simhash-operator',
                 'description': '根据海明距离计算文档相似度, 相似度<=海明距离，认为两个文档相似。（范围：4-6）'
             }
@@ -119,16 +151,19 @@ support_types = [
         'children': [
             {
                 'name': 'remove_email',
+                'enable': 'true',
                 'zh_name': '去除邮箱',
                 'description': '去除email地址'
             },
             {
                 'name': 'remove_ip_address',
+                'enable': 'false',
                 'zh_name': '去除IP地址',
                 'description': '去除IPv4 或者 IPv6 地址'
             },
             {
                 'name': 'remove_number',
+                'enable': 'false',
                 'zh_name': '去除数字',
                 'description': '去除数字和字母数字标识符，如电话号码、信用卡号、十六进制散列等，同时跳过年份和简单数字的实例'
             }
