@@ -79,7 +79,7 @@ func datasource2model(obj *unstructured.Unstructured) *model.Datasource {
 		Endpoint:        &endpoint,
 		Oss:             &oss,
 		Status:          &status,
-		UpdateTimestamp: updateTime,
+		UpdateTimestamp: &updateTime,
 	}
 	return &md
 }

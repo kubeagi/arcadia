@@ -107,7 +107,7 @@ type CreateKnowledgeBaseInput struct {
 	// 知识库资源描述
 	Description *string `json:"description,omitempty"`
 	// 模型服务
-	Embedder *TypedObjectReferenceInput `json:"embedder,omitempty"`
+	Embedder TypedObjectReferenceInput `json:"embedder"`
 	// "向量数据库(使用默认值)
 	VectorStore *TypedObjectReferenceInput `json:"vectorStore,omitempty"`
 	// 知识库文件
@@ -278,7 +278,7 @@ type Datasource struct {
 	Oss             *Oss                   `json:"oss,omitempty"`
 	Status          *string                `json:"status,omitempty"`
 	FileCount       *int                   `json:"fileCount,omitempty"`
-	UpdateTimestamp time.Time              `json:"updateTimestamp"`
+	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
 }
 
 func (Datasource) IsPageNode() {}
@@ -436,10 +436,10 @@ type KnowledgeBase struct {
 	Description *string                `json:"description,omitempty"`
 	Embedder    *TypedObjectReference  `json:"embedder,omitempty"`
 	VectorStore *TypedObjectReference  `json:"vectorStore,omitempty"`
-	FileGroups  []*Filegroup           `json:"fileGroups,omitempty"`
+	FileDetails []*Filedetail          `json:"fileDetails,omitempty"`
 	// 知识库连接状态
-	Status          *string   `json:"status,omitempty"`
-	UpdateTimestamp time.Time `json:"updateTimestamp"`
+	Status          *string    `json:"status,omitempty"`
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
 }
 
 func (KnowledgeBase) IsPageNode() {}
@@ -741,6 +741,11 @@ type VersionedDatasetMutation struct {
 type VersionedDatasetQuery struct {
 	GetVersionedDataset   VersionedDataset `json:"getVersionedDataset"`
 	ListVersionedDatasets PaginatedResult  `json:"listVersionedDatasets"`
+}
+
+type Filedetail struct {
+	Path   string `json:"path"`
+	Status string `json:"status"`
 }
 
 type Filegroup struct {

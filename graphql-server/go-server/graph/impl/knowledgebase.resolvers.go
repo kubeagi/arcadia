@@ -39,8 +39,8 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 	} else {
 		vectorstore = *vector
 	}
-	if input.Embedder != nil {
-		embedder = v1alpha1.TypedObjectReference(*input.Embedder)
+	if input.Embedder != (generated.TypedObjectReferenceInput{}) {
+		embedder = v1alpha1.TypedObjectReference(input.Embedder)
 	}
 	if input.FileGroups != nil {
 		for _, f := range input.FileGroups {
