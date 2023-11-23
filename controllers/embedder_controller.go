@@ -200,14 +200,19 @@ func (r *EmbedderReconciler) UpdateStatus(ctx context.Context, instance *arcadia
 		if !ok {
 			msg = _StatusNilResponse
 		}
-		// Set status to available
 		newCondition = arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
 			Message:            msg,
-			LastTransitionTime: metav1.Now(),
 			LastSuccessfulTime: metav1.Now(),
+		}
+		// Solve issue #255:
+		// If UpdateStatus() is triggered with status transitioning, update the last transition time; else keep it as before.
+		if instanceCopy.Status.IsReady() {
+			newCondition.LastTransitionTime = metav1.Now()
+		} else {
+			newCondition.LastTransitionTime = instanceCopy.Status.GetCondition(arcadiav1alpha1.TypeReady).LastTransitionTime
 		}
 	}
 	instanceCopy.Status.SetConditions(newCondition)

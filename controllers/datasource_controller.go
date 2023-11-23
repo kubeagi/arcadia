@@ -200,7 +200,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	return r.UpdateStatus(ctx, instance, nil)
 }
 
-// UpdateStatus uppon error
+// UpdateStatus upon error
 func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Datasource, err error) error {
 	instanceCopy := instance.DeepCopy()
 	var newCondition arcadiav1alpha1.Condition
