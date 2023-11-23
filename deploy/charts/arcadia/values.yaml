@@ -74,6 +74,7 @@ portal:
     enabled: false
     host: portal.172.22.96.167.nip.io
   enableplayground: false
+  dataProcessURL: http://arcadia-dataprocess.svc.cluster.local:28888
   oidc:
     enabled: false
     clientID: bff-client
@@ -93,9 +94,9 @@ dataprocess:
   port: 28888
   env:
     minio:
-      accessKey: minio_access_key
-      secretKey: minio_secret_key
-      apiURL: localhost:9000
+      accessKey: os4GDEmSZaJwweoj
+      secretKey: ROVfENZuyUtpRNOT4mtTQicA3CPASQ89
+      apiURL: https://kubeagi-minio.172.22.96.136.nip.io
       secure: false
     zhipu:
       key: zhipu
