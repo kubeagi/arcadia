@@ -195,6 +195,7 @@ type DataProcessSupportType struct {
 type DataProcessSupportTypeChildren struct {
 	Name        string `json:"name"`
 	ZhName      string `json:"zh_name"`
+	Enable      string `json:"enable"`
 	Description string `json:"description"`
 }
 
@@ -232,6 +233,8 @@ type Dataset struct {
 	DisplayName string `json:"displayName"`
 	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// 创建时间
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 数据集类型，文本，图片，视频
 	ContentType string `json:"contentType"`
 	// 应用场景
@@ -240,8 +243,6 @@ type Dataset struct {
 	// 支持对名字，类型的完全匹配过滤。
 	// 支持通过标签(somelabel=abc)，字段(metadata.name=abc)进行过滤
 	Versions PaginatedResult `json:"versions"`
-	// 数据集的总版本数量
-	VersionCount int `json:"versionCount"`
 }
 
 func (Dataset) IsPageNode() {}
@@ -523,7 +524,7 @@ type ListModelInput struct {
 
 type ListVersionedDatasetInput struct {
 	Name          *string `json:"name,omitempty"`
-	Namespace     string  `json:"namespace"`
+	Namespace     *string `json:"namespace,omitempty"`
 	DisplayName   *string `json:"displayName,omitempty"`
 	LabelSelector *string `json:"labelSelector,omitempty"`
 	FieldSelector *string `json:"fieldSelector,omitempty"`
@@ -690,6 +691,8 @@ type UpdateVersionedDatasetInput struct {
 	// 更新，删除数据集版本中的文件，传递方式于label相同，完全传递。
 	// 如果传递一个空的数组过去，认为是删除全部文件。
 	FileGroups []*FileGroup `json:"fileGroups,omitempty"`
+	// 修改数据集版本发布状态
+	Released *int `json:"released,omitempty"`
 }
 
 // VersionedDataset
@@ -708,6 +711,8 @@ type VersionedDataset struct {
 	Creator *string `json:"creator,omitempty"`
 	// 展示名字， 与metadat.name不一样，这个展示名字是可以用中文的
 	DisplayName string `json:"displayName"`
+	// 描述
+	Description *string `json:"description,omitempty"`
 	// 所属的数据集
 	Dataset TypedObjectReference `json:"dataset"`
 	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
@@ -717,8 +722,6 @@ type VersionedDataset struct {
 	Files PaginatedResult `json:"files"`
 	// 版本名称
 	Version string `json:"version"`
-	// 该数据集版本所包含的数据总量
-	FileCount int `json:"fileCount"`
 	// 该版本是否已经发布, 0是未发布，1是已经发布
 	Released int `json:"released"`
 	// 文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败

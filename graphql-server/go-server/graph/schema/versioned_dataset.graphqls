@@ -22,6 +22,9 @@ type VersionedDataset {
     """展示名字， 与metadat.name不一样，这个展示名字是可以用中文的"""
     displayName: String!
 
+    """描述"""
+    description: String
+
     """所属的数据集"""
     dataset: TypedObjectReference!
 
@@ -35,9 +38,6 @@ type VersionedDataset {
     
     """版本名称"""
     version: String!
-
-    """该数据集版本所包含的数据总量"""
-    fileCount: Int!
 
     """该版本是否已经发布, 0是未发布，1是已经发布"""
     released: Int!
@@ -155,6 +155,9 @@ input UpdateVersionedDatasetInput {
     如果传递一个空的数组过去，认为是删除全部文件。
     """
     fileGroups: [FileGroup!]
+
+    """修改数据集版本发布状态"""
+    released: Int
 }
 
 
@@ -167,7 +170,7 @@ input DeleteVersionedDatasetInput {
 
 input ListVersionedDatasetInput {
     name: String
-    namespace: String!
+    namespace: String
     displayName: String
     labelSelector: String
     fieldSelector: String

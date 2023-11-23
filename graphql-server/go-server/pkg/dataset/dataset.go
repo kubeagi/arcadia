@@ -41,6 +41,8 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds := &generated.Dataset{}
 	ds.Name = obj.GetName()
 	ds.Namespace = obj.GetNamespace()
+	n := obj.GetCreationTimestamp()
+	ds.CreationTimestamp = &n.Time
 	if r := obj.GetLabels(); len(r) > 0 {
 		l := make(map[string]any)
 		for k, v := range r {
@@ -63,6 +65,15 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds.DisplayName = dataset.Spec.DisplayName
 	ds.ContentType = dataset.Spec.ContentType
 	ds.Field = &dataset.Spec.Field
+	first := true
+	for _, cond := range dataset.Status.Conditions {
+		if !cond.LastSuccessfulTime.IsZero() {
+			if first || ds.UpdateTimestamp.Before(cond.LastTransitionTime.Time) {
+				ds.UpdateTimestamp = &cond.LastTransitionTime.Time
+				first = false
+			}
+		}
+	}
 	return ds, nil
 }
 

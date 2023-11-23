@@ -24,7 +24,7 @@ func (r *datasetResolver) Versions(ctx context.Context, obj *generated.Dataset, 
 		return nil, err
 	}
 	input.Name = nil
-	input.Namespace = obj.Namespace
+	input.Namespace = &obj.Namespace
 	labelSelector := fmt.Sprintf("%s=%s", v1alpha1.LabelVersionedDatasetVersionOwner, obj.Name)
 	input.LabelSelector = &labelSelector
 	return versioneddataset.ListVersionedDatasets(ctx, c, &input)

@@ -35,6 +35,8 @@ type Dataset {
     """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
     updateTimestamp: Time
 
+    """创建时间"""
+    creationTimestamp: Time
     """数据集类型，文本，图片，视频"""
     contentType: String!
 
@@ -47,9 +49,6 @@ type Dataset {
     支持通过标签(somelabel=abc)，字段(metadata.name=abc)进行过滤
     """
     versions(input: ListVersionedDatasetInput!): PaginatedResult!
-
-    """数据集的总版本数量"""
-    versionCount: Int!
 }
 
 input CreateDatasetInput {
