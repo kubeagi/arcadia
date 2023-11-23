@@ -22,7 +22,7 @@ type Datasource {
     # 数据源连接状态
     status: String
     fileCount: Int
-    updateTimestamp: Time!
+    updateTimestamp: Time
 }
 
 """对象存储终端输入"""

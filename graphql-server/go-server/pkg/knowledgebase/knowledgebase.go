@@ -46,29 +46,18 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 	vectorStore, _, _ := unstructured.NestedMap(obj.Object, "spec", "vectorStore")
 	vectorStorenp := vectorStore["namespace"].(string)
 	apiversion := obj.GetAPIVersion()
-	filegroups, _, _ := unstructured.NestedSlice(obj.Object, "spec", "fileGroups")
-	var fgs []*model.Filegroup
-	for _, fg := range filegroups {
-		filegroupmap := fg.(map[string]interface{})
-		var path []string
-		paths := filegroupmap["paths"].([]interface{})
-		for _, val := range paths {
-			path = append(path, val.(string))
+	fileGroupDetail, _, _ := unstructured.NestedSlice(obj.Object, "status", "fileGroupDetail")
+	var filedetails []*model.Filedetail
+	for _, fgd := range fileGroupDetail {
+		filedetailmap := fgd.(map[string]interface{})
+		filedetail := &model.Filedetail{
+			Path:   filedetailmap["path"].(string),
+			Status: filedetailmap["status"].(string),
 		}
-		fns := filegroupmap["source"].(map[string]interface{})["namespace"].(string)
-		filegroup := &model.Filegroup{
-			Source: &model.TypedObjectReference{
-				APIGroup:  &apiversion,
-				Kind:      filegroupmap["source"].(map[string]interface{})["kind"].(string),
-				Name:      filegroupmap["source"].(map[string]interface{})["name"].(string),
-				Namespace: &fns,
-			},
-			Path: path,
-		}
-		fgs = append(fgs, filegroup)
+		filedetails = append(filedetails, filedetail)
 	}
-	status := "unknow"
-	updateTime := metav1.Now().Time
+	status := ""
+	var updateTime time.Time
 	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if found && len(conditions) > 0 {
 		condition, ok := conditions[0].(map[string]interface{})
@@ -77,6 +66,8 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 			updateTime, _ = time.Parse(time.RFC3339, timeStr)
 			status, _ = condition["status"].(string)
 		}
+	} else {
+		status = "unknow"
 	}
 
 	md := model.KnowledgeBase{
@@ -96,11 +87,11 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 			Name:      vectorStore["name"].(string),
 			Namespace: &vectorStorenp,
 		},
-		FileGroups:      fgs,
+		FileDetails:     filedetails,
 		DisplayName:     displayName,
 		Description:     &description,
 		Status:          &status,
-		UpdateTimestamp: updateTime,
+		UpdateTimestamp: &updateTime,
 	}
 	return &md
 }
