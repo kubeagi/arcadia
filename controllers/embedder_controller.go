@@ -142,29 +142,31 @@ func (r *EmbedderReconciler) CheckEmbedder(ctx context.Context, logger logr.Logg
 
 func (r *EmbedderReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Embedder, t interface{}, err error) error {
 	instanceCopy := instance.DeepCopy()
+	var newCondition arcadiav1alpha1.Condition
 	if err != nil {
 		// Set status to unavailable
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
+		newCondition = arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionFalse,
 			Reason:             arcadiav1alpha1.ReasonUnavailable,
 			Message:            err.Error(),
 			LastTransitionTime: metav1.Now(),
-		})
+		}
 	} else {
 		msg, ok := t.(string)
 		if !ok {
 			msg = _StatusNilResponse
 		}
 		// Set status to available
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
+		newCondition = arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
 			Message:            msg,
 			LastTransitionTime: metav1.Now(),
 			LastSuccessfulTime: metav1.Now(),
-		})
+		}
 	}
+	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)
 }
