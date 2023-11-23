@@ -59,28 +59,30 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 		dstPrefix := fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, e.instance.Spec.Version)
 
 		var srcBucket, srcPrefix string
-		switch fs.Kind {
-		case "Datasource":
-			// Since the data source can be configured with different minio addresses,
-			// it may involve copying of data from different minio,
-			// which may result in the operator memory increasing to be OOM.
-			// so currently it is considered that all operations are in the same minio.
-			ds := &v1alpha1.Datasource{}
-			if err := e.client.Get(ctx, types.NamespacedName{Namespace: *fs.Namespace, Name: fs.Name}, ds); err != nil {
-				klog.Errorf("generateJob: failed to get datasource %s", err)
-				return err
+		if !removeAction {
+			switch fs.Kind {
+			case "Datasource":
+				// Since the data source can be configured with different minio addresses,
+				// it may involve copying of data from different minio,
+				// which may result in the operator memory increasing to be OOM.
+				// so currently it is considered that all operations are in the same minio.
+				ds := &v1alpha1.Datasource{}
+				if err := e.client.Get(ctx, types.NamespacedName{Namespace: *fs.Namespace, Name: fs.Name}, ds); err != nil {
+					klog.Errorf("generateJob: failed to get datasource %s", err)
+					return err
+				}
+				srcBucket = *fs.Namespace
+				if ds.Spec.OSS != nil {
+					srcBucket = ds.Spec.OSS.Bucket
+				}
+			case "VersionedDataset":
+				srcVersion := fs.Name[len(v1alpha1.InheritedFromVersionName):]
+				srcBucket = e.instance.Namespace
+				srcPrefix = fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, srcVersion)
+			default:
+				klog.Errorf("currently, copying data from a data source of the type %s is not supported", fs.Kind)
+				continue
 			}
-			srcBucket = *fs.Namespace
-			if ds.Spec.OSS != nil {
-				srcBucket = ds.Spec.OSS.Bucket
-			}
-		case "VersionedDataset":
-			srcVersion := fs.Name[len(v1alpha1.InheritedFromVersionName):]
-			srcBucket = e.instance.Namespace
-			srcPrefix = fmt.Sprintf("dataset/%s/%s/", e.instance.Spec.Dataset.Name, srcVersion)
-		default:
-			klog.Errorf("currently, copying data from a data source of the type %s is not supported", fs.Kind)
-			continue
 		}
 
 		bucketExists, err := e.minioClient.BucketExists(ctx, dstBucket)
