@@ -19,6 +19,7 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -30,7 +31,7 @@ import (
 	langchainembeddings "github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,6 +63,7 @@ var (
 	errDataSourceNotReady  = fmt.Errorf("datasource is not ready")
 	errEmbedderNotReady    = fmt.Errorf("embedder is not ready")
 	errVectorStoreNotReady = fmt.Errorf("vector store is not ready")
+	errFileSkipped         = fmt.Errorf("file is skipped")
 )
 
 // KnowledgeBaseReconciler reconciles a KnowledgeBase object
@@ -179,7 +181,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 
 	embedder := &arcadiav1alpha1.Embedder{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.Embedder.Name, Namespace: kb.Spec.Embedder.GetNamespace()}, embedder); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			r.setCondition(kb, kb.PendingCondition("embedder is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
@@ -189,7 +191,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 
 	vectorStore := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace()}, vectorStore); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			r.setCondition(kb, kb.PendingCondition("vectorStore is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
@@ -210,7 +212,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	} else {
 		for _, fileGroupDetail := range kb.Status.FileGroupDetail {
 			for _, fileDetail := range fileGroupDetail.FileDetails {
-				if fileDetail.ErrMessage != "" {
+				if fileDetail.Phase == arcadiav1alpha1.FileProcessPhaseFailed && fileDetail.ErrMessage != "" {
 					r.setCondition(kb, kb.ErrorCondition(fileDetail.ErrMessage))
 					return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 				}
@@ -240,7 +242,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	versionedDataset := &arcadiav1alpha1.VersionedDataset{}
 	ns := group.Source.GetNamespace()
 	if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, versionedDataset); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return errNoSource
 		} else {
 			return err
@@ -303,7 +305,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		log.V(0).Info(fmt.Sprintf("raw StatFile:%#v", stat), "path", path)
 		if err != nil {
 			errs = append(errs, err)
-			fileDatail.UpdateErr(err)
+			fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
 
@@ -312,7 +314,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		if !ok {
 			err = fmt.Errorf("failed to convert stat to minio.ObjectInfo:%s", path)
 			errs = append(errs, err)
-			fileDatail.UpdateErr(err)
+			fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
 		if objectStat.ETag == fileDatail.Checksum {
@@ -323,36 +325,41 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		tags, err := ds.GetTags(ctx, info)
 		if err != nil {
 			errs = append(errs, err)
-			fileDatail.UpdateErr(err)
+			fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
 		file, err := ds.ReadFile(ctx, info)
 		if err != nil {
 			errs = append(errs, err)
-			fileDatail.UpdateErr(err)
+			fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
 		defer file.Close()
 		if err = r.handleFile(ctx, log, file, info.Object, tags, kb, vectorStore, embedder); err != nil {
+			if errors.Is(err, errFileSkipped) {
+				fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseSkipped)
+				continue
+			}
 			err = fmt.Errorf("failed to handle file:%s: %w", path, err)
 			errs = append(errs, err)
-			fileDatail.UpdateErr(err)
+			fileDatail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
-		fileDatail.UpdateErr(nil)
+		fileDatail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
 	}
 	return utilerrors.NewAggregate(errs)
 }
 
 func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logger, file io.ReadCloser, fileName string, tags map[string]string, kb *arcadiav1alpha1.KnowledgeBase, store *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder) (err error) {
+	log = log.WithValues("fileName", fileName, "tags", tags)
 	if tags == nil {
-		log.Info("file tags is nil, ignore", "fileName", fileName)
-		return nil
+		log.Info("file tags is nil, ignore")
+		return fmt.Errorf("file tags is nil, %w", errFileSkipped)
 	}
 	v, ok := tags[ObjectTypeTag]
 	if !ok {
-		log.Info("file tags object type not found, ignore", "fileName", fileName, "tags", tags)
-		return nil
+		log.Info("file tags object type not found, ignore")
+		return fmt.Errorf("file tags object type not found, %w", errFileSkipped)
 	}
 	if !embedder.Status.IsReady() {
 		return errEmbedderNotReady
@@ -441,5 +448,6 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 			return err
 		}
 	}
+	log.Info("handle file succeeded")
 	return nil
 }
