@@ -80,3 +80,8 @@ portal:
     issuerURL: https://portal.172.22.96.167.nip.io/oidc
     clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
     masterURL: https://k8s.172.22.96.167.nip.io
+
+vectorstore:
+  url: http://chroma-chromadb.arcadia.svc:8000
+  chroma:
+    distanceFunction: cosine

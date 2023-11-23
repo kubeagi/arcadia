@@ -41,10 +41,11 @@ const (
 )
 
 var (
-	ErrNoConfigEnv     = fmt.Errorf("env:%s is not found", EnvConfigKey)
-	ErrNoConfig        = fmt.Errorf("config in configmap is empty")
-	ErrNoConfigGateway = fmt.Errorf("config Gateway in configmap is not found")
-	ErrNoConfigMinIO   = fmt.Errorf("config MinIO in comfigmap is not found")
+	ErrNoConfigEnv         = fmt.Errorf("env:%s is not found", EnvConfigKey)
+	ErrNoConfig            = fmt.Errorf("config in configmap is empty")
+	ErrNoConfigGateway     = fmt.Errorf("config Gateway in configmap is not found")
+	ErrNoConfigMinIO       = fmt.Errorf("config MinIO in comfigmap is not found")
+	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -178,4 +179,15 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 		return nil, err
 	}
 	return config, nil
+}
+
+func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfigDynamic(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if config.VectorStore == nil {
+		return nil, ErrNoConfigVectorstore
+	}
+	return config.VectorStore, nil
 }
