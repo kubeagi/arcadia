@@ -33,6 +33,7 @@ from minio.commonconfig import Tags
 from minio.error import S3Error
 from sanic.response import json, raw
 
+from common import config
 from db import data_process_task
 from file_handle import csv_handle, pdf_handle
 # from kube import client
@@ -60,7 +61,11 @@ async def text_manipulate(request, opt={}):
     bucket_name = request_json['bucket_name']
     support_type = request_json['data_process_config_info']
     file_names = request_json['file_names']
-    folder_prefix = request_json['pre_data_set_name'] + '/' + request_json['pre_data_set_version']
+
+    # minio 数据集统一前缀
+    minio_dataset_prefix = config.minio_dataset_prefix
+
+    folder_prefix = minio_dataset_prefix + '/' + request_json['pre_data_set_name'] + '/' + request_json['pre_data_set_version']
 
     # create minio client
     minio_client = await minio_utils.create_client()
@@ -158,7 +163,6 @@ async def download(opt={}):
     minio_client = opt['minio_client']
     bucket_name = opt['bucket_name']
     file_name = opt['file_name']
-
     file_path = await file_utils.get_temp_file_path()
 
     # 如果文件夹不存在，则创建
