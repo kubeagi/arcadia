@@ -17,17 +17,22 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
             kind
             Name
           }
-          vectorstore{
+          vectorStore{
             kind
             Name
           }
-          fileGroups {
-            ... on filegroup{
-                source {
-                    kind
-                    Name
+          fileGroupDetails {
+            ...on filegroupdetail{
+              source{
+                kind
+                Name
+              }
+              filedetails{
+                ...on filedetail{
+                  path
+                  phase
                 }
-                path
+              }
             }
           }
         }
@@ -51,17 +56,22 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
             kind
             Name
           }
-          vectorstore{
+          vectorStore{
             kind
             Name
           }
-          fileGroups {
-            ... on filegroup{
-                source {
-                    kind
-                    Name
+          fileGroupDetails {
+            ...on filegroupdetail{
+              source{
+                kind
+                Name
+              }
+              filedetails{
+                ...on filedetail{
+                  path
+                  phase
                 }
-                path
+              }
             }
           }
     }
@@ -83,17 +93,22 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
             kind
             Name
           }
-          vectorstore{
+          vectorStore{
             kind
             Name
           }
-          fileGroups {
-            ... on filegroup{
-                source {
-                    kind
-                    Name
+          fileGroupDetails {
+            ...on filegroupdetail{
+              source{
+                kind
+                Name
+              }
+              filedetails{
+                ...on filedetail{
+                  path
+                  phase
                 }
-                path
+              }
             }
           }
     }
@@ -115,17 +130,22 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
             kind
             Name
           }
-          vectorstore{
+          vectorStore{
             kind
             Name
           }
-          fileGroups {
-            ... on filegroup{
-                source {
-                    kind
-                    Name
+          fileGroupDetails {
+            ...on filegroupdetail{
+              source{
+                kind
+                Name
+              }
+              filedetails{
+                ...on filedetail{
+                  path
+                  phase
                 }
-                path
+              }
             }
           }
     }

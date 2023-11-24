@@ -427,16 +427,16 @@ type FileItem struct {
 }
 
 type KnowledgeBase struct {
-	Name        string                 `json:"name"`
-	Namespace   string                 `json:"namespace"`
-	Labels      map[string]interface{} `json:"labels,omitempty"`
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	Creator     *string                `json:"creator,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Description *string                `json:"description,omitempty"`
-	Embedder    *TypedObjectReference  `json:"embedder,omitempty"`
-	VectorStore *TypedObjectReference  `json:"vectorStore,omitempty"`
-	FileDetails []*Filedetail          `json:"fileDetails,omitempty"`
+	Name             string                 `json:"name"`
+	Namespace        string                 `json:"namespace"`
+	Labels           map[string]interface{} `json:"labels,omitempty"`
+	Annotations      map[string]interface{} `json:"annotations,omitempty"`
+	Creator          *string                `json:"creator,omitempty"`
+	DisplayName      string                 `json:"displayName"`
+	Description      *string                `json:"description,omitempty"`
+	Embedder         *TypedObjectReference  `json:"embedder,omitempty"`
+	VectorStore      *TypedObjectReference  `json:"vectorStore,omitempty"`
+	FileGroupDetails []*Filegroupdetail     `json:"fileGroupDetails,omitempty"`
 	// 知识库连接状态
 	Status          *string    `json:"status,omitempty"`
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
@@ -744,13 +744,18 @@ type VersionedDatasetQuery struct {
 }
 
 type Filedetail struct {
-	Path   string `json:"path"`
-	Status string `json:"status"`
+	Path  string `json:"path"`
+	Phase string `json:"phase"`
 }
 
 type Filegroup struct {
 	Source *TypedObjectReference `json:"source,omitempty"`
 	Path   []string              `json:"path,omitempty"`
+}
+
+type Filegroupdetail struct {
+	Source      *TypedObjectReference `json:"source,omitempty"`
+	Filedetails []*Filedetail         `json:"filedetails,omitempty"`
 }
 
 // 源文件输入
