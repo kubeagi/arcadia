@@ -25,6 +25,38 @@ const (
 	Finalizer = Group + "/finalizer"
 )
 
+type ProviderType string
+
+const (
+	ProviderTypeUnknown  ProviderType = "unknown"
+	ProviderType3rdParty ProviderType = "3rd_party"
+	ProviderTypeWorker   ProviderType = "worker"
+)
+
+// Provider defines how to prvoide the service
+type Provider struct {
+	// Enpoint defines connection info
+	Enpoint *Endpoint `json:"endpoint,omitempty"`
+
+	// Worker defines the worker info
+	// Means this LLM is provided by a arcadia worker
+	Worker *TypedObjectReference `json:"worker,omitempty"`
+}
+
+// GetType returnes the type of this provider
+func (p Provider) GetType() ProviderType {
+	// if endpoint provided,then 3rd_party
+	if p.Enpoint != nil {
+		return ProviderType3rdParty
+	}
+	// if worker provided,then worker
+	if p.Worker != nil {
+		return ProviderTypeWorker
+	}
+
+	return ProviderTypeUnknown
+}
+
 // After we use k8s.io/api v1.26.0, we can remove this types to use corev1.TypedObjectReference
 // that types is introduced in https://github.com/kubernetes/kubernetes/pull/113186
 

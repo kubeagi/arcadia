@@ -18,12 +18,15 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,6 +50,8 @@ type LLMReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=llms,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=llms/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=llms/finalizers,verbs=update
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=workers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=workers/status,verbs=get
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -119,29 +124,71 @@ func (r *LLMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // CheckLLM updates new LLM instance.
 func (r *LLMReconciler) CheckLLM(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.LLM) error {
 	logger.Info("Checking LLM instance")
-	// Check new URL/Auth availability
-	var err error
 
+	switch instance.Spec.Provider.GetType() {
+	case arcadiav1alpha1.ProviderType3rdParty:
+		return r.check3rdPartyLLM(ctx, logger, instance)
+	case arcadiav1alpha1.ProviderTypeWorker:
+		return r.checkWorkerLLM(ctx, logger, instance)
+	}
+
+	return nil
+}
+
+func (r *LLMReconciler) check3rdPartyLLM(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.LLM) error {
+	logger.Info("Checking 3rd party LLM resource")
+
+	var err error
+	var msg string
+
+	// Check Auth availability
 	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
-	var llmClient llms.LLM
 	switch instance.Spec.Type {
-	case llms.OpenAI:
-		llmClient = openai.NewOpenAI(apiKey)
 	case llms.ZhiPuAI:
-		llmClient = zhipuai.NewZhiPuAI(apiKey)
+		embedClient := zhipuai.NewZhiPuAI(apiKey)
+		res, err := embedClient.Validate()
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
+		}
+		msg = res.String()
+	case llms.OpenAI:
+		embedClient := openai.NewOpenAI(apiKey)
+		res, err := embedClient.Validate()
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
+		}
+		msg = res.String()
+
 	default:
-		llmClient = llms.NewUnknowLLM()
+		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.Type))
 	}
 
-	response, err := llmClient.Validate()
-	return r.UpdateStatus(ctx, instance, response, err)
+	return r.UpdateStatus(ctx, instance, msg, err)
 }
 
-func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.LLM, response llms.Response, err error) error {
+func (r *LLMReconciler) checkWorkerLLM(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.LLM) error {
+	logger.Info("Checking Worker's LLM resource")
+
+	var err error
+	var msg = "Worker is Ready"
+
+	worker := &arcadiav1alpha1.Worker{}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Spec.Worker.Name}, worker)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, "", err)
+	}
+	if !worker.Status.IsReady() {
+		return r.UpdateStatus(ctx, instance, nil, errors.New("worker is not ready"))
+	}
+
+	return r.UpdateStatus(ctx, instance, msg, err)
+}
+
+func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.LLM, t interface{}, err error) error {
 	instanceCopy := instance.DeepCopy()
 	if err != nil {
 		// Set status to unavailable
@@ -153,12 +200,16 @@ func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alp
 			LastTransitionTime: metav1.Now(),
 		})
 	} else {
+		msg, ok := t.(string)
+		if !ok {
+			msg = _StatusNilResponse
+		}
 		// Set status to available
 		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
 			Type:               arcadiav1alpha1.TypeReady,
 			Status:             corev1.ConditionTrue,
 			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            response.String(),
+			Message:            msg,
 			LastTransitionTime: metav1.Now(),
 			LastSuccessfulTime: metav1.Now(),
 		})

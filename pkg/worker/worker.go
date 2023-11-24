@@ -41,6 +41,7 @@ const (
 
 var (
 	ErrNotImplementedYet = errors.New("not implemented yet")
+	ErrModelNotReady     = errors.New("worker's model is not ready")
 )
 
 type Action string
@@ -62,6 +63,9 @@ func ActionOnError(err error) Action {
 
 // Worker implement the lifecycle management of a LLM worker
 type Worker interface {
+	// Model that this worker is running for
+	Model() *arcadiav1alpha1.Model
+
 	// Actions to do before start this worker
 	BeforeStart(ctx context.Context) error
 	// Actiosn to do when Start this worker
@@ -69,7 +73,7 @@ type Worker interface {
 
 	// Actions to do before stop this worker
 	BeforeStop(ctx context.Context) error
-	// Stop this worker
+	// Actions to do when Stop this worker
 	Stop(ctx context.Context) error
 
 	// State of this worker
@@ -87,7 +91,7 @@ type PodWorker struct {
 	// worker instance
 	w *arcadiav1alpha1.Worker
 	// model this worker is for
-	m *arcadiav1alpha1.TypedObjectReference
+	m *arcadiav1alpha1.Model
 
 	// ModelLoader provides a way to load this model
 	l ModelLoader
@@ -118,8 +122,17 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 			Namespace: w.Namespace,
 			Name:      w.Name,
 		},
-		m: model,
 	}
+
+	// check model
+	m := &arcadiav1alpha1.Model{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, m); err != nil {
+		return nil, err
+	}
+	if !m.Status.IsReady() {
+		return nil, ErrModelNotReady
+	}
+	worker.m = m
 
 	// default fields in a worker
 	storage := corev1.Volume{
@@ -200,6 +213,11 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	return worker, nil
 }
 
+// Model that this worker is running for
+func (worker *PodWorker) Model() *arcadiav1alpha1.Model {
+	return worker.m.DeepCopy()
+}
+
 func (worker *PodWorker) BeforeStart(ctx context.Context) error {
 	var err error
 
@@ -268,14 +286,14 @@ func (worker *PodWorker) Start(ctx context.Context) error {
 	var err error
 
 	// define the way to load model
-	loader, err := worker.l.Build(ctx, worker.m)
+	loader, err := worker.l.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &worker.m.Namespace, Name: worker.m.Name})
 	if err != nil {
 		return fmt.Errorf("failed to build loader with %w", err)
 	}
 	conLoader, _ := loader.(*corev1.Container)
 
 	// define the way to run model
-	runner, err := worker.r.Build(ctx, worker.m)
+	runner, err := worker.r.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &worker.m.Namespace, Name: worker.m.Name})
 	if err != nil {
 		return fmt.Errorf("failed to build runner with %w", err)
 	}

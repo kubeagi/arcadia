@@ -18,12 +18,14 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -31,6 +33,7 @@ import (
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
@@ -47,6 +50,8 @@ type EmbedderReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=embedders,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=embedders/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=embedders/finalizers,verbs=update
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=workers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=workers/status,verbs=get
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -114,6 +119,20 @@ func (r *EmbedderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *EmbedderReconciler) CheckEmbedder(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Embedder) error {
 	logger.Info("Checking embedding resource")
+
+	switch instance.Spec.Provider.GetType() {
+	case arcadiav1alpha1.ProviderType3rdParty:
+		return r.check3rdPartyEmbedder(ctx, logger, instance)
+	case arcadiav1alpha1.ProviderTypeWorker:
+		return r.checkWorkerEmbedder(ctx, logger, instance)
+	}
+
+	return nil
+}
+
+func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Embedder) error {
+	logger.Info("Checking 3rd party embedding resource")
+
 	var err error
 	var msg string
 
@@ -125,16 +144,40 @@ func (r *EmbedderReconciler) CheckEmbedder(ctx context.Context, logger logr.Logg
 
 	switch instance.Spec.ServiceType {
 	case embeddings.ZhiPuAI:
-		{
-			embedClient := zhipuai.NewZhiPuAI(apiKey)
-			res, err := embedClient.Validate()
-			if err != nil {
-				return r.UpdateStatus(ctx, instance, nil, err)
-			}
-			msg = res.String()
+		embedClient := zhipuai.NewZhiPuAI(apiKey)
+		res, err := embedClient.Validate()
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
 		}
+		msg = res.String()
+	case embeddings.OpenAI:
+		embedClient := openai.NewOpenAI(apiKey)
+		res, err := embedClient.Validate()
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
+		}
+		msg = res.String()
+
 	default:
 		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.ServiceType))
+	}
+
+	return r.UpdateStatus(ctx, instance, msg, err)
+}
+
+func (r *EmbedderReconciler) checkWorkerEmbedder(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Embedder) error {
+	logger.Info("Checking Worker's embedding resource")
+
+	var err error
+	var msg = "Worker is Ready"
+
+	worker := &arcadiav1alpha1.Worker{}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Spec.Worker.Name}, worker)
+	if err != nil {
+		return r.UpdateStatus(ctx, instance, nil, err)
+	}
+	if !worker.Status.IsReady() {
+		return r.UpdateStatus(ctx, instance, nil, errors.New("worker is not ready"))
 	}
 
 	return r.UpdateStatus(ctx, instance, msg, err)

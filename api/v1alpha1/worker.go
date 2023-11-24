@@ -17,8 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubeagi/arcadia/pkg/embeddings"
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 type WorkerType string
@@ -70,5 +76,67 @@ func (worker Worker) ErrorCondition(msg string) Condition {
 		Message:            msg,
 		LastTransitionTime: metav1.Now(),
 		LastSuccessfulTime: metav1.Now(),
+	}
+}
+
+func (worker Worker) generateUniqueName() string {
+	// Create a new SHA-256 hasher
+	hasher := sha256.New()
+
+	// Write the input string to the hasher
+	hasher.Write([]byte(worker.Name))
+
+	// Calculate the hash sum
+	hashSum := hasher.Sum(nil)
+
+	// Convert the hash sum to a hexadecimal string
+	hashString := hex.EncodeToString(hashSum)
+
+	return hashString[:10]
+}
+
+func (worker Worker) BuildEmbedder() *Embedder {
+	return &Embedder{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: worker.Namespace,
+			Name:      worker.generateUniqueName() + "-worker",
+		},
+		Spec: EmbedderSpec{
+			CommonSpec: CommonSpec{
+				Creator:     worker.Spec.Creator,
+				Description: "Embedder created by Worker(OpenAI compatible)",
+			},
+			ServiceType: embeddings.OpenAI,
+			Provider: Provider{
+				Worker: &TypedObjectReference{
+					Kind:      "Worker",
+					Namespace: &worker.Namespace,
+					Name:      worker.Name,
+				},
+			},
+		},
+	}
+}
+
+func (worker Worker) BuildLLM() *LLM {
+	return &LLM{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: worker.Namespace,
+			Name:      worker.generateUniqueName() + "-worker",
+		},
+		Spec: LLMSpec{
+			CommonSpec: CommonSpec{
+				Creator:     worker.Spec.Creator,
+				Description: "LLM created by Worker(OpenAI compatible)",
+			},
+			Type: llms.OpenAI,
+			Provider: Provider{
+				Worker: &TypedObjectReference{
+					Kind:      "Worker",
+					Namespace: &worker.Namespace,
+					Name:      worker.Name,
+				},
+			},
+		},
 	}
 }

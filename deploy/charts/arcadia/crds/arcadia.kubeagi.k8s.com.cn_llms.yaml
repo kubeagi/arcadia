@@ -44,13 +44,48 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
-              endpoint:
-                description: Enpoint defines connection info
+              provider:
+                description: Provider defines the provider info which provide this
+                  llm service
                 properties:
-                  authSecret:
-                    description: AuthSecret if the chart repository requires auth
-                      authentication, set the username and password to secret, with
-                      the field user and password respectively.
+                  endpoint:
+                    description: Enpoint defines connection info
+                    properties:
+                      authSecret:
+                        description: AuthSecret if the chart repository requires auth
+                          authentication, set the username and password to secret,
+                          with the field user and password respectively.
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                          namespace:
+                            description: Namespace is the namespace of resource being
+                              referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      insecure:
+                        description: Insecure if the endpoint needs a secure connection
+                        type: boolean
+                      url:
+                        description: URL chart repository address
+                        type: string
+                    type: object
+                  worker:
+                    description: Worker defines the worker info Means this LLM is
+                      provided by a arcadia worker
                     properties:
                       apiGroup:
                         description: APIGroup is the group for the resource being
@@ -72,12 +107,6 @@ spec:
                     - kind
                     - name
                     type: object
-                  insecure:
-                    description: Insecure if the endpoint needs a secure connection
-                    type: boolean
-                  url:
-                    description: URL chart repository address
-                    type: string
                 type: object
               type:
                 description: Type defines the type of llm

@@ -29,8 +29,8 @@ type LLMSpec struct {
 	// Type defines the type of llm
 	Type llms.LLMType `json:"type"`
 
-	// Enpoint defines connection info
-	Enpoint *Endpoint `json:"endpoint,omitempty"`
+	// Provider defines the provider info which provide this llm service
+	Provider `json:"provider,omitempty"`
 }
 
 // LLMStatus defines the observed state of LLM

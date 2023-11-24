@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,6 +51,8 @@ type WorkerReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=workers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources,verbs=get;list;watch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=datasources/status,verbs=get
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=embedders;llms,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=embedders/status;llms/status,verbs=get;update;patch
 
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=get;list
 //+kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -189,6 +192,59 @@ func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, wo
 	}
 
 	worker.Status.PodStatus = *podStatus
+
+	// further reconcile when worker is ready
+	if worker.Status.IsReady() {
+		if err := r.reconcileWhenWorkerReady(ctx, logger, worker, w.Model()); err != nil {
+			return fmt.Errorf("failed to reconcileWhenWorkerReady: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *WorkerReconciler) reconcileWhenWorkerReady(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker, model *arcadiav1alpha1.Model) error {
+	// reconcile worker's Embedder when its model is a embedding model
+	if model.IsEmbeddingModel() {
+		embedder := &arcadiav1alpha1.Embedder{}
+		err := r.Client.Get(ctx, types.NamespacedName{Namespace: worker.Namespace, Name: worker.Name + "-worker"}, embedder)
+		switch arcadiaworker.ActionOnError(err) {
+		case arcadiaworker.Create:
+			// Create when not found
+			embedder = worker.BuildEmbedder()
+			if err = controllerutil.SetControllerReference(worker, embedder, r.Scheme); err != nil {
+				return err
+			}
+			if err = r.Client.Create(ctx, embedder); err != nil {
+				return err
+			}
+		case arcadiaworker.Update:
+			// Skip update when found
+		case arcadiaworker.Panic:
+			return err
+		}
+	}
+
+	// reconcile worker's LLM when its model is a LLM model
+	if model.IsLLMModel() {
+		llm := &arcadiav1alpha1.LLM{}
+		err := r.Client.Get(ctx, types.NamespacedName{Namespace: worker.Namespace, Name: worker.Name + "-worker"}, llm)
+		switch arcadiaworker.ActionOnError(err) {
+		case arcadiaworker.Create:
+			// Create when not found
+			llm = worker.BuildLLM()
+			if err = controllerutil.SetControllerReference(worker, llm, r.Scheme); err != nil {
+				return err
+			}
+			if err = r.Client.Create(ctx, llm); err != nil {
+				return err
+			}
+		case arcadiaworker.Update:
+			// Skip update when found
+		case arcadiaworker.Panic:
+			return err
+		}
+	}
 
 	return nil
 }
