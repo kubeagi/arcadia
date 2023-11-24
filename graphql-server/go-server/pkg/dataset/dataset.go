@@ -19,6 +19,7 @@ package dataset
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,6 +140,9 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(datastList.Items, func(i, j int) bool {
+		return datastList.Items[i].GetCreationTimestamp().After(datastList.Items[j].GetCreationTimestamp().Time)
+	})
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page

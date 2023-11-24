@@ -38,6 +38,7 @@ query dataProcessSupportType{
           name
           zh_name
           description
+          enable
         }
       }
       message
