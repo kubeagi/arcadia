@@ -90,12 +90,14 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, u
 			CommonSpec: v1alpha1.CommonSpec{
 				DisplayName: displayname,
 			},
-			Enpoint: &v1alpha1.Endpoint{
-				URL: url,
-				AuthSecret: &v1alpha1.TypedObjectReference{
-					Kind:      "Secret",
-					Name:      authsecret,
-					Namespace: &namespace,
+			Provider: v1alpha1.Provider{
+				Enpoint: &v1alpha1.Endpoint{
+					URL: url,
+					AuthSecret: &v1alpha1.TypedObjectReference{
+						Kind:      "Secret",
+						Name:      authsecret,
+						Namespace: &namespace,
+					},
 				},
 			},
 			ServiceType: embeddings.EmbeddingType(servicetype),

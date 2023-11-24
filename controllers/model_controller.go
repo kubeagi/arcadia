@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -141,9 +142,14 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 		instanceDeepCopy.Labels = make(map[string]string)
 	}
 	// For model types
-	currentType := string(instanceDeepCopy.ModelTypes())
-	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelTypes]; v != currentType {
-		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelTypes] = currentType
+	isEmbeddingModel := strconv.FormatBool(instanceDeepCopy.IsEmbeddingModel())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelEmbedding]; v != isEmbeddingModel {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelEmbedding] = isEmbeddingModel
+		update = true
+	}
+	isLLMModel := strconv.FormatBool(instanceDeepCopy.IsLLMModel())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelLLM]; v != isLLMModel {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelLLM] = isLLMModel
 		update = true
 	}
 

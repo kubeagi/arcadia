@@ -18,19 +18,35 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
 )
 
 const (
-	// LabelModelTypes keeps the spec.types field
-	LabelModelTypes    = Group + "/model-types"
+	// LabelModelEmbedding indicates this is a embedding model
+	LabelModelEmbedding = Group + "/embedding"
+	// LabelModelLLM indicates this is a llm model
+	LabelModelLLM      = Group + "/llm"
 	LabelModelFullPath = Group + "/full-path"
 )
 
-func (model Model) ModelTypes() string {
-	if model.Spec.Types == "" {
-		return "unknown"
+// IsLLMModel checks whether this model is a llm model
+func (model Model) IsLLMModel() bool {
+	for _, t := range strings.Split(model.Spec.Types, ",") {
+		if strings.ToLower(t) == "llm" {
+			return true
+		}
 	}
-	return model.Spec.Types
+	return false
+}
+
+// IsLLMModel checks whether this model is a embedding model
+func (model Model) IsEmbeddingModel() bool {
+	for _, t := range strings.Split(model.Spec.Types, ",") {
+		if strings.ToLower(t) == "embedding" {
+			return true
+		}
+	}
+	return false
 }
 
 // FullPath with bucket and object path

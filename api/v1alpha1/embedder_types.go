@@ -32,8 +32,8 @@ type EmbedderSpec struct {
 	// ServiceType indicates the source type of embedding service
 	ServiceType embeddings.EmbeddingType `json:"serviceType,omitempty"`
 
-	// Enpoint defines connection info
-	Enpoint *Endpoint `json:"endpoint,omitempty"`
+	// Provider defines the provider info which provide this embedder service
+	Provider `json:"provider,omitempty"`
 }
 
 // EmbeddingsStatus defines the observed state of Embedder

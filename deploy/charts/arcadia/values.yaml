@@ -48,10 +48,6 @@ minio:
     enabled: true
     storageClass: ""
     size: 30Gi
-  users:
-    - accessKey: q18aRFqWOAX7pEin
-      secretKey: nCbZIP6q4s8KtQpL7n8CD2N88H6XABGf
-      policy: readwrite
   buckets:
     # Name of the bucket
     - name: *default-oss-bucket

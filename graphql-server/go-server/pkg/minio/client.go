@@ -40,8 +40,6 @@ var (
 	minioAccessKeyID     string
 	minioSecretAccessKey string
 	minioSecure          bool
-	minioBucket          string
-	minioBasePath        string
 )
 
 func init() {
@@ -63,8 +61,6 @@ func init() {
 	minioAddress = minioConfig.MinioAddress
 	minioAccessKeyID = minioConfig.MinioAccessKeyID
 	minioSecretAccessKey = minioConfig.MinioSecretAccessKey
-	minioBucket = minioConfig.MinioBucket
-	minioBasePath = minioConfig.MinioBasePath
 	minioSecure = minioConfig.MinioSecure
 }
 

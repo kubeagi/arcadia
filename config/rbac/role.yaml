@@ -138,6 +138,19 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - embedders
+  - llms
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - embedders/finalizers
   verbs:
   - update
@@ -145,6 +158,15 @@ rules:
   - arcadia.kubeagi.k8s.com.cn
   resources:
   - embedders/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - embedders/status
+  - llms/status
   verbs:
   - get
   - patch
