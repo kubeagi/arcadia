@@ -18,6 +18,7 @@ package knowledgebase
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -184,6 +185,9 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, namespace, lab
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(us.Items, func(i, j int) bool {
+		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
+	})
 	result := make([]*model.KnowledgeBase, len(us.Items))
 	for idx, u := range us.Items {
 		result[idx] = knowledgebase2model(&u)

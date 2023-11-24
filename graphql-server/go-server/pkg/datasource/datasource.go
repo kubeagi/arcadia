@@ -18,6 +18,7 @@ package datasource
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -191,6 +192,9 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, namespace, labelS
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(us.Items, func(i, j int) bool {
+		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
+	})
 	result := make([]*model.Datasource, len(us.Items))
 	for idx, u := range us.Items {
 		result[idx] = datasource2model(&u)

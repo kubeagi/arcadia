@@ -19,6 +19,7 @@ package versioneddataset
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -87,6 +88,10 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 			syncStatus := string(cond.Reason)
 			vds.SyncStatus = &syncStatus
 		}
+		if cond.Type == v1alpha1.TypeDataProcessing {
+			dataProcessStatus := string(cond.Reason)
+			vds.DataProcessStatus = &dataProcessStatus
+		}
 		if !cond.LastTransitionTime.IsZero() {
 			if first || vds.UpdateTimestamp.Before(cond.LastSuccessfulTime.Time) {
 				vds.UpdateTimestamp = &cond.LastTransitionTime.Time
@@ -110,6 +115,10 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 		keyword = *filter.Keyword
 	}
 	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient, -1)
+	sort.Slice(objectInfoList, func(i, j int) bool {
+		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
+	})
+
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
