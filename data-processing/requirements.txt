@@ -12,3 +12,4 @@ pypdf==3.17.1
 emoji==2.2.0
 ftfy==6.1.1
 psycopg2_binary==2.9.9
+kubernetes==28.1.0

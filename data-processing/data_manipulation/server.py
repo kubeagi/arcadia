@@ -28,6 +28,7 @@ import asyncio
 import logging
 
 import psycopg2
+from psycopg2 import pool
 from sanic import Sanic
 from sanic.response import json
 from sanic_cors import CORS
@@ -68,7 +69,7 @@ app.config['KEEP_ALIVE_TIMEOUT'] = 60 * 60 * 60
 
 @app.listener('before_server_start')
 async def init_web_server(app, loop):
-    app.config['conn'] = get_connection()
+    app.config['pool'] = get_connection_pool()
 
 
 ###
@@ -86,7 +87,7 @@ async def init_web_server(app, loop):
 @app.route('list-by-page', methods=['POST'])
 async def list_by_page(request):
     return await data_process_service.list_by_page(request, {
-        'conn': app.config['conn']
+        'pool': app.config['pool']
     })
 
 ###
@@ -104,7 +105,7 @@ async def list_by_page(request):
 @app.route('list-by-count', methods=['POST'])
 async def list_by_count(request):
     return await data_process_service.list_by_count(request, {
-        'conn': app.config['conn']
+        'pool': app.config['pool']
     })
 
 ###
@@ -122,7 +123,7 @@ async def list_by_count(request):
 @app.route('add', methods=['POST'])
 async def add(request):
     return await data_process_service.add(request, {
-        'conn': app.config['conn']
+        'pool': app.config['pool']
     })
 
 ###
@@ -140,7 +141,7 @@ async def add(request):
 @app.route('delete-by-id', methods=['POST'])
 async def delete_by_id(request):
     return await data_process_service.delete_by_id(request, {
-        'conn': app.config['conn']
+        'pool': app.config['pool']
     })
 
 ###
@@ -221,7 +222,7 @@ async def text_process_type(request):
 ###
 
 
-def get_connection():
+def get_connection_pool():
     '''
     获取postgresql连接
     :param host:
@@ -231,8 +232,16 @@ def get_connection():
     :param database:
     :return:
     '''
-    conn = psycopg2.connect(database=config.pg_database, user=config.pg_user,
-                            password=config.pg_password, host=config.pg_host, port=config.pg_port)
+    pool = psycopg2.pool.SimpleConnectionPool(
+        2,  # 最小连接数
+        8,  # 最大连接数
+        user=config.pg_user,
+        password=config.pg_password,
+        host=config.pg_host,
+        port=config.pg_port,
+        database=config.pg_database,
+        connect_timeout=3600
+    )
 
     # while True:
     #     cur = conn.cursor()
@@ -240,7 +249,7 @@ def get_connection():
     #     cur.close()
     #     time.sleep(3600)  # 每隔5分钟发送一次查询
 
-    return conn
+    return pool
 
 
 if __name__ == '__main__':

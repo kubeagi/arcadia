@@ -134,7 +134,7 @@ async def text_manipulate(request, opt={}):
     await data_process_task.update_status_by_id({
         'id': opt['id'],
         'status': 'process_complete',
-        'conn': opt['conn']
+        'pool': opt['pool']
     })
 
     # 更新数据集CR状态

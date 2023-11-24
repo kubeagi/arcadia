@@ -34,7 +34,7 @@ from utils import pg_utils
 
 
 async def list_by_page(request, opt={}):
-    conn = opt['conn']
+    pool = opt['pool']
 
     req_json = request.json
 
@@ -61,12 +61,12 @@ async def list_by_page(request, opt={}):
         limit %(pageSize)s offset %(pageIndex)s
     """.strip()
 
-    res = await pg_utils.execute_sql(conn,sql,params)
+    res = await pg_utils.execute_sql(pool,sql,params)
     return json(res)
   
 
 async def list_by_count(request, opt={}):
-    conn = opt['conn']
+    pool = opt['pool']
 
     req_json = request.json
 
@@ -83,12 +83,12 @@ async def list_by_count(request, opt={}):
           name like %(keyword)s
     """.strip()
 
-    res = await pg_utils.execute_count_sql(conn,sql,params)
+    res = await pg_utils.execute_count_sql(pool,sql,params)
     return json(res)
 
 
 async def add(request, opt={}):
-    conn = opt['conn']
+    pool = opt['pool']
 
     req_json = request.json
 
@@ -133,8 +133,8 @@ async def add(request, opt={}):
           create_user,
           create_program,
           update_datetime,
-          update_user,
-          update_program
+          update_program,
+          update_user
         )
         values (
           %(id)s,
@@ -157,11 +157,11 @@ async def add(request, opt={}):
         )
     """.strip()
 
-    return await pg_utils.execute_insert_sql(conn,sql,params)
+    return await pg_utils.execute_insert_sql(pool,sql,params)
 
 
 async def delete_by_id(request, opt={}):
-    conn = opt['conn']
+    pool = opt['pool']
 
     req_json = request.json
 
@@ -175,12 +175,12 @@ async def delete_by_id(request, opt={}):
           id = %(id)s
     """.strip()
 
-    res =  await pg_utils.execute_delete_sql(conn,sql,params)
+    res =  await pg_utils.execute_delete_sql(pool,sql,params)
     return json(res)
 
 
 async def update_status_by_id(opt={}):
-    conn = opt['conn']
+    pool = opt['pool']
 
     now = datetime.now()
     user = 'admin'
@@ -189,6 +189,7 @@ async def update_status_by_id(opt={}):
     params = {
         'id': opt['id'],
         'status': opt['status'],
+        'end_datetime': now,
         'update_datetime': now,
         'update_program': program,
         'update_user': user
@@ -198,11 +199,12 @@ async def update_status_by_id(opt={}):
         UPDATE public.data_process_task set
           status = %(status)s,
           update_datetime = %(update_datetime)s,
+          end_datetime = %(end_datetime)s,
           update_program = %(update_program)s,
           update_user = %(update_user)s
         WHERE
           id = %(id)s
     """.strip()
 
-    res =  await pg_utils.execute_update_sql(conn,sql,params)
+    res =  await pg_utils.execute_update_sql(pool,sql,params)
     return json(res)

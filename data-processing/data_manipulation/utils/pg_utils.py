@@ -20,16 +20,17 @@
 import psycopg2.extras
 
 
-async def execute_sql(conn,sql,record_to_select):
+async def execute_sql(pool,sql,record_to_select):
     '''
     执行sql语句
-    :param conn:
+    :param pool:
     :param sql:
     :return:
     '''
     error = ''
     data = []
     try:
+        conn = pool.getconn()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute(sql,record_to_select)
         result = cursor.fetchall()
@@ -39,13 +40,15 @@ async def execute_sql(conn,sql,record_to_select):
                 dataItem[item] = row[item]
             data.append(dataItem)
         
-        conn.commit()
         cursor.close()
     except Exception as ex:
         print('查询', ex)
         conn.rollback()
         error = str(ex)
         data = None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
     if len(error) > 0:
         return {
@@ -60,29 +63,32 @@ async def execute_sql(conn,sql,record_to_select):
         "data": data
     }
 
-async def execute_count_sql(conn,sql,record_to_select_count):
+async def execute_count_sql(pool,sql,record_to_select_count):
     '''
     执行count sql语句
-    :param conn:
+    :param pool:
     :param sql:
     :return:
     '''
     error = ''
     number_count = 0
     try:
+        conn = pool.getconn()
         cursor = conn.cursor()
         cursor.execute(sql,record_to_select_count)
         result = cursor.fetchall()
         for row in result:
             number_count = row
         
-        conn.commit()
         cursor.close()
     except Exception as ex:
         print('mysql 查询', ex)
         conn.rollback()
         error = str(ex)
         data = None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
     if len(error) > 0:
         return {
@@ -96,15 +102,16 @@ async def execute_count_sql(conn,sql,record_to_select_count):
         "data": number_count[0]
     }
 
-async def execute_insert_sql(conn,sql,record_to_insert):
+async def execute_insert_sql(pool,sql,record_to_insert):
     '''
     执行insert sql语句
-    :param conn:
+    :param pool:
     :param sql:
     :return:
     '''
     error = ''
     try:
+        conn = pool.getconn()
         cursor = conn.cursor()
         cursor.execute(sql,record_to_insert)
         
@@ -115,6 +122,9 @@ async def execute_insert_sql(conn,sql,record_to_insert):
         conn.rollback()
         error = str(ex)
         data = None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
     if len(error) > 0:
         return {
@@ -129,16 +139,17 @@ async def execute_insert_sql(conn,sql,record_to_insert):
         "data": None
     }
 
-async def execute_update_sql(conn,sql,record_to_update):
+async def execute_update_sql(pool,sql,record_to_update):
     '''
     执行 update sql语句
-    :param conn:
+    :param pool:
     :param sql:
     :return:
     '''
     error = ''
     number_count = 0
     try:
+        conn = pool.getconn()
         cursor = conn.cursor()
         cursor.execute(sql,record_to_update)
         
@@ -149,6 +160,9 @@ async def execute_update_sql(conn,sql,record_to_update):
         conn.rollback()
         error = str(ex)
         data = None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
     if len(error) > 0:
         return {
@@ -163,16 +177,17 @@ async def execute_update_sql(conn,sql,record_to_update):
         "data": None
     }
 
-async def execute_delete_sql(conn,sql,record_to_delete):
+async def execute_delete_sql(pool,sql,record_to_delete):
     '''
     执行 delete sql语句
-    :param conn:
+    :param pool:
     :param sql:
     :return:
     '''
     error = ''
     number_count = 0
     try:
+        conn = pool.getconn()
         cursor = conn.cursor()
         cursor.execute(sql,record_to_delete)
         
@@ -183,6 +198,9 @@ async def execute_delete_sql(conn,sql,record_to_delete):
         conn.rollback()
         error = str(ex)
         data = None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
     if len(error) > 0:
         return {
