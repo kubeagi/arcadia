@@ -5,7 +5,7 @@ metadata:
   namespace: arcadia
 type: Opaque
 data:
-  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+  apiKey: "MjZlMzA4YzljNTA2NjcxNmFjYjdhM2M0OGUyZGU0YTcuck9zWktDVEJ0RzljV2JKNw==" # replace this with your API key
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Embedder
