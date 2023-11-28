@@ -64,7 +64,7 @@ func (o *OpenAI) Validate() (llms.Response, error) {
 		return nil, fmt.Errorf("auth is empty")
 	}
 
-	testURL := OpenaiModelAPIURL + "/models"
+	testURL := o.baseURL + "/models"
 	testAuth := "Bearer " + o.apiKey // openAI official requirement
 
 	req, err := http.NewRequest("GET", testURL, nil)
