@@ -34,6 +34,7 @@ async def generate_QA(opt={}):
     zhipuai.api_key = config.zhipuai_api_key
 
     text = opt['text']
+    print('xx', 'text', text)
     content = """
         我会给你一段文本，它们可能包含多个主题内容，学习它们，并整理学习成果，要求为：
         1. 提出最多 25 个问题。

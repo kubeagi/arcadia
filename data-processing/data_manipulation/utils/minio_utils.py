@@ -16,6 +16,8 @@
 # MinIO
 ###
 
+import urllib3
+
 from minio import Minio
 
 from common import config
@@ -26,5 +28,14 @@ async def create_client():
         config.minio_api_url,
         access_key=config.minio_access_key,
         secret_key=config.minio_secret_key,
-        secure=config.minio_secure
+        secure=bool(config.minio_secure),
+        http_client=urllib3.PoolManager(
+            timeout=urllib3.Timeout.DEFAULT_TIMEOUT,
+            cert_reqs='CERT_NONE',
+            retries=urllib3.Retry(
+                total=5,
+                backoff_factor=0.2,
+                status_forcelist=[500, 502, 503, 504],
+            )
+        )
     )

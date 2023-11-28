@@ -30,7 +30,7 @@ import ulid
 from sanic.response import json
 
 from db import data_process_task
-from service import minio_store_process_service
+from service import minio_store_process_service, dataset_service
 
 logger = logging.getLogger('data_process_service')
 
@@ -82,6 +82,18 @@ async def add(request, opt={}):
     res = await data_process_task.add(request, opt)
 
     if res['status'] == 200:
+        request_json = request.json
+
+        # 更新数据集状态
+        update_dataset = await dataset_service.update_dataset_k8s_cr({
+            'bucket_name': request_json['bucket_name'],
+            'version_data_set_name': request_json['version_data_set_name'],
+            'reason': 'processing'
+        })
+
+        if update_dataset['status'] != 200:
+            return json(update_dataset)
+
         # 进行数据处理
         asyncio.create_task(
             minio_store_process_service.text_manipulate(request, opt)

@@ -1,6 +1,6 @@
 import os
 
-from custom_resources import (arcadia_resource_datasets,
+from .custom_resources import (arcadia_resource_datasets,
                               arcadia_resource_datasources,
                               arcadia_resource_versioneddatasets)
 from kubernetes import client, config
@@ -57,6 +57,25 @@ class KubeEnv:
             arcadia_resource_versioneddatasets.get_version(),
             namespace, arcadia_resource_versioneddatasets.get_name(),
             **kwargs
+        )
+    
+    def patch_versioneddatasets_status(self, namespace: str, name: str, status: any):
+        CustomObjectsApi().patch_namespaced_custom_object_status(
+            arcadia_resource_versioneddatasets.get_group(),
+            arcadia_resource_versioneddatasets.get_version(),
+            namespace,
+            arcadia_resource_versioneddatasets.get_name(),
+            name,
+            status
+        )
+        
+    def get_versioneddatasets_status(self, namespace: str, name: str):
+        return CustomObjectsApi().get_namespaced_custom_object_status(
+            arcadia_resource_versioneddatasets.get_group(),
+            arcadia_resource_versioneddatasets.get_version(),
+            namespace, 
+            'versioneddatasets',
+            name
         )
     
     def patch_versioneddatasets_status(self, namespace: str, name: str, status: any):

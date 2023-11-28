@@ -34,17 +34,10 @@ from sanic.response import json
 from sanic_cors import CORS
 
 from common import config
-# from kube import client
+from kube import client, custom_resources
 from service import data_process_service, minio_store_process_service
 from transform.text import support_type
 from utils import log_utils
-
-###
-# Initialize kubernetes client
-###
-# kube = client.KubeEnv()
-# have a try!
-# print(kube.list_versioneddatasets("arcadia"))
 
 
 ###
@@ -238,7 +231,7 @@ def get_connection_pool():
         user=config.pg_user,
         password=config.pg_password,
         host=config.pg_host,
-        port=config.pg_port,
+        port=int(config.pg_port),
         database=config.pg_database,
         connect_timeout=3600
     )

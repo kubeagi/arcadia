@@ -18,18 +18,18 @@ minio_access_key = os.getenv('MINIO_ACCESSKEY', 'minioadmin')
 minio_secret_key = os.getenv('MINIO_SECRETKEY', 'minioadmin')
 minio_api_url = os.getenv('MINIO_API_URL', 'localhost:9000')
 # 如果使用HTTP，将secure设置为False；如果使用HTTPS，将其设置为True
-minio_secure = os.getenv('MINIO_SECURE', False)
+minio_secure = os.getenv('MINIO_SECURE', True)
 minio_dataset_prefix = os.getenv('MINIO_DATASET_PREFIX', 'dataset')
 
 # zhipuai api_key
 zhipuai_api_key = os.getenv('ZHIPUAI_API_KEY', 'xxxxxx')
 
-knowledge_chunk_size = os.getenv("KNOWLEDGE_CHUNK_SIZE", 500)
-knowledge_chunk_overlap = os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50)
+knowledge_chunk_size = os.getenv('KNOWLEDGE_CHUNK_SIZE', 500)
+knowledge_chunk_overlap = os.getenv('KNOWLEDGE_CHUNK_OVERLAP', 50)
 
 # pg数据库
-pg_host = os.getenv("PG_HOST", "localhost")
-pg_port = os.getenv("PG_PORT", 5432)
-pg_user = os.getenv("PG_USER", "postgres")
-pg_password = os.getenv("PG_PASSWORD", "xxxxxx")
-pg_database = os.getenv("PG_DATABASE", "data_process")
+pg_host = os.getenv('PG_HOST', 'localhost')
+pg_port = os.getenv('PG_PORT', 5432)
+pg_user = os.getenv('PG_USER', 'postgres')
+pg_password = os.getenv('PG_PASSWORD', 'xxxxxx')
+pg_database = os.getenv('PG_DATABASE', 'data_process')

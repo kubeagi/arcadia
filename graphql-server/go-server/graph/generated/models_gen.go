@@ -20,6 +20,7 @@ type AddDataProcessInput struct {
 	PostDataSetVersion    string                   `json:"post_data_set_version"`
 	DataProcessConfigInfo []*DataProcessConfigItem `json:"data_process_config_info,omitempty"`
 	BucketName            string                   `json:"bucket_name"`
+	VersionDataSetName    string                   `json:"version_data_set_name"`
 }
 
 type AllDataProcessListByCountInput struct {

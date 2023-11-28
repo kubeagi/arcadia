@@ -36,7 +36,7 @@ from sanic.response import json, raw
 from common import config
 from db import data_process_task
 from file_handle import csv_handle, pdf_handle
-# from kube import client
+from service import dataset_service
 from utils import file_utils, minio_utils
 
 logger = logging.getLogger('minio_store_process_service')
@@ -111,10 +111,9 @@ async def text_manipulate(request, opt={}):
     )
 
     # 上传final文件夹下的文件，并添加tag
+    tags["phase"] = "final"
     if any(d.get('type') == 'qa_split' for d in support_type):
         tags["object_type"] = "QA"
-    else:
-        tags["phase"] = "final"
 
     await upload_files_to_minio_with_tags(
         minio_client,
@@ -138,7 +137,11 @@ async def text_manipulate(request, opt={}):
     })
 
     # 更新数据集CR状态
-    # kube.patch_versioneddatasets_status(request_json[])
+    await dataset_service.update_dataset_k8s_cr({
+        'bucket_name': request_json['bucket_name'],
+        'version_data_set_name': request_json['version_data_set_name'],
+        'reason': 'process_complete'
+    })
 
     return json({
         'status': 200,

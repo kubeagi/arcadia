@@ -59,6 +59,7 @@ async def list_by_page(request, opt={}):
         where
           name like %(keyword)s
         limit %(pageSize)s offset %(pageIndex)s
+        order by start_datetime desc
     """.strip()
 
     res = await pg_utils.execute_sql(pool,sql,params)

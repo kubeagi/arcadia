@@ -14,10 +14,15 @@
 
 
 import datetime
+import pytz
 
 
 def now_str():
     return f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S.%f}"
+
+
+def now_utc_str(opt={}):
+    return datetime.datetime.now(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def now_str_for_day():
