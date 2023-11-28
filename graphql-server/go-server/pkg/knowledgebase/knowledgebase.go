@@ -47,15 +47,28 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 	vectorStore, _, _ := unstructured.NestedMap(obj.Object, "spec", "vectorStore")
 	vectorStorenp := vectorStore["namespace"].(string)
 	apiversion := obj.GetAPIVersion()
-	fileGroupDetail, _, _ := unstructured.NestedSlice(obj.Object, "status", "fileGroupDetail")
-	var filedetails []*model.Filedetail
-	for _, fgd := range fileGroupDetail {
-		filedetailmap := fgd.(map[string]interface{})
-		filedetail := &model.Filedetail{
-			Path:   filedetailmap["path"].(string),
-			Status: filedetailmap["status"].(string),
+	fileGroupDetails, _, _ := unstructured.NestedSlice(obj.Object, "status", "fileGroupDetail")
+	var filegroupdetails []*model.Filegroupdetail
+	for _, filegroupdetail := range fileGroupDetails {
+		fileDetails := filegroupdetail.(map[string]interface{})["fileDetails"].([]interface{})
+		var filedetails []*model.Filedetail
+		fns := filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["namespace"].(string)
+		for _, filedetailsmap := range fileDetails {
+			filedetail := &model.Filedetail{
+				Path:  filedetailsmap.(map[string]interface{})["path"].(string),
+				Phase: filedetailsmap.(map[string]interface{})["phase"].(string),
+			}
+			filedetails = append(filedetails, filedetail)
 		}
-		filedetails = append(filedetails, filedetail)
+		filegroupdetail := &model.Filegroupdetail{
+			Source: &model.TypedObjectReference{
+				Kind:      filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["kind"].(string),
+				Name:      filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["name"].(string),
+				Namespace: &fns,
+			},
+			Filedetails: filedetails,
+		}
+		filegroupdetails = append(filegroupdetails, filegroupdetail)
 	}
 	status := ""
 	var updateTime time.Time
@@ -88,11 +101,11 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 			Name:      vectorStore["name"].(string),
 			Namespace: &vectorStorenp,
 		},
-		FileDetails:     filedetails,
-		DisplayName:     displayName,
-		Description:     &description,
-		Status:          &status,
-		UpdateTimestamp: &updateTime,
+		FileGroupDetails: filegroupdetails,
+		DisplayName:      displayName,
+		Description:      &description,
+		Status:           &status,
+		UpdateTimestamp:  &updateTime,
 	}
 	return &md
 }

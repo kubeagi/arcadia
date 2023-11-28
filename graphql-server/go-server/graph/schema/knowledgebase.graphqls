@@ -5,7 +5,12 @@ type filegroup{
 
 type filedetail{
     path: String!
-    status: String!
+    phase: String!
+}
+
+type filegroupdetail{
+    source: TypedObjectReference
+    filedetails:[filedetail]
 }
 
 type KnowledgeBase {
@@ -18,7 +23,7 @@ type KnowledgeBase {
     description: String
     embedder: TypedObjectReference
     vectorStore: TypedObjectReference
-    fileDetails: [filedetail]
+    fileGroupDetails: [filegroupdetail]
     """知识库连接状态"""
     status: String
     updateTimestamp: Time

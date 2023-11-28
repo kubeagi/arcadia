@@ -204,18 +204,18 @@ type ComplexityRoot struct {
 	}
 
 	KnowledgeBase struct {
-		Annotations     func(childComplexity int) int
-		Creator         func(childComplexity int) int
-		Description     func(childComplexity int) int
-		DisplayName     func(childComplexity int) int
-		Embedder        func(childComplexity int) int
-		FileDetails     func(childComplexity int) int
-		Labels          func(childComplexity int) int
-		Name            func(childComplexity int) int
-		Namespace       func(childComplexity int) int
-		Status          func(childComplexity int) int
-		UpdateTimestamp func(childComplexity int) int
-		VectorStore     func(childComplexity int) int
+		Annotations      func(childComplexity int) int
+		Creator          func(childComplexity int) int
+		Description      func(childComplexity int) int
+		DisplayName      func(childComplexity int) int
+		Embedder         func(childComplexity int) int
+		FileGroupDetails func(childComplexity int) int
+		Labels           func(childComplexity int) int
+		Name             func(childComplexity int) int
+		Namespace        func(childComplexity int) int
+		Status           func(childComplexity int) int
+		UpdateTimestamp  func(childComplexity int) int
+		VectorStore      func(childComplexity int) int
 	}
 
 	KnowledgeBaseMutation struct {
@@ -331,13 +331,18 @@ type ComplexityRoot struct {
 	}
 
 	Filedetail struct {
-		Path   func(childComplexity int) int
-		Status func(childComplexity int) int
+		Path  func(childComplexity int) int
+		Phase func(childComplexity int) int
 	}
 
 	Filegroup struct {
 		Path   func(childComplexity int) int
 		Source func(childComplexity int) int
+	}
+
+	Filegroupdetail struct {
+		Filedetails func(childComplexity int) int
+		Source      func(childComplexity int) int
 	}
 }
 
@@ -1173,12 +1178,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KnowledgeBase.Embedder(childComplexity), true
 
-	case "KnowledgeBase.fileDetails":
-		if e.complexity.KnowledgeBase.FileDetails == nil {
+	case "KnowledgeBase.fileGroupDetails":
+		if e.complexity.KnowledgeBase.FileGroupDetails == nil {
 			break
 		}
 
-		return e.complexity.KnowledgeBase.FileDetails(childComplexity), true
+		return e.complexity.KnowledgeBase.FileGroupDetails(childComplexity), true
 
 	case "KnowledgeBase.labels":
 		if e.complexity.KnowledgeBase.Labels == nil {
@@ -1809,12 +1814,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filedetail.Path(childComplexity), true
 
-	case "filedetail.status":
-		if e.complexity.Filedetail.Status == nil {
+	case "filedetail.phase":
+		if e.complexity.Filedetail.Phase == nil {
 			break
 		}
 
-		return e.complexity.Filedetail.Status(childComplexity), true
+		return e.complexity.Filedetail.Phase(childComplexity), true
 
 	case "filegroup.path":
 		if e.complexity.Filegroup.Path == nil {
@@ -1829,6 +1834,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Filegroup.Source(childComplexity), true
+
+	case "filegroupdetail.filedetails":
+		if e.complexity.Filegroupdetail.Filedetails == nil {
+			break
+		}
+
+		return e.complexity.Filegroupdetail.Filedetails(childComplexity), true
+
+	case "filegroupdetail.source":
+		if e.complexity.Filegroupdetail.Source == nil {
+			break
+		}
+
+		return e.complexity.Filegroupdetail.Source(childComplexity), true
 
 	}
 	return 0, false
@@ -2504,7 +2523,12 @@ union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | Versi
 
 type filedetail{
     path: String!
-    status: String!
+    phase: String!
+}
+
+type filegroupdetail{
+    source: TypedObjectReference
+    filedetails:[filedetail]
 }
 
 type KnowledgeBase {
@@ -2517,7 +2541,7 @@ type KnowledgeBase {
     description: String
     embedder: TypedObjectReference
     vectorStore: TypedObjectReference
-    fileDetails: [filedetail]
+    fileGroupDetails: [filegroupdetail]
     """知识库连接状态"""
     status: String
     updateTimestamp: Time
@@ -8132,8 +8156,8 @@ func (ec *executionContext) fieldContext_KnowledgeBase_vectorStore(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _KnowledgeBase_fileDetails(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_KnowledgeBase_fileDetails(ctx, field)
+func (ec *executionContext) _KnowledgeBase_fileGroupDetails(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8146,7 +8170,7 @@ func (ec *executionContext) _KnowledgeBase_fileDetails(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FileDetails, nil
+		return obj.FileGroupDetails, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8155,12 +8179,12 @@ func (ec *executionContext) _KnowledgeBase_fileDetails(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Filedetail)
+	res := resTmp.([]*Filegroupdetail)
 	fc.Result = res
-	return ec.marshalOfiledetail2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFiledetail(ctx, field.Selections, res)
+	return ec.marshalOfilegroupdetail2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFilegroupdetail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_KnowledgeBase_fileDetails(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_KnowledgeBase_fileGroupDetails(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "KnowledgeBase",
 		Field:      field,
@@ -8168,12 +8192,12 @@ func (ec *executionContext) fieldContext_KnowledgeBase_fileDetails(ctx context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "path":
-				return ec.fieldContext_filedetail_path(ctx, field)
-			case "status":
-				return ec.fieldContext_filedetail_status(ctx, field)
+			case "source":
+				return ec.fieldContext_filegroupdetail_source(ctx, field)
+			case "filedetails":
+				return ec.fieldContext_filegroupdetail_filedetails(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type filedetail", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type filegroupdetail", field.Name)
 		},
 	}
 	return fc, nil
@@ -8318,8 +8342,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_createKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
-			case "fileDetails":
-				return ec.fieldContext_KnowledgeBase_fileDetails(ctx, field)
+			case "fileGroupDetails":
+				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "updateTimestamp":
@@ -8399,8 +8423,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_updateKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
-			case "fileDetails":
-				return ec.fieldContext_KnowledgeBase_fileDetails(ctx, field)
+			case "fileGroupDetails":
+				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "updateTimestamp":
@@ -8532,8 +8556,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_getKnowledgeBase(ctx
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
-			case "fileDetails":
-				return ec.fieldContext_KnowledgeBase_fileDetails(ctx, field)
+			case "fileGroupDetails":
+				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "updateTimestamp":
@@ -13784,8 +13808,8 @@ func (ec *executionContext) fieldContext_filedetail_path(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _filedetail_status(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_filedetail_status(ctx, field)
+func (ec *executionContext) _filedetail_phase(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filedetail_phase(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -13798,7 +13822,7 @@ func (ec *executionContext) _filedetail_status(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
+		return obj.Phase, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13815,7 +13839,7 @@ func (ec *executionContext) _filedetail_status(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_filedetail_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_filedetail_phase(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "filedetail",
 		Field:      field,
@@ -13915,6 +13939,104 @@ func (ec *executionContext) fieldContext_filegroup_path(ctx context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _filegroupdetail_source(ctx context.Context, field graphql.CollectedField, obj *Filegroupdetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filegroupdetail_source(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TypedObjectReference)
+	fc.Result = res
+	return ec.marshalOTypedObjectReference2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReference(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filegroupdetail_source(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filegroupdetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "apiGroup":
+				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
+			case "kind":
+				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
+			case "Name":
+				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
+			case "Namespace":
+				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _filegroupdetail_filedetails(ctx context.Context, field graphql.CollectedField, obj *Filegroupdetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filegroupdetail_filedetails(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filedetails, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Filedetail)
+	fc.Result = res
+	return ec.marshalOfiledetail2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFiledetail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filegroupdetail_filedetails(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filegroupdetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_filedetail_path(ctx, field)
+			case "phase":
+				return ec.fieldContext_filedetail_phase(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type filedetail", field.Name)
 		},
 	}
 	return fc, nil
@@ -18088,8 +18210,8 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._KnowledgeBase_embedder(ctx, field, obj)
 		case "vectorStore":
 			out.Values[i] = ec._KnowledgeBase_vectorStore(ctx, field, obj)
-		case "fileDetails":
-			out.Values[i] = ec._KnowledgeBase_fileDetails(ctx, field, obj)
+		case "fileGroupDetails":
+			out.Values[i] = ec._KnowledgeBase_fileGroupDetails(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._KnowledgeBase_status(ctx, field, obj)
 		case "updateTimestamp":
@@ -19842,8 +19964,8 @@ func (ec *executionContext) _filedetail(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "status":
-			out.Values[i] = ec._filedetail_status(ctx, field, obj)
+		case "phase":
+			out.Values[i] = ec._filedetail_phase(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -19885,6 +20007,44 @@ func (ec *executionContext) _filegroup(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._filegroup_source(ctx, field, obj)
 		case "path":
 			out.Values[i] = ec._filegroup_path(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var filegroupdetailImplementors = []string{"filegroupdetail"}
+
+func (ec *executionContext) _filegroupdetail(ctx context.Context, sel ast.SelectionSet, obj *Filegroupdetail) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, filegroupdetailImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("filegroupdetail")
+		case "source":
+			out.Values[i] = ec._filegroupdetail_source(ctx, field, obj)
+		case "filedetails":
+			out.Values[i] = ec._filegroupdetail_filedetails(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21427,6 +21587,54 @@ func (ec *executionContext) marshalOfiledetail2ᚖgithubᚗcomᚋkubeagiᚋarcad
 		return graphql.Null
 	}
 	return ec._filedetail(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOfilegroupdetail2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFilegroupdetail(ctx context.Context, sel ast.SelectionSet, v []*Filegroupdetail) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOfilegroupdetail2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFilegroupdetail(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOfilegroupdetail2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFilegroupdetail(ctx context.Context, sel ast.SelectionSet, v *Filegroupdetail) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._filegroupdetail(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOfilegroupinput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFilegroupinputᚄ(ctx context.Context, v interface{}) ([]*Filegroupinput, error) {
