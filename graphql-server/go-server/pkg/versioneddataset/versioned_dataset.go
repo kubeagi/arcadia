@@ -123,7 +123,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
 			result = append(result, generated.F{
-				Path:     obj.Key,
+				Path:     strings.TrimPrefix(obj.Key, prefix),
 				FileType: obj.ContentType,
 				Count:    &dataCount,
 				Time:     &obj.LastModified,
