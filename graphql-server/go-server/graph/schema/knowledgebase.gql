@@ -13,6 +13,8 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
           creator
           displayName
           description
+          status
+          updateTimestamp
           embedder {
             kind
             Name
@@ -22,17 +24,13 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
             Name
           }
           fileGroupDetails {
-            ...on filegroupdetail{
-              source{
-                kind
-                Name
-              }
-              filedetails{
-                ...on filedetail{
-                  path
-                  phase
-                }
-              }
+            source{
+              kind
+              Name
+            }
+            filedetails{
+                path
+                phase
             }
           }
         }
@@ -52,6 +50,8 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
           creator
           displayName
           description
+          status
+          updateTimestamp
           embedder {
             kind
             Name
@@ -61,17 +61,13 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
             Name
           }
           fileGroupDetails {
-            ...on filegroupdetail{
-              source{
-                kind
-                Name
-              }
-              filedetails{
-                ...on filedetail{
-                  path
-                  phase
-                }
-              }
+            source{
+              kind
+              Name
+            }
+            filedetails{
+                path
+                phase
             }
           }
     }
@@ -89,6 +85,8 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
           creator
           displayName
           description
+          status
+          updateTimestamp
           embedder {
             kind
             Name
@@ -98,17 +96,13 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
             Name
           }
           fileGroupDetails {
-            ...on filegroupdetail{
-              source{
-                kind
-                Name
-              }
-              filedetails{
-                ...on filedetail{
-                  path
-                  phase
-                }
-              }
+            source{
+              kind
+              Name
+            }
+            filedetails{
+                path
+                phase
             }
           }
     }
@@ -126,6 +120,8 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
           creator
           displayName
           description
+          status
+          updateTimestamp
           embedder {
             kind
             Name
@@ -135,17 +131,13 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
             Name
           }
           fileGroupDetails {
-            ...on filegroupdetail{
-              source{
-                kind
-                Name
-              }
-              filedetails{
-                ...on filedetail{
-                  path
-                  phase
-                }
-              }
+            source{
+              kind
+              Name
+            }
+            filedetails{
+                path
+                phase
             }
           }
     }
