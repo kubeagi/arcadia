@@ -151,7 +151,7 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 		}
 		msg = res.String()
 	case embeddings.OpenAI:
-		embedClient := openai.NewOpenAI(apiKey)
+		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Enpoint.URL)
 		res, err := embedClient.Validate()
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)

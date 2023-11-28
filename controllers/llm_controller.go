@@ -156,7 +156,7 @@ func (r *LLMReconciler) check3rdPartyLLM(ctx context.Context, logger logr.Logger
 		}
 		msg = res.String()
 	case llms.OpenAI:
-		embedClient := openai.NewOpenAI(apiKey)
+		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Enpoint.URL)
 		res, err := embedClient.Validate()
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)

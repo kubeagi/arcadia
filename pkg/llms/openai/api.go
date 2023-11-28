@@ -33,12 +33,17 @@ const (
 var _ llms.LLM = (*OpenAI)(nil)
 
 type OpenAI struct {
-	apiKey string
+	apiKey  string
+	baseURL string
 }
 
-func NewOpenAI(auth string) *OpenAI {
+func NewOpenAI(apiKey string, baseURL string) *OpenAI {
+	if baseURL == "" {
+		baseURL = OpenaiModelAPIURL
+	}
 	return &OpenAI{
-		apiKey: auth,
+		apiKey:  apiKey,
+		baseURL: baseURL,
 	}
 }
 
