@@ -120,6 +120,7 @@ async def text_manipulate(request, opt={}):
             'data': ''
         }
     except Exception as ex:
+        logger.error(str(ex))
         return {
             'status': 400,
             'message': '',
@@ -259,6 +260,7 @@ async def get_content(opt={}):
 
 
 async def generate_QA(request, opt={}):
+    logger.info("pdf text generate qa start!")
     request_json = request.json
 
     # 文本分段
@@ -275,8 +277,8 @@ async def generate_QA(request, opt={}):
     text_splitter = SpacyTextSplitter(
         separator=separator,
         pipeline="zh_core_web_sm",
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
+        chunk_size=int(chunk_size),
+        chunk_overlap=int(chunk_overlap),
     )
     texts = text_splitter.split_text(opt['data'])
 
@@ -291,6 +293,8 @@ async def generate_QA(request, opt={}):
 
         qa_list.extend(data)
         
+    logger.info("pdf text generate qa stop!")
+
     return qa_list
 
 ###

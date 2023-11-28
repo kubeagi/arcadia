@@ -38,6 +38,7 @@ input AddDataProcessInput {
   post_data_set_version: String!
   data_process_config_info: [DataProcessConfigItem!]
   bucket_name: String!
+  version_data_set_name: String!
 }
 
 # 文件条目
