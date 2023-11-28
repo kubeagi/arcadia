@@ -20,4 +20,4 @@ spec:
       name: dataset-playground-v1
       namespace: arcadia
     paths:
-      - dataset/dataset-playground/v1/qa.csv
+      - qa.csv
