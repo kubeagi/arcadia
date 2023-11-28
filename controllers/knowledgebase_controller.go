@@ -410,7 +410,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 
 	// initliaze text splitter
 	// var split textsplitter.TextSplitter
-	split := textsplitter.NewTokenSplitter(
+	split := textsplitter.NewRecursiveCharacter(
 		textsplitter.WithChunkSize(300),
 		textsplitter.WithChunkOverlap(30),
 	)
