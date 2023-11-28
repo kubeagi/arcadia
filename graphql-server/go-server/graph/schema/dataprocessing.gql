@@ -46,7 +46,7 @@ query dataProcessSupportType{
   }
 }
 
-mutation createDataProcessTask($input: AddDataProcessListInput!) {
+mutation createDataProcessTask($input: AddDataProcessInput) {
   dataProcess {
     createDataProcessTask(input: $input) {
       status
@@ -56,7 +56,7 @@ mutation createDataProcessTask($input: AddDataProcessListInput!) {
   }
 }
 
-mutation deleteDataProcessTask($input: DeleteDataProcessListInput!) {
+mutation deleteDataProcessTask($input: DeleteDataProcessInput) {
   dataProcess {
     deleteDataProcessTask(input: $input) {
       status

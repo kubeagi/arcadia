@@ -253,6 +253,14 @@ gql-gen:
 	@go run github.com/99designs/gqlgen@v0.17.40 generate
 build-graphql-server: gql-gen
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/graphql-server graphql-server/go-server/main.go
+run-graphql-server:
+	POD_NAMESPACE=arcadia go run graphql-server/go-server/main.go --enable-playground=true &
+
+# sdk for graphql-server api
+GRL_SDK_GENERATOR_IMAGE ?= kubebb/gql-sdk-generator
+.PHONY: gql-sdk-generator
+gql-sdk-generator: run-graphql-server
+	docker run -v $(shell pwd)/graphql-server/go-server/graph/schema:/schema ${GRL_SDK_GENERATOR_IMAGE}:main
 
 
 # prepare for git push
