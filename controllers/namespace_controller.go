@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/minio/minio-go/v7"
 	v1 "k8s.io/api/core/v1"
@@ -72,7 +71,7 @@ func (r *NamespacetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if err = r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			err = r.removeBucket(ctx, req.Name)
-			return reconcile.Result{RequeueAfter: 3 * time.Second}, err
+			return reconcile.Result{RequeueAfter: waitSmaller}, err
 		}
 		return reconcile.Result{}, err
 	}
