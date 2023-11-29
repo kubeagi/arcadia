@@ -18,6 +18,8 @@ package minio
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"os"
 	"sync"
 
@@ -87,6 +89,11 @@ func GetClients() (*minio.Client, *minio.Core, error) {
 		minioClient, err = minio.New(aliasedURL, &minio.Options{
 			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 			Secure: secure,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
 		})
 	}
 	if err != nil {
@@ -100,6 +107,11 @@ func GetClients() (*minio.Client, *minio.Core, error) {
 		coreClient, err = minio.NewCore(aliasedURL, &minio.Options{
 			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 			Secure: secure,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
 		})
 	}
 
