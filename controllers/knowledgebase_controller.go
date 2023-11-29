@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	waitLonger  = time.Minute
+	waitLonger  = time.Hour
 	waitSmaller = time.Second * 3
 	waitMedium  = time.Second * 30
 
