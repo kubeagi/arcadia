@@ -14,6 +14,7 @@ type filegroupdetail{
 }
 
 type KnowledgeBase {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -26,6 +27,7 @@ type KnowledgeBase {
     fileGroupDetails: [filegroupdetail]
     """知识库连接状态"""
     status: String
+    creationTimestamp: Time
     updateTimestamp: Time
 }
 
@@ -51,7 +53,7 @@ input CreateKnowledgeBaseInput{
     """知识库资源描述"""
     description: String
     """模型服务"""
-    embedder: TypedObjectReferenceInput!
+    embedder: String!
     """"向量数据库(使用默认值)"""
     vectorStore: TypedObjectReferenceInput
     """知识库文件"""

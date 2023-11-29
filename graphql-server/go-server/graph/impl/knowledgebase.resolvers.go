@@ -25,9 +25,9 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 	}
 
 	var filegroups []v1alpha1.FileGroup
-	var vectorstore, embedder v1alpha1.TypedObjectReference
+	var vectorstore v1alpha1.TypedObjectReference
 	vector, _ := config.GetVectorStore(ctx, c)
-	displayname, description := "", ""
+	displayname, description, embedder := "", "", ""
 	if input.DisplayName != "" {
 		displayname = input.DisplayName
 	}
@@ -39,8 +39,8 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 	} else {
 		vectorstore = *vector
 	}
-	if input.Embedder != (generated.TypedObjectReferenceInput{}) {
-		embedder = v1alpha1.TypedObjectReference(input.Embedder)
+	if input.Embedder != "" {
+		embedder = input.Embedder
 	}
 	if input.FileGroups != nil {
 		for _, f := range input.FileGroups {
@@ -51,7 +51,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 			filegroups = append(filegroups, filegroup)
 		}
 	}
-	return knowledgebase.CreateKnowledgeBase(ctx, c, input.Name, input.Namespace, displayname, description, vectorstore, embedder, filegroups)
+	return knowledgebase.CreateKnowledgeBase(ctx, c, input.Name, input.Namespace, displayname, description, embedder, vectorstore, filegroups)
 }
 
 // UpdateKnowledgeBase is the resolver for the updateKnowledgeBase field.

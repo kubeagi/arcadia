@@ -22,7 +22,7 @@ func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.
 		return nil, err
 	}
 
-	displayname, description, filed, modeltypes := "", "", "", ""
+	displayname, description, modeltypes := "", "", ""
 
 	if input.DisplayName != "" {
 		displayname = input.DisplayName
@@ -30,13 +30,10 @@ func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.
 	if input.Description != nil {
 		description = *input.Description
 	}
-	if input.Field != "" {
-		filed = input.Field
-	}
 	if input.Modeltypes != "" {
 		modeltypes = input.Modeltypes
 	}
-	return md.CreateModel(ctx, c, input.Name, input.Namespace, displayname, description, filed, modeltypes)
+	return md.CreateModel(ctx, c, input.Name, input.Namespace, displayname, description, modeltypes)
 }
 
 // UpdateModel is the resolver for the updateModel field.

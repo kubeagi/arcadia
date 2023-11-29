@@ -108,7 +108,7 @@ type CreateKnowledgeBaseInput struct {
 	// 知识库资源描述
 	Description *string `json:"description,omitempty"`
 	// 模型服务
-	Embedder TypedObjectReferenceInput `json:"embedder"`
+	Embedder string `json:"embedder"`
 	// "向量数据库(使用默认值)
 	VectorStore *TypedObjectReferenceInput `json:"vectorStore,omitempty"`
 	// 知识库文件
@@ -122,8 +122,6 @@ type CreateModelInput struct {
 	Namespace string `json:"namespace"`
 	// 模型资源展示名称作为显示，并提供编辑
 	DisplayName string `json:"displayName"`
-	// 模型应用领域
-	Field string `json:"field"`
 	// 模型资源描述
 	Description *string `json:"description,omitempty"`
 	// 模型类型
@@ -428,6 +426,7 @@ type FileItem struct {
 }
 
 type KnowledgeBase struct {
+	ID               *string                `json:"id,omitempty"`
 	Name             string                 `json:"name"`
 	Namespace        string                 `json:"namespace"`
 	Labels           map[string]interface{} `json:"labels,omitempty"`
@@ -439,8 +438,9 @@ type KnowledgeBase struct {
 	VectorStore      *TypedObjectReference  `json:"vectorStore,omitempty"`
 	FileGroupDetails []*Filegroupdetail     `json:"fileGroupDetails,omitempty"`
 	// 知识库连接状态
-	Status          *string    `json:"status,omitempty"`
-	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	Status            *string    `json:"status,omitempty"`
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
 }
 
 func (KnowledgeBase) IsPageNode() {}
@@ -537,16 +537,18 @@ type ListVersionedDatasetInput struct {
 }
 
 type Model struct {
-	Name            string                 `json:"name"`
-	Namespace       string                 `json:"namespace"`
-	Labels          map[string]interface{} `json:"labels,omitempty"`
-	Annotations     map[string]interface{} `json:"annotations,omitempty"`
-	Creator         *string                `json:"creator,omitempty"`
-	DisplayName     string                 `json:"displayName"`
-	Description     *string                `json:"description,omitempty"`
-	Field           string                 `json:"field"`
-	Modeltypes      string                 `json:"modeltypes"`
-	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
+	ID                *string                `json:"id,omitempty"`
+	Name              string                 `json:"name"`
+	Namespace         string                 `json:"namespace"`
+	Labels            map[string]interface{} `json:"labels,omitempty"`
+	Annotations       map[string]interface{} `json:"annotations,omitempty"`
+	Creator           *string                `json:"creator,omitempty"`
+	DisplayName       string                 `json:"displayName"`
+	Description       *string                `json:"description,omitempty"`
+	Modeltypes        string                 `json:"modeltypes"`
+	Status            *string                `json:"status,omitempty"`
+	CreationTimestamp *time.Time             `json:"creationTimestamp,omitempty"`
+	UpdateTimestamp   *time.Time             `json:"updateTimestamp,omitempty"`
 }
 
 func (Model) IsPageNode() {}
@@ -590,15 +592,15 @@ type PaginatedResult struct {
 type TypedObjectReference struct {
 	APIGroup  *string `json:"apiGroup,omitempty"`
 	Kind      string  `json:"kind"`
-	Name      string  `json:"Name"`
-	Namespace *string `json:"Namespace,omitempty"`
+	Name      string  `json:"name"`
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 type TypedObjectReferenceInput struct {
 	APIGroup  *string `json:"apiGroup,omitempty"`
 	Kind      string  `json:"kind"`
-	Name      string  `json:"Name"`
-	Namespace *string `json:"Namespace,omitempty"`
+	Name      string  `json:"name"`
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 type UpdateDatasetInput struct {
