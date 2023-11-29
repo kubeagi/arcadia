@@ -36,6 +36,11 @@ func (r *dataProcessQueryResolver) DataProcessSupportType(ctx context.Context, o
 	return dataprocessing.DataProcessSupportType(ctx, obj)
 }
 
+// DataProcessDetails is the resolver for the dataProcessDetails field.
+func (r *dataProcessQueryResolver) DataProcessDetails(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessDetails, error) {
+	return dataprocessing.DataProcessDetails(ctx, obj, input)
+}
+
 // DataProcess is the resolver for the dataProcess field.
 func (r *mutationResolver) DataProcess(ctx context.Context) (*generated.DataProcessMutation, error) {
 	return &generated.DataProcessMutation{}, nil

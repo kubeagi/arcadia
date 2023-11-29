@@ -15,6 +15,8 @@ type DataProcessQuery {
   allDataProcessListByCount(input: AllDataProcessListByCountInput): CountDataProcessItem
   # 数据处理支持类型
   dataProcessSupportType: DataProcessSupportType
+  # 数据处理详情
+  dataProcessDetails(input: DataProcessDetailsInput): DataProcessDetails
 }
 
 
@@ -52,6 +54,10 @@ input DataProcessConfigItem {
 }
 
 input DeleteDataProcessInput {
+  id: String!
+}
+
+input DataProcessDetailsInput {
   id: String!
 }
 
@@ -119,6 +125,57 @@ type DataProcessResponse {
   message: String!
 }
 
+
+# 数据处理详情
+type DataProcessDetails {
+  status: Int!
+  data: DataProcessDetailsItem!
+  message: String!
+}
+
+# 数据处理详情Item
+type DataProcessDetailsItem {
+  id: String!
+  status: String!
+  file_type: String!
+  pre_dataset_name: String!
+  pre_dataset_version: String!
+  post_dataset_name: String!
+  post_dataset_version: String!
+  file_num: Int!
+  start_time: String!
+  end_time: String!
+  config: [DataProcessConfig!]
+}
+
+# 数据处理配置项
+type DataProcessConfig {
+  name: String!
+  description: String!
+  status: String!
+  children: [DataProcessConfigChildren]
+}
+
+# 数据处理配置项子项
+type DataProcessConfigChildren {
+  name: String
+  enable: String
+  zh_name: String
+  description: String
+  preview: [DataProcessConfigpreView]
+}
+
+# 数据处理配置项预览
+type DataProcessConfigpreView {
+  file_name: String
+  content: [DataProcessConfigpreViewContent]
+}
+
+# 数据处理配置项预览内容
+type DataProcessConfigpreViewContent {
+  pre: String
+  post: String
+}
 
 
 # mutation

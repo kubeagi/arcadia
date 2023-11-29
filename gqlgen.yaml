@@ -149,6 +149,8 @@ models:
         resolver: true
       dataProcessSupportType:
         resolver: true
+      dataProcessDetails:
+        resolver: true
   DataProcessMutation:
     fields:
       createDataProcessTask:

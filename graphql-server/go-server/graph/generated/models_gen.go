@@ -155,8 +155,57 @@ type CreateVersionedDatasetInput struct {
 	InheritedFrom *string `json:"inheritedFrom,omitempty"`
 }
 
+type DataProcessConfig struct {
+	Name        string                       `json:"name"`
+	Description string                       `json:"description"`
+	Status      string                       `json:"status"`
+	Children    []*DataProcessConfigChildren `json:"children,omitempty"`
+}
+
+type DataProcessConfigChildren struct {
+	Name        *string                     `json:"name,omitempty"`
+	Enable      *string                     `json:"enable,omitempty"`
+	ZhName      *string                     `json:"zh_name,omitempty"`
+	Description *string                     `json:"description,omitempty"`
+	Preview     []*DataProcessConfigpreView `json:"preview,omitempty"`
+}
+
 type DataProcessConfigItem struct {
 	Type string `json:"type"`
+}
+
+type DataProcessConfigpreView struct {
+	FileName *string                            `json:"file_name,omitempty"`
+	Content  []*DataProcessConfigpreViewContent `json:"content,omitempty"`
+}
+
+type DataProcessConfigpreViewContent struct {
+	Pre  *string `json:"pre,omitempty"`
+	Post *string `json:"post,omitempty"`
+}
+
+type DataProcessDetails struct {
+	Status  int                    `json:"status"`
+	Data    DataProcessDetailsItem `json:"data"`
+	Message string                 `json:"message"`
+}
+
+type DataProcessDetailsInput struct {
+	ID string `json:"id"`
+}
+
+type DataProcessDetailsItem struct {
+	ID                 string               `json:"id"`
+	Status             string               `json:"status"`
+	FileType           string               `json:"file_type"`
+	PreDatasetName     string               `json:"pre_dataset_name"`
+	PreDatasetVersion  string               `json:"pre_dataset_version"`
+	PostDatasetName    string               `json:"post_dataset_name"`
+	PostDatasetVersion string               `json:"post_dataset_version"`
+	FileNum            int                  `json:"file_num"`
+	StartTime          string               `json:"start_time"`
+	EndTime            string               `json:"end_time"`
+	Config             []*DataProcessConfig `json:"config,omitempty"`
 }
 
 type DataProcessItem struct {
@@ -179,6 +228,7 @@ type DataProcessQuery struct {
 	AllDataProcessListByPage  *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
 	AllDataProcessListByCount *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
 	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
+	DataProcessDetails        *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
 }
 
 type DataProcessResponse struct {
