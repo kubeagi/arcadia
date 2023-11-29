@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 )

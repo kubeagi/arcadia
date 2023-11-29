@@ -11,4 +11,6 @@ resources:
 - arcadia_v1alpha1_vectorstore.yaml
 - arcadia_v1alpha1_worker.yaml
 - arcadia_v1alpha1_model.yaml
+- arcadia_v1alpha1_application.yaml
+- app_llmchain_englishteacher.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

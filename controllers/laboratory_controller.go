@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
 // LaboratoryReconciler reconciles a Laboratory object

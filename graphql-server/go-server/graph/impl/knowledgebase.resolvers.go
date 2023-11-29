@@ -8,7 +8,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"

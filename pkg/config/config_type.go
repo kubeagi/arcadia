@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
 // Config defines the configuration for the Arcadia controller

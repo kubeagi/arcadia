@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kubeagi/arcadia/api/v1alpha1"
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
 var (

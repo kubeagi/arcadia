@@ -1,0 +1,118 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: base-chat-english-teacher
+  namespace: arcadia
+spec:
+  displayName: "AI英语老师"
+  description: "最简单的应用，AI英语老师"
+  prologue: "Hello, I am English Teacher KubeAGI 🤖"
+  nodes:
+    - name: Input
+      displayName: "用户输入"
+      description: "用户输入节点，必须"
+      ref:
+        kind: Input
+        name: Input
+      nextNodeName: ["prompt-node"]
+    - name: prompt-node
+      displayName: "prompt"
+      description: "设定prompt，template中可以使用{{xx}}来替换变量"
+      ref:
+        apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+        kind: Prompt
+        name: base-chat-english-teacher
+      nextNodeName: ["chain-node"]
+    - name: llm-node
+      displayName: "zhipu大模型服务"
+      description: "设定质谱大模型的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: LLM
+        name: base-chat-english-teacher
+      nextNodeName: ["chain-node"]
+    - name: chain-node
+      displayName: "llm chain"
+      description: "chain是langchain的核心概念，llmChain用于连接prompt和llm"
+      ref:
+        apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+        kind: LLMChain
+        name: base-chat-english-teacher
+      nextNodeName: ["Output"]
+    - name: Output
+      displayName: "最终输出"
+      description: "最终输出节点，必须"
+      ref:
+        kind: Output
+        name: Output
+---
+apiVersion: prompt.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Prompt
+metadata:
+  name: base-chat-english-teacher
+  namespace: arcadia
+spec:
+  displayName: "设定英语老师的prompt"
+  description: "设定英语老师的prompt,来自https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-an-english-translator-and-improver"
+  userMessage: |
+    I want you to act as an English translator, spelling corrector and improver. 
+    I will speak to you in any language, and you will detect the language, 
+    translate it and answer in the corrected and improved version of my text, in English. 
+    I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. 
+    Keep the meaning same, but make them more literary. 
+    I want you to only reply the correction, the improvements and nothing else, do not write explanations.
+    My sentence is: '{{.question}}'
+  input:
+    kind: "Input"
+    name: "Input"
+  output:
+    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+    kind: LLMChain
+    name: base-chat-english-teacher
+---
+apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLMChain
+metadata:
+  name: base-chat-english-teacher
+  namespace: arcadia
+spec:
+  displayName: "llm chain"
+  description: "llm chain"
+  memory:
+    maxTokenLimit: 20480
+  input:
+    llm:
+      apiGroup: arcadia.kubeagi.k8s.com.cn
+      kind: LLM
+      name: base-chat-english-teacher
+    prompt:
+      apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+      kind: Prompt
+      name: base-chat-english-teacher
+  output:
+    apiGroup: "arcadia.kubeagi.k8s.com.cn"
+    kind: "Output"
+    name: "output-node"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: base-chat-english-teacher
+  namespace: arcadia
+type: Opaque
+data:
+  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLM
+metadata:
+  name: base-chat-english-teacher
+  namespace: arcadia
+spec:
+  type: "zhipuai"
+  provider:
+    endpoint:
+      url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: base-chat-english-teacher

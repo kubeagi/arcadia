@@ -5,6 +5,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
+multigroup: true
 projectName: arcadia
 repo: github.com/kubeagi/arcadia
 resources:
@@ -14,7 +15,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Laboratory
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -23,7 +24,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: LLM
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -32,7 +33,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Prompt
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true
@@ -43,7 +44,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Datasource
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -52,7 +53,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Embedders
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -61,7 +62,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Dataset
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -70,7 +71,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: VersionedDataset
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -79,7 +80,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Worker
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -88,7 +89,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: Model
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -97,7 +98,7 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: KnowledgeBase
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -106,6 +107,31 @@ resources:
   domain: kubeagi.k8s.com.cn
   group: arcadia
   kind: VectorStore
-  path: github.com/kubeagi/arcadia/api/v1alpha1
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubeagi.k8s.com.cn
+  group: arcadia
+  kind: Application
+  path: github.com/kubeagi/arcadia/api/base/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
+  group: chain
+  kind: LLMChain
+  path: github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
+  group: prompt
+  kind: Prompt
+  path: github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1
   version: v1alpha1
 version: "3"

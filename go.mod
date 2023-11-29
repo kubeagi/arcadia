@@ -7,6 +7,7 @@ require (
 	github.com/KawashiroNitori/butcher/v2 v2.0.1
 	github.com/amikos-tech/chroma-go v0.0.0-20230901221218-d0087270239e
 	github.com/coreos/go-oidc/v3 v3.7.0
+	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.2.0
 	github.com/gofiber/fiber/v2 v2.49.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -26,19 +27,41 @@ require (
 )
 
 require (
+	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/bytedance/sonic v1.9.1 // indirect
+	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.14.0 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
+	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/reflectwalk v1.0.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
+	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sosodev/duration v1.1.0 // indirect
+	github.com/spf13/cast v1.3.1 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/ugorji/go/codec v1.2.11 // indirect
+	go.starlark.net v0.0.0-20230302034142-4b1e35fe2254 // indirect
+	golang.org/x/arch v0.3.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 

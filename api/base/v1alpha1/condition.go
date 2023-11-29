@@ -214,3 +214,35 @@ func (s *ConditionedStatus) Equal(other *ConditionedStatus) bool {
 func (s *ConditionedStatus) IsReady() bool {
 	return s.GetCondition(TypeReady).Status == corev1.ConditionTrue
 }
+
+func (s *ConditionedStatus) WaitingCompleteCondition() []Condition {
+	return []Condition{{
+		Type:               TypeReady,
+		Status:             corev1.ConditionUnknown,
+		Reason:             "Pending",
+		Message:            "Waiting for user to complete",
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: metav1.Now(),
+	}}
+}
+
+func (s *ConditionedStatus) ErrorCondition(msg string) []Condition {
+	return []Condition{{
+		Type:               TypeReady,
+		Status:             corev1.ConditionFalse,
+		Reason:             "Error",
+		Message:            msg,
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: metav1.Now(),
+	}}
+}
+
+func (s *ConditionedStatus) ReadyCondition() []Condition {
+	return []Condition{{
+		Type:               TypeReady,
+		Status:             corev1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: metav1.Now(),
+		Message:            "Success",
+	}}
+}

@@ -27,11 +27,13 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gin-gonic/gin"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/impl"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/chat"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataprocessing"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
@@ -68,6 +70,25 @@ func main() {
 	// initialize dataprocessing
 	dataprocessing.Init(*dataProcessingURL)
 
+	r := gin.Default()
+	r.POST("/bff", graphqlHandler())
+	if *enablePlayground {
+		r.GET("/", playgroundHandler())
+	}
+	r.POST("/chat", chatHandler())
+
+	// todo refactor these handlers like others
+	http.HandleFunc("/minio/get_chunks", minio.GetSuccessChunks)
+	http.HandleFunc("/minio/new_multipart", minio.NewMultipart)
+	http.HandleFunc("/minio/get_multipart_url", minio.GetMultipartUploadURL)
+	http.HandleFunc("/minio/complete_multipart", minio.CompleteMultipart)
+	http.HandleFunc("/minio/update_chunk", minio.UpdateMultipart)
+
+	klog.Infof("listening server on port: %d", *port)
+	log.Fatal(r.Run(fmt.Sprintf("%s:%d", *host, *port)))
+}
+
+func graphqlHandler() gin.HandlerFunc {
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &impl.Resolver{}}))
 	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		rc := graphql.GetFieldContext(ctx)
@@ -76,29 +97,40 @@ func main() {
 		klog.Infoln("Left", rc.Object, rc.Field.Name, "=>", res, err)
 		return res, err
 	})
-
-	if *enablePlayground {
-		endpoint := "/bff"
-		if *playgroundEndpointPrefix != "" {
-			if prefix := strings.TrimPrefix(strings.TrimSuffix(*playgroundEndpointPrefix, "/"), "/"); prefix != "" {
-				endpoint = fmt.Sprintf("/%s%s", prefix, endpoint)
-			}
-		}
-		http.Handle("/", playground.Handler("Arcadia-Graphql-Server", endpoint))
-	}
-
+	serveHTTP := srv.ServeHTTP
 	if *enableOIDC {
-		http.Handle("/bff", auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP))
-	} else {
-		http.Handle("/bff", srv)
+		serveHTTP = auth.AuthInterceptor(oidc.Verifier, srv.ServeHTTP)
 	}
+	return func(c *gin.Context) {
+		serveHTTP(c.Writer, c.Request)
+	}
+}
 
-	http.HandleFunc("/minio/get_chunks", minio.GetSuccessChunks)
-	http.HandleFunc("/minio/new_multipart", minio.NewMultipart)
-	http.HandleFunc("/minio/get_multipart_url", minio.GetMultipartUploadURL)
-	http.HandleFunc("/minio/complete_multipart", minio.CompleteMultipart)
-	http.HandleFunc("/minio/update_chunk", minio.UpdateMultipart)
+func playgroundHandler() gin.HandlerFunc {
+	endpoint := "/bff"
+	if *playgroundEndpointPrefix != "" {
+		if prefix := strings.TrimPrefix(strings.TrimSuffix(*playgroundEndpointPrefix, "/"), "/"); prefix != "" {
+			endpoint = fmt.Sprintf("/%s%s", prefix, endpoint)
+		}
+	}
+	h := playground.Handler("Arcadia-Graphql-Server", endpoint)
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
 
-	klog.Infof("listening server on port: %d", *port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
+func chatHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		req := chat.ChatReqBody{}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		resp, err := chat.AppRun(c, req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, resp)
+	}
 }
