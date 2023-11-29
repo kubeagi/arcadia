@@ -116,7 +116,7 @@ input CreateVersionedDatasetInput {
     """描述信息，可以不写"""
     description: String
 
-    """数据集里面的数据的类型，文本，视频，图片"""
+    """数据集版本，v1, v2, v3..."""
     version: String!
 
     """是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以"""

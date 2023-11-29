@@ -145,7 +145,7 @@ type CreateVersionedDatasetInput struct {
 	DisplayName string `json:"displayName"`
 	// 描述信息，可以不写
 	Description *string `json:"description,omitempty"`
-	// 数据集里面的数据的类型，文本，视频，图片
+	// 数据集版本，v1, v2, v3...
 	Version string `json:"version"`
 	// 是否发布，0是未发布，1是已经发布，创建一个版本的时候默认传递0就可以
 	Released int `json:"released"`

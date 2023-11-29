@@ -220,7 +220,7 @@ func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.Up
 	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
 	if input.DisplayName != nil && *input.DisplayName != displayname {
-		_ = unstructured.SetNestedField(obj.Object, input.DisplayName, "spec", "displayName")
+		_ = unstructured.SetNestedField(obj.Object, *input.DisplayName, "spec", "displayName")
 	}
 	if input.Description != nil && *input.Description != description {
 		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
