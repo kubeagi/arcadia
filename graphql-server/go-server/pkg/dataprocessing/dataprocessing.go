@@ -171,3 +171,31 @@ func DeleteDataProcessTask(ctx context.Context, obj *generated.DataProcessMutati
 	}
 	return data, nil
 }
+
+func DataProcessDetails(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessDetails, error) {
+	// prepare http request
+	jsonParams, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", url+"/info-by-id", bytes.NewBuffer(jsonParams))
+	if err != nil {
+		return nil, err
+	}
+
+	// call dataprocessing server
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// parse http response
+	data := &generated.DataProcessDetails{}
+	err = json.NewDecoder(resp.Body).Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}

@@ -68,6 +68,51 @@ type ComplexityRoot struct {
 		Status  func(childComplexity int) int
 	}
 
+	DataProcessConfig struct {
+		Children    func(childComplexity int) int
+		Description func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Status      func(childComplexity int) int
+	}
+
+	DataProcessConfigChildren struct {
+		Description func(childComplexity int) int
+		Enable      func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Preview     func(childComplexity int) int
+		ZhName      func(childComplexity int) int
+	}
+
+	DataProcessConfigpreView struct {
+		Content  func(childComplexity int) int
+		FileName func(childComplexity int) int
+	}
+
+	DataProcessConfigpreViewContent struct {
+		Post func(childComplexity int) int
+		Pre  func(childComplexity int) int
+	}
+
+	DataProcessDetails struct {
+		Data    func(childComplexity int) int
+		Message func(childComplexity int) int
+		Status  func(childComplexity int) int
+	}
+
+	DataProcessDetailsItem struct {
+		Config             func(childComplexity int) int
+		EndTime            func(childComplexity int) int
+		FileNum            func(childComplexity int) int
+		FileType           func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		PostDatasetName    func(childComplexity int) int
+		PostDatasetVersion func(childComplexity int) int
+		PreDatasetName     func(childComplexity int) int
+		PreDatasetVersion  func(childComplexity int) int
+		StartTime          func(childComplexity int) int
+		Status             func(childComplexity int) int
+	}
+
 	DataProcessItem struct {
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
@@ -87,6 +132,7 @@ type ComplexityRoot struct {
 	DataProcessQuery struct {
 		AllDataProcessListByCount func(childComplexity int, input *AllDataProcessListByCountInput) int
 		AllDataProcessListByPage  func(childComplexity int, input *AllDataProcessListByPageInput) int
+		DataProcessDetails        func(childComplexity int, input *DataProcessDetailsInput) int
 		DataProcessSupportType    func(childComplexity int) int
 	}
 
@@ -354,6 +400,7 @@ type DataProcessQueryResolver interface {
 	AllDataProcessListByPage(ctx context.Context, obj *DataProcessQuery, input *AllDataProcessListByPageInput) (*PaginatedDataProcessItem, error)
 	AllDataProcessListByCount(ctx context.Context, obj *DataProcessQuery, input *AllDataProcessListByCountInput) (*CountDataProcessItem, error)
 	DataProcessSupportType(ctx context.Context, obj *DataProcessQuery) (*DataProcessSupportType, error)
+	DataProcessDetails(ctx context.Context, obj *DataProcessQuery, input *DataProcessDetailsInput) (*DataProcessDetails, error)
 }
 type DatasetResolver interface {
 	Versions(ctx context.Context, obj *Dataset, input ListVersionedDatasetInput) (*PaginatedResult, error)
@@ -476,6 +523,195 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CountDataProcessItem.Status(childComplexity), true
 
+	case "DataProcessConfig.children":
+		if e.complexity.DataProcessConfig.Children == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfig.Children(childComplexity), true
+
+	case "DataProcessConfig.description":
+		if e.complexity.DataProcessConfig.Description == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfig.Description(childComplexity), true
+
+	case "DataProcessConfig.name":
+		if e.complexity.DataProcessConfig.Name == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfig.Name(childComplexity), true
+
+	case "DataProcessConfig.status":
+		if e.complexity.DataProcessConfig.Status == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfig.Status(childComplexity), true
+
+	case "DataProcessConfigChildren.description":
+		if e.complexity.DataProcessConfigChildren.Description == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.Description(childComplexity), true
+
+	case "DataProcessConfigChildren.enable":
+		if e.complexity.DataProcessConfigChildren.Enable == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.Enable(childComplexity), true
+
+	case "DataProcessConfigChildren.name":
+		if e.complexity.DataProcessConfigChildren.Name == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.Name(childComplexity), true
+
+	case "DataProcessConfigChildren.preview":
+		if e.complexity.DataProcessConfigChildren.Preview == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.Preview(childComplexity), true
+
+	case "DataProcessConfigChildren.zh_name":
+		if e.complexity.DataProcessConfigChildren.ZhName == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.ZhName(childComplexity), true
+
+	case "DataProcessConfigpreView.content":
+		if e.complexity.DataProcessConfigpreView.Content == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreView.Content(childComplexity), true
+
+	case "DataProcessConfigpreView.file_name":
+		if e.complexity.DataProcessConfigpreView.FileName == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreView.FileName(childComplexity), true
+
+	case "DataProcessConfigpreViewContent.post":
+		if e.complexity.DataProcessConfigpreViewContent.Post == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreViewContent.Post(childComplexity), true
+
+	case "DataProcessConfigpreViewContent.pre":
+		if e.complexity.DataProcessConfigpreViewContent.Pre == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreViewContent.Pre(childComplexity), true
+
+	case "DataProcessDetails.data":
+		if e.complexity.DataProcessDetails.Data == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetails.Data(childComplexity), true
+
+	case "DataProcessDetails.message":
+		if e.complexity.DataProcessDetails.Message == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetails.Message(childComplexity), true
+
+	case "DataProcessDetails.status":
+		if e.complexity.DataProcessDetails.Status == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetails.Status(childComplexity), true
+
+	case "DataProcessDetailsItem.config":
+		if e.complexity.DataProcessDetailsItem.Config == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.Config(childComplexity), true
+
+	case "DataProcessDetailsItem.end_time":
+		if e.complexity.DataProcessDetailsItem.EndTime == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.EndTime(childComplexity), true
+
+	case "DataProcessDetailsItem.file_num":
+		if e.complexity.DataProcessDetailsItem.FileNum == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.FileNum(childComplexity), true
+
+	case "DataProcessDetailsItem.file_type":
+		if e.complexity.DataProcessDetailsItem.FileType == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.FileType(childComplexity), true
+
+	case "DataProcessDetailsItem.id":
+		if e.complexity.DataProcessDetailsItem.ID == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.ID(childComplexity), true
+
+	case "DataProcessDetailsItem.post_dataset_name":
+		if e.complexity.DataProcessDetailsItem.PostDatasetName == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.PostDatasetName(childComplexity), true
+
+	case "DataProcessDetailsItem.post_dataset_version":
+		if e.complexity.DataProcessDetailsItem.PostDatasetVersion == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.PostDatasetVersion(childComplexity), true
+
+	case "DataProcessDetailsItem.pre_dataset_name":
+		if e.complexity.DataProcessDetailsItem.PreDatasetName == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.PreDatasetName(childComplexity), true
+
+	case "DataProcessDetailsItem.pre_dataset_version":
+		if e.complexity.DataProcessDetailsItem.PreDatasetVersion == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.PreDatasetVersion(childComplexity), true
+
+	case "DataProcessDetailsItem.start_time":
+		if e.complexity.DataProcessDetailsItem.StartTime == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.StartTime(childComplexity), true
+
+	case "DataProcessDetailsItem.status":
+		if e.complexity.DataProcessDetailsItem.Status == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.Status(childComplexity), true
+
 	case "DataProcessItem.id":
 		if e.complexity.DataProcessItem.ID == nil {
 			break
@@ -579,6 +815,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessQuery.AllDataProcessListByPage(childComplexity, args["input"].(*AllDataProcessListByPageInput)), true
+
+	case "DataProcessQuery.dataProcessDetails":
+		if e.complexity.DataProcessQuery.DataProcessDetails == nil {
+			break
+		}
+
+		args, err := ec.field_DataProcessQuery_dataProcessDetails_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DataProcessQuery.DataProcessDetails(childComplexity, args["input"].(*DataProcessDetailsInput)), true
 
 	case "DataProcessQuery.dataProcessSupportType":
 		if e.complexity.DataProcessQuery.DataProcessSupportType == nil {
@@ -1867,6 +2115,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateModelInput,
 		ec.unmarshalInputCreateVersionedDatasetInput,
 		ec.unmarshalInputDataProcessConfigItem,
+		ec.unmarshalInputDataProcessDetailsInput,
 		ec.unmarshalInputDeleteDataProcessInput,
 		ec.unmarshalInputDeleteDatasetInput,
 		ec.unmarshalInputDeleteDatasourceInput,
@@ -2007,6 +2256,8 @@ type DataProcessQuery {
   allDataProcessListByCount(input: AllDataProcessListByCountInput): CountDataProcessItem
   # 数据处理支持类型
   dataProcessSupportType: DataProcessSupportType
+  # 数据处理详情
+  dataProcessDetails(input: DataProcessDetailsInput): DataProcessDetails
 }
 
 
@@ -2044,6 +2295,10 @@ input DataProcessConfigItem {
 }
 
 input DeleteDataProcessInput {
+  id: String!
+}
+
+input DataProcessDetailsInput {
   id: String!
 }
 
@@ -2111,6 +2366,57 @@ type DataProcessResponse {
   message: String!
 }
 
+
+# 数据处理详情
+type DataProcessDetails {
+  status: Int!
+  data: DataProcessDetailsItem!
+  message: String!
+}
+
+# 数据处理详情Item
+type DataProcessDetailsItem {
+  id: String!
+  status: String!
+  file_type: String!
+  pre_dataset_name: String!
+  pre_dataset_version: String!
+  post_dataset_name: String!
+  post_dataset_version: String!
+  file_num: Int!
+  start_time: String!
+  end_time: String!
+  config: [DataProcessConfig!]
+}
+
+# 数据处理配置项
+type DataProcessConfig {
+  name: String!
+  description: String!
+  status: String!
+  children: [DataProcessConfigChildren]
+}
+
+# 数据处理配置项子项
+type DataProcessConfigChildren {
+  name: String
+  enable: String
+  zh_name: String
+  description: String
+  preview: [DataProcessConfigpreView]
+}
+
+# 数据处理配置项预览
+type DataProcessConfigpreView {
+  file_name: String
+  content: [DataProcessConfigpreViewContent]
+}
+
+# 数据处理配置项预览内容
+type DataProcessConfigpreViewContent {
+  pre: String
+  post: String
+}
 
 
 # mutation
@@ -2986,6 +3292,21 @@ func (ec *executionContext) field_DataProcessQuery_allDataProcessListByPage_args
 	return args, nil
 }
 
+func (ec *executionContext) field_DataProcessQuery_dataProcessDetails_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *DataProcessDetailsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalODataProcessDetailsInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetailsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_DatasetMutation_createDataset_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3735,6 +4056,1219 @@ func (ec *executionContext) fieldContext_CountDataProcessItem_message(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _DataProcessConfig_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfig_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfig_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfig_description(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfig_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfig_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfig_status(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfig_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfig_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfig_children(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfig_children(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Children, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfigChildren)
+	fc.Result = res
+	return ec.marshalODataProcessConfigChildren2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigChildren(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfig_children(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DataProcessConfigChildren_name(ctx, field)
+			case "enable":
+				return ec.fieldContext_DataProcessConfigChildren_enable(ctx, field)
+			case "zh_name":
+				return ec.fieldContext_DataProcessConfigChildren_zh_name(ctx, field)
+			case "description":
+				return ec.fieldContext_DataProcessConfigChildren_description(ctx, field)
+			case "preview":
+				return ec.fieldContext_DataProcessConfigChildren_preview(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigChildren", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_enable(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_enable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_enable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_zh_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_zh_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ZhName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_zh_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_description(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_preview(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_preview(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Preview, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfigpreView)
+	fc.Result = res
+	return ec.marshalODataProcessConfigpreView2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreView(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_preview(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "file_name":
+				return ec.fieldContext_DataProcessConfigpreView_file_name(ctx, field)
+			case "content":
+				return ec.fieldContext_DataProcessConfigpreView_content(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigpreView", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreView_file_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreView) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreView_file_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreView_file_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreView",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreView_content(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreView) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreView_content(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfigpreViewContent)
+	fc.Result = res
+	return ec.marshalODataProcessConfigpreViewContent2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreViewContent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreView_content(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreView",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "pre":
+				return ec.fieldContext_DataProcessConfigpreViewContent_pre(ctx, field)
+			case "post":
+				return ec.fieldContext_DataProcessConfigpreViewContent_post(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigpreViewContent", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreViewContent_pre(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreViewContent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreViewContent_pre(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pre, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreViewContent_pre(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreViewContent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreViewContent_post(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreViewContent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreViewContent_post(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Post, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreViewContent_post(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreViewContent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetails_status(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetails_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetails_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetails_data(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetails_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(DataProcessDetailsItem)
+	fc.Result = res
+	return ec.marshalNDataProcessDetailsItem2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetailsItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataProcessDetailsItem_id(ctx, field)
+			case "status":
+				return ec.fieldContext_DataProcessDetailsItem_status(ctx, field)
+			case "file_type":
+				return ec.fieldContext_DataProcessDetailsItem_file_type(ctx, field)
+			case "pre_dataset_name":
+				return ec.fieldContext_DataProcessDetailsItem_pre_dataset_name(ctx, field)
+			case "pre_dataset_version":
+				return ec.fieldContext_DataProcessDetailsItem_pre_dataset_version(ctx, field)
+			case "post_dataset_name":
+				return ec.fieldContext_DataProcessDetailsItem_post_dataset_name(ctx, field)
+			case "post_dataset_version":
+				return ec.fieldContext_DataProcessDetailsItem_post_dataset_version(ctx, field)
+			case "file_num":
+				return ec.fieldContext_DataProcessDetailsItem_file_num(ctx, field)
+			case "start_time":
+				return ec.fieldContext_DataProcessDetailsItem_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_DataProcessDetailsItem_end_time(ctx, field)
+			case "config":
+				return ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessDetailsItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetails_message(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetails_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetails_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_id(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_status(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_file_type(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_file_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_file_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_pre_dataset_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_pre_dataset_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PreDatasetName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_pre_dataset_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_pre_dataset_version(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_pre_dataset_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PreDatasetVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_pre_dataset_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_post_dataset_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_post_dataset_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostDatasetName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_post_dataset_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_post_dataset_version(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_post_dataset_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostDatasetVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_post_dataset_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_file_num(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_file_num(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileNum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_file_num(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_start_time(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_start_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_start_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_end_time(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_end_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_end_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_config(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Config, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfig)
+	fc.Result = res
+	return ec.marshalODataProcessConfig2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DataProcessConfig_name(ctx, field)
+			case "description":
+				return ec.fieldContext_DataProcessConfig_description(ctx, field)
+			case "status":
+				return ec.fieldContext_DataProcessConfig_status(ctx, field)
+			case "children":
+				return ec.fieldContext_DataProcessConfig_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataProcessItem_id(ctx context.Context, field graphql.CollectedField, obj *DataProcessItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataProcessItem_id(ctx, field)
 	if err != nil {
@@ -4369,6 +5903,66 @@ func (ec *executionContext) fieldContext_DataProcessQuery_dataProcessSupportType
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessSupportType", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessQuery_dataProcessDetails(ctx context.Context, field graphql.CollectedField, obj *DataProcessQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessQuery_dataProcessDetails(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.DataProcessQuery().DataProcessDetails(rctx, obj, fc.Args["input"].(*DataProcessDetailsInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataProcessDetails)
+	fc.Result = res
+	return ec.marshalODataProcessDetails2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetails(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessQuery_dataProcessDetails(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_DataProcessDetails_status(ctx, field)
+			case "data":
+				return ec.fieldContext_DataProcessDetails_data(ctx, field)
+			case "message":
+				return ec.fieldContext_DataProcessDetails_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessDetails", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DataProcessQuery_dataProcessDetails_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10356,6 +11950,8 @@ func (ec *executionContext) fieldContext_Query_dataProcess(ctx context.Context, 
 				return ec.fieldContext_DataProcessQuery_allDataProcessListByCount(ctx, field)
 			case "dataProcessSupportType":
 				return ec.fieldContext_DataProcessQuery_dataProcessSupportType(ctx, field)
+			case "dataProcessDetails":
+				return ec.fieldContext_DataProcessQuery_dataProcessDetails(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessQuery", field.Name)
 		},
@@ -14832,6 +16428,35 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDataProcessDetailsInput(ctx context.Context, obj interface{}) (DataProcessDetailsInput, error) {
+	var it DataProcessDetailsInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeleteDataProcessInput(ctx context.Context, obj interface{}) (DeleteDataProcessInput, error) {
 	var it DeleteDataProcessInput
 	asMap := map[string]interface{}{}
@@ -16628,6 +18253,312 @@ func (ec *executionContext) _CountDataProcessItem(ctx context.Context, sel ast.S
 	return out
 }
 
+var dataProcessConfigImplementors = []string{"DataProcessConfig"}
+
+func (ec *executionContext) _DataProcessConfig(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfig")
+		case "name":
+			out.Values[i] = ec._DataProcessConfig_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._DataProcessConfig_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._DataProcessConfig_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "children":
+			out.Values[i] = ec._DataProcessConfig_children(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessConfigChildrenImplementors = []string{"DataProcessConfigChildren"}
+
+func (ec *executionContext) _DataProcessConfigChildren(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigChildren) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigChildrenImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfigChildren")
+		case "name":
+			out.Values[i] = ec._DataProcessConfigChildren_name(ctx, field, obj)
+		case "enable":
+			out.Values[i] = ec._DataProcessConfigChildren_enable(ctx, field, obj)
+		case "zh_name":
+			out.Values[i] = ec._DataProcessConfigChildren_zh_name(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._DataProcessConfigChildren_description(ctx, field, obj)
+		case "preview":
+			out.Values[i] = ec._DataProcessConfigChildren_preview(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessConfigpreViewImplementors = []string{"DataProcessConfigpreView"}
+
+func (ec *executionContext) _DataProcessConfigpreView(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigpreView) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigpreViewImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfigpreView")
+		case "file_name":
+			out.Values[i] = ec._DataProcessConfigpreView_file_name(ctx, field, obj)
+		case "content":
+			out.Values[i] = ec._DataProcessConfigpreView_content(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessConfigpreViewContentImplementors = []string{"DataProcessConfigpreViewContent"}
+
+func (ec *executionContext) _DataProcessConfigpreViewContent(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigpreViewContent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigpreViewContentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfigpreViewContent")
+		case "pre":
+			out.Values[i] = ec._DataProcessConfigpreViewContent_pre(ctx, field, obj)
+		case "post":
+			out.Values[i] = ec._DataProcessConfigpreViewContent_post(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessDetailsImplementors = []string{"DataProcessDetails"}
+
+func (ec *executionContext) _DataProcessDetails(ctx context.Context, sel ast.SelectionSet, obj *DataProcessDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessDetails")
+		case "status":
+			out.Values[i] = ec._DataProcessDetails_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "data":
+			out.Values[i] = ec._DataProcessDetails_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._DataProcessDetails_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessDetailsItemImplementors = []string{"DataProcessDetailsItem"}
+
+func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast.SelectionSet, obj *DataProcessDetailsItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessDetailsItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessDetailsItem")
+		case "id":
+			out.Values[i] = ec._DataProcessDetailsItem_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._DataProcessDetailsItem_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "file_type":
+			out.Values[i] = ec._DataProcessDetailsItem_file_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pre_dataset_name":
+			out.Values[i] = ec._DataProcessDetailsItem_pre_dataset_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pre_dataset_version":
+			out.Values[i] = ec._DataProcessDetailsItem_pre_dataset_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "post_dataset_name":
+			out.Values[i] = ec._DataProcessDetailsItem_post_dataset_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "post_dataset_version":
+			out.Values[i] = ec._DataProcessDetailsItem_post_dataset_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "file_num":
+			out.Values[i] = ec._DataProcessDetailsItem_file_num(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "start_time":
+			out.Values[i] = ec._DataProcessDetailsItem_start_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "end_time":
+			out.Values[i] = ec._DataProcessDetailsItem_end_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "config":
+			out.Values[i] = ec._DataProcessDetailsItem_config(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var dataProcessItemImplementors = []string{"DataProcessItem"}
 
 func (ec *executionContext) _DataProcessItem(ctx context.Context, sel ast.SelectionSet, obj *DataProcessItem) graphql.Marshaler {
@@ -16886,6 +18817,39 @@ func (ec *executionContext) _DataProcessQuery(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._DataProcessQuery_dataProcessSupportType(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "dataProcessDetails":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataProcessQuery_dataProcessDetails(ctx, field, obj)
 				return res
 			}
 
@@ -20122,9 +22086,23 @@ func (ec *executionContext) unmarshalNCreateVersionedDatasetInput2githubᚗcom�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDataProcessConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfig(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DataProcessConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDataProcessConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigItem(ctx context.Context, v interface{}) (*DataProcessConfigItem, error) {
 	res, err := ec.unmarshalInputDataProcessConfigItem(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDataProcessDetailsItem2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetailsItem(ctx context.Context, sel ast.SelectionSet, v DataProcessDetailsItem) graphql.Marshaler {
+	return ec._DataProcessDetailsItem(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNDataProcessItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessItem(ctx context.Context, sel ast.SelectionSet, v *DataProcessItem) graphql.Marshaler {
@@ -20687,6 +22665,101 @@ func (ec *executionContext) unmarshalOCreateDatasetInput2ᚖgithubᚗcomᚋkubea
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalODataProcessConfig2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDataProcessConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalODataProcessConfigChildren2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigChildren(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigChildren) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODataProcessConfigChildren2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigChildren(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODataProcessConfigChildren2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigChildren(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfigChildren) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataProcessConfigChildren(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalODataProcessConfigItem2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigItemᚄ(ctx context.Context, v interface{}) ([]*DataProcessConfigItem, error) {
 	if v == nil {
 		return nil, nil
@@ -20705,6 +22778,117 @@ func (ec *executionContext) unmarshalODataProcessConfigItem2ᚕᚖgithubᚗcom�
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreView2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreView(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigpreView) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODataProcessConfigpreView2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreView(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreView2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreView(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfigpreView) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataProcessConfigpreView(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreViewContent2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreViewContent(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigpreViewContent) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODataProcessConfigpreViewContent2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreViewContent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreViewContent2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessConfigpreViewContent(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfigpreViewContent) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataProcessConfigpreViewContent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODataProcessDetails2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetails(ctx context.Context, sel ast.SelectionSet, v *DataProcessDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataProcessDetails(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODataProcessDetailsInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessDetailsInput(ctx context.Context, v interface{}) (*DataProcessDetailsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDataProcessDetailsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalODataProcessItem2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDataProcessItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*DataProcessItem) graphql.Marshaler {

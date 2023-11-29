@@ -46,6 +46,45 @@ query dataProcessSupportType{
   }
 }
 
+query dataProcessDetails($input: DataProcessDetailsInput){
+  dataProcess {
+    dataProcessDetails {
+      status
+      data {
+        id
+        status
+        file_type
+        pre_dataset_name
+        pre_dataset_version
+        post_dataset_name
+        post_dataset_version
+        file_num
+        start_time
+        end_time
+        config {
+          name
+          description
+          status
+          children {
+            name
+            enable
+            zh_name
+            description
+            preview {
+              file_name
+              content {
+                pre
+                post
+              }
+            }
+          }
+        }
+      }
+      message
+    }
+  }
+}
+
 mutation createDataProcessTask($input: AddDataProcessInput) {
   dataProcess {
     createDataProcessTask(input: $input) {
