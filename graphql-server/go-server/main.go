@@ -78,11 +78,11 @@ func main() {
 	r.POST("/chat", chatHandler())
 
 	// todo refactor these handlers like others
-	http.HandleFunc("/minio/get_chunks", minio.GetSuccessChunks)
-	http.HandleFunc("/minio/new_multipart", minio.NewMultipart)
-	http.HandleFunc("/minio/get_multipart_url", minio.GetMultipartUploadURL)
-	http.HandleFunc("/minio/complete_multipart", minio.CompleteMultipart)
-	http.HandleFunc("/minio/update_chunk", minio.UpdateMultipart)
+	r.GET("/minio/get_chunks", gin.WrapF(minio.GetSuccessChunks))
+	r.GET("/minio/new_multipart", gin.WrapF(minio.NewMultipart))
+	r.GET("/minio/get_multipart_url", gin.WrapF(minio.GetMultipartUploadURL))
+	r.POST("/minio/complete_multipart", gin.WrapF(minio.CompleteMultipart))
+	r.POST("/minio/update_chunk", gin.WrapF(minio.UpdateMultipart))
 
 	klog.Infof("listening server on port: %d", *port)
 	log.Fatal(r.Run(fmt.Sprintf("%s:%d", *host, *port)))
