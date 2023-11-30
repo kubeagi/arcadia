@@ -9,7 +9,7 @@ mutation createDatasource($input: CreateDatasourceInput!) {
         url
         authSecret {
           kind
-          Name
+          name
         }
         insecure
       }
@@ -31,7 +31,7 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
         url
         authSecret {
           kind
-          Name
+          name
         }
         insecure
       }
@@ -65,7 +65,7 @@ query listDatasources($input: ListDatasourceInput!) {
           url
           authSecret {
             kind
-            Name
+            name
           }
           insecure
         }
@@ -89,7 +89,7 @@ query getDatasource($name: String!, $namespace: String!) {
         url
         authSecret {
           kind
-          Name
+          name
         }
         insecure
       }

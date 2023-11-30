@@ -12,7 +12,7 @@ mutation createEmbedder($input: CreateEmbedderInput!) {
         url
         authSecret {
           kind
-          Name
+          name
         }
         insecure
       }
@@ -36,7 +36,7 @@ mutation updateEmbedder($input: UpdateEmbedderInput) {
         url
         authSecret {
           kind
-          Name
+          name
         }
         insecure
       }
@@ -71,7 +71,7 @@ query listEmbedders($input: ListEmbedderInput!) {
           url
           authSecret {
             kind
-            Name
+            name
           }
           insecure
         }
@@ -97,7 +97,7 @@ query getEmbedder($name: String!, $namespace: String!) {
           url
           authSecret {
             kind
-            Name
+            name
           }
           insecure
         }

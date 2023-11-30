@@ -250,18 +250,20 @@ type ComplexityRoot struct {
 	}
 
 	KnowledgeBase struct {
-		Annotations      func(childComplexity int) int
-		Creator          func(childComplexity int) int
-		Description      func(childComplexity int) int
-		DisplayName      func(childComplexity int) int
-		Embedder         func(childComplexity int) int
-		FileGroupDetails func(childComplexity int) int
-		Labels           func(childComplexity int) int
-		Name             func(childComplexity int) int
-		Namespace        func(childComplexity int) int
-		Status           func(childComplexity int) int
-		UpdateTimestamp  func(childComplexity int) int
-		VectorStore      func(childComplexity int) int
+		Annotations       func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		Description       func(childComplexity int) int
+		DisplayName       func(childComplexity int) int
+		Embedder          func(childComplexity int) int
+		FileGroupDetails  func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Labels            func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
+		Status            func(childComplexity int) int
+		UpdateTimestamp   func(childComplexity int) int
+		VectorStore       func(childComplexity int) int
 	}
 
 	KnowledgeBaseMutation struct {
@@ -276,16 +278,18 @@ type ComplexityRoot struct {
 	}
 
 	Model struct {
-		Annotations     func(childComplexity int) int
-		Creator         func(childComplexity int) int
-		Description     func(childComplexity int) int
-		DisplayName     func(childComplexity int) int
-		Field           func(childComplexity int) int
-		Labels          func(childComplexity int) int
-		Modeltypes      func(childComplexity int) int
-		Name            func(childComplexity int) int
-		Namespace       func(childComplexity int) int
-		UpdateTimestamp func(childComplexity int) int
+		Annotations       func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		Description       func(childComplexity int) int
+		DisplayName       func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Labels            func(childComplexity int) int
+		Modeltypes        func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
+		Status            func(childComplexity int) int
+		UpdateTimestamp   func(childComplexity int) int
 	}
 
 	ModelMutation struct {
@@ -1398,6 +1402,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KnowledgeBase.Annotations(childComplexity), true
 
+	case "KnowledgeBase.creationTimestamp":
+		if e.complexity.KnowledgeBase.CreationTimestamp == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBase.CreationTimestamp(childComplexity), true
+
 	case "KnowledgeBase.creator":
 		if e.complexity.KnowledgeBase.Creator == nil {
 			break
@@ -1432,6 +1443,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KnowledgeBase.FileGroupDetails(childComplexity), true
+
+	case "KnowledgeBase.id":
+		if e.complexity.KnowledgeBase.ID == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBase.ID(childComplexity), true
 
 	case "KnowledgeBase.labels":
 		if e.complexity.KnowledgeBase.Labels == nil {
@@ -1542,6 +1560,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.Annotations(childComplexity), true
 
+	case "Model.creationTimestamp":
+		if e.complexity.Model.CreationTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Model.CreationTimestamp(childComplexity), true
+
 	case "Model.creator":
 		if e.complexity.Model.Creator == nil {
 			break
@@ -1563,12 +1588,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.DisplayName(childComplexity), true
 
-	case "Model.field":
-		if e.complexity.Model.Field == nil {
+	case "Model.id":
+		if e.complexity.Model.ID == nil {
 			break
 		}
 
-		return e.complexity.Model.Field(childComplexity), true
+		return e.complexity.Model.ID(childComplexity), true
 
 	case "Model.labels":
 		if e.complexity.Model.Labels == nil {
@@ -1597,6 +1622,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Model.Namespace(childComplexity), true
+
+	case "Model.status":
+		if e.complexity.Model.Status == nil {
+			break
+		}
+
+		return e.complexity.Model.Status(childComplexity), true
 
 	case "Model.updateTimestamp":
 		if e.complexity.Model.UpdateTimestamp == nil {
@@ -1871,14 +1903,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TypedObjectReference.Kind(childComplexity), true
 
-	case "TypedObjectReference.Name":
+	case "TypedObjectReference.name":
 		if e.complexity.TypedObjectReference.Name == nil {
 			break
 		}
 
 		return e.complexity.TypedObjectReference.Name(childComplexity), true
 
-	case "TypedObjectReference.Namespace":
+	case "TypedObjectReference.namespace":
 		if e.complexity.TypedObjectReference.Namespace == nil {
 			break
 		}
@@ -2810,15 +2842,15 @@ type PaginatedResult {
 input TypedObjectReferenceInput {
     apiGroup: String
     kind: String!
-    Name: String!
-    Namespace: String
+    name: String!
+    namespace: String
 }
 
 type TypedObjectReference {
     apiGroup: String
     kind: String!
-    Name: String!
-    Namespace: String
+    name: String!
+    namespace: String
 }
 
 union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F
@@ -2839,6 +2871,7 @@ type filegroupdetail{
 }
 
 type KnowledgeBase {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -2851,6 +2884,7 @@ type KnowledgeBase {
     fileGroupDetails: [filegroupdetail]
     """知识库连接状态"""
     status: String
+    creationTimestamp: Time
     updateTimestamp: Time
 }
 
@@ -2876,7 +2910,7 @@ input CreateKnowledgeBaseInput{
     """知识库资源描述"""
     description: String
     """模型服务"""
-    embedder: TypedObjectReferenceInput!
+    embedder: String!
     """"向量数据库(使用默认值)"""
     vectorStore: TypedObjectReferenceInput
     """知识库文件"""
@@ -2941,6 +2975,7 @@ extend type Query{
 }
 `, BuiltIn: false},
 	{Name: "../schema/model.graphqls", Input: `type Model {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -2948,8 +2983,9 @@ extend type Query{
     creator: String
     displayName: String!
     description: String
-    field: String!
     modeltypes: String!
+    status: String
+    creationTimestamp: Time
     updateTimestamp: Time
 }
 
@@ -2960,8 +2996,6 @@ input CreateModelInput{
     namespace: String!
     """模型资源展示名称作为显示，并提供编辑"""
     displayName: String!
-    """模型应用领域"""
-    field: String!
     """模型资源描述"""
     description: String
     """模型类型"""
@@ -9131,10 +9165,10 @@ func (ec *executionContext) fieldContext_Endpoint_authSecret(ctx context.Context
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -9348,6 +9382,47 @@ func (ec *executionContext) fieldContext_F_time(ctx context.Context, field graph
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBase_id(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBase_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBase",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9689,10 +9764,10 @@ func (ec *executionContext) fieldContext_KnowledgeBase_embedder(ctx context.Cont
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -9740,10 +9815,10 @@ func (ec *executionContext) fieldContext_KnowledgeBase_vectorStore(ctx context.C
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -9839,6 +9914,47 @@ func (ec *executionContext) fieldContext_KnowledgeBase_status(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _KnowledgeBase_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_creationTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreationTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBase_creationTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBase",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBase_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 	if err != nil {
@@ -9919,6 +10035,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_createKnowledgeBa
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_KnowledgeBase_id(ctx, field)
 			case "name":
 				return ec.fieldContext_KnowledgeBase_name(ctx, field)
 			case "namespace":
@@ -9941,6 +10059,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_createKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBase_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			}
@@ -10000,6 +10120,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_updateKnowledgeBa
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_KnowledgeBase_id(ctx, field)
 			case "name":
 				return ec.fieldContext_KnowledgeBase_name(ctx, field)
 			case "namespace":
@@ -10022,6 +10144,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_updateKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBase_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			}
@@ -10133,6 +10257,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_getKnowledgeBase(ctx
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_KnowledgeBase_id(ctx, field)
 			case "name":
 				return ec.fieldContext_KnowledgeBase_name(ctx, field)
 			case "namespace":
@@ -10155,6 +10281,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_getKnowledgeBase(ctx
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBase_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			}
@@ -10238,6 +10366,47 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_listKnowledgeBases(c
 	if fc.Args, err = ec.field_KnowledgeBaseQuery_listKnowledgeBases_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_id(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -10538,50 +10707,6 @@ func (ec *executionContext) fieldContext_Model_description(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Model_field(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Model_field(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Field, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Model_field(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Model",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Model_modeltypes(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Model_modeltypes(ctx, field)
 	if err != nil {
@@ -10621,6 +10746,88 @@ func (ec *executionContext) fieldContext_Model_modeltypes(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_status(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_creationTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreationTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_creationTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10706,6 +10913,8 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Model_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
@@ -10720,10 +10929,12 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Model_description(ctx, field)
-			case "field":
-				return ec.fieldContext_Model_field(ctx, field)
 			case "modeltypes":
 				return ec.fieldContext_Model_modeltypes(ctx, field)
+			case "status":
+				return ec.fieldContext_Model_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Model_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -10783,6 +10994,8 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Model_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
@@ -10797,10 +11010,12 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Model_description(ctx, field)
-			case "field":
-				return ec.fieldContext_Model_field(ctx, field)
 			case "modeltypes":
 				return ec.fieldContext_Model_modeltypes(ctx, field)
+			case "status":
+				return ec.fieldContext_Model_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Model_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -10912,6 +11127,8 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Model_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
@@ -10926,10 +11143,12 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Model_description(ctx, field)
-			case "field":
-				return ec.fieldContext_Model_field(ctx, field)
 			case "modeltypes":
 				return ec.fieldContext_Model_modeltypes(ctx, field)
+			case "status":
+				return ec.fieldContext_Model_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Model_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Model_updateTimestamp(ctx, field)
 			}
@@ -12455,8 +12674,8 @@ func (ec *executionContext) fieldContext_TypedObjectReference_kind(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _TypedObjectReference_Name(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TypedObjectReference_Name(ctx, field)
+func (ec *executionContext) _TypedObjectReference_name(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TypedObjectReference_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -12486,7 +12705,7 @@ func (ec *executionContext) _TypedObjectReference_Name(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TypedObjectReference_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TypedObjectReference_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TypedObjectReference",
 		Field:      field,
@@ -12499,8 +12718,8 @@ func (ec *executionContext) fieldContext_TypedObjectReference_Name(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _TypedObjectReference_Namespace(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+func (ec *executionContext) _TypedObjectReference_namespace(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -12527,7 +12746,7 @@ func (ec *executionContext) _TypedObjectReference_Namespace(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TypedObjectReference_Namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TypedObjectReference_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TypedObjectReference",
 		Field:      field,
@@ -12879,10 +13098,10 @@ func (ec *executionContext) fieldContext_VersionedDataset_dataset(ctx context.Co
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -15489,10 +15708,10 @@ func (ec *executionContext) fieldContext_filegroup_source(ctx context.Context, f
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -15581,10 +15800,10 @@ func (ec *executionContext) fieldContext_filegroupdetail_source(ctx context.Cont
 				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
 			case "kind":
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
-			case "Name":
-				return ec.fieldContext_TypedObjectReference_Name(ctx, field)
-			case "Namespace":
-				return ec.fieldContext_TypedObjectReference_Namespace(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
@@ -16177,7 +16396,7 @@ func (ec *executionContext) unmarshalInputCreateKnowledgeBaseInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embedder"))
-			data, err := ec.unmarshalNTypedObjectReferenceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16213,7 +16432,7 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "displayName", "field", "description", "modeltypes"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "modeltypes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16247,15 +16466,6 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 				return it, err
 			}
 			it.DisplayName = data
-		case "field":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Field = data
 		case "description":
 			var err error
 
@@ -17589,7 +17799,7 @@ func (ec *executionContext) unmarshalInputTypedObjectReferenceInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"apiGroup", "kind", "Name", "Namespace"}
+	fieldsInOrder := [...]string{"apiGroup", "kind", "name", "namespace"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -17614,19 +17824,19 @@ func (ec *executionContext) unmarshalInputTypedObjectReferenceInput(ctx context.
 				return it, err
 			}
 			it.Kind = data
-		case "Name":
+		case "name":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Name"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Name = data
-		case "Namespace":
+		case "namespace":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Namespace"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
@@ -20157,6 +20367,8 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("KnowledgeBase")
+		case "id":
+			out.Values[i] = ec._KnowledgeBase_id(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._KnowledgeBase_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20188,6 +20400,8 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._KnowledgeBase_fileGroupDetails(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._KnowledgeBase_status(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._KnowledgeBase_creationTimestamp(ctx, field, obj)
 		case "updateTimestamp":
 			out.Values[i] = ec._KnowledgeBase_updateTimestamp(ctx, field, obj)
 		default:
@@ -20469,6 +20683,8 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Model")
+		case "id":
+			out.Values[i] = ec._Model_id(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Model_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -20492,16 +20708,15 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "description":
 			out.Values[i] = ec._Model_description(ctx, field, obj)
-		case "field":
-			out.Values[i] = ec._Model_field(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "modeltypes":
 			out.Values[i] = ec._Model_modeltypes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "status":
+			out.Values[i] = ec._Model_status(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._Model_creationTimestamp(ctx, field, obj)
 		case "updateTimestamp":
 			out.Values[i] = ec._Model_updateTimestamp(ctx, field, obj)
 		default:
@@ -21206,13 +21421,13 @@ func (ec *executionContext) _TypedObjectReference(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Name":
-			out.Values[i] = ec._TypedObjectReference_Name(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._TypedObjectReference_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Namespace":
-			out.Values[i] = ec._TypedObjectReference_Namespace(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._TypedObjectReference_namespace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

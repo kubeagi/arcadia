@@ -7,6 +7,8 @@ query listModels($input: ListModelInput!){
       nodes {
         __typename
         ... on Model {
+          id
+          createTimestamp
           name
           namespace
           labels
@@ -14,7 +16,7 @@ query listModels($input: ListModelInput!){
           creator
           displayName
           description
-          field
+          status
           modeltypes
           updateTimestamp
         }
@@ -27,16 +29,18 @@ query listModels($input: ListModelInput!){
 query getModel($name: String!, $namespace: String!) {
   Model {
     getModel(name: $name, namespace: $namespace){
-      name
-      namespace
-      labels
-      annotations
-      creator
-      displayName
-      description
-      field
-      modeltypes
-      updateTimestamp
+          id
+          createTimestamp
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          status
+          modeltypes
+          updateTimestamp
     }
   }
 }
@@ -45,16 +49,18 @@ query getModel($name: String!, $namespace: String!) {
 mutation createModel($input: CreateModelInput!) {
   Model {
     createModel(input: $input) {
-      name
-      namespace
-      labels
-      annotations
-      creator
-      displayName
-      description
-      field
-      modeltypes
-      updateTimestamp
+          id
+          createTimestamp
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          status
+          modeltypes
+          updateTimestamp
     }
   }
 }
@@ -63,16 +69,18 @@ mutation createModel($input: CreateModelInput!) {
 mutation updateModel($input: UpdateModelInput) {
   Model {
     updateModel(input: $input){
-      name
-      namespace
-      labels
-      annotations
-      creator
-      displayName
-      description
-      field
-      modeltypes
-      updateTimestamp
+          id
+          createTimestamp
+          name
+          namespace
+          labels
+          annotations
+          creator
+          displayName
+          description
+          status
+          modeltypes
+          updateTimestamp
     }
   }
 }

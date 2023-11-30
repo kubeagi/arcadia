@@ -6,6 +6,8 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
       hasNextPage
       nodes {
         ... on KnowledgeBase {
+          id
+          createTimestamp
           name
           namespace
           labels
@@ -17,16 +19,16 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
           updateTimestamp
           embedder {
             kind
-            Name
+            name
           }
           vectorStore{
             kind
-            Name
+            name
           }
           fileGroupDetails {
             source{
               kind
-              Name
+              name
             }
             filedetails{
                 path
@@ -43,6 +45,8 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
 query getKnowledgeBase($name: String!, $namespace: String!) {
   KnowledgeBase {
     getKnowledgeBase(name: $name, namespace: $namespace){
+          id
+          createTimestamp
           name
           namespace
           labels
@@ -54,16 +58,16 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
           updateTimestamp
           embedder {
             kind
-            Name
+            name
           }
           vectorStore{
             kind
-            Name
+            name
           }
           fileGroupDetails {
             source{
               kind
-              Name
+              name
             }
             filedetails{
                 path
@@ -78,6 +82,8 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
 mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
   KnowledgeBase {
     createKnowledgeBase(input: $input) {
+          id
+          createTimestamp
           name
           namespace
           labels
@@ -89,16 +95,16 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
           updateTimestamp
           embedder {
             kind
-            Name
+            name
           }
           vectorStore{
             kind
-            Name
+            name
           }
           fileGroupDetails {
             source{
               kind
-              Name
+              name
             }
             filedetails{
                 path
@@ -113,6 +119,8 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
 mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
   KnowledgeBase {
     updateKnowledgeBase(input: $input){
+          id
+          createTimestamp
           name
           namespace
           labels
@@ -124,16 +132,16 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
           updateTimestamp
           embedder {
             kind
-            Name
+            name
           }
           vectorStore{
             kind
-            Name
+            name
           }
           fileGroupDetails {
             source{
               kind
-              Name
+              name
             }
             filedetails{
                 path

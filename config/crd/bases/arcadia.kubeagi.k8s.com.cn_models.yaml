@@ -44,9 +44,6 @@ spec:
               displayName:
                 description: DisplayName defines dataset display name
                 type: string
-              field:
-                description: Model application fields
-                type: string
               types:
                 description: Type defines what kind of model this is Comma seperated
                   field which can be wrapped by {llm,embdding}

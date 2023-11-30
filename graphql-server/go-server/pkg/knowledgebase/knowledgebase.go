@@ -40,6 +40,8 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 	for k, v := range obj.GetAnnotations() {
 		annotations[k] = v
 	}
+	id := string(obj.GetUID())
+	creationtimestamp := obj.GetCreationTimestamp().Time
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
 	embedder, _, _ := unstructured.NestedMap(obj.Object, "spec", "embedder")
@@ -85,6 +87,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 	}
 
 	md := model.KnowledgeBase{
+		ID:          &id,
 		Name:        obj.GetName(),
 		Namespace:   obj.GetNamespace(),
 		Labels:      labels,
@@ -101,16 +104,17 @@ func knowledgebase2model(obj *unstructured.Unstructured) *model.KnowledgeBase {
 			Name:      vectorStore["name"].(string),
 			Namespace: &vectorStorenp,
 		},
-		FileGroupDetails: filegroupdetails,
-		DisplayName:      displayName,
-		Description:      &description,
-		Status:           &status,
-		UpdateTimestamp:  &updateTime,
+		FileGroupDetails:  filegroupdetails,
+		DisplayName:       displayName,
+		Description:       &description,
+		Status:            &status,
+		CreationTimestamp: &creationtimestamp,
+		UpdateTimestamp:   &updateTime,
 	}
 	return &md
 }
 
-func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, discription string, vectorstore, embedder v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*model.KnowledgeBase, error) {
+func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, discription, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*model.KnowledgeBase, error) {
 	knowledgebase := v1alpha1.KnowledgeBase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -125,7 +129,11 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 				DisplayName: displayname,
 				Description: discription,
 			},
-			Embedder:    &embedder,
+			Embedder: &v1alpha1.TypedObjectReference{
+				Kind:      "Embedder",
+				Name:      embedder,
+				Namespace: &namespace,
+			},
 			VectorStore: &vectorstore,
 			FileGroups:  filegroups,
 		},

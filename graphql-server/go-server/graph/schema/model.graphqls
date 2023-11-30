@@ -1,4 +1,5 @@
 type Model {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -6,8 +7,9 @@ type Model {
     creator: String
     displayName: String!
     description: String
-    field: String!
     modeltypes: String!
+    status: String
+    creationTimestamp: Time
     updateTimestamp: Time
 }
 
@@ -18,8 +20,6 @@ input CreateModelInput{
     namespace: String!
     """模型资源展示名称作为显示，并提供编辑"""
     displayName: String!
-    """模型应用领域"""
-    field: String!
     """模型资源描述"""
     description: String
     """模型类型"""

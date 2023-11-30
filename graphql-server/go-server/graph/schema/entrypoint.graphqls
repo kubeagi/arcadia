@@ -20,15 +20,15 @@ type PaginatedResult {
 input TypedObjectReferenceInput {
     apiGroup: String
     kind: String!
-    Name: String!
-    Namespace: String
+    name: String!
+    namespace: String
 }
 
 type TypedObjectReference {
     apiGroup: String
     kind: String!
-    Name: String!
-    Namespace: String
+    name: String!
+    namespace: String
 }
 
 union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F

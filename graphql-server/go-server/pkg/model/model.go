@@ -39,34 +39,42 @@ func obj2model(obj *unstructured.Unstructured) *model.Model {
 	for k, v := range obj.GetAnnotations() {
 		annotations[k] = v
 	}
+	id := string(obj.GetUID())
+	creationtimestamp := obj.GetCreationTimestamp().Time
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	field, _, _ := unstructured.NestedString(obj.Object, "spec", "field")
-	modeltype, _, _ := unstructured.NestedString(obj.Object, "spec", "type")
+
+	modeltype, _, _ := unstructured.NestedString(obj.Object, "spec", "types")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	updateTime := metav1.Now().Time
+	status := ""
+	var updateTime time.Time
 	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if found && len(conditions) > 0 {
 		condition, ok := conditions[0].(map[string]interface{})
 		if ok {
 			timeStr, _ := condition["lastTransitionTime"].(string)
 			updateTime, _ = time.Parse(time.RFC3339, timeStr)
+			status, _ = condition["status"].(string)
 		}
+	} else {
+		status = "unknow"
 	}
 	md := model.Model{
-		Name:            obj.GetName(),
-		Namespace:       obj.GetNamespace(),
-		Labels:          labels,
-		Annotations:     annotations,
-		DisplayName:     displayName,
-		Description:     &description,
-		Field:           field,
-		Modeltypes:      modeltype,
-		UpdateTimestamp: &updateTime,
+		ID:                &id,
+		Name:              obj.GetName(),
+		Namespace:         obj.GetNamespace(),
+		Labels:            labels,
+		Annotations:       annotations,
+		DisplayName:       displayName,
+		Description:       &description,
+		Status:            &status,
+		Modeltypes:        modeltype,
+		CreationTimestamp: &creationtimestamp,
+		UpdateTimestamp:   &updateTime,
 	}
 	return &md
 }
 
-func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, displayName, description, field, modeltypes string) (*model.Model, error) {
+func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, displayName, description, modeltypes string) (*model.Model, error) {
 	model := v1alpha1.Model{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -77,9 +85,8 @@ func CreateModel(ctx context.Context, c dynamic.Interface, name, namespace, disp
 			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.ModelSpec{
-			DiplayName:  displayName,
+			DisplayName: displayName,
 			Description: description,
-			Field:       field,
 			Types:       modeltypes,
 		},
 	}

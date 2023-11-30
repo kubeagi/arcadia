@@ -29,13 +29,10 @@ type ModelSpec struct {
 	Creator string `json:"creator,omitempty"`
 
 	// DisplayName defines dataset display name
-	DiplayName string `json:"displayName"`
+	DisplayName string `json:"displayName"`
 
 	// Description defines datasource description
 	Description string `json:"description,omitempty"`
-
-	// Model application fields
-	Field string `json:"field,omitempty"`
 
 	// Type defines what kind of model this is
 	// Comma seperated field which can be wrapped by {llm,embdding}
