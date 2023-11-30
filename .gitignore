@@ -116,3 +116,6 @@ _output/
 tmp_role.yaml
 vendor
 
+# python
+__pycache__
+.ipynb_checkpoints

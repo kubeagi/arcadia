@@ -1,0 +1,26 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: KnowledgeBase
+metadata:
+  name: playground-knowledgebase
+  namespace: playground
+spec:
+  displayName: "Playground KnowledgeBase"
+  description: "For Playground KnowledgeBase"
+  embedder:
+    apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+    kind: Embedders
+    name: zhipuai
+    namespace: playground
+  vectorStore:
+    apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+    kind: VectorStores
+    name: playground-chroma
+    namespace: playground
+  fileGroups:
+  - source:
+      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+      kind: VersionedDataset
+      name: playground-dataset-v1
+      namespace: playground
+    paths:
+      - qa.csv

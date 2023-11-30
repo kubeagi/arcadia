@@ -1,0 +1,115 @@
+## Datasource secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: playground-datasource-authsecret
+  namespace: playground
+data:
+  rootUser: YWRtaW4=
+  rootPassword: UGFzc3cwcmQh
+---
+## Datasource
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name: playground-datasource
+  namespace: playground
+spec:
+  displayName: "Playground Datasource"
+  description: "A datasource provided for playground"
+  endpoint:
+    authSecret:
+      kind: Secret
+      name: playground-datasource-authsecret
+      namespace: playground
+    insecure: true
+    url: arcadia-minio-api.172.22.96.167.nip.io
+  oss:
+    bucket: playground
+---
+## Dataset
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Dataset
+metadata:
+  name: test-dataset
+  namespace: playground
+spec:
+  displayName: "dataset example"
+  description: "test dataset management"
+  contentType: "text"
+  field: "finance"
+---
+## VersionedDataset
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VersionedDataset
+metadata:
+  name: playground-dataset-v1
+  namespace: playground
+spec:
+  dataset:
+    kind: Dataset
+    name: playground-dataset
+    namespace: playground
+  version: v1
+  released: 0
+  fileGroups:
+  - source:
+      kind: Datasource
+      name: playground-datasource
+      namespace: playground
+    paths:
+    - qa.csv
+---
+## Embedder secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zhipuai
+  namespace: playground
+type: Opaque
+data:
+  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+---
+## Embedder
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Embedder
+metadata:
+  name: zhipuai
+  namespace: playground
+spec:
+  serviceType: "zhipuai"
+  provider:
+    endpoint:
+      url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: zhipuai
+---
+## Embedder
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLM
+metadata:
+  name: zhipuai
+  namespace: playground
+spec:
+  type: "zhipuai"
+  provider:
+    endpoint:
+      url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: zhipuai
+---
+## VectorStore
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VectorStore
+metadata:
+  name: playground-chroma
+  namespace: playground
+spec:
+  displayName: "Chroma VectorStore"
+  description: "For playground VectorStore"
+  endpoint:
+    url: http://chroma.172.22.96.136.nip.io
+  chroma:
+    distanceFunction: cosine
