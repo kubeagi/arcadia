@@ -44,7 +44,7 @@ type ApplicationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start Application Reconcile")
+	log.V(5).Info("Start Application Reconcile")
 	app := &arcadiav1alpha1.Application{}
 	if err := r.Get(ctx, req.NamespacedName, app); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -53,7 +53,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log = log.WithValues("Generation", app.GetGeneration(), "ObservedGeneration", app.Status.ObservedGeneration, "creator", app.Spec.Creator)
-	log.V(1).Info("Get Application instance")
+	log.V(5).Info("Get Application instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the Application to be deleted.

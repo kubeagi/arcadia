@@ -105,7 +105,7 @@ func (in *TypedObjectReference) WithNameSpace(namespace string) {
 
 func (in *TypedObjectReference) GetNamespace() string {
 	if in.Namespace == nil {
-		return utils.GetSelfNamespace()
+		return utils.GetCurrentNamespace()
 	}
 	return *in.Namespace
 }

@@ -75,6 +75,11 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if instance.DeletionTimestamp == nil {
 		updatedObj, err := r.preUpdate(ctx, instance)
 		if err != nil {
+			// Skip if it's NotFound error
+			if errors.IsNotFound(err) {
+				klog.Errorf(" VersionedDataset %s not found", instance.Name)
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{}, err
 		}
 
@@ -99,7 +104,7 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			klog.V(4).Infof("[Debug] start to delete %d group files for %s/%s", len(deleteFilestatus), instance.Namespace, instance.Name)
 			if err = s.Start(); err != nil {
 				klog.Errorf("try to delete files failed, error %s, need retry", err)
-				return reconcile.Result{}, err
+				return reconcile.Result{RequeueAfter: waitMedium}, nil
 			}
 		}
 		if instance.DeletionTimestamp == nil {

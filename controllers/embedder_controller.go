@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -27,9 +28,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
@@ -65,13 +69,13 @@ type EmbedderReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *EmbedderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling embedding resource")
+	logger.V(5).Info("Reconciling embedding resource")
 
 	instance := &arcadiav1alpha1.Embedder{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		// There's no need to requeue if the resource no longer exists.
 		// Otherwise, we'll be requeued implicitly because we return an error.
-		logger.V(1).Info("Failed to get Embedder")
+		logger.Error(err, "Failed to get Embedder")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -85,7 +89,7 @@ func (r *EmbedderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		logger.Info("Adding Finalizer for Embedder done")
-		return ctrl.Result{}, nil
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Check if the Embedder instance is marked to be deleted, which is
@@ -102,23 +106,38 @@ func (r *EmbedderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		logger.Info("Remove Embedder done")
 		return ctrl.Result{}, nil
 	}
-
 	if err := r.CheckEmbedder(ctx, logger, instance); err != nil {
 		return ctrl.Result{RequeueAfter: waitMedium}, err
 	}
-
 	return ctrl.Result{RequeueAfter: waitLonger}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *EmbedderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.Embedder{}).
+		For(&arcadiav1alpha1.Embedder{}, builder.WithPredicates(predicate.Funcs{
+			UpdateFunc: func(ue event.UpdateEvent) bool {
+				// Avoid to handle the event that it's not spec update or delete
+				oldEmbedder := ue.ObjectOld.(*arcadiav1alpha1.Embedder)
+				newEmbedder := ue.ObjectNew.(*arcadiav1alpha1.Embedder)
+				return !reflect.DeepEqual(oldEmbedder.Spec, newEmbedder.Spec) || newEmbedder.DeletionTimestamp != nil
+			},
+			// for other event handler, we must add the function explictly.
+			CreateFunc: func(event.CreateEvent) bool {
+				return true
+			},
+			DeleteFunc: func(event.DeleteEvent) bool {
+				return true
+			},
+			GenericFunc: func(event.GenericEvent) bool {
+				return true
+			},
+		})).
 		Complete(r)
 }
 
 func (r *EmbedderReconciler) CheckEmbedder(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Embedder) error {
-	logger.Info("Checking embedding resource")
+	logger.V(5).Info("Checking embedding resource")
 
 	switch instance.Spec.Provider.GetType() {
 	case arcadiav1alpha1.ProviderType3rdParty:
@@ -131,7 +150,7 @@ func (r *EmbedderReconciler) CheckEmbedder(ctx context.Context, logger logr.Logg
 }
 
 func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Embedder) error {
-	logger.Info("Checking 3rd party embedding resource")
+	logger.V(5).Info("Checking 3rd party embedding resource")
 
 	var err error
 	var msg string

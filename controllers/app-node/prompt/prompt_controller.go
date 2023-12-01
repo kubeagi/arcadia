@@ -45,7 +45,7 @@ type PromptReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PromptReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start Prompt Reconcile")
+	log.V(5).Info("Start Prompt Reconcile")
 	instance := &api.Prompt{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -54,7 +54,7 @@ func (r *PromptReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log = log.WithValues("Generation", instance.GetGeneration(), "ObservedGeneration", instance.Status.ObservedGeneration, "creator", instance.Spec.Creator)
-	log.V(1).Info("Get Prompt instance")
+	log.V(5).Info("Get Prompt instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the Prompt to be deleted.

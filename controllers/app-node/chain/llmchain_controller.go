@@ -45,7 +45,7 @@ type LLMChainReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *LLMChainReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start LLMChain Reconcile")
+	log.V(5).Info("Start LLMChain Reconcile")
 	instance := &api.LLMChain{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -54,7 +54,7 @@ func (r *LLMChainReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log = log.WithValues("Generation", instance.GetGeneration(), "ObservedGeneration", instance.Status.ObservedGeneration, "creator", instance.Spec.Creator)
-	log.V(1).Info("Get LLMChain instance")
+	log.V(5).Info("Get LLMChain instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the LLMChain to be deleted.

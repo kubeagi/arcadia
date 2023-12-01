@@ -72,7 +72,7 @@ type WorkerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start Worker Reconcile")
+	log.V(5).Info("Start Worker Reconcile")
 	worker := &arcadiav1alpha1.Worker{}
 	if err := r.Get(ctx, req.NamespacedName, worker); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -80,7 +80,7 @@ func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		log.V(1).Info("Failed to get Worker")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	log.V(1).Info("Get Worker instance")
+	log.V(5).Info("Get Worker instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the Worker to be deleted.
