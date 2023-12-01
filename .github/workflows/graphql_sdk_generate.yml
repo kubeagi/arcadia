@@ -1,0 +1,37 @@
+name: Generate Graphql JS SDK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'graphql-server/go-server/graph/schema/**'
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: make operator image
+        run: |
+          make docker-build
+      - name: Copy the existing kustomize
+        # avoid kustomize installation to bypass the rate limit of GitHub.
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/bin
+          cp /usr/local/bin/kustomize ${GITHUB_WORKSPACE}/bin/kustomize
+      - name: Install mc
+        run: |
+          command -v mc >/dev/null 2>&1 || (curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+          	--create-dirs -o /usr/local/bin/mc && chmod +x /usr/local/bin/mc )
+      - name: Example test
+        run: tests/example-test.sh
+      - name: setting token to npmrc
+        run: |
+          echo '//dev-npm.tenxcloud.net/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
+          echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
+      - name: make sdk
+        run: |
+          kubectl port-forward svc/arcadia-portal-server -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
+          export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
+          make gql-sdk-generator

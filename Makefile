@@ -257,11 +257,11 @@ run-graphql-server:
 	POD_NAMESPACE=arcadia go run graphql-server/go-server/main.go --enable-playground=true &
 
 # sdk for graphql-server api
-GRL_SDK_GENERATOR_IMAGE ?= kubebb/gql-sdk-generator
+GRL_SDK_GENERATOR_IMAGE ?= yuntijs/gql-sdk-generator:latest
+GRAPH_API_ENDPOINT ?= http://0.0.0.0:8888/bff
 .PHONY: gql-sdk-generator
-gql-sdk-generator: run-graphql-server
-	docker run -v $(shell pwd)/graphql-server/go-server/graph/schema:/schema ${GRL_SDK_GENERATOR_IMAGE}:main
-
+gql-sdk-generator:
+	docker run --rm --net=host --env SDK_PACKAGE_NAME=@yuntijs/arcadia-bff-sdk --env SDK_YUNTI_NAME=ArcadiaBffSDK --env GRAPH_API_ENDPOINT=${GRAPH_API_ENDPOINT} -v $(shell pwd)/graphql-server/go-server/graph/schema:/schema -v ~/.npmrc:/root/.npmrc ${GRL_SDK_GENERATOR_IMAGE}
 
 # prepare for git push
 .PHONY: prepare-push
