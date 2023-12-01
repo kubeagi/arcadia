@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/minio/minio-go/v7"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,15 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/streamlit"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -47,7 +46,7 @@ const (
 	SkipNamespaceConfigMap = "skip-namespaces"
 )
 
-type NamespacetReconciler struct {
+type NamespaceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -63,43 +62,66 @@ type NamespacetReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *NamespacetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	logger.V(5).Info("Starting namespace reconcile")
 
-	var err error
 	instance := &v1.Namespace{}
-	if err = r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			err = r.removeBucket(ctx, req.Name)
 			return reconcile.Result{RequeueAfter: waitSmaller}, err
 		}
 		return reconcile.Result{}, err
 	}
+
+	// Check if the Namespace instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if instance.GetDeletionTimestamp() != nil {
+		logger.Info("Namespace is marked to be deleted, skip it")
+		return ctrl.Result{}, nil
+	}
+
+	// 1. Handle the streamlit install/uninstall, we'll run a streamlit pod for data app for each namespace
+	var err error
+	if instance.ObjectMeta.Annotations[streamlit.StreamlitInstalledAnnotation] == "true" {
+		// check if the streamlit-server exists
+		err = r.InstallStreamlitTool(ctx, logger, instance)
+	} else {
+		// check if the streamlit-server exists
+		err = r.UninstallStreamlitTool(ctx, logger, instance)
+	}
+
+	if err != nil {
+		return ctrl.Result{RequeueAfter: waitSmaller}, err
+	}
+
+	// 2. Reconcile for MinIO bucket, we will create a separate bucket for each namespace
 	skip, err := r.checkSkippedNamespace(ctx, instance.Name)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: waitMedium}, err
 	}
 	if skip {
 		klog.Infof("namespace %s is in the filter list and will not be created, delete the corresponding bucket.", instance.Name)
 		return reconcile.Result{}, nil
 	}
 
+	// TODO: check whether we need to synchronize for every event?
 	err = r.syncBucket(ctx, instance.Name)
-	return ctrl.Result{}, err
+	if err != nil {
+		return ctrl.Result{RequeueAfter: waitMedium}, err
+	}
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *NamespacetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Namespace{}, builder.WithPredicates(predicate.Funcs{
-			UpdateFunc: func(ue event.UpdateEvent) bool {
-				return false
-			},
-		})).
+		For(&v1.Namespace{}).
 		Complete(r)
 }
 
-func (r *NamespacetReconciler) ossClient(ctx context.Context) (*datasource.OSS, error) {
+func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, error) {
 	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
 		klog.Errorf("get system datasource error %s", err)
@@ -117,22 +139,24 @@ func (r *NamespacetReconciler) ossClient(ctx context.Context) (*datasource.OSS, 
 	return oss, nil
 }
 
-func (r *NamespacetReconciler) syncBucket(ctx context.Context, namespace string) error {
+func (r *NamespaceReconciler) syncBucket(ctx context.Context, bucketName string) error {
 	oss, err := r.ossClient(ctx)
 	if err != nil {
 		err = fmt.Errorf("sync bucket: failed to get oss client error %w", err)
 		klog.Error(err)
 		return err
 	}
-	exists, err := oss.Client.BucketExists(ctx, namespace)
+	// TODO: namespace might be quite short, but Minio bucket name cannot be shorter than 3 characters
+	// maybe we can add suffix later to fix this
+	exists, err := oss.Client.BucketExists(ctx, bucketName)
 	if err != nil {
-		err = fmt.Errorf("check if the bucket exists and an error occurs, error %w", err)
+		err = fmt.Errorf("check if the bucket exists and an error occurs, error: %w", err)
 		klog.Error(err)
 		return err
 	}
 	if !exists {
-		klog.Infof("bucket %s does not exist, ready to create bucket", namespace)
-		if err = oss.Client.MakeBucket(ctx, namespace, minio.MakeBucketOptions{}); err != nil {
+		klog.Infof("bucket %s does not exist, ready to create bucket", bucketName)
+		if err = oss.Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
 			err = fmt.Errorf("and error osccured creating the bucket, error %w", err)
 			klog.Error(err)
 			return err
@@ -141,23 +165,24 @@ func (r *NamespacetReconciler) syncBucket(ctx context.Context, namespace string)
 	return nil
 }
 
-func (r *NamespacetReconciler) removeBucket(ctx context.Context, namespace string) error {
+func (r *NamespaceReconciler) removeBucket(ctx context.Context, bucketName string) error {
 	oss, err := r.ossClient(ctx)
 	if err != nil {
 		err = fmt.Errorf("remove bucket: failed to get oss client error %w", err)
 		klog.Error(err)
 		return err
 	}
-	err = oss.Client.RemoveBucket(ctx, namespace)
+	err = oss.Client.RemoveBucket(ctx, bucketName)
 	if err == nil || err.Error() == BucketNotExist {
 		return nil
 	}
 	return err
 }
 
-func (r *NamespacetReconciler) checkSkippedNamespace(ctx context.Context, namespace string) (bool, error) {
+func (r *NamespaceReconciler) checkSkippedNamespace(ctx context.Context, namespace string) (bool, error) {
 	cm := v1.ConfigMap{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: utils.GetSelfNamespace(), Name: SkipNamespaceConfigMap}, &cm); err != nil {
+	controllerNamespace := utils.GetCurrentNamespace()
+	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: controllerNamespace, Name: SkipNamespaceConfigMap}, &cm); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -165,4 +190,19 @@ func (r *NamespacetReconciler) checkSkippedNamespace(ctx context.Context, namesp
 	}
 	_, ok := cm.Data[namespace]
 	return ok, nil
+}
+
+// InstallStreamlitTool to install the required resource of streamlit
+func (r *NamespaceReconciler) InstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *v1.Namespace) error {
+	logger.Info("Installing streamlit tool...")
+	stDeployer := streamlit.NewStreamlitDeployer(ctx, r.Client, instance)
+
+	return stDeployer.Install()
+}
+
+// UninstallStreamlitTool to remove resources of streamlit
+func (r *NamespaceReconciler) UninstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *v1.Namespace) error {
+	stDeployer := streamlit.NewStreamlitDeployer(ctx, r.Client, instance)
+
+	return stDeployer.Uninstall()
 }

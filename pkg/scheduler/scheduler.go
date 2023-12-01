@@ -78,7 +78,7 @@ func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.Versi
 
 func (s *Scheduler) Start() error {
 	if err := s.runner.Run(s.ctx); err != nil {
-		klog.Errorf("versionDataset %s/%s run failed err %s.", s.ds.Namespace, s.ds.Name, err)
+		klog.Errorf("versionDataset %s/%s run failed with err %s.", s.ds.Namespace, s.ds.Name, err)
 		return err
 	}
 

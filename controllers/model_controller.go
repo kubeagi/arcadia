@@ -63,7 +63,7 @@ type ModelReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Starting model reconcile")
+	logger.V(5).Info("Starting model reconcile")
 
 	instance := &arcadiav1alpha1.Model{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
@@ -173,7 +173,7 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 
 // CheckModel to update status
 func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) error {
-	logger.Info("check model")
+	logger.V(5).Info("check model")
 	var err error
 
 	var ds datasource.Datasource

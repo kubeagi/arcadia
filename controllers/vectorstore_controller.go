@@ -51,7 +51,7 @@ type VectorStoreReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *VectorStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start VectorStore Reconcile")
+	log.V(5).Info("Start VectorStore Reconcile")
 	vs := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, req.NamespacedName, vs); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -59,7 +59,7 @@ func (r *VectorStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.V(1).Info("Failed to get VectorStore")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	log.V(1).Info("Get VectorStore instance")
+	log.V(5).Info("Get VectorStore instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the KnowledgeBase to be deleted.
@@ -114,7 +114,7 @@ func (r *VectorStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore) (err error) {
-	log.Info("check vectorstore")
+	log.V(5).Info("check vectorstore")
 	switch vs.Spec.Type() {
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		_, err := chroma.New(

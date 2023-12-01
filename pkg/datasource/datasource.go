@@ -18,8 +18,10 @@ package datasource
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
@@ -159,6 +161,11 @@ func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (
 	mc, err := minio.New(endpoint.URL, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: !endpoint.Insecure,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
 	})
 	if err != nil {
 		return nil, err

@@ -17,45 +17,13 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	"os"
 )
 
 const (
 	EnvNamespaceKey = "POD_NAMESPACE"
-
-	InClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
-var (
-	ErrNoNamespaceEnv = fmt.Errorf("not in cluster and env:%s is not found", EnvNamespaceKey)
-)
-
-var selfNamespace string
-
-func GetSelfNamespace() string {
-	return selfNamespace
-}
-
-func SetSelfNamespace() error {
-	// Check whether the namespace file exists.
-	// If not, we are not running in cluster so can't guess the namespace.
-	if _, err := os.Stat(InClusterNamespacePath); os.IsNotExist(err) {
-		operatorNamespace := os.Getenv(EnvNamespaceKey)
-		if operatorNamespace == "" {
-			return ErrNoNamespaceEnv
-		}
-		selfNamespace = operatorNamespace
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("error checking namespace file: %w", err)
-	}
-
-	// Load the namespace file and return its content
-	namespace, err := os.ReadFile(InClusterNamespacePath)
-	if err != nil {
-		return fmt.Errorf("error reading namespace file: %w", err)
-	}
-	selfNamespace = string(namespace)
-	return nil
+func GetCurrentNamespace() string {
+	return os.Getenv(EnvNamespaceKey)
 }

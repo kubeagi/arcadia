@@ -89,7 +89,7 @@ type KnowledgeBaseReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Start KnowledgeBase Reconcile")
+	log.V(5).Info("Start KnowledgeBase Reconcile")
 	kb := &arcadiav1alpha1.KnowledgeBase{}
 	if err := r.Get(ctx, req.NamespacedName, kb); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -98,7 +98,7 @@ func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log = log.WithValues("Generation", kb.GetGeneration(), "ObservedGeneration", kb.Status.ObservedGeneration, "creator", kb.Spec.Creator)
-	log.V(1).Info("Get KnowledgeBase instance")
+	log.V(5).Info("Get KnowledgeBase instance")
 
 	// Add a finalizer.Then, we can define some operations which should
 	// occur before the KnowledgeBase to be deleted.
@@ -307,7 +307,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		}
 		info.Object = filepath.Join("dataset", versionedDataset.Spec.Dataset.Name, versionedDataset.Spec.Version, path)
 		stat, err := ds.StatFile(ctx, info)
-		log.V(0).Info(fmt.Sprintf("raw StatFile:%#v", stat), "path", path)
+		log.V(5).Info(fmt.Sprintf("raw StatFile:%#v", stat), "path", path)
 		if err != nil {
 			errs = append(errs, err)
 			fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
@@ -315,7 +315,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		}
 
 		objectStat, ok := stat.(minio.ObjectInfo)
-		log.V(0).Info(fmt.Sprintf("minio StatFile:%#v", objectStat), "path", path)
+		log.V(5).Info(fmt.Sprintf("minio StatFile:%#v", objectStat), "path", path)
 		if !ok {
 			err = fmt.Errorf("failed to convert stat to minio.ObjectInfo:%s", path)
 			errs = append(errs, err)

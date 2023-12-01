@@ -62,7 +62,7 @@ type DatasourceReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Starting datasource reconcile")
+	logger.V(5).Info("Starting datasource reconcile")
 
 	instance := &arcadiav1alpha1.Datasource{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
@@ -152,7 +152,7 @@ func (r *DatasourceReconciler) Initialize(ctx context.Context, logger logr.Logge
 
 // Checkdatasource to update status
 func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Datasource) error {
-	logger.Info("check datasource")
+	logger.V(5).Info("check datasource")
 	var err error
 
 	// create datasource

@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"net/http"
 	"net/http/pprof"
@@ -25,8 +26,10 @@ import (
 	"strconv"
 
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,6 +42,7 @@ import (
 	"github.com/kubeagi/arcadia/controllers"
 	chaincontrollers "github.com/kubeagi/arcadia/controllers/app-node/chain"
 	promptcontrollers "github.com/kubeagi/arcadia/controllers/app-node/prompt"
+	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -128,6 +132,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Validate if arcadia-config configMap exists before start all controllers
+	clientset, err := kubernetes.NewForConfig(ctrl.GetConfigOrDie())
+	if err != nil {
+		panic(err)
+	}
+	_, err = clientset.CoreV1().ConfigMaps(utils.GetCurrentNamespace()).Get(context.Background(), config.EnvConfigDefaultValue, metav1.GetOptions{})
+	if err != nil {
+		setupLog.Error(err, "failed to find required configMap", utils.GetCurrentNamespace(), config.EnvConfigDefaultValue)
+		panic(err)
+	}
+
 	if err = (&controllers.LaboratoryReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -142,6 +157,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LLM")
 		os.Exit(1)
 	}
+	// Deprecated: will remove later, use promptcontrollers.PromptReconciler and construct a application
 	if err = (&controllers.PromptReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -149,13 +165,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Prompt")
 		os.Exit(1)
 	}
-	if enableWebhooks {
-		if err = (&arcadiav1alpha1.Prompt{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Prompt")
-			os.Exit(1)
-		}
-	}
-
 	if err = (&controllers.DatasourceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -212,7 +221,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "VectorStore")
 		os.Exit(1)
 	}
-	if err = (&controllers.NamespacetReconciler{
+	if err = (&controllers.NamespaceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -240,6 +249,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Prompt")
 		os.Exit(1)
 	}
+
+	if enableWebhooks {
+		if err = (&arcadiav1alpha1.Prompt{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Prompt")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -257,10 +273,6 @@ func main() {
 		_ = mgr.AddMetricsExtraHandler("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		_ = mgr.AddMetricsExtraHandler("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		_ = mgr.AddMetricsExtraHandler("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-	}
-	if err = utils.SetSelfNamespace(); err != nil {
-		setupLog.Error(err, "unable to get self namespace")
-		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")

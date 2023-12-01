@@ -46,6 +46,7 @@ var (
 	ErrNoConfigGateway     = fmt.Errorf("config Gateway in configmap is not found")
 	ErrNoConfigMinIO       = fmt.Errorf("config MinIO in comfigmap is not found")
 	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
+	ErrNoConfigStreamkit   = fmt.Errorf("config Streamkit in comfigmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -58,7 +59,7 @@ func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1
 	if config.SystemDatasource.Namespace != nil {
 		namespace = *config.SystemDatasource.Namespace
 	} else {
-		namespace = utils.GetSelfNamespace()
+		namespace = utils.GetCurrentNamespace()
 	}
 	source := &arcadiav1alpha1.Datasource{}
 	if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
@@ -77,7 +78,7 @@ func GetSystemDatasourceDynamic(ctx context.Context, c dynamic.Interface) (*arca
 	if config.SystemDatasource.Namespace != nil {
 		namespace = *config.SystemDatasource.Namespace
 	} else {
-		namespace = utils.GetSelfNamespace()
+		namespace = utils.GetCurrentNamespace()
 	}
 	source := &arcadiav1alpha1.Datasource{}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: arcadiav1alpha1.GroupVersion.Group, Version: arcadiav1alpha1.GroupVersion.Version, Resource: "datasources"}).
@@ -142,7 +143,7 @@ func GetConfigDynamic(ctx context.Context, c dynamic.Interface) (config *Config,
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
-	cmNamespace := utils.GetSelfNamespace()
+	cmNamespace := utils.GetCurrentNamespace()
 	u, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
 	if err != nil {
 		return nil, ErrNoConfig
@@ -166,7 +167,7 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
-	cmNamespace := utils.GetSelfNamespace()
+	cmNamespace := utils.GetCurrentNamespace()
 	cm := &corev1.ConfigMap{}
 	if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
 		return nil, err
@@ -190,4 +191,16 @@ func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.
 		return nil, ErrNoConfigVectorstore
 	}
 	return config.VectorStore, nil
+}
+
+// Get the configuration of streamlit tool
+func GetStreamlit(ctx context.Context, c client.Client) (*Streamkit, error) {
+	config, err := GetConfig(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if config.Streamkit == nil {
+		return nil, ErrNoConfigStreamkit
+	}
+	return config.Streamkit, nil
 }

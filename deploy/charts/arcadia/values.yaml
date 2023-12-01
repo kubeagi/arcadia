@@ -10,8 +10,8 @@ deployment:
   imagePullPolicy: IfNotPresent
   resources:
     limits:
-      cpu: 5000m
-      memory: 1280Mi
+      cpu: "1"
+      memory: 1024Mi
     requests:
       cpu: 10m
       memory: 64Mi

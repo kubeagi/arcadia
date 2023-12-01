@@ -20,16 +20,13 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"k8s.io/klog/v2"
 
 	client3 "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var minioClient *minio.Client = nil
@@ -46,11 +43,6 @@ var (
 
 func init() {
 	mutex = new(sync.Mutex)
-
-	if err := utils.SetSelfNamespace(); err != nil {
-		klog.Errorf("unable to get self namespace: %s", err)
-		os.Exit(1)
-	}
 
 	c, err := client3.GetClient(nil)
 	if err != nil {

@@ -33,6 +33,9 @@ type Config struct {
 
 	// VectorStore to access VectorStore api services
 	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
+
+	// Streamkit to get the configuration
+	Streamkit *Streamkit `json:"streamkit,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia
@@ -49,4 +52,12 @@ type MinIO struct {
 	MinioSecure          bool   `json:"minioSecure"`
 	MinioBucket          string `json:"minioBucket"`
 	MinioBasePath        string `json:"minioBasePath"`
+}
+
+// Streamkit defines the configuration of streamkit app
+type Streamkit struct {
+	Image            string `json:"image"`
+	IngressClassName string `json:"ingressClassName"`
+	Host             string `json:"host"`
+	ContextPath      string `json:"contextPath"`
 }
