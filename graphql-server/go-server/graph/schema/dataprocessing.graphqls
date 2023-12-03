@@ -137,6 +137,7 @@ type DataProcessDetails {
 type DataProcessDetailsItem {
   id: String!
   status: String!
+  name: String!
   file_type: String!
   pre_dataset_name: String!
   pre_dataset_version: String!

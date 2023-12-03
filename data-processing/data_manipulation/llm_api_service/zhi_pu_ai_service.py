@@ -12,29 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 
+import re
 import zhipuai
 
 from common import config
 
-###
-# QA生成
-# @author: wangxinbiao
-# @date: 2023-11-15 16:30:01
-# modify history
-# ==== 2023-11-15 16:30:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
+
+async def init_service(opt={}):
+    """Initialize the ZhiPuAI service."""
+    zhipuai.api_key = opt['api_key']
 
 
-async def generate_QA(opt={}):
-    zhipuai.api_key = config.zhipuai_api_key
-
+async def generate_qa(opt={}):
+    """Generate the questions and answers."""
     text = opt['text']
-    print('xx', 'text', text)
     content = """
         我会给你一段文本，它们可能包含多个主题内容，学习它们，并整理学习成果，要求为：
         1. 提出最多 25 个问题。
@@ -60,23 +52,13 @@ async def generate_QA(opt={}):
         temperature=0.9,
     )
 
-    # 格式化后的QA对
-    result = await formatSplitText(response['data']['choices'][0]['content'])
+    # # 格式化后的QA对
+    result = await _formatSplitText(response['data']['choices'][0]['content'])
 
     return result
 
 
-###
-# 对QA进行格式化
-# @author: wangxinbiao
-# @date: 2023-11-15 16:30:01
-# modify history
-# ==== 2023-11-15 16:30:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
-async def formatSplitText(text):
+async def _formatSplitText(text):
 
     pattern = re.compile(r'Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)')
 

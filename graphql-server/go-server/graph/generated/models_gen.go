@@ -195,6 +195,7 @@ type DataProcessDetailsInput struct {
 type DataProcessDetailsItem struct {
 	ID                 string               `json:"id"`
 	Status             string               `json:"status"`
+	Name               string               `json:"name"`
 	FileType           string               `json:"file_type"`
 	PreDatasetName     string               `json:"pre_dataset_name"`
 	PreDatasetVersion  string               `json:"pre_dataset_version"`

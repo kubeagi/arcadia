@@ -19,6 +19,10 @@ from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
 
 def init_config(opt={}):
+    """Initialize the log config"""
+    # Disable debug logs for the Kubernetes Python client
+    logging.getLogger("kubernetes").setLevel(logging.WARNING)
+
     source_type = opt['source_type']
     log_dir = opt['log_dir']
     os.makedirs(log_dir, exist_ok=True)
