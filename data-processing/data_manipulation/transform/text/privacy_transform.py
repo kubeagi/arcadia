@@ -46,8 +46,16 @@ async def remove_email(opt={}):
         # 将邮箱地址替换为 "PI:EMAIL"
         replacement_text = "PI:EMAIL"
 
-        cleaned_text = re.sub(email_pattern, replacement_text, chinese_text)
-        return clean_text
+        clean_text = re.sub(email_pattern, replacement_text, text)
+        return {
+            'status': 200,
+            'message': '',
+            'data': clean_text
+        }
 
     except Exception as ex:
-        return ''
+        return {
+            'status': 400,
+            'message': '去除邮箱地址失败：' + str(ex),
+            'data': ''
+        }

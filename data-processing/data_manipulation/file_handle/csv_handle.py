@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-###
-# CSV文件处理
-# @author: wangxinbiao
-# @date: 2023-11-01 16:43:01
-# modify history
-# ==== 2023-11-01 16:43:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 import asyncio
 import csv
@@ -35,17 +25,6 @@ from transform.text import clean_transform, privacy_transform
 from utils import date_time_utils, file_utils
 
 logger = logging.getLogger('csv_handle')
-
-###
-# 文本数据处理
-# @author: wangxinbiao
-# @date: 2023-11-02 14:42:01
-# modify history
-# ==== 2023-11-02 14:42:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 
 async def text_manipulate(opt={}):

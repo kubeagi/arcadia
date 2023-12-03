@@ -13,31 +13,17 @@
 # limitations under the License.
 
 
-###
-# 数据处理任务
-# @author: wangxinbiao
-# @date: 2023-11-21 13:57:01
-# modify history
-# ==== 2023-11-21 13:57:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
-
-from datetime import datetime
-
 import ujson
 import ulid
 from sanic.response import json
 
-from utils import pg_utils
+from database_clients import postgresql_pool_client
+from utils import date_time_utils
 
-
-async def list_by_page(request, opt={}):
+async def list_by_page(req_json, opt={}):
+    """Get the list data for data processing by page"""
     pool = opt['pool']
-
-    req_json = request.json
-
+    
     params = {
         'keyword': '%' + req_json['keyword'] + '%',
         'pageIndex': int(req_json['pageIndex']),
@@ -58,19 +44,18 @@ async def list_by_page(request, opt={}):
           public.data_process_task
         where
           name like %(keyword)s
-        limit %(pageSize)s offset %(pageIndex)s
         order by start_datetime desc
+        limit %(pageSize)s offset %(pageIndex)s
     """.strip()
 
-    res = await pg_utils.execute_sql(pool,sql,params)
-    return json(res)
-  
+    res = await postgresql_pool_client.execute_query(pool, sql, params)
+    return res
 
-async def list_by_count(request, opt={}):
+
+async def list_by_count(req_json, opt={}):
+    """Get count for the list data processing with page"""
     pool = opt['pool']
-
-    req_json = request.json
-
+    
     params = {
         'keyword': '%' + req_json['keyword'] + '%'
     }
@@ -84,16 +69,33 @@ async def list_by_count(request, opt={}):
           name like %(keyword)s
     """.strip()
 
-    res = await pg_utils.execute_count_sql(pool,sql,params)
-    return json(res)
+    res = await postgresql_pool_client.execute_count_query(pool, sql, params)
+    return res
 
 
-async def add(request, opt={}):
+async def delete_by_id(req_json, opt={}):
+    """Delete a record with id"""
     pool = opt['pool']
 
-    req_json = request.json
+    params = {
+        'id': req_json['id']
+    }
 
-    now = datetime.now()
+    sql = """
+        delete from public.data_process_task 
+        where
+          id = %(id)s
+    """.strip()
+
+    res =  await postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+
+async def add(req_json, opt={}):
+    """Add a new record"""
+    pool = opt['pool']
+    
+    now = date_time_utils.now_str()
     user = 'admin'
     program = '数据处理任务-新增'
 
@@ -158,38 +160,21 @@ async def add(request, opt={}):
         )
     """.strip()
 
-    return await pg_utils.execute_insert_sql(pool,sql,params)
+    res =  await postgresql_pool_client.execute_update(pool, sql, params)
+    return res
 
 
-async def delete_by_id(request, opt={}):
+async def update_status_by_id(req_json, opt={}):
+    """Update the status with id"""
     pool = opt['pool']
 
-    req_json = request.json
-
-    params = {
-        'id': req_json['id']
-    }
-
-    sql = """
-        delete from public.data_process_task 
-        where
-          id = %(id)s
-    """.strip()
-
-    res =  await pg_utils.execute_delete_sql(pool,sql,params)
-    return json(res)
-
-
-async def update_status_by_id(opt={}):
-    pool = opt['pool']
-
-    now = datetime.now()
+    now = date_time_utils.now_str()
     user = 'admin'
     program = '修改任务状态'
 
     params = {
-        'id': opt['id'],
-        'status': opt['status'],
+        'id': req_json['id'],
+        'status': req_json['status'],
         'end_datetime': now,
         'update_datetime': now,
         'update_program': program,
@@ -197,15 +182,49 @@ async def update_status_by_id(opt={}):
     }
 
     sql = """
-        UPDATE public.data_process_task set
+        update public.data_process_task set
           status = %(status)s,
           update_datetime = %(update_datetime)s,
           end_datetime = %(end_datetime)s,
           update_program = %(update_program)s,
           update_user = %(update_user)s
-        WHERE
+        where
           id = %(id)s
     """.strip()
 
-    res =  await pg_utils.execute_update_sql(pool,sql,params)
-    return json(res)
+    res =  await postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+
+async def info_by_id(req_json, opt={}):
+    """info with id"""
+    pool = opt['pool']
+
+    params = {
+        'id': req_json['id']
+    }
+
+    sql = """
+        select
+          id,
+          name,
+          file_type,
+          status,
+          pre_data_set_name,
+          pre_data_set_version,
+          post_data_set_name,
+          post_data_set_version,
+          file_names,
+          data_process_config_info,
+          start_datetime,
+          end_datetime,
+          create_user,
+          update_datetime
+        from
+          public.data_process_task
+        where
+          id = %(id)s
+    """.strip()
+
+    res = await postgresql_pool_client.execute_query(pool, sql, params)
+    return res

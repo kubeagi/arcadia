@@ -12,51 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-###
-# PDF文件处理
-# @author: wangxinbiao
-# @date: 2023-11-01 16:43:01
-# modify history
-# ==== 2023-11-01 16:43:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 import logging
 import os
-
 import pandas as pd
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import SpacyTextSplitter
 from pypdf import PdfReader
+import ulid
 
-from common import config
+from common import config, log_tag_const
+from database_operate import data_process_detail_db_operate
 from file_handle import csv_handle
-from transform.text import QA_transform, clean_transform, privacy_transform
+from llm_api_service import zhi_pu_ai_service
+from transform.text import clean_transform, privacy_transform
 from utils import file_utils
 
-logger = logging.getLogger('pdf_handle')
-
-###
-# 文本数据处理
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 
-async def text_manipulate(request, opt={}):
-    logger.info("pdf text manipulate!")
+logger = logging.getLogger(__name__)
+
+
+async def text_manipulate(req_json, opt={}):
+    logger.debug(f"{log_tag_const.PDF_HANDLE} Start to manipulate the text in pdf")
 
     try:
         
         file_name = opt['file_name']
         support_type = opt['support_type']
+        conn_pool = opt['conn_pool'] # database connectionn pool
+        
+        # 数据量
+        object_count = 0
+        object_name = ''
         
         pdf_file_path = await file_utils.get_temp_file_path()
         file_path = pdf_file_path + 'original/' + file_name
@@ -95,16 +83,41 @@ async def text_manipulate(request, opt={}):
 
         # QA拆分
         if any(d.get('type') == 'qa_split' for d in support_type):
-            qa_data = await generate_QA(request, {
+
+            qa_data = await generate_QA(req_json, {
                 'support_type': support_type,
                 'data': content
             })
+
+            # qa_data = []
+
+            logger.debug(f"{log_tag_const.QA_SPLIT} The QA data is: \n{qa_data}\n")
+
+            # start to insert qa data
+            for i in range(len(qa_data)):
+                if i == 0:
+                    continue
+                qa_insert_item = {
+                    'id': ulid.ulid(),
+                    'task_id': opt['task_id'],
+                    'file_name': file_name,
+                    'question': qa_data[i][0],
+                    'answer': qa_data[i][1]
+                }
+               
+                await data_process_detail_db_operate.insert_question_answer_info(
+                    qa_insert_item, {
+                        'pool': opt['conn_pool']
+                    }
+                )
+                
         
             # 将生成的QA数据保存为CSV文件
             new_file_name = await file_utils.get_file_name({
                 'file_name': file_name,
                 'handle_name': 'final'
             })
+
 
             file_name_without_extension = file_name.rsplit('.', 1)[0]
 
@@ -113,11 +126,19 @@ async def text_manipulate(request, opt={}):
                 'phase_value': 'final',
                 'data': qa_data
             })
+            
+            object_name = file_name_without_extension + '.csv'
+
+            # 减 1 是为了去除表头
+            object_count = len(qa_data) - 1
 
         return {
             'status': 200,
             'message': '',
-            'data': ''
+            'data': {
+                'object_name': object_name,
+                'object_count': object_count
+            }
         }
     except Exception as ex:
         logger.error(str(ex))
@@ -127,16 +148,6 @@ async def text_manipulate(request, opt={}):
             'data': ''
         }
 
-###
-# 数据异常清洗
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 
 async def data_clean(opt={}):
@@ -183,18 +194,6 @@ async def data_clean(opt={}):
     }
 
 
-###
-# 去隐私
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
-
-
 async def privacy_erosion(opt={}):
     logger.info("pdf text privacy erosion start!")
     support_type = opt['support_type']
@@ -207,11 +206,7 @@ async def privacy_erosion(opt={}):
         })
 
         if result['status'] != 200:
-            return {
-                'status': 400,
-                'message': '去邮箱',
-                'data': ''
-            }            
+            return result            
         
         data = result['data']
 
@@ -223,16 +218,6 @@ async def privacy_erosion(opt={}):
         'data': data
     }
 
-###
-# 获取PDF内容
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
 
 async def get_content(opt={}):
@@ -247,30 +232,18 @@ async def get_content(opt={}):
 
     return content
 
-###
-# QA拆分
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
-
-async def generate_QA(request, opt={}):
+async def generate_QA(req_json, opt={}):
     logger.info("pdf text generate qa start!")
-    request_json = request.json
-
+    
     # 文本分段
     chunk_size = config.knowledge_chunk_size
-    if "chunk_size" in request_json:
-        chunk_size = request_json['chunk_size']
+    if "chunk_size" in req_json:
+        chunk_size = req_json['chunk_size']
 
     chunk_overlap = config.knowledge_chunk_overlap
-    if "chunk_overlap" in request_json:
-        chunk_overlap = request_json['chunk_overlap']
+    if "chunk_overlap" in req_json:
+        chunk_overlap = req_json['chunk_overlap']
 
     separator = "\n\n"
 
@@ -284,10 +257,12 @@ async def generate_QA(request, opt={}):
 
     # 生成QA
     qa_list = [['q', 'a']]
-
+    await zhi_pu_ai_service.init_service({
+        'api_key': config.zhipuai_api_key
+    })
     for item in texts:
         text = item.replace("\n", "")
-        data = await QA_transform.generate_QA({
+        data = await zhi_pu_ai_service.generate_qa({
             'text': text
         })
 
@@ -297,19 +272,8 @@ async def generate_QA(request, opt={}):
 
     return qa_list
 
-###
-# 文本分段
-# @author: wangxinbiao
-# @date: 2023-11-17 16:14:01
-# modify history
-# ==== 2023-11-17 16:14:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
 
-
-async def document_chunk(request, opt={}):
+async def document_chunk(req_json, opt={}):
 
     separator = "\n\n"
 

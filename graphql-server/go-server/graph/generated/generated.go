@@ -105,6 +105,7 @@ type ComplexityRoot struct {
 		FileNum            func(childComplexity int) int
 		FileType           func(childComplexity int) int
 		ID                 func(childComplexity int) int
+		Name               func(childComplexity int) int
 		PostDatasetName    func(childComplexity int) int
 		PostDatasetVersion func(childComplexity int) int
 		PreDatasetName     func(childComplexity int) int
@@ -673,6 +674,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessDetailsItem.ID(childComplexity), true
+
+	case "DataProcessDetailsItem.name":
+		if e.complexity.DataProcessDetailsItem.Name == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.Name(childComplexity), true
 
 	case "DataProcessDetailsItem.post_dataset_name":
 		if e.complexity.DataProcessDetailsItem.PostDatasetName == nil {
@@ -2410,6 +2418,7 @@ type DataProcessDetails {
 type DataProcessDetailsItem {
   id: String!
   status: String!
+  name: String!
   file_type: String!
   pre_dataset_name: String!
   pre_dataset_version: String!
@@ -4743,6 +4752,8 @@ func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Con
 				return ec.fieldContext_DataProcessDetailsItem_id(ctx, field)
 			case "status":
 				return ec.fieldContext_DataProcessDetailsItem_status(ctx, field)
+			case "name":
+				return ec.fieldContext_DataProcessDetailsItem_name(ctx, field)
 			case "file_type":
 				return ec.fieldContext_DataProcessDetailsItem_file_type(ctx, field)
 			case "pre_dataset_name":
@@ -4888,6 +4899,50 @@ func (ec *executionContext) _DataProcessDetailsItem_status(ctx context.Context, 
 }
 
 func (ec *executionContext) fieldContext_DataProcessDetailsItem_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataProcessDetailsItem",
 		Field:      field,
@@ -18701,6 +18756,11 @@ func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast
 			}
 		case "status":
 			out.Values[i] = ec._DataProcessDetailsItem_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._DataProcessDetailsItem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

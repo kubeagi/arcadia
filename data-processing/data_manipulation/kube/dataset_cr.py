@@ -14,23 +14,30 @@
 
 import logging
 
-import kubernetes.client
-from kubernetes.client.rest import ApiException
-from kube import client, custom_resources
+from . import client
 from utils import date_time_utils
 
-logger = logging.getLogger('dataset_service')
+
+logger = logging.getLogger(__name__)
 
 async def update_dataset_k8s_cr(opt={}):
+    """ Update the condition info for the dataset.
+    
+    opt is a dictionary object. It has the following keys:
+    bucket_name: bucket name;
+    version_data_set_name: version dataset name;
+    reason: the update reason;
+    """
     try:
         kube = client.KubeEnv()
 
-        cr_datasets = kube.list_versioneddatasets(opt['bucket_name'])
-
-        one_cr_datasets = kube.get_versioneddatasets_status(opt['bucket_name'], opt['version_data_set_name'])
+        one_cr_datasets = kube.get_versioneddatasets_status(
+                                opt['bucket_name'], 
+                                opt['version_data_set_name']
+                            )
 
         conditions = one_cr_datasets['status']['conditions']
-
+        now_utc_str = date_time_utils.now_utc_str()
 
         found_index = None
         for i in range(len(conditions)):
@@ -43,14 +50,14 @@ async def update_dataset_k8s_cr(opt={}):
         result = None
         if found_index is None:
             conditions.append({
-                'lastTransitionTime': date_time_utils.now_utc_str(),
+                'lastTransitionTime': now_utc_str,
                 'reason': opt['reason'],
                 'status': "True",
                 "type": "DataProcessing"
             })
         else:
             conditions[found_index] = {
-                'lastTransitionTime': date_time_utils.now_utc_str(),
+                'lastTransitionTime': now_utc_str,
                 'reason': opt['reason'],
                 'status': "True",
                 "type": "DataProcessing"

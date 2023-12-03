@@ -53,6 +53,7 @@ query dataProcessDetails($input: DataProcessDetailsInput){
       data {
         id
         status
+        name
         file_type
         pre_dataset_name
         pre_dataset_version
