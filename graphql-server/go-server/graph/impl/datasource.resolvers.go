@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
@@ -39,8 +38,8 @@ func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *
 	if input.Ossinput != nil && input.Ossinput.Bucket != nil {
 		bucket = *input.Ossinput.Bucket
 	}
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
 	}
 	return datasource.CreateDatasource(ctx, c, input.Name, input.Namespace, url, authSecret, bucket, displayname, description, insecure)
 }
@@ -53,8 +52,8 @@ func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *
 		return nil, err
 	}
 	name, displayname := "", ""
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
 	}
 	if input.Name != "" {
 		name = input.Name
@@ -101,47 +100,7 @@ func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *gene
 	if err != nil {
 		return nil, err
 	}
-	name, displayName, labelSelector, fieldSelector := "", "", "", ""
-	page, pageSize := 1, 10
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.DisplayName != nil {
-		displayName = *input.DisplayName
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
-	}
-	result, err := datasource.ListDatasources(ctx, c, input.Namespace, labelSelector, fieldSelector)
-	if err != nil {
-		return nil, err
-	}
-	var filteredResult []generated.PageNode
-	for idx, u := range result {
-		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
-			filteredResult = append(filteredResult, result[idx])
-		}
-	}
-
-	totalCount := len(filteredResult)
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       filteredResult[(page-1)*pageSize : end],
-	}, nil
+	return datasource.ListDatasources(ctx, c, &input)
 }
 
 // Datasource is the resolver for the Datasource field.

@@ -1,5 +1,7 @@
 # FastChat LLM-Worker
 
+**Deprecated as we manage the llm-worker in arcadia operator now**
+
 ## Requirements
 
 - Kubernetes

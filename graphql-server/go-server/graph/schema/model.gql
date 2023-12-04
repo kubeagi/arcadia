@@ -1,5 +1,5 @@
 # list
-query listModels($input: ListModelInput!){
+query listModels($input: ListCommonInput!){
   Model {
     listModels(input: $input) {
       totalCount
@@ -8,7 +8,7 @@ query listModels($input: ListModelInput!){
         __typename
         ... on Model {
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -17,7 +17,7 @@ query listModels($input: ListModelInput!){
           displayName
           description
           status
-          modeltypes
+          types
           updateTimestamp
         }
       }
@@ -30,7 +30,7 @@ query getModel($name: String!, $namespace: String!) {
   Model {
     getModel(name: $name, namespace: $namespace){
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -39,7 +39,7 @@ query getModel($name: String!, $namespace: String!) {
           displayName
           description
           status
-          modeltypes
+          types
           updateTimestamp
     }
   }
@@ -50,7 +50,7 @@ mutation createModel($input: CreateModelInput!) {
   Model {
     createModel(input: $input) {
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -59,7 +59,7 @@ mutation createModel($input: CreateModelInput!) {
           displayName
           description
           status
-          modeltypes
+          types
           updateTimestamp
     }
   }
@@ -70,7 +70,7 @@ mutation updateModel($input: UpdateModelInput) {
   Model {
     updateModel(input: $input){
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -79,7 +79,7 @@ mutation updateModel($input: UpdateModelInput) {
           displayName
           description
           status
-          modeltypes
+          types
           updateTimestamp
     }
   }

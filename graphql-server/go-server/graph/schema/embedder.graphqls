@@ -4,7 +4,7 @@ type Embedder {
     labels: Map
     annotations: Map
     creator: String
-    displayName: String!
+    displayName: String
     description: String
     endpoint: Endpoint
     serviceType: String
@@ -21,7 +21,7 @@ input CreateEmbedderInput {
     """模型服务资源注释"""
     annotations: Map
     """模型服务资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """模型服务资源描述"""
     description: String
     endpointinput: EndpointInput
@@ -39,7 +39,7 @@ input UpdateEmbedderInput {
     """模型服务资源注释"""
     annotations: Map
     """模型服务资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """模型服务资源描述"""
     description: String
 }

@@ -23,6 +23,8 @@ version: 0.0.2
 # It is recommended to use it with quotes.
 appVersion: "0.2.32"
 
+deprecated: true
+
 sources:
   - https://github.com/kubeagi/arcadia
 keywords:

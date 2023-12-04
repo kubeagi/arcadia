@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
@@ -22,18 +21,7 @@ func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.
 		return nil, err
 	}
 
-	displayname, description, modeltypes := "", "", ""
-
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
-	}
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.Modeltypes != "" {
-		modeltypes = input.Modeltypes
-	}
-	return md.CreateModel(ctx, c, input.Name, input.Namespace, displayname, description, modeltypes)
+	return md.CreateModel(ctx, c, input)
 }
 
 // UpdateModel is the resolver for the updateModel field.
@@ -43,15 +31,8 @@ func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.
 	if err != nil {
 		return nil, err
 	}
-	name, displayname := "", ""
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
-	}
-	if input.Name != "" {
-		name = input.Name
 
-	}
-	return md.UpdateModel(ctx, c, name, input.Namespace, displayname)
+	return md.UpdateModel(ctx, c, input)
 }
 
 // DeleteModel is the resolver for the deleteModel field.
@@ -86,53 +67,14 @@ func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQ
 }
 
 // ListModels is the resolver for the listModels field.
-func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListModelInput) (*generated.PaginatedResult, error) {
+func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
-	name, displayName, labelSelector, fieldSelector := "", "", "", ""
-	page, pageSize := 1, 10
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.DisplayName != nil {
-		displayName = *input.DisplayName
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
-	}
-	result, err := md.ListModels(ctx, c, input.Namespace, labelSelector, fieldSelector)
-	if err != nil {
-		return nil, err
-	}
-	var filteredResult []generated.PageNode
-	for idx, u := range result {
-		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
-			filteredResult = append(filteredResult, result[idx])
-		}
-	}
 
-	totalCount := len(filteredResult)
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       filteredResult[(page-1)*pageSize : end],
-	}, nil
+	return md.ListModels(ctx, c, input)
 }
 
 // Model is the resolver for the Model field.

@@ -25,6 +25,13 @@ const (
 	Finalizer = Group + "/finalizer"
 )
 
+// Tags for file object
+const (
+	ObjectTypeTag  = "object_type"
+	ObjectCountTag = "object_count"
+	ObjectTypeQA   = "QA"
+)
+
 type ProviderType string
 
 const (

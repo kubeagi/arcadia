@@ -1,27 +1,68 @@
+"""终端的访问信息"""
 type Endpoint {
+    """url地址"""
     url: String
+    """终端访问的密钥信息，保存在k8s secret中"""
     authSecret: TypedObjectReference
+    """是否通过非安全方式访问，默认为false，即安全模式访问"""
     insecure: Boolean
 }
 
+"""对象存储的使用信息"""
 type Oss {
+    """所用的bucket名称"""
     bucket: String
+    """所用的object路径(可为前缀)"""
     Object: String
 }
 
+"""
+数据源: 定义了对某一个具备数据存储能力服务的访问信息，供后续向该数据源获取数据使用
+"""
 type Datasource {
+    """
+    名称
+    规则: 遵循k8s命名
+    规则: 非空
+    """
     name: String!
+    """
+    命名空间
+    规则: 非空
+    """
     namespace: String!
+
     labels: Map
     annotations: Map
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
     creator: String
-    displayName: String!
+    """展示名"""
+    displayName: String
+    """描述信息"""
     description: String
+
+    """终端访问信息"""
     endpoint: Endpoint
+
+    """
+    对象存储访问信息
+    规则: 非空代表当前数据源为对象存储数据源
+    """
     oss: Oss
-    # 数据源连接状态
+
+    """数据源连接状态"""
     status: String
+
+    """文件数量"""
     fileCount: Int
+
+    """创建时间"""
+    creationTimestamp: Time
+    """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
     updateTimestamp: Time
 }
 
@@ -42,58 +83,109 @@ input OssInput {
 
 """新增数据源时输入条件"""
 input CreateDatasourceInput {
-    """数据源资源名称（不可同名）"""
+    """
+    名字
+    规则: k8s的名称规则
+    规则: 非空
+    """
     name: String!
-    """数据源创建命名空间"""
+
+    """
+    数据源的命名空间
+    规则: 非空
+    """
     namespace: String!
+
     """数据源资源标签"""
     labels: Map
     """数据源资源注释"""
     annotations: Map
+
     """数据源资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """数据源资源描述"""
     description: String
+
     """提供对象存储时输入条件"""
     endpointinput: EndpointInput
     ossinput: OssInput
 }
 
+"""更新数据源的输入"""
 input UpdateDatasourceInput {
-    """数据源资源名称（不可同名）"""
+    """
+    name, namespace用来确定资源
+    规则: 不允许修改的。将原数据传递回来即可。
+    """
     name: String!
-    """数据源创建命名空间"""
     namespace: String!
-    """数据源资源标签"""
+
+    """
+    更新的的标签信息，这里涉及到增加或者删除标签，
+    规则: 不允许修改的。将原数据传递回来即可。    
+    如果标签有任何改动，传递完整的label。
+    例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+    """ 
     labels: Map
-    """数据源资源注释"""
     annotations: Map
-    """数据源资源展示名称作为显示，并提供编辑"""
-    displayName: String!
-    """数据源资源描述"""
+
+    """如不更新，则为空"""
+    displayName: String
+    """如不更新，则为空"""
     description: String
 }
 
+"""删除数据源的输入"""
 input DeleteDatasourceInput {
+    """
+    name, namespace用来确定资源
+    """
     name: String
     namespace: String!
-    """筛选器"""
+
+    """标签选择器"""    
     labelSelector: String
+    """字段选择器"""   
     fieldSelector: String
 }
 
-"""分页查询输入"""
+"""数据源分页列表查询的输入"""
 input ListDatasourceInput {
-    """数据源资源名称（不可同名）"""
-    name: String
-    """数据源创建命名空间"""
+    """
+    namespace用来确定资源
+    规则: 必填
+    """
     namespace: String!
-    """数据源资源展示名称"""
+    """name用来唯一确定资源"""
+    name: String
+
+    """展示名"""
     displayName: String
+
+
+
+    """标签选择器"""    
     labelSelector: String
+    """字段选择器"""   
     fieldSelector: String
+
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
     page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
     pageSize: Int
+
+    """
+    关键词: 模糊匹配
+    规则: namespace,name,displayName,contentType,annotations中如果包含该字段则返回
+    """
     keyword: String
 }
 

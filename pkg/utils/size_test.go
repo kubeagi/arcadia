@@ -1,5 +1,5 @@
 /*
-Copyright 2023 KubeAGI.
+Copyright 2023 The KubeAGI Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package utils
 
-import (
-	"k8s.io/klog/v2"
+import "testing"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/service"
+func TestBytesToSizedStr(t *testing.T) {
+	tests := []struct {
+		bytes    int64
+		expected string
+	}{
+		{1023, "1023 B"},
+		{1024, "1.00 KB"},
+		{5242880, "5.00 MB"},
+		{1073741824, "1.00 GB"},
+	}
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-)
-
-func main() {
-	conf := config.NewServerFlags()
-
-	klog.Infof("listening server on port: %d", conf.Port)
-	service.NewServerAndRun(conf)
+	for _, test := range tests {
+		result := BytesToSizedStr(test.bytes)
+		if result != test.expected {
+			t.Errorf("BytesToSize(%d) = %s, expected %s", test.bytes, result, test.expected)
+		}
+	}
 }

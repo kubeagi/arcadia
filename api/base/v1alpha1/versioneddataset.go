@@ -48,14 +48,15 @@ func generateInheriedFileStatus(minioClient *minio.Client, instance *VersionedDa
 		phase = FileProcessPhaseSucceeded
 	}
 
-	filePaths := minioutils.ListObjects(context.TODO(), *srcBucket, prefix, minioClient, -1)
-	status := make([]FileDetails, len(filePaths))
-	sort.Strings(filePaths)
-
-	for idx, fp := range filePaths {
-		status[idx] = FileDetails{
-			Path:  strings.TrimPrefix(fp, prefix),
-			Phase: phase,
+	status := make([]FileDetails, 0)
+	if instance.Spec.InheritedFrom != "" {
+		filePaths := minioutils.ListObjects(context.TODO(), *srcBucket, prefix, minioClient, -1)
+		sort.Strings(filePaths)
+		for _, fp := range filePaths {
+			status = append(status, FileDetails{
+				Path:  strings.TrimPrefix(fp, prefix),
+				Phase: phase,
+			})
 		}
 	}
 

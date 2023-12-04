@@ -48,7 +48,7 @@ query dataProcessSupportType{
 
 query dataProcessDetails($input: DataProcessDetailsInput){
   dataProcess {
-    dataProcessDetails {
+    dataProcessDetails(input: $input) {
       status
       data {
         id

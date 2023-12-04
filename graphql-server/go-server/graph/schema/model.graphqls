@@ -1,46 +1,103 @@
+"""模型"""
 type Model {
+    """
+    模型id,为CR资源中的metadata.uid
+    """
     id: String
+
+    """
+    名称
+    规则: 遵循k8s命名
+    """
     name: String!
+
+    """
+    所在的namespace(文件上传时作为bucket)
+    规则: 获取当前项目对应的命名空间
+    规则: 非空
+    """
     namespace: String!
+
+    """一些用于标记，选择的的标签"""
     labels: Map
+    """添加一些辅助性记录信息"""
     annotations: Map
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
     creator: String
-    displayName: String!
+
+    """展示名"""
+    displayName: String
+
+    """描述信息"""
     description: String
-    modeltypes: String!
-    status: String
+
+    """创建时间"""
     creationTimestamp: Time
+    """更新时间"""
     updateTimestamp: Time
+
+    """
+    模型类型
+    规则: 目前支持 llm和embedding两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String!
+
+    """
+    状态
+    """
+    status: String
 }
 
+"""创建模型的输入"""
 input CreateModelInput{
     """模型资源名称（不可同名）"""
     name: String!
     """模型创建命名空间"""
     namespace: String!
+
     """模型资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """模型资源描述"""
     description: String
-    """模型类型"""
-    modeltypes: String!
+
+    """
+    模型类型
+    规则: 目前支持 llm和embedding两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String!
 }
 
+"""模型更新的输入"""
 input UpdateModelInput {
     """模型资源名称（不可同名）"""
     name: String!
     """模型创建命名空间"""
     namespace: String!
+
     """模型资标签"""
     labels: Map
     """模型资源注释"""
     annotations: Map
     """模型资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """模型资源描述"""
     description: String
+
+    """
+    模型类型
+    规则: 目前支持 llm和embedding两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String
 }
 
+"""模型删除的输入"""
 input DeleteModelInput {
     name: String 
     namespace: String!
@@ -50,18 +107,6 @@ input DeleteModelInput {
     fieldSelector: String
 }
 
-input ListModelInput {
-    name: String
-    namespace: String!
-    displayName: String
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-    page: Int
-    pageSize: Int
-    keyword: String
-}
 
 type ModelMutation {
     createModel(input: CreateModelInput!): Model!
@@ -71,8 +116,9 @@ type ModelMutation {
 
 type ModelQuery {
     getModel(name: String!, namespace: String!): Model!
-    listModels(input: ListModelInput!): PaginatedResult!
+    listModels(input: ListCommonInput!): PaginatedResult!
 }
+
 extend type Mutation {
     Model: ModelMutation
 }

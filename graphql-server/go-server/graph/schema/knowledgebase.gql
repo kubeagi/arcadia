@@ -7,7 +7,7 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
       nodes {
         ... on KnowledgeBase {
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -33,6 +33,10 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
             filedetails{
                 path
                 phase
+                fileType
+                count
+                size
+                updateTimestamp
             }
           }
         }
@@ -46,7 +50,7 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
   KnowledgeBase {
     getKnowledgeBase(name: $name, namespace: $namespace){
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -72,6 +76,10 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
             filedetails{
                 path
                 phase
+                fileType
+                count
+                size
+                updateTimestamp
             }
           }
     }
@@ -83,7 +91,7 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
   KnowledgeBase {
     createKnowledgeBase(input: $input) {
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -109,6 +117,10 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
             filedetails{
                 path
                 phase
+                fileType
+                count
+                size
+                updateTimestamp
             }
           }
     }
@@ -120,7 +132,7 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
   KnowledgeBase {
     updateKnowledgeBase(input: $input){
           id
-          createTimestamp
+          creationTimestamp
           name
           namespace
           labels
@@ -146,6 +158,10 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
             filedetails{
                 path
                 phase
+                fileType
+                count
+                size
+                updateTimestamp
             }
           }
     }

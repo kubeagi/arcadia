@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-logr/logr"
+	"github.com/minio/minio-go/v7"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -60,7 +61,9 @@ type VersionedDatasetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
+
+	logger.V(5).Info("Start VersionedDataset Reconcile")
 
 	var err error
 
@@ -69,15 +72,25 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		klog.Errorf("reconcile: failed to get versionDataset with req: %v", req.NamespacedName)
+		logger.V(1).Info("Failed to get VersionedDataset")
 		return reconcile.Result{}, err
 	}
+	if instance.DeletionTimestamp != nil {
+		logger.Info("Remove bucket files for versioneddatset")
+		if err = r.removeBucketFiles(ctx, logger, instance); err != nil {
+			return reconcile.Result{}, err
+		}
+		instance.Finalizers = nil
+		logger.Info("Remove versioneddatset done")
+		return reconcile.Result{}, r.Client.Update(ctx, instance)
+	}
+
 	if instance.DeletionTimestamp == nil {
-		updatedObj, err := r.preUpdate(ctx, instance)
+		updatedObj, err := r.preUpdate(ctx, logger, instance)
 		if err != nil {
 			// Skip if it's NotFound error
 			if errors.IsNotFound(err) {
-				klog.Errorf(" VersionedDataset %s not found", instance.Name)
+				logger.V(1).Info(" Failed to get VersionedDataset")
 				return reconcile.Result{}, nil
 			}
 			return reconcile.Result{}, err
@@ -89,35 +102,35 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	deepCopy := instance.DeepCopy()
-	update, deleteFilestatus, err := r.checkStatus(ctx, deepCopy)
+	update, deleteFilestatus, err := r.checkStatus(ctx, logger, deepCopy)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	if update || len(deleteFilestatus) > 0 {
 		if len(deleteFilestatus) > 0 {
-			klog.V(4).Infof("[Debug] need to delete files%+v\n", deleteFilestatus)
+			logger.V(1).Info("Need to delete files", "Files", deleteFilestatus)
 			s, err := scheduler.NewScheduler(ctx, r.Client, instance, deleteFilestatus, true)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			klog.V(4).Infof("[Debug] start to delete %d group files for %s/%s", len(deleteFilestatus), instance.Namespace, instance.Name)
+			logger.V(1).Info("Start to delete group files", "Number", len(deleteFilestatus))
 			if err = s.Start(); err != nil {
-				klog.Errorf("try to delete files failed, error %s, need retry", err)
+				logger.Error(err, "failed to delete files, need retry")
 				return reconcile.Result{RequeueAfter: waitMedium}, nil
 			}
 		}
 		if instance.DeletionTimestamp == nil {
 			err := r.Client.Status().Patch(ctx, deepCopy, client.MergeFrom(instance))
 			if err != nil {
-				klog.Errorf("patch %s/%s status error %s", instance.Namespace, instance.Name, err)
+				logger.Error(err, "Failed to patch status")
 			}
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	klog.V(4).Infof("[Debug] start to add new files")
+	logger.V(1).Info("Start to add new files")
 
 	key := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
 	v, ok := r.cache.Load(key)
@@ -126,12 +139,12 @@ func (r *VersionedDatasetReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	s, err := scheduler.NewScheduler(ctx, r.Client, instance, nil, false)
 	if err != nil {
-		klog.V(4).Infof("generate scheduler error %s", err)
+		logger.Error(err, "Faled to generate scheduler")
 		return reconcile.Result{}, err
 	}
 	r.cache.Store(key, s)
 
-	klog.V(4).Infof("[Debug] start to sync files for %s/%s", instance.Namespace, instance.Name)
+	logger.V(1).Info("Start to sync files")
 	go func() {
 		_ = s.Start()
 	}()
@@ -146,7 +159,7 @@ func (r *VersionedDatasetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1alpha1.VersionedDataset) (bool, error) {
+func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, logger logr.Logger, instance *v1alpha1.VersionedDataset) (bool, error) {
 	var err error
 	update := false
 	if instance.Labels == nil {
@@ -174,7 +187,7 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1
 	if err = r.Client.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
 		Name:      instance.Spec.Dataset.Name}, dataset); err != nil {
-		klog.Errorf("preUpdate: failed to get dataset %s/%s, error %s", namespace, instance.Spec.Dataset.Name, err)
+		logger.Error(err, "Failed to preUpdate the dataset", "Dataset Namespace", namespace, "Dataset Name", instance.Spec.Dataset.Name)
 		return false, err
 	}
 
@@ -186,7 +199,7 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1
 	}
 	if index == len(instance.OwnerReferences) {
 		if err = controllerutil.SetControllerReference(dataset, instance, r.Scheme); err != nil {
-			klog.Errorf("preUpdate: failed to set versionDataset %s/%s's ownerReference", instance.Namespace, instance.Name)
+			logger.Error(err, "Failed to preUpdate the versionDataset ownerReference")
 			return false, err
 		}
 
@@ -196,12 +209,12 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, instance *v1
 	return update, err
 }
 
-func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus, error) {
+func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger logr.Logger, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus, error) {
 	// TODO: Currently, we think there is only one default minio environment,
 	// so we get the minio client directly through the configuration.
 	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
-		klog.Errorf("get system datasource error %s", err)
+		logger.Error(err, "Failed to get system datasource")
 		return false, nil, err
 	}
 	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
@@ -210,10 +223,36 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, instance *
 	}
 	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
 	if err != nil {
-		klog.Errorf("generate new minio client error %s", err)
+		logger.Error(err, "Failed to generate new minio client")
 		return false, nil, err
 	}
 
 	update, deleteFileStatus := v1alpha1.CopyedFileGroup2Status(oss.Client, instance)
 	return update, deleteFileStatus, nil
+}
+
+func (r *VersionedDatasetReconciler) removeBucketFiles(ctx context.Context, logger logr.Logger, instance *v1alpha1.VersionedDataset) error {
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
+	if err != nil {
+		logger.Error(err, "Failed to get system datasource")
+		return err
+	}
+	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	if err != nil {
+		logger.Error(err, "Failed to generate new minio client")
+		return err
+	}
+
+	for ei := range oss.Client.RemoveObjects(ctx, instance.Namespace, oss.Client.ListObjects(ctx, instance.Namespace, minio.ListObjectsOptions{
+		Prefix:    fmt.Sprintf("dataset/%s/%s/", instance.Spec.Dataset.Name, instance.Spec.Version),
+		Recursive: true,
+	}), minio.RemoveObjectsOptions{}) {
+		err = ei.Err
+		logger.Error(err, "failed to remove object", "Object", ei.ObjectName)
+	}
+	return err
 }
