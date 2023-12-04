@@ -1,9 +1,15 @@
+scalar Int64
 """
 VersionedDataset
 数据集的版本信息。
 主要记录版本名字，数据的来源，以及文件的同步状态
 """
 type VersionedDataset {
+    """
+    版本数据集id,为CR资源中的metadata.uid
+    """
+    id: String
+
     """数据集名称, 这个应该是前端随机生成就可以，没有实际用途"""
     name: String!
 
@@ -20,7 +26,7 @@ type VersionedDataset {
     creator: String
 
     """展示名字， 与metadat.name不一样，这个展示名字是可以用中文的"""
-    displayName: String!
+    displayName: String
 
     """描述"""
     description: String
@@ -61,10 +67,16 @@ type F {
     fileType: String!
 
     """数据量"""
-    count: Int
+    count: String
 
-    """文件成功导入时间，如果没有导入成功，这个字段为空"""
+    """文件更新时间，如果没有导入成功，这个字段为空"""
     time: Time
+
+    """文件大小"""
+    size: String
+
+    """文件创建时间"""
+    creationTimestamp: Time    
 }
 
 """
@@ -111,7 +123,7 @@ input CreateVersionedDatasetInput {
     annotations: Map
 
     """展示名称，用于展示在界面上的，必须填写"""
-    displayName: String!
+    displayName: String
     
     """描述信息，可以不写"""
     description: String
@@ -147,7 +159,7 @@ input UpdateVersionedDatasetInput {
     """传递方式同label"""
     annotations: Map
     
-    displayName: String!
+    displayName: String
     description: String
 
     """

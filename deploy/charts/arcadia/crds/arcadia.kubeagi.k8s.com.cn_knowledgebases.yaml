@@ -180,6 +180,10 @@ spec:
                           checksum:
                             description: Checksum defines the checksum of the file
                             type: string
+                          count:
+                            description: Count defines the total items in a file which
+                              is extracted from object tag  `object_count`
+                            type: string
                           errMessage:
                             description: ErrMessage defines the error message
                             type: string
@@ -193,6 +197,14 @@ spec:
                             type: string
                           phase:
                             description: Phase defines the process phase
+                            type: string
+                          size:
+                            description: Size defines the file size which is extracted
+                              from object tag  `object_size`
+                            type: string
+                          type:
+                            description: Type defines the file type which is extracted
+                              from object tag  `object_type`
                             type: string
                         type: object
                       type: array

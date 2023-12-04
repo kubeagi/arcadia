@@ -63,7 +63,7 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 		return nil, err
 	}
 	ds.Creator = &dataset.Spec.Creator
-	ds.DisplayName = dataset.Spec.DisplayName
+	ds.DisplayName = &dataset.Spec.DisplayName
 	ds.ContentType = dataset.Spec.ContentType
 	ds.Field = &dataset.Spec.Field
 	first := true
@@ -90,10 +90,10 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 		},
 		Spec: v1alpha1.DatasetSpec{
 			ContentType: input.ContentType,
-			CommonSpec: v1alpha1.CommonSpec{
-				DisplayName: input.DisplayName,
-			},
 		},
+	}
+	if input.DisplayName != nil {
+		dataset.Spec.DisplayName = *input.DisplayName
 	}
 	if input.Description != nil {
 		dataset.Spec.Description = *input.Description
@@ -153,7 +153,7 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	result := make([]generated.PageNode, 0)
 	for _, u := range datastList.Items {
 		uu, _ := dataset2model(&u)
-		if input.DisplayName != nil && uu.DisplayName != *input.DisplayName {
+		if input.DisplayName != nil && *uu.DisplayName != *input.DisplayName {
 			continue
 		}
 		if input.Keyword != nil {
@@ -164,7 +164,7 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 			if strings.Contains(uu.Namespace, *input.Keyword) {
 				ok = true
 			}
-			if strings.Contains(uu.DisplayName, *input.Keyword) {
+			if strings.Contains(*uu.DisplayName, *input.Keyword) {
 				ok = true
 			}
 			if strings.Contains(uu.ContentType, *input.Keyword) {

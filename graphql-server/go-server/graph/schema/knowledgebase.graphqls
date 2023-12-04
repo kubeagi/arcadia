@@ -1,34 +1,132 @@
+"""
+文件组
+规则: 属于同一个源(数据集)的文件要放在同一个filegroup中
+规则: path直接读取文件里表中的文件路径即可
+"""
 type filegroup{
+    """
+    源；目前仅支持版本数据集，即 Kind为 VersionedDataset
+    """
     source: TypedObjectReference
+    """
+    路径数组
+    """
     path: [String!]
 }
 
+"""
+文件详情
+描述: 文件在知识库中的详细状态
+"""
 type filedetail{
+    """文件路径"""
     path: String!
+
+    """
+    文件类型
+    规则: enum { QA }
+    """
+    fileType: String!
+
+    """
+    文件中的数据条目总数
+    """
+    count: String!
+    
+    """
+    文件大小
+    """
+    size: String!
+
+    """
+    最新处理时间
+    """
+    updateTimestamp: Time
+
+    """
+    文件处理的阶段
+    规则: enum { Pending , Processing , Succeeded, Failed, Skipped}
+    """
     phase: String!
 }
 
+"""
+文件组详情
+描述: 文件组在知识库中的状态
+"""
 type filegroupdetail{
+    """
+    源；目前仅支持版本数据集，即 Kind为 VersionedDataset
+    """
     source: TypedObjectReference
+
+    """
+    文件详情
+    规则；数组。具体文件详情参考 filedetail描述
+    """
     filedetails:[filedetail]
 }
 
+"""
+知识库
+"""
 type KnowledgeBase {
+    """
+    知识库id,为CR资源中的metadata.uid
+    """
     id: String
+
+    """
+    名称
+    规则: 遵循k8s命名
+    """
     name: String!
+
+    """
+    所在的namespace(文件上传时作为bucket)
+    规则: 获取当前项目对应的命名空间
+    规则: 非空
+    """
     namespace: String!
+
+    """一些用于标记，选择的的标签"""
     labels: Map
+    """添加一些辅助性记录信息"""
     annotations: Map
+    
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
     creator: String
-    displayName: String!
+
+    """展示名"""
+    displayName: String
+
+    """描述信息"""
     description: String
-    embedder: TypedObjectReference
-    vectorStore: TypedObjectReference
-    fileGroupDetails: [filegroupdetail]
-    """知识库连接状态"""
-    status: String
+
+    """创建时间"""
     creationTimestamp: Time
+    """更新时间"""
     updateTimestamp: Time
+    
+    """
+    embedder指当前知识库使用的embedding向量化模型，即 Kind 为 Embedder
+    """
+    embedder: TypedObjectReference
+    """
+    vectorStore指当前知识库使用的向量数据库服务，即 Kind 为 VectorStore
+    """
+    vectorStore: TypedObjectReference
+    """
+    fileGroupDetails为知识库中所处理的文件组的详细内容和状态
+    """
+    fileGroupDetails: [filegroupdetail]
+    
+    """知识库整体连接状态"""
+    status: String
 }
 
 """源文件输入"""
@@ -39,27 +137,35 @@ input filegroupinput {
     path: [String!]
 }
 
+"""创建知识库的输入"""
 input CreateKnowledgeBaseInput{
     """知识库资源名称（不可同名）"""
     name: String!
     """知识库创建命名空间"""
     namespace: String!
+
     """知识库资源标签"""
     labels: Map
     """知识库资源注释"""
     annotations: Map
+
     """知识库资源展示名称作为显示，并提供编辑"""
-    displayName: String!
+    displayName: String
     """知识库资源描述"""
     description: String
-    """模型服务"""
+
+     """
+    embedder指当前知识库使用的embedding向量化模型
+    """
     embedder: String!
-    """"向量数据库(使用默认值)"""
+
+    """"向量数据库(目前不需要填写，直接使用系统默认的向量数据库)"""
     vectorStore: TypedObjectReferenceInput
     """知识库文件"""
     fileGroups: [filegroupinput!]
 }
 
+"""知识库更新的输入"""
 input UpdateKnowledgeBaseInput {
     """知识库资源名称（不可同名）"""
     name: String!
@@ -69,31 +175,55 @@ input UpdateKnowledgeBaseInput {
     labels: Map
     """知识库资源注释"""
     annotations: Map
-    """知识库资源展示名称作为显示，并提供编辑"""
-    displayName: String!
-    """知识库资源描述"""
+
+    """如不更新，则为空"""
+    displayName: String
+
+    """如不更新，则为空"""
     description: String
+
+    """更新知识库文件"""
+    fileGroups: [filegroupinput!]
 }
 
+"""知识库删除的输入"""
 input DeleteKnowledgeBaseInput {
     name: String
     namespace: String!
+
     """标签选择器"""
     labelSelector: String
     """字段选择器"""
     fieldSelector: String
 }
 
+"""知识库分页列表查询的输入"""
 input ListKnowledgeBaseInput {
     name: String
     namespace: String!
+
     displayName: String
     """标签选择器"""
     labelSelector: String
     """字段选择器"""
     fieldSelector: String
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
     page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
     pageSize: Int
+
+    """
+    关键词: 模糊匹配
+    规则: name,displayName中如果包含该字段则返回
+    """
     keyword: String
 }
 

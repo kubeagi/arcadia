@@ -5,6 +5,31 @@ type Mutation{
     hello(name: String!): String!
 }
 
+input ListCommonInput {
+    namespace: String!
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
+}
+
 scalar Time
 scalar Map
 scalar Void

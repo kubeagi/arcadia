@@ -33,6 +33,7 @@ mutation deleteVersionedDatasets($input: DeleteVersionedDatasetInput!){
 query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileFilter){
   VersionedDataset{
     getVersionedDataset(name: $name, namespace: $namespace) {
+      id
       name
       displayName
       description
@@ -52,6 +53,8 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
             time
             fileType
             count
+            size
+            creationTimestamp
           }
         }
       }
@@ -65,6 +68,7 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
         totalCount
         nodes {
           ... on VersionedDataset {
+            id
             name
             displayName
             description
@@ -84,6 +88,8 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
                   time
                   fileType
                   count
+                  size
+                  creationTimestamp
               }
             }
           }

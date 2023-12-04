@@ -14,10 +14,17 @@ Dataset
 数据集某个版本完成数据处理后，数据处理服务需要将处理后的存储回 版本数据集
 """
 type Dataset {
-    """数据集名称"""
+    """
+    名称
+    规则: 遵循k8s命名
+    """
     name: String!
 
-    """数据集所在的namespace，也是后续桶的名字"""
+    """
+    所在的namespace(文件上传时作为bucket)
+    规则: 获取当前项目对应的命名空间
+    规则: 非空
+    """
     namespace: String!
 
     """一些用于标记，选择的的标签"""
@@ -26,35 +33,56 @@ type Dataset {
     """添加一些辅助性记录信息"""
     annotations: Map
 
-    """创建者，正查给你这个字段是不需要人写的，自动添加"""
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
     creator: String
 
-    """展示名字， 与metadat.name不一样，这个展示名字是可以用中文的"""
-    displayName: String!
+    """展示名"""
+    displayName: String
 
-    """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
-    updateTimestamp: Time
+    """描述信息"""
+    description: String
 
     """创建时间"""
     creationTimestamp: Time
-    """数据集类型，文本，图片，视频"""
-    contentType: String!
-
-    """应用场景"""
-    field: String
+    """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
+    updateTimestamp: Time
 
     """
-    这个是一个resolver，数据集下面的版本列表。
-    支持对名字，类型的完全匹配过滤。
-    支持通过标签(somelabel=abc)，字段(metadata.name=abc)进行过滤
+    数据集类型，文本，图片，视频
+    规则: enum{ text image video}
+    规则: 非空
+    """
+    contentType: String!
+
+    """
+    应用场景
+    规则: enum{ xx xx } (非固定字段，以产品为准)
+    """
+    field: String
+    """
+    数据集下面的版本列表。
+    规则: 支持对名字，类型的完全匹配过滤。
+    规则: 支持通过标签(somelabel=abc)，字段(metadata.name=abc)进行过滤
     """
     versions(input: ListVersionedDatasetInput!): PaginatedResult!
 }
 
+"""数据集创建的输入"""
 input CreateDatasetInput {
-    """数据集的CR名字，要满足k8s的名称规则"""
+    """
+    数据集的名字
+    规则: k8s的名称规则
+    规则: 非空
+    """
     name: String!
 
+    """
+    数据集的命名空间
+    规则: 非空
+    """
     namespace: String!
 
     """一些标签选择信息，可以不添加"""
@@ -63,8 +91,8 @@ input CreateDatasetInput {
     """一些备注用的注视信息，或者记录一个简单的配置"""
     annotations: Map
 
-    """展示名称，用于展示在界面上的，必须填写"""
-    displayName: String!
+    """展示名称"""
+    displayName: String
     
     """描述信息，可以不写"""
     description: String
@@ -72,75 +100,117 @@ input CreateDatasetInput {
     """数据集里面的数据的类型，文本，视频，图片"""
     contentType: String!
 
-    """应用场景，可以为空"""
+    """
+    应用场景，可以为空
+    规则: enum{ xx xx } (非固定字段，以产品为准)
+    """
     filed: String
 }
 
+"""数据集更新的输入"""
 input UpdateDatasetInput {
     """
-    name, namespace用来确定资源，不允许修改的。将原数据传递回来即可。
-    """
+    name, namespace用来确定资源
+    规则: 不允许修改的。将原数据传递回来即可。
+    """   
     name: String!
     namespace: String!
 
     """
     更新的的标签信息，这里涉及到增加或者删除标签，
-    所以，如果标签有任何改动，传递完整的label。
+    规则: 不允许修改的。将原数据传递回来即可。    
+    如果标签有任何改动，传递完整的label。
     例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
-    """
+    """ 
     labels: Map
     annotations: Map
     
-    """如果不更新，为空就可以"""
+    """如不更新，则为空"""
     displayName: String
 
-    """同理"""
+    """如不更新，则为空"""
     description: String
 }
 
+"""数据集删除的输入"""
 input DeleteDatasetInput {
+    """
+    name, namespace用来确定资源
+    """
     name: String
     namespace: String!
+    
+    """标签选择器"""    
     labelSelector: String
+
+    """字段选择器"""   
     fieldSelector: String
 }
 
+"""数据集分页列表查询的输入"""
 input ListDatasetInput {
-    name: String
+    """
+    namespace用来确定资源
+    规则: 必填
+    """
     namespace: String!
+
+    """name用来唯一确定资源"""
+    name: String
+
+    """展示名"""
     displayName: String
+
+    """标签选择器"""    
     labelSelector: String
+    """字段选择器"""   
     fieldSelector: String
 
-    """分页页码，从1开始，默认是1"""
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
     page: Int
 
-    """每页数量，默认10"""
+    """
+    每页数量，
+    规则: 默认10
+    """
     pageSize: Int
+
+    """
+    关键词: 模糊匹配
+    规则: namespace,name,displayName,contentType,annotations中如果包含该字段则返回
+    """
     keyword: String
 }
 
+"""数据集查询"""
 type DatasetQuery {
     """根据名字获取某个具体的数据集"""
     getDataset(name: String!, namespace: String!): Dataset!
 
     """
-    获取数据集列表，支持通过标签和字段进行选择。
+    获取数据集列表
+    规则: 支持通过标签和字段进行选择。如下:
     labelSelector: aa=bbb
     fieldSelector= metadata.name=somename
     """
     listDatasets(input: ListDatasetInput): PaginatedResult!
 }
 
+"""数据集更新"""
 type DatasetMutation {
+    """创建数据集"""
     createDataset(input: CreateDatasetInput): Dataset!
+    """更新数据集"""
     updateDataset(input: UpdateDatasetInput): Dataset!
 
     """
     删除数据集
-    可以提供一个名称列表，会将所有名字在这个列表的dataset全部删除
-    支持通过标签进行删除，提供一个标签选择器，将满足标签的dataset全部删除
-    如果提供了这两个参数，以名字列表为主。
+    规则: 支持删除一个名称列表中包含的所有数据集
+    规则: 支持通过标签选择器，将满足标签的dataset全部删除
+    规则: 如果提供了这两个参数，以名字列表为主。
     """
     deleteDatasets(input: DeleteDatasetInput): Void
 }

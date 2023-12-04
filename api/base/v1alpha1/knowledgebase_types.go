@@ -46,6 +46,15 @@ type FileDetails struct {
 	// Path defines the detail path to get objects from above datasource
 	Path string `json:"path,omitempty"`
 
+	// Type defines the file type which is extracted from object tag  `object_type`
+	Type string `json:"type,omitempty"`
+
+	// Count defines the total items in a file which is extracted from object tag  `object_count`
+	Count string `json:"count,omitempty"`
+
+	// Size defines the file size which is extracted from object tag  `object_size`
+	Size string `json:"size,omitempty"`
+
 	// Checksum defines the checksum of the file
 	Checksum string `json:"checksum,omitempty"`
 

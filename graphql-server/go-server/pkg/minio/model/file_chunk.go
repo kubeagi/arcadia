@@ -38,19 +38,28 @@ const MaxMultipartPutObjectSize = 1024 * 1024 * 1024 * 1024 * 5
 const MinPartSize = 1024 * 1024 * 64
 
 type FileChunk struct {
-	Md5            string
-	IsUploaded     int
-	UploadID       string
-	TotalChunks    int
-	Size           int64
-	FileName       string
-	CompletedParts string
+	Md5                string
+	IsUploaded         int
+	UploadID           string
+	TotalChunks        int
+	Size               int64
+	FileName           string
+	CompletedParts     string
+	Bucket, BucketPath string
 }
 
+/*
+TODO: We should abstract the interface to support memory as well as some other caching components.
+
+	type Cache struct {
+		Set(key, v any)
+		Get(key any) (any, bool)
+	}
+*/
 var fileChunks = sync.Map{}
 
-func GetFileChunkByMD5(md5 string) (*FileChunk, error) {
-	v, ok := fileChunks.Load(md5)
+func GetFileChunkByMD5(bucket, bucketPath, md5 string) (*FileChunk, error) {
+	v, ok := fileChunks.Load([3]string{bucket, bucketPath, md5})
 	if !ok {
 		return nil, fmt.Errorf("not found chunk with md5 %s", md5)
 	}
@@ -62,7 +71,7 @@ func GetFileChunkByMD5(md5 string) (*FileChunk, error) {
 }
 
 func UpdateFileChunk(fileChunk *FileChunk) error {
-	v, err := GetFileChunkByMD5(fileChunk.Md5)
+	v, err := GetFileChunkByMD5(fileChunk.Bucket, fileChunk.BucketPath, fileChunk.Md5)
 	if err != nil {
 		return err
 	}
@@ -72,6 +81,6 @@ func UpdateFileChunk(fileChunk *FileChunk) error {
 }
 
 func InsetFileChunk(fileChunk *FileChunk) (_ *FileChunk, err error) {
-	fileChunks.Store(fileChunk.Md5, fileChunk)
+	fileChunks.Store([3]string{fileChunk.Bucket, fileChunk.BucketPath, fileChunk.Md5}, fileChunk)
 	return fileChunk, nil
 }

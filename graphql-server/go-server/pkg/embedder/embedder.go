@@ -19,7 +19,6 @@ package embedder
 import (
 	"context"
 	"sort"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,6 +29,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
@@ -52,7 +52,7 @@ func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
 		condition, ok := conditions[0].(map[string]interface{})
 		if ok {
 			timeStr, _ := condition["lastTransitionTime"].(string)
-			updateTime, _ = time.Parse(time.RFC3339, timeStr)
+			updateTime, _ = utils.RFC3339Time(timeStr)
 		}
 	}
 	endpoint := model.Endpoint{
@@ -69,7 +69,7 @@ func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
 		Namespace:       obj.GetNamespace(),
 		Labels:          labels,
 		Annotations:     annotations,
-		DisplayName:     displayName,
+		DisplayName:     &displayName,
 		Endpoint:        &endpoint,
 		ServiceType:     &servicetype,
 		UpdateTimestamp: &updateTime,

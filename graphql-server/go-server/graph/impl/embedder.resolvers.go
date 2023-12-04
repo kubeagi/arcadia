@@ -32,8 +32,8 @@ func (r *embedderMutationResolver) CreateEmbedder(ctx context.Context, obj *gene
 		}
 	}
 
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
 	}
 	if input.Description != nil {
 		description = *input.Description
@@ -52,8 +52,8 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 		return nil, err
 	}
 	name, displayname := "", ""
-	if input.DisplayName != "" {
-		displayname = input.DisplayName
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
 	}
 	if input.Name != "" {
 		name = input.Name
@@ -126,7 +126,7 @@ func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generate
 	}
 	var filteredResult []generated.PageNode
 	for idx, u := range result {
-		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(u.DisplayName, displayName)) {
+		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(*u.DisplayName, displayName)) {
 			filteredResult = append(filteredResult, result[idx])
 		}
 	}

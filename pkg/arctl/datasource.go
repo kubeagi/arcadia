@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/arctl/printer"
 )
@@ -165,13 +166,15 @@ func DatasourceListCmd(kubeClient dynamic.Interface, namespace string) *cobra.Co
 		Use:   "list [usage]",
 		Short: "List datasources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, namespace, "", "")
+			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, &generated.ListDatasourceInput{
+				Namespace: namespace,
+			})
 			if err != nil {
 				return err
 			}
-			objects := make([]any, len(list))
-			for i, item := range list {
-				objects[i] = *item
+			objects := make([]any, len(list.Nodes))
+			for i, item := range list.Nodes {
+				objects[i] = item
 			}
 			printer.Print(datasourcePrintHeaders, objects)
 			return nil

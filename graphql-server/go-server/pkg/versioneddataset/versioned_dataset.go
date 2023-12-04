@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	miniogo "github.com/minio/minio-go/v7"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,6 +34,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
+	"github.com/kubeagi/arcadia/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
 
@@ -42,11 +44,12 @@ var (
 		Version:  v1alpha1.GroupVersion.Version,
 		Resource: "versioneddatasets",
 	}
-	dataCount = 0
 )
 
 func versionedDataset2model(obj *unstructured.Unstructured) (*generated.VersionedDataset, error) {
 	vds := &generated.VersionedDataset{}
+	id := string(obj.GetUID())
+	vds.ID = &id
 	vds.Name = obj.GetName()
 	vds.Namespace = obj.GetNamespace()
 	if r := obj.GetLabels(); len(r) > 0 {
@@ -69,7 +72,7 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 	}
 	vds.CreationTimestamp = obj.GetCreationTimestamp().Time
 	vds.Creator = &versioneddataset.Spec.Creator
-	vds.DisplayName = versioneddataset.Spec.DisplayName
+	vds.DisplayName = &versioneddataset.Spec.DisplayName
 	vds.Description = &versioneddataset.Spec.Description
 	vds.Dataset = generated.TypedObjectReference{
 		APIGroup:  versioneddataset.Spec.Dataset.APIGroup,
@@ -114,7 +117,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	if filter != nil && filter.Keyword != nil {
 		keyword = *filter.Keyword
 	}
-	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient, -1)
+	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient)
 	sort.Slice(objectInfoList, func(i, j int) bool {
 		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
 	})
@@ -122,12 +125,33 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
-			result = append(result, generated.F{
-				Path:     strings.TrimPrefix(obj.Key, prefix),
-				FileType: obj.ContentType,
-				Count:    &dataCount,
-				Time:     &obj.LastModified,
-			})
+			tf := generated.F{
+				Path: strings.TrimPrefix(obj.Key, prefix),
+				Time: &obj.LastModified,
+			}
+
+			size := utils.BytesToSizedStr(obj.Size)
+			tf.Size = &size
+
+			// parse tags
+			tags, err := minioClient.GetObjectTagging(ctx, input.Namespace, obj.Key, miniogo.GetObjectTaggingOptions{})
+			if err == nil {
+				tagsMap := tags.ToMap()
+				if v, ok := tagsMap[v1alpha1.ObjectTypeTag]; ok {
+					tf.FileType = v
+				}
+
+				if v, ok := tagsMap[v1alpha1.ObjectCountTag]; ok {
+					tf.Count = &v
+				}
+			}
+
+			if v, ok := obj.UserTags[minio.CreationTimestamp]; ok {
+				if now, err := time.Parse(time.RFC3339, v); err == nil {
+					tf.CreationTimestamp = &now
+				}
+			}
+			result = append(result, tf)
 		}
 	}
 	page, size := 1, 10
@@ -179,6 +203,10 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 		return nil, err
 	}
 
+	sort.Slice(list.Items, func(i, j int) bool {
+		return list.Items[i].GetCreationTimestamp().After(list.Items[j].GetCreationTimestamp().Time)
+	})
+
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -189,7 +217,7 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 	result := make([]generated.PageNode, 0)
 	for _, u := range list.Items {
 		uu, _ := versionedDataset2model(&u)
-		if input.DisplayName != nil && uu.DisplayName != *input.DisplayName {
+		if input.DisplayName != nil && *uu.DisplayName != *input.DisplayName {
 			continue
 		}
 		if input.Keyword != nil {
@@ -199,7 +227,7 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 			if strings.Contains(uu.Namespace, *input.Keyword) {
 				goto add
 			}
-			if strings.Contains(uu.DisplayName, *input.Keyword) {
+			if strings.Contains(*uu.DisplayName, *input.Keyword) {
 				goto add
 			}
 			for _, v := range uu.Annotations {
@@ -280,8 +308,8 @@ func UpdateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	}
 	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	if input.DisplayName != "" && input.DisplayName != displayname {
-		_ = unstructured.SetNestedField(obj.Object, input.DisplayName, "spec", "displayName")
+	if input.DisplayName != nil && *input.DisplayName != displayname {
+		_ = unstructured.SetNestedField(obj.Object, *input.DisplayName, "spec", "displayName")
 	}
 	if input.Description != nil && *input.Description != description {
 		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
@@ -324,9 +352,9 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 			Namespace: &input.Namespace,
 		},
 		Released: 0,
-		CommonSpec: v1alpha1.CommonSpec{
-			DisplayName: input.DisplayName,
-		},
+	}
+	if input.DisplayName != nil {
+		vds.Spec.DisplayName = *input.DisplayName
 	}
 	if input.Description != nil {
 		vds.Spec.Description = *input.Description
