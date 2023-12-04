@@ -30,6 +30,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 )
 
 func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
@@ -38,20 +39,8 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds.Namespace = obj.GetNamespace()
 	n := obj.GetCreationTimestamp()
 	ds.CreationTimestamp = &n.Time
-	if r := obj.GetLabels(); len(r) > 0 {
-		l := make(map[string]any)
-		for k, v := range r {
-			l[k] = v
-		}
-		ds.Labels = l
-	}
-	if r := obj.GetAnnotations(); len(r) > 0 {
-		a := make(map[string]any)
-		for k, v := range r {
-			a[k] = v
-		}
-		ds.Annotations = a
-	}
+	ds.Labels = utils.MapStr2Any(obj.GetLabels())
+	ds.Annotations = utils.MapStr2Any(obj.GetAnnotations())
 	dataset := &v1alpha1.Dataset{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, dataset); err != nil {
 		return nil, err
@@ -92,20 +81,8 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 	if input.Description != nil {
 		dataset.Spec.Description = *input.Description
 	}
-	if len(input.Labels) > 0 {
-		l := make(map[string]string)
-		for k, v := range input.Labels {
-			l[k] = v.(string)
-		}
-		dataset.Labels = l
-	}
-	if len(input.Annotations) > 0 {
-		a := make(map[string]string)
-		for k, v := range input.Annotations {
-			a[k] = v.(string)
-		}
-		dataset.Annotations = a
-	}
+	dataset.Labels = utils.MapAny2Str(input.Labels)
+	dataset.Annotations = utils.MapAny2Str(input.Annotations)
 
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dataset)
 	if err != nil {
@@ -201,16 +178,8 @@ func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.Up
 	if err != nil {
 		return nil, err
 	}
-	l := make(map[string]string)
-	for k, v := range input.Labels {
-		l[k] = v.(string)
-	}
-	a := make(map[string]string)
-	for k, v := range input.Annotations {
-		a[k] = v.(string)
-	}
-	obj.SetLabels(l)
-	obj.SetAnnotations(a)
+	obj.SetLabels(utils.MapAny2Str(input.Labels))
+	obj.SetAnnotations(utils.MapAny2Str(input.Annotations))
 	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
 	if input.DisplayName != nil && *input.DisplayName != displayname {

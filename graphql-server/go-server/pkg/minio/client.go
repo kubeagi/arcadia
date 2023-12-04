@@ -19,8 +19,10 @@ package minio
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -48,7 +50,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	minioConfig, err := config.GetMinIO(context.TODO(), c)
+	var minioConfig *config.MinIO
+	for i := 0; i < 60; i++ {
+		minioConfig, err = config.GetMinIO(context.TODO(), c)
+		if err != nil {
+			fmt.Println("no minio config found, retrying...")
+			time.Sleep(time.Second)
+			continue
+		}
+	}
 	if err != nil {
 		panic(err)
 	}

@@ -34,6 +34,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
@@ -52,20 +53,8 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 	vds.ID = &id
 	vds.Name = obj.GetName()
 	vds.Namespace = obj.GetNamespace()
-	if r := obj.GetLabels(); len(r) > 0 {
-		l := make(map[string]any)
-		for k, v := range r {
-			l[k] = v
-		}
-		vds.Labels = l
-	}
-	if r := obj.GetAnnotations(); len(r) > 0 {
-		a := make(map[string]any)
-		for k, v := range r {
-			a[k] = v
-		}
-		vds.Annotations = a
-	}
+	vds.Labels = graphqlutils.MapStr2Any(obj.GetLabels())
+	vds.Annotations = graphqlutils.MapStr2Any(obj.GetAnnotations())
 	versioneddataset := &v1alpha1.VersionedDataset{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, versioneddataset); err != nil {
 		return nil, err
@@ -293,16 +282,8 @@ func UpdateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	if err != nil {
 		return nil, err
 	}
-	l := make(map[string]string)
-	for k, v := range input.Labels {
-		l[k] = v.(string)
-	}
-	a := make(map[string]string)
-	for k, v := range input.Annotations {
-		a[k] = v.(string)
-	}
-	obj.SetLabels(l)
-	obj.SetAnnotations(a)
+	obj.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	obj.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 	if input.Released != nil {
 		_ = unstructured.SetNestedField(obj.Object, *input.Released, "spec", "released")
 	}
@@ -359,20 +340,8 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	if input.Description != nil {
 		vds.Spec.Description = *input.Description
 	}
-	if len(input.Labels) > 0 {
-		l := make(map[string]string)
-		for k, v := range input.Labels {
-			l[k] = v.(string)
-		}
-		vds.SetLabels(l)
-	}
-	if len(input.Annotations) > 0 {
-		a := make(map[string]string)
-		for k, v := range input.Annotations {
-			a[k] = v.(string)
-		}
-		vds.SetAnnotations(a)
-	}
+	vds.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	vds.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 	if len(input.FileGrups) > 0 {
 		fg := make([]v1alpha1.FileGroup, 0)
 		for _, item := range input.FileGrups {

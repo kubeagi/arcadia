@@ -35,6 +35,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -46,15 +47,6 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 	}
 
 	id := string(datasource.GetUID())
-
-	labels := make(map[string]interface{})
-	for k, v := range obj.GetLabels() {
-		labels[k] = v
-	}
-	annotations := make(map[string]interface{})
-	for k, v := range obj.GetAnnotations() {
-		annotations[k] = v
-	}
 
 	creationtimestamp := datasource.GetCreationTimestamp().Time
 
@@ -87,8 +79,8 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 		ID:                &id,
 		Name:              datasource.Name,
 		Namespace:         datasource.Namespace,
-		Labels:            labels,
-		Annotations:       annotations,
+		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &datasource.Spec.DisplayName,
 		Description:       &datasource.Spec.Description,
 		Endpoint:          &endpoint,
@@ -191,17 +183,8 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 		return nil, err
 	}
 
-	l := make(map[string]string)
-	for k, v := range input.Labels {
-		l[k] = v.(string)
-	}
-	datasource.SetLabels(l)
-
-	a := make(map[string]string)
-	for k, v := range input.Annotations {
-		a[k] = v.(string)
-	}
-	datasource.SetAnnotations(a)
+	datasource.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	datasource.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 
 	if input.DisplayName != nil {
 		datasource.Spec.DisplayName = *input.DisplayName

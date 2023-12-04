@@ -216,3 +216,17 @@ models:
         resolver: true
       deleteWorkers:
         resolver: true
+  KnowledgeBaseApplicationMutation:
+    fields:
+      createKnowledgeBaseApplication:
+        resolver: true
+      updateKnowledgeBaseApplication:
+        resolver: true
+      deleteKnowledgeBaseApplication:
+        resolver: true
+  KnowledgeBaseApplicationQuery:
+    fields:
+      getKnowledgeBaseApplication:
+        resolver: true
+      listKnowledgeBaseApplications:
+        resolver: true

@@ -47,6 +47,8 @@ type ResolverRoot interface {
 	DatasourceQuery() DatasourceQueryResolver
 	EmbedderMutation() EmbedderMutationResolver
 	EmbedderQuery() EmbedderQueryResolver
+	KnowledgeBaseApplicationMutation() KnowledgeBaseApplicationMutationResolver
+	KnowledgeBaseApplicationQuery() KnowledgeBaseApplicationQueryResolver
 	KnowledgeBaseMutation() KnowledgeBaseMutationResolver
 	KnowledgeBaseQuery() KnowledgeBaseQueryResolver
 	Model() ModelResolver
@@ -277,6 +279,36 @@ type ComplexityRoot struct {
 		VectorStore       func(childComplexity int) int
 	}
 
+	KnowledgeBaseApplication struct {
+		Annotations       func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		Description       func(childComplexity int) int
+		DisplayName       func(childComplexity int) int
+		Icon              func(childComplexity int) int
+		IsPublic          func(childComplexity int) int
+		KnowledgebaseName func(childComplexity int) int
+		Labels            func(childComplexity int) int
+		LlmName           func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
+		Status            func(childComplexity int) int
+		SystemMessage     func(childComplexity int) int
+		UpdateTimestamp   func(childComplexity int) int
+		UserMessage       func(childComplexity int) int
+	}
+
+	KnowledgeBaseApplicationMutation struct {
+		CreateKnowledgeBaseApplication func(childComplexity int, input CreateKnowledgeBaseApplicationInput) int
+		DeleteKnowledgeBaseApplication func(childComplexity int, input DeleteCommonInput) int
+		UpdateKnowledgeBaseApplication func(childComplexity int, input UpdateKnowledgeBaseApplicationInput) int
+	}
+
+	KnowledgeBaseApplicationQuery struct {
+		GetKnowledgeBaseApplication   func(childComplexity int, name string, namespace string) int
+		ListKnowledgeBaseApplications func(childComplexity int, input ListCommonInput) int
+	}
+
 	KnowledgeBaseMutation struct {
 		CreateKnowledgeBase func(childComplexity int, input CreateKnowledgeBaseInput) int
 		DeleteKnowledgeBase func(childComplexity int, input *DeleteCommonInput) int
@@ -316,15 +348,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		DataProcess      func(childComplexity int) int
-		Dataset          func(childComplexity int) int
-		Datasource       func(childComplexity int) int
-		Embedder         func(childComplexity int) int
-		Hello            func(childComplexity int, name string) int
-		KnowledgeBase    func(childComplexity int) int
-		Model            func(childComplexity int) int
-		VersionedDataset func(childComplexity int) int
-		Worker           func(childComplexity int) int
+		DataProcess              func(childComplexity int) int
+		Dataset                  func(childComplexity int) int
+		Datasource               func(childComplexity int) int
+		Embedder                 func(childComplexity int) int
+		Hello                    func(childComplexity int, name string) int
+		KnowledgeBase            func(childComplexity int) int
+		KnowledgeBaseApplication func(childComplexity int) int
+		Model                    func(childComplexity int) int
+		VersionedDataset         func(childComplexity int) int
+		Worker                   func(childComplexity int) int
 	}
 
 	Oss struct {
@@ -347,15 +380,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		DataProcess      func(childComplexity int) int
-		Dataset          func(childComplexity int) int
-		Datasource       func(childComplexity int) int
-		Embedder         func(childComplexity int) int
-		Hello            func(childComplexity int, name string) int
-		KnowledgeBase    func(childComplexity int) int
-		Model            func(childComplexity int) int
-		VersionedDataset func(childComplexity int) int
-		Worker           func(childComplexity int) int
+		DataProcess              func(childComplexity int) int
+		Dataset                  func(childComplexity int) int
+		Datasource               func(childComplexity int) int
+		Embedder                 func(childComplexity int) int
+		Hello                    func(childComplexity int, name string) int
+		KnowledgeBase            func(childComplexity int) int
+		KnowledgeBaseApplication func(childComplexity int) int
+		Model                    func(childComplexity int) int
+		VersionedDataset         func(childComplexity int) int
+		Worker                   func(childComplexity int) int
 	}
 
 	Resources struct {
@@ -490,6 +524,15 @@ type EmbedderQueryResolver interface {
 	GetEmbedder(ctx context.Context, obj *EmbedderQuery, name string, namespace string) (*Embedder, error)
 	ListEmbedders(ctx context.Context, obj *EmbedderQuery, input ListCommonInput) (*PaginatedResult, error)
 }
+type KnowledgeBaseApplicationMutationResolver interface {
+	CreateKnowledgeBaseApplication(ctx context.Context, obj *KnowledgeBaseApplicationMutation, input CreateKnowledgeBaseApplicationInput) (*KnowledgeBaseApplication, error)
+	UpdateKnowledgeBaseApplication(ctx context.Context, obj *KnowledgeBaseApplicationMutation, input UpdateKnowledgeBaseApplicationInput) (*KnowledgeBaseApplication, error)
+	DeleteKnowledgeBaseApplication(ctx context.Context, obj *KnowledgeBaseApplicationMutation, input DeleteCommonInput) (*string, error)
+}
+type KnowledgeBaseApplicationQueryResolver interface {
+	GetKnowledgeBaseApplication(ctx context.Context, obj *KnowledgeBaseApplicationQuery, name string, namespace string) (*KnowledgeBaseApplication, error)
+	ListKnowledgeBaseApplications(ctx context.Context, obj *KnowledgeBaseApplicationQuery, input ListCommonInput) (*PaginatedResult, error)
+}
 type KnowledgeBaseMutationResolver interface {
 	CreateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input CreateKnowledgeBaseInput) (*KnowledgeBase, error)
 	UpdateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input *UpdateKnowledgeBaseInput) (*KnowledgeBase, error)
@@ -518,6 +561,7 @@ type MutationResolver interface {
 	Datasource(ctx context.Context) (*DatasourceMutation, error)
 	Embedder(ctx context.Context) (*EmbedderMutation, error)
 	KnowledgeBase(ctx context.Context) (*KnowledgeBaseMutation, error)
+	KnowledgeBaseApplication(ctx context.Context) (*KnowledgeBaseApplicationMutation, error)
 	Model(ctx context.Context) (*ModelMutation, error)
 	VersionedDataset(ctx context.Context) (*VersionedDatasetMutation, error)
 	Worker(ctx context.Context) (*WorkerMutation, error)
@@ -529,6 +573,7 @@ type QueryResolver interface {
 	Datasource(ctx context.Context) (*DatasourceQuery, error)
 	Embedder(ctx context.Context) (*EmbedderQuery, error)
 	KnowledgeBase(ctx context.Context) (*KnowledgeBaseQuery, error)
+	KnowledgeBaseApplication(ctx context.Context) (*KnowledgeBaseApplicationQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
 	VersionedDataset(ctx context.Context) (*VersionedDatasetQuery, error)
 	Worker(ctx context.Context) (*WorkerQuery, error)
@@ -1622,6 +1667,178 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KnowledgeBase.VectorStore(childComplexity), true
 
+	case "KnowledgeBaseApplication.annotations":
+		if e.complexity.KnowledgeBaseApplication.Annotations == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Annotations(childComplexity), true
+
+	case "KnowledgeBaseApplication.creationTimestamp":
+		if e.complexity.KnowledgeBaseApplication.CreationTimestamp == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.CreationTimestamp(childComplexity), true
+
+	case "KnowledgeBaseApplication.creator":
+		if e.complexity.KnowledgeBaseApplication.Creator == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Creator(childComplexity), true
+
+	case "KnowledgeBaseApplication.description":
+		if e.complexity.KnowledgeBaseApplication.Description == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Description(childComplexity), true
+
+	case "KnowledgeBaseApplication.displayName":
+		if e.complexity.KnowledgeBaseApplication.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.DisplayName(childComplexity), true
+
+	case "KnowledgeBaseApplication.icon":
+		if e.complexity.KnowledgeBaseApplication.Icon == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Icon(childComplexity), true
+
+	case "KnowledgeBaseApplication.isPublic":
+		if e.complexity.KnowledgeBaseApplication.IsPublic == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.IsPublic(childComplexity), true
+
+	case "KnowledgeBaseApplication.knowledgebaseName":
+		if e.complexity.KnowledgeBaseApplication.KnowledgebaseName == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.KnowledgebaseName(childComplexity), true
+
+	case "KnowledgeBaseApplication.labels":
+		if e.complexity.KnowledgeBaseApplication.Labels == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Labels(childComplexity), true
+
+	case "KnowledgeBaseApplication.llmName":
+		if e.complexity.KnowledgeBaseApplication.LlmName == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.LlmName(childComplexity), true
+
+	case "KnowledgeBaseApplication.name":
+		if e.complexity.KnowledgeBaseApplication.Name == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Name(childComplexity), true
+
+	case "KnowledgeBaseApplication.namespace":
+		if e.complexity.KnowledgeBaseApplication.Namespace == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Namespace(childComplexity), true
+
+	case "KnowledgeBaseApplication.status":
+		if e.complexity.KnowledgeBaseApplication.Status == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.Status(childComplexity), true
+
+	case "KnowledgeBaseApplication.systemMessage":
+		if e.complexity.KnowledgeBaseApplication.SystemMessage == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.SystemMessage(childComplexity), true
+
+	case "KnowledgeBaseApplication.updateTimestamp":
+		if e.complexity.KnowledgeBaseApplication.UpdateTimestamp == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.UpdateTimestamp(childComplexity), true
+
+	case "KnowledgeBaseApplication.userMessage":
+		if e.complexity.KnowledgeBaseApplication.UserMessage == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBaseApplication.UserMessage(childComplexity), true
+
+	case "KnowledgeBaseApplicationMutation.createKnowledgeBaseApplication":
+		if e.complexity.KnowledgeBaseApplicationMutation.CreateKnowledgeBaseApplication == nil {
+			break
+		}
+
+		args, err := ec.field_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.KnowledgeBaseApplicationMutation.CreateKnowledgeBaseApplication(childComplexity, args["input"].(CreateKnowledgeBaseApplicationInput)), true
+
+	case "KnowledgeBaseApplicationMutation.deleteKnowledgeBaseApplication":
+		if e.complexity.KnowledgeBaseApplicationMutation.DeleteKnowledgeBaseApplication == nil {
+			break
+		}
+
+		args, err := ec.field_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.KnowledgeBaseApplicationMutation.DeleteKnowledgeBaseApplication(childComplexity, args["input"].(DeleteCommonInput)), true
+
+	case "KnowledgeBaseApplicationMutation.updateKnowledgeBaseApplication":
+		if e.complexity.KnowledgeBaseApplicationMutation.UpdateKnowledgeBaseApplication == nil {
+			break
+		}
+
+		args, err := ec.field_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.KnowledgeBaseApplicationMutation.UpdateKnowledgeBaseApplication(childComplexity, args["input"].(UpdateKnowledgeBaseApplicationInput)), true
+
+	case "KnowledgeBaseApplicationQuery.getKnowledgeBaseApplication":
+		if e.complexity.KnowledgeBaseApplicationQuery.GetKnowledgeBaseApplication == nil {
+			break
+		}
+
+		args, err := ec.field_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.KnowledgeBaseApplicationQuery.GetKnowledgeBaseApplication(childComplexity, args["name"].(string), args["namespace"].(string)), true
+
+	case "KnowledgeBaseApplicationQuery.listKnowledgeBaseApplications":
+		if e.complexity.KnowledgeBaseApplicationQuery.ListKnowledgeBaseApplications == nil {
+			break
+		}
+
+		args, err := ec.field_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.KnowledgeBaseApplicationQuery.ListKnowledgeBaseApplications(childComplexity, args["input"].(ListCommonInput)), true
+
 	case "KnowledgeBaseMutation.createKnowledgeBase":
 		if e.complexity.KnowledgeBaseMutation.CreateKnowledgeBase == nil {
 			break
@@ -1885,6 +2102,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.KnowledgeBase(childComplexity), true
 
+	case "Mutation.KnowledgeBaseApplication":
+		if e.complexity.Mutation.KnowledgeBaseApplication == nil {
+			break
+		}
+
+		return e.complexity.Mutation.KnowledgeBaseApplication(childComplexity), true
+
 	case "Mutation.Model":
 		if e.complexity.Mutation.Model == nil {
 			break
@@ -2022,6 +2246,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.KnowledgeBase(childComplexity), true
+
+	case "Query.KnowledgeBaseApplication":
+		if e.complexity.Query.KnowledgeBaseApplication == nil {
+			break
+		}
+
+		return e.complexity.Query.KnowledgeBaseApplication(childComplexity), true
 
 	case "Query.Model":
 		if e.complexity.Query.Model == nil {
@@ -2513,6 +2744,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateDatasetInput,
 		ec.unmarshalInputCreateDatasourceInput,
 		ec.unmarshalInputCreateEmbedderInput,
+		ec.unmarshalInputCreateKnowledgeBaseApplicationInput,
 		ec.unmarshalInputCreateKnowledgeBaseInput,
 		ec.unmarshalInputCreateModelInput,
 		ec.unmarshalInputCreateVersionedDatasetInput,
@@ -2537,6 +2769,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDatasetInput,
 		ec.unmarshalInputUpdateDatasourceInput,
 		ec.unmarshalInputUpdateEmbedderInput,
+		ec.unmarshalInputUpdateKnowledgeBaseApplicationInput,
 		ec.unmarshalInputUpdateKnowledgeBaseInput,
 		ec.unmarshalInputUpdateModelInput,
 		ec.unmarshalInputUpdateVersionedDatasetInput,
@@ -3354,7 +3587,7 @@ type TypedObjectReference {
     namespace: String
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | KnowledgeBaseApplication
 `, BuiltIn: false},
 	{Name: "../schema/knowledgebase.graphqls", Input: `"""
 文件组
@@ -3600,6 +3833,183 @@ extend type Mutation {
 # query
 extend type Query{
     KnowledgeBase: KnowledgeBaseQuery
+}
+`, BuiltIn: false},
+	{Name: "../schema/knowledgebase_application.graphqls", Input: `type KnowledgeBaseApplicationQuery {
+    getKnowledgeBaseApplication(name: String!, namespace: String!): KnowledgeBaseApplication!
+    listKnowledgeBaseApplications(input: ListCommonInput!): PaginatedResult!
+}
+
+type KnowledgeBaseApplicationMutation {
+    createKnowledgeBaseApplication(input: CreateKnowledgeBaseApplicationInput!): KnowledgeBaseApplication!
+    updateKnowledgeBaseApplication(input: UpdateKnowledgeBaseApplicationInput!): KnowledgeBaseApplication!
+    deleteKnowledgeBaseApplication(input: DeleteCommonInput!): Void
+}
+extend type Mutation {
+    KnowledgeBaseApplication: KnowledgeBaseApplicationMutation
+}
+extend type Query{
+    KnowledgeBaseApplication: KnowledgeBaseApplicationQuery
+}
+
+"""
+KnowledgeBaseApplication
+知识库应用
+"""
+type KnowledgeBaseApplication {
+    """
+    知识库应用名称
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    知识库应用所在的namespace
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    一些用于标记，选择的的标签
+    """
+    labels: Map
+
+    """
+    添加一些辅助性记录信息
+    """
+    annotations: Map
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
+    creator: String
+
+    """展示名"""
+    displayName: String
+
+    """描述信息"""
+    description: String
+
+    """创建时间"""
+    creationTimestamp: Time
+    """更新时间"""
+    updateTimestamp: Time
+
+    """Icon, base64格式的图片"""
+    icon: String
+
+    """IsPublic, 是否发布，即是否公开提供服务"""
+    isPublic: Boolean
+
+    """
+    knowledgebaseName 指当前知识库应用使用的knowledgebase知识库
+    """
+    knowledgebaseName: String!
+    """
+    llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+    """
+    llmName: String!
+
+    """systemMessage 系统 Prompt"""
+    systemMessage: String
+    """userMessage 用户 Prompt"""
+    userMessage: String
+
+    """知识库应用状态"""
+    status: String
+}
+
+input CreateKnowledgeBaseApplicationInput {
+    """
+    知识库应用名称
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    知识库应用所在的namespace
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    一些用于标记，选择的的标签
+    """
+    labels: Map
+
+    """
+    添加一些辅助性记录信息
+    """
+    annotations: Map
+
+    """展示名"""
+    displayName: String
+
+    """描述信息"""
+    description: String
+
+    """Icon, base64格式的图片"""
+    icon: String
+
+    """IsPublic, 是否发布，即是否公开提供服务"""
+    isPublic: Boolean
+
+    """
+    knowledgebase 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
+    """
+    knowledgebaseName: String!
+    """
+    llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+    """
+    llmName: String!
+
+    """systemMessage 系统 Prompt"""
+    systemMessage: String
+    """userMessage 用户 Prompt"""
+    userMessage: String
+}
+
+input UpdateKnowledgeBaseApplicationInput {
+    """
+    这个名字就是metadat.name, 根据name和namespace确定资源
+    name，namespac是不可以更新的。
+    """
+    name: String!
+    namespace: String!
+
+    """
+    更新的的标签信息，这里涉及到增加或者删除标签，
+    所以，如果标签有任何改动，传递完整的label。
+    例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+    """
+    labels: Map
+
+    """传递方式同label"""
+    annotations: Map
+    
+    displayName: String!
+    description: String
+
+    """Icon, base64格式的图片"""
+    icon: String
+
+    """IsPublic, 是否发布，即是否公开提供服务"""
+    isPublic: Boolean
+
+    """
+    knowledgebaseName 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
+    """
+    knowledgebaseName: String!
+    """
+    llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+    """
+    llmName: String!
+
+    """systemMessage 系统 Prompt"""
+    systemMessage: String
+    """userMessage 用户 Prompt"""
+    userMessage: String
 }
 `, BuiltIn: false},
 	{Name: "../schema/model.graphqls", Input: `"""模型"""
@@ -4480,6 +4890,90 @@ func (ec *executionContext) field_EmbedderQuery_getEmbedder_args(ctx context.Con
 }
 
 func (ec *executionContext) field_EmbedderQuery_listEmbedders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ListCommonInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateKnowledgeBaseApplicationInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNCreateKnowledgeBaseApplicationInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateKnowledgeBaseApplicationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 DeleteCommonInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNDeleteCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 UpdateKnowledgeBaseApplicationInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUpdateKnowledgeBaseApplicationInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐUpdateKnowledgeBaseApplicationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 ListCommonInput
@@ -11356,6 +11850,1060 @@ func (ec *executionContext) fieldContext_KnowledgeBase_message(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _KnowledgeBaseApplication_name(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_namespace(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_labels(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Labels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_annotations(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_annotations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Annotations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_annotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_creator(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_displayName(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_description(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_creationTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreationTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_creationTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_updateTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_updateTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_icon(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_icon(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Icon, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_icon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_isPublic(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_isPublic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsPublic, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_isPublic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_knowledgebaseName(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_knowledgebaseName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KnowledgebaseName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_knowledgebaseName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_llmName(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_llmName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LlmName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_llmName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_systemMessage(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_systemMessage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_systemMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_userMessage(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_userMessage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_userMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplication_status(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplication) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplication_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplication_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplicationMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KnowledgeBaseApplicationMutation().CreateKnowledgeBaseApplication(rctx, obj, fc.Args["input"].(CreateKnowledgeBaseApplicationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*KnowledgeBaseApplication)
+	fc.Result = res
+	return ec.marshalNKnowledgeBaseApplication2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplicationMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_KnowledgeBaseApplication_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_KnowledgeBaseApplication_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_KnowledgeBaseApplication_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_KnowledgeBaseApplication_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_KnowledgeBaseApplication_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_KnowledgeBaseApplication_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_KnowledgeBaseApplication_description(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_updateTimestamp(ctx, field)
+			case "icon":
+				return ec.fieldContext_KnowledgeBaseApplication_icon(ctx, field)
+			case "isPublic":
+				return ec.fieldContext_KnowledgeBaseApplication_isPublic(ctx, field)
+			case "knowledgebaseName":
+				return ec.fieldContext_KnowledgeBaseApplication_knowledgebaseName(ctx, field)
+			case "llmName":
+				return ec.fieldContext_KnowledgeBaseApplication_llmName(ctx, field)
+			case "systemMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_systemMessage(ctx, field)
+			case "userMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_userMessage(ctx, field)
+			case "status":
+				return ec.fieldContext_KnowledgeBaseApplication_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplicationMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KnowledgeBaseApplicationMutation().UpdateKnowledgeBaseApplication(rctx, obj, fc.Args["input"].(UpdateKnowledgeBaseApplicationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*KnowledgeBaseApplication)
+	fc.Result = res
+	return ec.marshalNKnowledgeBaseApplication2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplicationMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_KnowledgeBaseApplication_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_KnowledgeBaseApplication_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_KnowledgeBaseApplication_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_KnowledgeBaseApplication_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_KnowledgeBaseApplication_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_KnowledgeBaseApplication_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_KnowledgeBaseApplication_description(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_updateTimestamp(ctx, field)
+			case "icon":
+				return ec.fieldContext_KnowledgeBaseApplication_icon(ctx, field)
+			case "isPublic":
+				return ec.fieldContext_KnowledgeBaseApplication_isPublic(ctx, field)
+			case "knowledgebaseName":
+				return ec.fieldContext_KnowledgeBaseApplication_knowledgebaseName(ctx, field)
+			case "llmName":
+				return ec.fieldContext_KnowledgeBaseApplication_llmName(ctx, field)
+			case "systemMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_systemMessage(ctx, field)
+			case "userMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_userMessage(ctx, field)
+			case "status":
+				return ec.fieldContext_KnowledgeBaseApplication_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplicationMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KnowledgeBaseApplicationMutation().DeleteKnowledgeBaseApplication(rctx, obj, fc.Args["input"].(DeleteCommonInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplicationMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Void does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplicationQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KnowledgeBaseApplicationQuery().GetKnowledgeBaseApplication(rctx, obj, fc.Args["name"].(string), fc.Args["namespace"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*KnowledgeBaseApplication)
+	fc.Result = res
+	return ec.marshalNKnowledgeBaseApplication2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplicationQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_KnowledgeBaseApplication_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_KnowledgeBaseApplication_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_KnowledgeBaseApplication_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_KnowledgeBaseApplication_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_KnowledgeBaseApplication_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_KnowledgeBaseApplication_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_KnowledgeBaseApplication_description(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_KnowledgeBaseApplication_updateTimestamp(ctx, field)
+			case "icon":
+				return ec.fieldContext_KnowledgeBaseApplication_icon(ctx, field)
+			case "isPublic":
+				return ec.fieldContext_KnowledgeBaseApplication_isPublic(ctx, field)
+			case "knowledgebaseName":
+				return ec.fieldContext_KnowledgeBaseApplication_knowledgebaseName(ctx, field)
+			case "llmName":
+				return ec.fieldContext_KnowledgeBaseApplication_llmName(ctx, field)
+			case "systemMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_systemMessage(ctx, field)
+			case "userMessage":
+				return ec.fieldContext_KnowledgeBaseApplication_userMessage(ctx, field)
+			case "status":
+				return ec.fieldContext_KnowledgeBaseApplication_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseApplicationQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KnowledgeBaseApplicationQuery().ListKnowledgeBaseApplications(rctx, obj, fc.Args["input"].(ListCommonInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBaseApplicationQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBaseMutation_createKnowledgeBase(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBaseMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBaseMutation_createKnowledgeBase(ctx, field)
 	if err != nil {
@@ -12976,6 +14524,55 @@ func (ec *executionContext) fieldContext_Mutation_KnowledgeBase(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_KnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_KnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().KnowledgeBaseApplication(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*KnowledgeBaseApplicationMutation)
+	fc.Result = res
+	return ec.marshalOKnowledgeBaseApplicationMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplicationMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_KnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "createKnowledgeBaseApplication":
+				return ec.fieldContext_KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication(ctx, field)
+			case "updateKnowledgeBaseApplication":
+				return ec.fieldContext_KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication(ctx, field)
+			case "deleteKnowledgeBaseApplication":
+				return ec.fieldContext_KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplicationMutation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_Model(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_Model(ctx, field)
 	if err != nil {
@@ -13854,6 +15451,53 @@ func (ec *executionContext) fieldContext_Query_KnowledgeBase(ctx context.Context
 				return ec.fieldContext_KnowledgeBaseQuery_listKnowledgeBases(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_KnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_KnowledgeBaseApplication(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().KnowledgeBaseApplication(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*KnowledgeBaseApplicationQuery)
+	fc.Result = res
+	return ec.marshalOKnowledgeBaseApplicationQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplicationQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_KnowledgeBaseApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "getKnowledgeBaseApplication":
+				return ec.fieldContext_KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication(ctx, field)
+			case "listKnowledgeBaseApplications":
+				return ec.fieldContext_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplicationQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -19221,6 +20865,134 @@ func (ec *executionContext) unmarshalInputCreateEmbedderInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateKnowledgeBaseApplicationInput(ctx context.Context, obj interface{}) (CreateKnowledgeBaseApplicationInput, error) {
+	var it CreateKnowledgeBaseApplicationInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "knowledgebaseName", "llmName", "systemMessage", "userMessage"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "icon":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("icon"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Icon = data
+		case "isPublic":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isPublic"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsPublic = data
+		case "knowledgebaseName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("knowledgebaseName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.KnowledgebaseName = data
+		case "llmName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmName = data
+		case "systemMessage":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemMessage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SystemMessage = data
+		case "userMessage":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userMessage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserMessage = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateKnowledgeBaseInput(ctx context.Context, obj interface{}) (CreateKnowledgeBaseInput, error) {
 	var it CreateKnowledgeBaseInput
 	asMap := map[string]interface{}{}
@@ -20763,6 +22535,134 @@ func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateKnowledgeBaseApplicationInput(ctx context.Context, obj interface{}) (UpdateKnowledgeBaseApplicationInput, error) {
+	var it UpdateKnowledgeBaseApplicationInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "knowledgebaseName", "llmName", "systemMessage", "userMessage"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "icon":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("icon"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Icon = data
+		case "isPublic":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isPublic"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsPublic = data
+		case "knowledgebaseName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("knowledgebaseName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.KnowledgebaseName = data
+		case "llmName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmName = data
+		case "systemMessage":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemMessage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SystemMessage = data
+		case "userMessage":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userMessage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserMessage = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateKnowledgeBaseInput(ctx context.Context, obj interface{}) (UpdateKnowledgeBaseInput, error) {
 	var it UpdateKnowledgeBaseInput
 	asMap := map[string]interface{}{}
@@ -21206,6 +23106,13 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._Worker(ctx, sel, obj)
+	case KnowledgeBaseApplication:
+		return ec._KnowledgeBaseApplication(ctx, sel, &obj)
+	case *KnowledgeBaseApplication:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._KnowledgeBaseApplication(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -23269,6 +25176,329 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var knowledgeBaseApplicationImplementors = []string{"KnowledgeBaseApplication", "PageNode"}
+
+func (ec *executionContext) _KnowledgeBaseApplication(ctx context.Context, sel ast.SelectionSet, obj *KnowledgeBaseApplication) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, knowledgeBaseApplicationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KnowledgeBaseApplication")
+		case "name":
+			out.Values[i] = ec._KnowledgeBaseApplication_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._KnowledgeBaseApplication_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "labels":
+			out.Values[i] = ec._KnowledgeBaseApplication_labels(ctx, field, obj)
+		case "annotations":
+			out.Values[i] = ec._KnowledgeBaseApplication_annotations(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._KnowledgeBaseApplication_creator(ctx, field, obj)
+		case "displayName":
+			out.Values[i] = ec._KnowledgeBaseApplication_displayName(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._KnowledgeBaseApplication_description(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._KnowledgeBaseApplication_creationTimestamp(ctx, field, obj)
+		case "updateTimestamp":
+			out.Values[i] = ec._KnowledgeBaseApplication_updateTimestamp(ctx, field, obj)
+		case "icon":
+			out.Values[i] = ec._KnowledgeBaseApplication_icon(ctx, field, obj)
+		case "isPublic":
+			out.Values[i] = ec._KnowledgeBaseApplication_isPublic(ctx, field, obj)
+		case "knowledgebaseName":
+			out.Values[i] = ec._KnowledgeBaseApplication_knowledgebaseName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "llmName":
+			out.Values[i] = ec._KnowledgeBaseApplication_llmName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "systemMessage":
+			out.Values[i] = ec._KnowledgeBaseApplication_systemMessage(ctx, field, obj)
+		case "userMessage":
+			out.Values[i] = ec._KnowledgeBaseApplication_userMessage(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._KnowledgeBaseApplication_status(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var knowledgeBaseApplicationMutationImplementors = []string{"KnowledgeBaseApplicationMutation"}
+
+func (ec *executionContext) _KnowledgeBaseApplicationMutation(ctx context.Context, sel ast.SelectionSet, obj *KnowledgeBaseApplicationMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, knowledgeBaseApplicationMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KnowledgeBaseApplicationMutation")
+		case "createKnowledgeBaseApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KnowledgeBaseApplicationMutation_createKnowledgeBaseApplication(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "updateKnowledgeBaseApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KnowledgeBaseApplicationMutation_updateKnowledgeBaseApplication(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "deleteKnowledgeBaseApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KnowledgeBaseApplicationMutation_deleteKnowledgeBaseApplication(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var knowledgeBaseApplicationQueryImplementors = []string{"KnowledgeBaseApplicationQuery"}
+
+func (ec *executionContext) _KnowledgeBaseApplicationQuery(ctx context.Context, sel ast.SelectionSet, obj *KnowledgeBaseApplicationQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, knowledgeBaseApplicationQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KnowledgeBaseApplicationQuery")
+		case "getKnowledgeBaseApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KnowledgeBaseApplicationQuery_getKnowledgeBaseApplication(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "listKnowledgeBaseApplications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var knowledgeBaseMutationImplementors = []string{"KnowledgeBaseMutation"}
 
 func (ec *executionContext) _KnowledgeBaseMutation(ctx context.Context, sel ast.SelectionSet, obj *KnowledgeBaseMutation) graphql.Marshaler {
@@ -23908,6 +26138,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_KnowledgeBase(ctx, field)
 			})
+		case "KnowledgeBaseApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_KnowledgeBaseApplication(ctx, field)
+			})
 		case "Model":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_Model(ctx, field)
@@ -24204,6 +26438,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_KnowledgeBase(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "KnowledgeBaseApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_KnowledgeBaseApplication(ctx, field)
 				return res
 			}
 
@@ -25562,6 +27815,11 @@ func (ec *executionContext) unmarshalNCreateEmbedderInput2githubᚗcomᚋkubeagi
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateKnowledgeBaseApplicationInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateKnowledgeBaseApplicationInput(ctx context.Context, v interface{}) (CreateKnowledgeBaseApplicationInput, error) {
+	res, err := ec.unmarshalInputCreateKnowledgeBaseApplicationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateKnowledgeBaseInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateKnowledgeBaseInput(ctx context.Context, v interface{}) (CreateKnowledgeBaseInput, error) {
 	res, err := ec.unmarshalInputCreateKnowledgeBaseInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -25659,6 +27917,11 @@ func (ec *executionContext) marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcad
 	return ec._Datasource(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDeleteCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx context.Context, v interface{}) (DeleteCommonInput, error) {
+	res, err := ec.unmarshalInputDeleteCommonInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNDeleteVersionedDatasetInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteVersionedDatasetInput(ctx context.Context, v interface{}) (DeleteVersionedDatasetInput, error) {
 	res, err := ec.unmarshalInputDeleteVersionedDatasetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -25720,6 +27983,20 @@ func (ec *executionContext) marshalNKnowledgeBase2ᚖgithubᚗcomᚋkubeagiᚋar
 		return graphql.Null
 	}
 	return ec._KnowledgeBase(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNKnowledgeBaseApplication2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplication(ctx context.Context, sel ast.SelectionSet, v KnowledgeBaseApplication) graphql.Marshaler {
+	return ec._KnowledgeBaseApplication(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNKnowledgeBaseApplication2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplication(ctx context.Context, sel ast.SelectionSet, v *KnowledgeBaseApplication) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._KnowledgeBaseApplication(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx context.Context, v interface{}) (ListCommonInput, error) {
@@ -25825,6 +28102,11 @@ func (ec *executionContext) marshalNTypedObjectReference2githubᚗcomᚋkubeagi�
 
 func (ec *executionContext) unmarshalNTypedObjectReferenceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx context.Context, v interface{}) (TypedObjectReferenceInput, error) {
 	res, err := ec.unmarshalInputTypedObjectReferenceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateKnowledgeBaseApplicationInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐUpdateKnowledgeBaseApplicationInput(ctx context.Context, v interface{}) (UpdateKnowledgeBaseApplicationInput, error) {
+	res, err := ec.unmarshalInputUpdateKnowledgeBaseApplicationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -26750,6 +29032,20 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOKnowledgeBaseApplicationMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplicationMutation(ctx context.Context, sel ast.SelectionSet, v *KnowledgeBaseApplicationMutation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KnowledgeBaseApplicationMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOKnowledgeBaseApplicationQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseApplicationQuery(ctx context.Context, sel ast.SelectionSet, v *KnowledgeBaseApplicationQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KnowledgeBaseApplicationQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOKnowledgeBaseMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐKnowledgeBaseMutation(ctx context.Context, sel ast.SelectionSet, v *KnowledgeBaseMutation) graphql.Marshaler {

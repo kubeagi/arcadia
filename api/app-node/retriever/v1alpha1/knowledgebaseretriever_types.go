@@ -23,36 +23,23 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
-// LLMChainSpec defines the desired state of LLMChain
-type LLMChainSpec struct {
+// KnowledgeBaseRetrieverSpec defines the desired state of KnowledgeBaseRetriever
+type KnowledgeBaseRetrieverSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
-
-	CommonChainConfig `json:",inline"`
-
-	Input  LLMChainInput `json:"input"`
-	Output Output        `json:"output"`
+	Input               Input  `json:"input,omitempty"`
+	Output              Output `json:"output,omitempty"`
 }
 
-type LLMChainInput struct {
-	LLM    node.LLMRef    `json:"llm"`
-	Prompt node.PromptRef `json:"prompt"`
+type Input struct {
+	node.KnowledgeBaseRef `json:",inline"`
 }
+
 type Output struct {
 	node.CommonOrInPutOrOutputRef `json:",inline"`
 }
 
-type CommonChainConfig struct {
-	// 记忆相关参数
-	Memory Memory `json:"memory,omitempty"`
-}
-
-type Memory struct {
-	// 能记住的最大 token 数
-	MaxTokenLimit int `json:"maxTokenLimit,omitempty"`
-}
-
-// LLMChainStatus defines the observed state of LLMChain
-type LLMChainStatus struct {
+// KnowledgeBaseRetrieverStatus defines the observed state of KnowledgeBaseRetriever
+type KnowledgeBaseRetrieverStatus struct {
 	// ObservedGeneration is the last observed generation.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -64,24 +51,24 @@ type LLMChainStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// LLMChain is the Schema for the LLMChains API
-type LLMChain struct {
+// KnowledgeBaseRetriever is the Schema for the KnowledgeBaseRetriever API
+type KnowledgeBaseRetriever struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LLMChainSpec   `json:"spec,omitempty"`
-	Status LLMChainStatus `json:"status,omitempty"`
+	Spec   KnowledgeBaseRetrieverSpec   `json:"spec,omitempty"`
+	Status KnowledgeBaseRetrieverStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// LLMChainList contains a list of LLMChain
-type LLMChainList struct {
+// KnowledgeBaseRetrieverList contains a list of KnowledgeBaseRetriever
+type KnowledgeBaseRetrieverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LLMChain `json:"items"`
+	Items           []KnowledgeBaseRetriever `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LLMChain{}, &LLMChainList{})
+	SchemeBuilder.Register(&KnowledgeBaseRetriever{}, &KnowledgeBaseRetrieverList{})
 }

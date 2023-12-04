@@ -60,6 +60,47 @@ type LLMRef struct {
 }
 
 // +kubebuilder:object:generate=true
+type LLMChainRef struct {
+	// +kubebuilder:validation:Enum="LLMChain"
+	// kubebuilder:default="LLMChain"
+	// Kind is the type of resource being referenced
+	Kind string `json:"kind"`
+	// Name is the name of resource being referenced
+	// +optional
+	Name string `json:"name,omitempty"`
+	// +kubebuilder:validation:Enum="chain.arcadia.kubeagi.k8s.com.cn"
+	// kubebuilder:default="chain.arcadia.kubeagi.k8s.com.cn"
+	// APIGroup is the group for the resource being referenced.
+	APIGroup string `json:"apiGroup"`
+}
+
+// +kubebuilder:object:generate=true
+type RetrieverRef struct {
+	CommonRef `json:",inline"`
+
+	// +kubebuilder:validation:Enum="retriever.arcadia.kubeagi.k8s.com.cn"
+	// kubebuilder:default="retriever.arcadia.kubeagi.k8s.com.cn"
+	// APIGroup is the group for the resource being referenced.
+	APIGroup string `json:"apiGroup"`
+}
+
+// +kubebuilder:object:generate=true
+type KnowledgeBaseRef struct {
+	// +kubebuilder:validation:Enum="KnowledgeBase"
+	// kubebuilder:default="KnowledgeBase"
+	// Kind is the type of resource being referenced
+	Kind string `json:"kind"`
+	// Name is the name of resource being referenced
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// +kubebuilder:validation:Enum="arcadia.kubeagi.k8s.com.cn"
+	// kubebuilder:default="arcadia.kubeagi.k8s.com.cn"
+	// APIGroup is the group for the resource being referenced.
+	APIGroup string `json:"apiGroup"`
+}
+
+// +kubebuilder:object:generate=true
 type CommonOrInPutOrOutputRef struct {
 	// APIGroup is the group for the resource being referenced.
 	// If APIGroup is not specified, the specified Kind must be in the core API group.

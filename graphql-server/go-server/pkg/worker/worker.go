@@ -32,6 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	gqlmodel "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -50,15 +51,6 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	}
 
 	id := string(worker.GetUID())
-
-	labels := make(map[string]interface{})
-	for k, v := range obj.GetLabels() {
-		labels[k] = v
-	}
-	annotations := make(map[string]interface{})
-	for k, v := range obj.GetAnnotations() {
-		annotations[k] = v
-	}
 
 	creationtimestamp := worker.GetCreationTimestamp().Time
 
@@ -87,8 +79,8 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		ID:                &id,
 		Name:              worker.Name,
 		Namespace:         worker.Namespace,
-		Labels:            labels,
-		Annotations:       annotations,
+		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &worker.Spec.DisplayName,
 		Description:       &worker.Spec.Description,
 		Status:            &status,
@@ -174,17 +166,8 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		return nil, err
 	}
 
-	l := make(map[string]string)
-	for k, v := range input.Labels {
-		l[k] = v.(string)
-	}
-	worker.SetLabels(l)
-
-	a := make(map[string]string)
-	for k, v := range input.Annotations {
-		a[k] = v.(string)
-	}
-	worker.SetAnnotations(a)
+	worker.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	worker.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 
 	if input.DisplayName != nil {
 		worker.Spec.DisplayName = *input.DisplayName

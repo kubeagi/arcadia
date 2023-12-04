@@ -273,7 +273,7 @@ gql-sdk-generator:
 .PHONY: prepare-push
 config_rule_line_num = $(shell grep -n "rules:" config/rbac/role.yaml | cut -d: -f1)
 chart_rule_line_num = $(shell grep -n "rules:" deploy/charts/arcadia/templates/rbac.yaml | cut -d: -f1)
-prepare-push: manifests generate fmt vet
+prepare-push: manifests generate fmt vet gql-gen
 	@go mod tidy
 	@echo "install golangci-lint"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

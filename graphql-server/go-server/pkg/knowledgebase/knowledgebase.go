@@ -29,6 +29,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -40,14 +41,6 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 
 	id := string(knowledgebase.GetUID())
 
-	labels := make(map[string]interface{})
-	for k, v := range obj.GetLabels() {
-		labels[k] = v
-	}
-	annotations := make(map[string]interface{})
-	for k, v := range obj.GetAnnotations() {
-		annotations[k] = v
-	}
 	creationtimestamp := knowledgebase.GetCreationTimestamp().Time
 
 	// conditioned status
@@ -93,8 +86,8 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
-		Labels:            labels,
-		Annotations:       annotations,
+		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &knowledgebase.Spec.DisplayName,
 		Description:       &knowledgebase.Spec.Description,
 		CreationTimestamp: &creationtimestamp,

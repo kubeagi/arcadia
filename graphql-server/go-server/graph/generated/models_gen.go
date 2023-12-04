@@ -111,6 +111,35 @@ type CreateEmbedderInput struct {
 	Type *string `json:"type,omitempty"`
 }
 
+type CreateKnowledgeBaseApplicationInput struct {
+	// 知识库应用名称
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 知识库应用所在的namespace
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名
+	DisplayName *string `json:"displayName,omitempty"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// Icon, base64格式的图片
+	Icon *string `json:"icon,omitempty"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
+	// knowledgebase 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
+	KnowledgebaseName string `json:"knowledgebaseName"`
+	// llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+	LlmName string `json:"llmName"`
+	// systemMessage 系统 Prompt
+	SystemMessage *string `json:"systemMessage,omitempty"`
+	// userMessage 用户 Prompt
+	UserMessage *string `json:"userMessage,omitempty"`
+}
+
 // 创建知识库的输入
 type CreateKnowledgeBaseInput struct {
 	// 知识库资源名称（不可同名）
@@ -569,6 +598,59 @@ type KnowledgeBase struct {
 
 func (KnowledgeBase) IsPageNode() {}
 
+// KnowledgeBaseApplication
+// 知识库应用
+type KnowledgeBaseApplication struct {
+	// 知识库应用名称
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 知识库应用所在的namespace
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 创建者，为当前用户的用户名
+	// 规则: webhook启用后自动添加，默认为空
+	Creator *string `json:"creator,omitempty"`
+	// 展示名
+	DisplayName *string `json:"displayName,omitempty"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// 创建时间
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	// 更新时间
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// Icon, base64格式的图片
+	Icon *string `json:"icon,omitempty"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
+	// knowledgebaseName 指当前知识库应用使用的knowledgebase知识库
+	KnowledgebaseName string `json:"knowledgebaseName"`
+	// llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+	LlmName string `json:"llmName"`
+	// systemMessage 系统 Prompt
+	SystemMessage *string `json:"systemMessage,omitempty"`
+	// userMessage 用户 Prompt
+	UserMessage *string `json:"userMessage,omitempty"`
+	// 知识库应用状态
+	Status *string `json:"status,omitempty"`
+}
+
+func (KnowledgeBaseApplication) IsPageNode() {}
+
+type KnowledgeBaseApplicationMutation struct {
+	CreateKnowledgeBaseApplication KnowledgeBaseApplication `json:"createKnowledgeBaseApplication"`
+	UpdateKnowledgeBaseApplication KnowledgeBaseApplication `json:"updateKnowledgeBaseApplication"`
+	DeleteKnowledgeBaseApplication *string                  `json:"deleteKnowledgeBaseApplication,omitempty"`
+}
+
+type KnowledgeBaseApplicationQuery struct {
+	GetKnowledgeBaseApplication   KnowledgeBaseApplication `json:"getKnowledgeBaseApplication"`
+	ListKnowledgeBaseApplications PaginatedResult          `json:"listKnowledgeBaseApplications"`
+}
+
 type KnowledgeBaseMutation struct {
 	CreateKnowledgeBase KnowledgeBase `json:"createKnowledgeBase"`
 	UpdateKnowledgeBase KnowledgeBase `json:"updateKnowledgeBase"`
@@ -833,6 +915,33 @@ type UpdateEmbedderInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型服务资源描述
 	Description *string `json:"description,omitempty"`
+}
+
+type UpdateKnowledgeBaseApplicationInput struct {
+	// 这个名字就是metadat.name, 根据name和namespace确定资源
+	// name，namespac是不可以更新的。
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	// 更新的的标签信息，这里涉及到增加或者删除标签，
+	// 所以，如果标签有任何改动，传递完整的label。
+	// 例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 传递方式同label
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	DisplayName string                 `json:"displayName"`
+	Description *string                `json:"description,omitempty"`
+	// Icon, base64格式的图片
+	Icon *string `json:"icon,omitempty"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
+	// knowledgebaseName 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
+	KnowledgebaseName string `json:"knowledgebaseName"`
+	// llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
+	LlmName string `json:"llmName"`
+	// systemMessage 系统 Prompt
+	SystemMessage *string `json:"systemMessage,omitempty"`
+	// userMessage 用户 Prompt
+	UserMessage *string `json:"userMessage,omitempty"`
 }
 
 // 知识库更新的输入

@@ -1,0 +1,146 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+spec:
+  displayName: "知识库应用"
+  description: "最简单的和知识库对话的应用"
+  prologue: "Welcome to talk to the KnowledgeBase!🤖"
+  nodes:
+    - name: Input
+      displayName: "用户输入"
+      description: "用户输入节点，必须"
+      ref:
+        kind: Input
+        name: Input
+      nextNodeName: ["prompt-node"]
+    - name: prompt-node
+      displayName: "prompt"
+      description: "设定prompt，template中可以使用{{xx}}来替换变量"
+      ref:
+        apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+        kind: Prompt
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: llm-node
+      displayName: "zhipu大模型服务"
+      description: "设定质谱大模型的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: LLM
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: retriever-node
+      displayName: "从知识库提取信息的retriever"
+      description: "连接应用和知识库"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBaseRetriever
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: chain-node
+      displayName: "RetrievalQA chain"
+      description: "chain是langchain的核心概念，RetrievalQAChain用于从retriver中提取信息，供llm调用"
+      ref:
+        apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+        kind: RetrievalQAChain
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["Output"]
+    - name: Output
+      displayName: "最终输出"
+      description: "最终输出节点，必须"
+      ref:
+        kind: Output
+        name: Output
+---
+apiVersion: prompt.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Prompt
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+spec:
+  displayName: "设定知识库应用的prompt"
+  description: "设定知识库应用的prompt, 来自 https://github.com/tmc/langchaingo/blob/af36340149bbf35ae51c80357fa80bf648c33512/chains/question_answering.go#L9"
+  userMessage: |
+    Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.  
+    
+    {{.context}}
+    
+    Question: {{.question}}
+    
+    Helpful Answer:
+  input:
+    kind: "Input"
+    name: "Input"
+  output:
+    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+    kind: RetrievalQAChain
+    name: base-chat-english-teacher
+---
+apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: RetrievalQAChain
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+spec:
+  displayName: "RetrievalQAChain"
+  description: "用于搜索QA的Chain"
+  memory:
+    maxTokenLimit: 20480
+  input:
+    llm:
+      apiGroup: arcadia.kubeagi.k8s.com.cn
+      kind: LLM
+      name: base-chat-with-knowledgebase
+    prompt:
+      apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+      kind: Prompt
+      name: base-chat-with-knowledgebase
+    retriever:
+      apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+      kind: KnowledgeBaseRetriever
+      name: base-chat-with-knowledgebase
+  output:
+    apiGroup: "arcadia.kubeagi.k8s.com.cn"
+    kind: "Output"
+    name: "output-node"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+type: Opaque
+data:
+  apiKey: "MTZlZDcxYzcwMDE0NGFiMjIyMmI5YmEwZDFhMTBhZTUuUTljWVZtWWxmdjlnZGtDeQ==" # replace this with your API key
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLM
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+spec:
+  type: "zhipuai"
+  provider:
+    endpoint:
+      url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: base-chat-with-knowledgebase
+---
+apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: KnowledgeBaseRetriever
+metadata:
+  name: base-chat-with-knowledgebase
+  namespace: arcadia
+spec:
+  displayName: "从知识库获取信息的Retriever"
+  input:
+    apiGroup: arcadia.kubeagi.k8s.com.cn
+    kind: KnowledgeBase
+    name: knowledgebase-sample
+  output:
+    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+    kind: RetrievalQAChain
+    name: base-chat-with-knowledgebase

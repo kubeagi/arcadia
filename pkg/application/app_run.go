@@ -30,6 +30,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/application/chain"
 	"github.com/kubeagi/arcadia/pkg/application/llm"
 	"github.com/kubeagi/arcadia/pkg/application/prompt"
+	"github.com/kubeagi/arcadia/pkg/application/retriever"
 )
 
 type Input struct {
@@ -168,6 +169,15 @@ func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectR
 		switch baseNode.Kind() {
 		case "llmchain":
 			return chain.NewLLMChain(baseNode), nil
+		case "retrievalqachain":
+			return chain.NewRetrievalQAChain(baseNode), nil
+		default:
+			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
+		}
+	case "retriever":
+		switch baseNode.Kind() {
+		case "knowledgebaseretriever":
+			return retriever.NewKnowledgeBaseRetriever(ctx, baseNode, cli)
 		default:
 			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
 		}

@@ -43,6 +43,9 @@ func Cors() gin.HandlerFunc {
 func NewServerAndRun(conf config.ServerConfig) {
 	r := gin.Default()
 	r.Use(Cors())
+	r.GET("/healthz", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
 	if conf.EnableOIDC {
 		oidc.InitOIDCArgs(conf.IssuerURL, conf.MasterURL, conf.ClientSecret, conf.ClientID)
 	}

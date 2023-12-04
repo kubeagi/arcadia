@@ -38,10 +38,12 @@ import (
 
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
+	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/controllers"
 	chaincontrollers "github.com/kubeagi/arcadia/controllers/app-node/chain"
 	promptcontrollers "github.com/kubeagi/arcadia/controllers/app-node/prompt"
+	retrievertrollers "github.com/kubeagi/arcadia/controllers/app-node/retriever"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 
@@ -62,6 +64,7 @@ func init() {
 	utilruntime.Must(v1.AddToScheme(scheme))
 	utilruntime.Must(apichain.AddToScheme(scheme))
 	utilruntime.Must(apiprompt.AddToScheme(scheme))
+	utilruntime.Must(apiretriever.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -240,6 +243,20 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LLMChain")
+		os.Exit(1)
+	}
+	if err = (&chaincontrollers.RetrievalQAChainReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RetrievalQAChain")
+		os.Exit(1)
+	}
+	if err = (&retrievertrollers.KnowledgeBaseRetrieverReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "KnowledgeBaseRetriever")
 		os.Exit(1)
 	}
 	if err = (&promptcontrollers.PromptReconciler{
