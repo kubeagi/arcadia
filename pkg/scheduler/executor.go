@@ -27,12 +27,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/versioneddataset"
 )
 
 type executor struct {
-	instance    *v1alpha1.VersionedDataset
-	client      client.Client
-	minioClient *minio.Client
+	instance *v1alpha1.VersionedDataset
+	client   client.Client
+	oss      *datasource.OSS
 
 	fileStatus []v1alpha1.FileStatus
 	remove     bool
@@ -43,9 +45,9 @@ const (
 	bufSize    = 5
 )
 
-func newExecutor(ctx context.Context, c client.Client, minioClient *minio.Client, instance *v1alpha1.VersionedDataset, fileStatus []v1alpha1.FileStatus, remove bool) butcher.Executor[JobPayload] {
+func newExecutor(ctx context.Context, c client.Client, oss *datasource.OSS, instance *v1alpha1.VersionedDataset, fileStatus []v1alpha1.FileStatus, remove bool) butcher.Executor[JobPayload] {
 	klog.V(4).Infof("[Debug] client is nil: %v\n", c == nil)
-	return &executor{instance: instance, fileStatus: fileStatus, client: c, minioClient: minioClient, remove: remove}
+	return &executor{instance: instance, fileStatus: fileStatus, client: c, oss: oss, remove: remove}
 }
 
 func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, datasourceFiles []v1alpha1.FileStatus, removeAction bool) error {
@@ -85,13 +87,13 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 			}
 		}
 
-		bucketExists, err := e.minioClient.BucketExists(ctx, dstBucket)
+		bucketExists, err := e.oss.BucketExists(ctx, dstBucket)
 		if err != nil {
 			klog.Errorf("generateJob: check for the presence of a bucket has failed %s.", err)
 			return err
 		}
 		if !bucketExists {
-			if err = e.minioClient.MakeBucket(ctx, dstBucket, minio.MakeBucketOptions{}); err != nil {
+			if err = e.oss.MakeBucket(ctx, dstBucket, minio.MakeBucketOptions{}); err != nil {
 				klog.Errorf("generateJob: failed to create bucket %s.", dstBucket)
 				return err
 			}
@@ -122,7 +124,7 @@ func (e *executor) generateJob(ctx context.Context, jobCh chan<- JobPayload, dat
 				SourceName: fs.Name,
 				SrcBucket:  srcBucket,
 				DstBucket:  dstBucket,
-				Client:     e.minioClient,
+				Oss:        e.oss,
 				Remove:     removeAction,
 			}
 
@@ -143,7 +145,7 @@ func (e *executor) GenerateJob(ctx context.Context, jobCh chan<- JobPayload) err
 func (e *executor) Task(ctx context.Context, job JobPayload) error {
 	if !job.Remove {
 		klog.V(4).Infof("[Debug] copyObject task from %s/%s to %s/%s", job.SrcBucket, job.Src, job.DstBucket, job.Dst)
-		_, err := job.Client.CopyObject(ctx, minio.CopyDestOptions{
+		_, err := job.Oss.Client.CopyObject(ctx, minio.CopyDestOptions{
 			Bucket: job.DstBucket,
 			Object: job.Dst,
 		}, minio.CopySrcOptions{
@@ -154,7 +156,7 @@ func (e *executor) Task(ctx context.Context, job JobPayload) error {
 		return err
 	}
 
-	err := job.Client.RemoveObject(ctx, job.DstBucket, job.Dst, minio.RemoveObjectOptions{})
+	err := job.Oss.Client.RemoveObject(ctx, job.DstBucket, job.Dst, minio.RemoveObjectOptions{})
 	klog.V(4).Infof("[Debug] removeObject %s/%s result %s", job.DstBucket, job.Dst, err)
 
 	return err
@@ -179,7 +181,7 @@ func (e *executor) OnFinish(ctx context.Context, job JobPayload, err error) {
 	}
 	klog.V(4).Infof("[Debug] change the status of file %s/%s to %s", job.SourceName, src, syncStatus)
 
-	if err = v1alpha1.UpdateFileStatus(ctx, e.instance, job.SourceName, src, syncStatus, errMsg); err != nil {
+	if err = versioneddataset.UpdateFileStatus(ctx, e.instance, job.SourceName, src, syncStatus, errMsg); err != nil {
 		klog.Errorf("the job with payload %v completes, but updating the cr status fails %s.", job, err)
 	}
 }

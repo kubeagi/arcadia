@@ -109,15 +109,16 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 		ok, rawToken := isBearerToken(rawToken)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "unauthorized",
+				"message": "unauthorized, not bearer token",
 			})
 			return
 		}
 
 		oidcIDtoken, err := oidcVerifier.Verify(context.TODO(), rawToken)
 		if err != nil {
+			klog.Errorf("auth error: illegal token, rawtoken %s, error %s", rawToken, err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "illegal token",
+				"message": fmt.Sprintf("illegal token. error %s", err),
 			})
 			return
 		}
@@ -125,20 +126,23 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 		// Use operator permissions to determine if a user has permission to perform an operation.
 		client, err := client1.GetClient(nil)
 		if err != nil {
+			klog.Errorf("auth error: failed to connect cluster error %s", err)
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"message": "can't connect to cluster",
+				"message": fmt.Sprintf("can't connect to cluster. error %s", err),
 			})
 			return
 		}
 		if verb != "" {
 			allowed, err := cani(client, oidcIDtoken, resources, verb, namespace)
 			if err != nil {
+				klog.Errorf("auth error: failed to checkout permission. error %s", err)
 				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-					"message": "some error occurred in checking the permissions",
+					"message": fmt.Sprintf("some error occurred in checking the permissions. error %s", err),
 				})
 				return
 			}
 			if !allowed {
+				klog.Warningf("auth failed: you don't have permission to perform this operations. resource: %s, verb: %s, namespace: %s", resources, verb, namespace)
 				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 					"message": "you do not have permission to perform this operation. Please check the permissions.",
 				})

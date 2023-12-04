@@ -18,16 +18,10 @@ package datasource
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"io"
-	"net/http"
-	"strings"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -41,12 +35,95 @@ var (
 	ErrOSSNoConfig          = errors.New("no bucket or object config")
 )
 
+type ChunkUploaderConf struct {
+	bucket, relativeDir, fileName, md5 string
+
+	// This uploadid is a unique identifier generated for the chunked upload of files
+	uploadID string
+
+	partNumber string
+
+	annotations map[string]string
+}
+
+type ChunkUploaderOption func(*ChunkUploaderConf)
+
+func WithBucket(bucket string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.bucket = bucket
+	}
+}
+
+func WithBucketPath(relativeDir string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.relativeDir = relativeDir
+	}
+}
+
+func WithFileName(fileName string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.fileName = fileName
+	}
+}
+
+func WithMD5(md5 string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.md5 = md5
+	}
+}
+
+func WithAnnotations(annotations map[string]string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.annotations = annotations
+	}
+}
+
+func WithUploadID(uploadID string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.uploadID = uploadID
+	}
+}
+
+func WithPartNumber(partNumber string) ChunkUploaderOption {
+	return func(cuo *ChunkUploaderConf) {
+		cuo.partNumber = partNumber
+	}
+}
+
+/*
+Uploading files in chunks.
+1. Get completed blocks
+2. if there is no unique uploadid, you need to request a unique uploadid
+3. request the upload file URL
+4. Upload the file via the URL
+5. Update the information of the uploaded block
+6. merge files
+*/
+type ChunkUploader interface {
+	// Queries for blocks that have already been uploaded.
+	CompletedChunks(context.Context, ...ChunkUploaderOption) (any, error)
+
+	// CompletedChunks(context.Context, ...chunkUploaderOption) (any, error)
+	// Generate uploadID for uploaded files
+	NewMultipartIdentifier(context.Context, ...ChunkUploaderOption) (string, error)
+
+	// Generate URLs for uploading files
+	GenMultipartSignedURL(context.Context, ...ChunkUploaderOption) (string, error)
+
+	// After all the chunks are uploaded, this interface is called and the backend merges the files.
+	Complete(context.Context, ...ChunkUploaderOption) error
+
+	// To stop the upload, the user needs to destroy the chunked data.
+	Abort(context.Context, ...ChunkUploaderOption) error
+}
+
 type Datasource interface {
 	Stat(ctx context.Context, info any) error
 	Remove(ctx context.Context, info any) error
 	ReadFile(ctx context.Context, info any) (io.ReadCloser, error)
 	StatFile(ctx context.Context, info any) (any, error)
 	GetTags(ctx context.Context, info any) (map[string]string, error)
+	ListObjects(ctx context.Context, source string, info any) (any, error)
 }
 
 var _ Datasource = (*Unknown)(nil)
@@ -75,6 +152,10 @@ func (u *Unknown) StatFile(ctx context.Context, info any) (any, error) {
 }
 
 func (u *Unknown) GetTags(ctx context.Context, info any) (map[string]string, error) {
+	return nil, ErrUnknowDatasourceType
+}
+
+func (*Unknown) ListObjects(ctx context.Context, source string, info any) (any, error) {
 	return nil, ErrUnknowDatasourceType
 }
 
@@ -124,148 +205,6 @@ func (local *Local) StatFile(ctx context.Context, info any) (any, error) {
 func (local *Local) GetTags(ctx context.Context, info any) (map[string]string, error) {
 	return local.oss.GetTags(ctx, info)
 }
-
-var _ Datasource = (*OSS)(nil)
-
-// OSS is a wrapper to object storage service
-type OSS struct {
-	*minio.Client
-}
-
-var (
-	ossDefaultGetOpt    = minio.GetObjectOptions{}
-	ossDefaultGetTagOpt = minio.GetObjectTaggingOptions{}
-)
-
-func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
-	var accessKeyID, secretAccessKey string
-	if endpoint.AuthSecret != nil {
-		if endpoint.AuthSecret.Namespace == nil {
-			return nil, errors.New("no namepsace found for endpoint.authsecret")
-		}
-		secret := corev1.Secret{}
-		if err := c.Get(ctx, types.NamespacedName{
-			Namespace: *endpoint.AuthSecret.Namespace,
-			Name:      endpoint.AuthSecret.Name,
-		}, &secret); err != nil {
-			return nil, err
-		}
-		accessKeyID = string(secret.Data["rootUser"])
-		secretAccessKey = string(secret.Data["rootPassword"])
-
-		// TODO: implement https(secure check)
-		// if !endpoint.Insecure {
-		// }
-	}
-
-	mc, err := minio.New(endpoint.URL, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: !endpoint.Insecure,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &OSS{Client: mc}, nil
-}
-
-// Check oss agains info()
-func (oss *OSS) Stat(ctx context.Context, info any) error {
-	if info == nil {
-		return nil
-	}
-	ossInfo, ok := info.(*v1alpha1.OSS)
-	if !ok {
-		return ErrOSSNoConfig
-	}
-
-	return oss.statObject(ctx, ossInfo)
-}
-
-// TODO: implement `Remove` against info
-func (oss *OSS) Remove(ctx context.Context, info any) error {
-	return nil
-}
-
-// StatObject against oss info
-// Q: Why not using client.StatObject() ?
-// A: The `StateObject()` won't treat path(directory) as a valid object
-func (oss *OSS) statObject(ctx context.Context, ossInfo *v1alpha1.OSS) error {
-	if ossInfo.Bucket == "" {
-		return ErrBucketNotProvided
-	}
-
-	// check whether bucket exists
-	isExist, err := oss.Client.BucketExists(ctx, ossInfo.Bucket)
-	if err != nil {
-		return err
-	}
-	if !isExist {
-		return ErrOSSNoSuchBucket
-	}
-
-	// check whether object exists
-	if ossInfo.Object != "" {
-		// The object by `ListObjects` will trim "/" automatically,so we also need to trim "/" to make sure name comparision successful
-		ossInfo.Object = strings.TrimPrefix(ossInfo.Object, "/")
-		// When object contains "/" which means it is a directory,'ListObjects' will show all objects under that directory without object itself
-		// After we remove "/", the objects by `ListObjects` will have object itself included.
-		trimmedObjectPath := strings.TrimSuffix(ossInfo.Object, "/")
-		for objInfo := range oss.Client.ListObjects(
-			ctx, ossInfo.Bucket, minio.ListObjectsOptions{
-				Prefix: trimmedObjectPath,
-			},
-		) {
-			if objInfo.Key == ossInfo.Object {
-				return nil
-			}
-		}
-		return ErrOSSNoSuchObject
-	}
-
-	return nil
-}
-
-func (oss *OSS) ReadFile(ctx context.Context, info any) (io.ReadCloser, error) {
-	ossInfo, err := oss.preCheck(info)
-	if err != nil {
-		return nil, err
-	}
-	return oss.Client.GetObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
-}
-
-func (oss *OSS) StatFile(ctx context.Context, info any) (any, error) {
-	ossInfo, err := oss.preCheck(info)
-	if err != nil {
-		return nil, err
-	}
-	return oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
-}
-
-func (oss *OSS) GetTags(ctx context.Context, info any) (map[string]string, error) {
-	ossInfo, err := oss.preCheck(info)
-	if err != nil {
-		return nil, err
-	}
-	tags, err := oss.Client.GetObjectTagging(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetTagOpt)
-	if err != nil {
-		return nil, err
-	}
-	return tags.ToMap(), nil
-}
-
-func (oss *OSS) preCheck(info any) (*v1alpha1.OSS, error) {
-	if info == nil {
-		return nil, ErrOSSNoConfig
-	}
-	ossInfo, ok := info.(*v1alpha1.OSS)
-	if !ok || ossInfo.Bucket == "" || ossInfo.Object == "" {
-		return nil, ErrOSSNoConfig
-	}
-	return ossInfo, nil
+func (local *Local) ListObjects(ctx context.Context, source string, info any) (any, error) {
+	return local.oss.ListObjects(ctx, source, info)
 }

@@ -17,11 +17,9 @@ package service
 
 import (
 	"context"
-	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
-	"sort"
 	"strings"
 	"time"
 
@@ -29,66 +27,98 @@ import (
 	"github.com/minio/minio-go/v7"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	gqlconfig "github.com/kubeagi/arcadia/graphql-server/go-server/config"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	minio1 "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
-	models "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio/model"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
+	"github.com/kubeagi/arcadia/pkg/cache"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
-type minioAPI struct {
-	conf config.ServerConfig
-}
+type (
+	minioAPI struct {
+		conf   gqlconfig.ServerConfig
+		source *datasource.OSS
+
+		store cache.Cache
+	}
+
+	Chunk struct {
+		PartNumber int    `json:"partNubmer"`
+		ETag       string `json:"etag"`
+		Size       int64  `json:"size"`
+	}
+	SuccessChunksResult struct {
+		Done     bool    `json:"done"`
+		UploadID string  `json:"uploadID,omitempty"`
+		Chunks   []Chunk `json:"chunks,omitempty"`
+	}
+
+	NewMultipartBody struct {
+		// How many pieces do we have to divide it into?
+		ChunkCount int `json:"chunkCount"`
+		// part size
+		Size int64 `json:"size"`
+		// file md5
+		MD5 string `json:"md5"`
+
+		// The file is eventually stored in bucketPath/filtName in the bucket.
+		FileName   string `json:"fileName"`
+		Bucket     string `json:"bucket"`
+		BucketPath string `json:"bucketPath"`
+	}
+
+	GenChunkURLBody struct {
+		PartNumber int    `json:"partNumber"`
+		Size       int64  `json:"size"`
+		MD5        string `json:"md5"`
+		UploadID   string `json:"uploadID"`
+		Bucket     string `json:"bucket"`
+		BucketPath string `json:"bucketPath"`
+	}
+	GenChunkURLResult struct {
+		Completed bool   `json:"completed"`
+		URL       string `json:"url"`
+	}
+
+	DelteFileBody struct {
+		Files      []string `json:"files"`
+		Bucket     string   `json:"bucket"`
+		BucketPath string   `json:"bucketPath"`
+	}
+
+	CompleteBody struct {
+		MD5        string `json:"md5"`
+		BucketPath string `json:"bucketPath"`
+		Bucket     string `json:"bucket"`
+		FileName   string `json:"fileName"`
+		UploadID   string `json:"uploadID"`
+	}
+)
 
 const (
 	bucketQuery     = "bucket"
-	bucketPathQuery = "bucket_path"
+	bucketPathQuery = "bucketPath"
 	md5Query        = "md5"
 )
 
-type SuccessChunksResult struct {
-	ResultCode int    `json:"resultCode"`
-	Uploaded   string `json:"uploaded"`
-	UploadID   string `json:"uploadID"`
-	Chunks     string `json:"chunks"`
-}
+/*
+GetSuccessChunks
+There are three different scenarios:
 
-type NewMultipartResult struct {
-	UploadID string `json:"uploadID"`
-}
+1. If the file exists, the function will return done=true and will not provide an uploadid.
+In this case, no further action is required for uploading because the file is already present.
 
-type MultipartUploadURLResult struct {
-	URL string `json:"url"`
-}
+2. If the file does not exist, the function will return done=false.
+In this case, you need to request a new uploadid to initiate the upload process.
 
-// completeMultipartUpload container for completing multipart upload.
-type CompleteMultipartUpload struct {
-	XMLName xml.Name             `xml:"http://s3.amazonaws.com/doc/2006-03-01/ CompleteMultipartUpload" json:"-"`
-	Parts   []minio.CompletePart `xml:"Part"`
-}
-
-// completedParts is a collection of parts sortable by their part numbers.
-// used for sorting the uploaded parts before completing the multipart request.
-type completedParts []minio.CompletePart
-
-func (a completedParts) Len() int           { return len(a) }
-func (a completedParts) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a completedParts) Less(i, j int) bool { return a[i].PartNumber < a[j].PartNumber }
-
-const (
-	PresignedUploadPartURLExpireTime = time.Hour * 24 * 7
-)
-
+3. If the upload is in progress, the function will return done=false, uploadid (e.g., uploadid=xx) and chunks={partNumber, etag}.
+In this case, you can utilize the provided uploadid to continue requesting the upload URL and proceed with the file upload process.
+*/
 func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
-	res := -1
-	var (
-		uploaded, uploadID, chunks, objectName string
-		partNumberMarker, maxParts             int
-		listObjectPartsResult                  minio.ListObjectPartsResult
-		client                                 *minio.Core
-		exists                                 bool
-	)
-
 	fildMD5 := ctx.Query(md5Query)
 	if fildMD5 == "" {
 		klog.Error("md5 is required")
@@ -97,123 +127,121 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 		})
 		return
 	}
+
+	fileName := ctx.Query("fileName")
 	bucketName := ctx.Query(bucketQuery)
 	bucketPath := ctx.Query(bucketPathQuery)
+	etag := ctx.Query("etag")
+	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
 
-	fileChunk, err := models.GetFileChunkByMD5(bucketName, bucketPath, fildMD5)
-	if err != nil {
-		klog.Errorf("failed to get file chunk error %s", err)
-		goto done
+	r := SuccessChunksResult{
+		Done: false,
 	}
 
-	uploaded = fmt.Sprintf("%d", fileChunk.IsUploaded)
-	uploadID = fileChunk.UploadID
-	objectName = fmt.Sprintf("%s/%s", bucketPath, fileChunk.FileName)
+	// First check if the file already exists in minio
+	anyObject, err := m.source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{Bucket: bucketName, Object: objectName})
+	if err == nil {
+		objectInfo, ok := anyObject.(minio.ObjectInfo)
+		if !ok {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "can't get file information",
+			})
+			return
+		}
+		if objectInfo.ETag == etag {
+			// The file already exists and has the same md5, it is the same file and does not need to be uploaded again.
+			r.Done = true
+			ctx.JSON(http.StatusOK, r)
+			return
+		}
+	}
 
-	exists, err = isObjectExist(ctx.Request.Context(), bucketName, objectName)
-	if err != nil {
+	if err != nil && err.Error() != datasource.ObjectNotExistMsg {
+		// When checking the existence of a file in MinIO, besides the "file not found" error, there can be other errors as well.
 		klog.Errorf("failed to check for the existence of a resource %s/%s. error %s", bucketName, objectName, err)
-		goto done
-	}
-	if exists {
-		uploaded = "1"
-		if fileChunk.IsUploaded != models.FileUploaded {
-			klog.Infof("the file %s/%s has been uploaded but not recorded.", bucketName, objectName)
-			fileChunk.IsUploaded = 1
-			if err = models.UpdateFileChunk(fileChunk); err != nil {
-				klog.Errorf("failed to update file %s/%s upload status. error %s", bucketName, objectName, err)
-			}
-		}
-		res = 0
-		goto done
-	} else {
-		uploaded = "0"
-		if fileChunk.IsUploaded == models.FileUploaded {
-			klog.Infof("the file %s/%s has been recorded but not uploaded", bucketName, objectName)
-			fileChunk.IsUploaded = 0
-			if err = models.UpdateFileChunk(fileChunk); err != nil {
-				klog.Errorf("failed to update file %s/%s upload status. error %s", bucketName, objectName, err)
-			}
-		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"messge": err.Error(),
+		})
+		return
 	}
 
-	_, client, err = minio1.GetClients()
-	if err != nil {
-		klog.Errorf("failed to get oss client. %s", err)
-		goto done
+	// If the file does not exist, you can check if there are any relevant upload records locally.
+	key := [3]string{bucketName, bucketPath, fildMD5}
+	fc, ok := m.store.Get(key)
+	if !ok {
+		// If the file exists in MinIO but there is no corresponding record locally (for example, if the user directly uploaded the file),
+		// then the user will need to re-upload the file.
+		klog.Infof("not found file chunkc %s/%s/%s, ", bucketName, bucketPath, fildMD5)
+		ctx.JSON(http.StatusOK, r)
+		return
 	}
 
-	listObjectPartsResult, err = client.ListObjectParts(ctx, bucketName, objectName, uploadID, partNumberMarker, maxParts)
+	fileChunk := fc.(*common.FileChunk)
+
+	// If uploadid is empty, you need to re-upload.
+	if fileChunk.UploadID == "" {
+		ctx.JSON(http.StatusOK, r)
+		return
+	}
+
+	// Checking already uploaded chunks
+	r.UploadID = fileChunk.UploadID
+	r.Chunks = make([]Chunk, 0)
+	result, err := m.source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(bucketName),
+		datasource.WithBucketPath(bucketPath), datasource.WithFileName(fileChunk.FileName),
+		datasource.WithUploadID(fileChunk.UploadID))
 	if err != nil {
 		klog.Errorf("ListObjectParts failed: %s", err)
-		goto done
-	}
-	for _, objectPart := range listObjectPartsResult.ObjectParts {
-		chunks += fmt.Sprintf("%d-%s,", objectPart.PartNumber, objectPart.ETag)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
 	}
 
-done:
-	result := SuccessChunksResult{
-		ResultCode: res,
-		Uploaded:   uploaded,
-		UploadID:   uploadID,
-		Chunks:     chunks,
+	for _, objectPart := range result.(minio.ListObjectPartsResult).ObjectParts {
+		r.Chunks = append(r.Chunks, Chunk{
+			PartNumber: objectPart.PartNumber,
+			ETag:       objectPart.ETag,
+			Size:       objectPart.Size,
+		})
 	}
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, r)
 }
 
 func (m *minioAPI) NewMultipart(ctx *gin.Context) {
-	var (
-		uploadID    string
-		totalChunks int
-		size        uint64
-	)
-	totalChunksStr := ctx.Query("totalChunkCounts")
-	_, err := fmt.Sscanf(totalChunksStr, "%d", &totalChunks)
-	if err != nil {
-		klog.Errorf("failed to get totalChunks error %s", err)
+	var body NewMultipartBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		klog.Errorf("failed to parse body to json structure error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
+			"message": "failed to parse body",
 		})
 		return
 	}
 
-	if totalChunks > models.MaxPartsCount || totalChunks <= 0 {
-		klog.Errorf("illegal totalChunks %d", totalChunks)
+	if body.ChunkCount > common.MaxPartsCount || body.ChunkCount <= 0 {
+		klog.Errorf("illegal chunkCount %d", body.ChunkCount)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("totalChunks must be greater than zero and less than or equal to %d.", models.MaxPartsCount),
+			"message": fmt.Sprintf("chunkCount must be greater than zero and less than or equal to %d.", common.MaxPartsCount),
 		})
 		return
 	}
 
-	fileSizeStr := ctx.Query("size")
-	_, err = fmt.Sscanf(fileSizeStr, "%d", &size)
-	if err != nil {
-		klog.Errorf("failed to get file size error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-
-	if size > models.MaxMultipartPutObjectSize {
+	if body.Size > common.MaxMultipartPutObjectSize {
 		klog.Error("illegal file size")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("the file size must be greater than or equal to 0 and less than or equal to %d.", models.MaxMultipartPutObjectSize),
+			"message": fmt.Sprintf("the file size must be greater than or equal to 0 and less than or equal to %d.", common.MaxMultipartPutObjectSize),
 		})
 		return
 	}
 
-	md5 := ctx.Query(md5Query)
-	if md5 == "" {
+	if body.MD5 == "" {
 		klog.Error("md5 is empty")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "md5 is required",
 		})
 		return
 	}
-	fileName := ctx.Query("fileName")
-	if fileName == "" {
+	if body.FileName == "" {
 		klog.Error("file name is empty")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "file name is required",
@@ -221,9 +249,12 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		return
 	}
 
-	bucket := ctx.Query(bucketQuery)
-	bucketPath := ctx.Query(bucketPathQuery)
-	uploadID, err = newMultiPartUpload(ctx.Request.Context(), bucket, bucketPath, fileName, size)
+	uploadID, err := m.source.NewMultipartIdentifier(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
+		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(body.FileName),
+		datasource.WithAnnotations(map[string]string{
+			"size":              fmt.Sprintf("%d", body.Size),
+			"creationTimestamp": time.Now().Format(time.RFC3339),
+		}))
 	if err != nil {
 		klog.Errorf("failed to generate uploadid error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -231,14 +262,12 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	if _, err = models.InsetFileChunk(&models.FileChunk{
-		UploadID:    uploadID,
-		Md5:         md5,
-		Size:        int64(size), // maybe need to change to uint64
-		FileName:    fileName,
-		TotalChunks: totalChunks,
-		Bucket:      bucket,
-		BucketPath:  bucketPath,
+	if err := m.store.Set([3]string{body.Bucket, body.BucketPath, body.MD5}, &common.FileChunk{
+		UploadID:   uploadID,
+		Md5:        body.MD5,
+		FileName:   body.FileName,
+		Bucket:     body.Bucket,
+		BucketPath: body.BucketPath,
 	}); err != nil {
 		klog.Errorf("failed to insert new file chunk error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -247,28 +276,36 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		return
 	}
 
-	result := NewMultipartResult{
-		UploadID: uploadID,
-	}
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, gin.H{
+		"uploadID": uploadID,
+	})
 }
 
+/*
+GetMultipartUploadURL
+The function will check if the provided partNumber has been uploaded completely.
+
+1. If it is completed, it will set complete=true.
+2. If it is not completed, it will set complete=false and return the upload URL.
+*/
 func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
-	var (
-		url   string
-		parts int
-		size  int64
-	)
-	md5 := ctx.Query(md5Query)
-	if md5 == "" {
+	var body GenChunkURLBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		klog.Errorf("failed to parse body error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "failed to parse body",
+		})
+		return
+	}
+
+	if body.MD5 == "" {
 		klog.Error("md5 is empty")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "md5 is required",
 		})
 		return
 	}
-	uploadID := ctx.Query("uploadID")
-	if uploadID == "" {
+	if body.UploadID == "" {
 		klog.Error("uploadID is required")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": "uploadID is required",
@@ -276,67 +313,66 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		return
 	}
 
-	_, err := fmt.Sscanf(ctx.Query("chunkNumber"), "%d", &parts)
-	if err != nil {
-		klog.Errorf("failed to get chunkNumber error %s", err)
+	// FIXME: why
+	if body.Size > common.MinPartSize {
+		klog.Errorf("minimum slice is %d, current is %d", common.MinPartSize, body.Size)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "failed to get chunkNumber, failed to get chunkNumber, please fill in the correct number.",
-		})
-		return
-	}
-	_, err = fmt.Sscanf(ctx.Query("size"), "%d", &size)
-	if err != nil {
-		klog.Errorf("failed to get file size error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "failed to get file size, please provide the correct file size.",
-		})
-		return
-	}
-	if size > models.MinPartSize {
-		klog.Errorf("minimum slice is %d, current is %d", models.MinPartSize, size)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("minimum part size is %d, current is %d", models.MinPartSize, size),
+			"message": fmt.Sprintf("minimum part size is %d, current is %d", common.MinPartSize, body.Size),
 		})
 		return
 	}
 
-	bucket := ctx.Query(bucketQuery)
-	bucketPath := ctx.Query(bucketPathQuery)
-	fileChunk, err := models.GetFileChunkByMD5(bucket, bucketPath, md5)
-	if err != nil {
-		klog.Errorf("failed to get file chunk by md5 %s, error %s", md5, err)
+	fc, ok := m.store.Get([3]string{body.Bucket, body.BucketPath, body.MD5})
+	if !ok {
+		klog.Errorf("failed to get file chunk by md5 %s", body.MD5)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "failed to get file chunk by md5",
 		})
 		return
 	}
+	fileChunk := fc.(*common.FileChunk)
 
-	url, err = genMultiPartSignedURL(ctx, bucket, bucketPath, uploadID, parts, fileChunk.FileName, size)
+	result, err := m.source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
+		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(fileChunk.FileName),
+		datasource.WithUploadID(body.UploadID))
+	if err != nil {
+		klog.Errorf("ListObjectParts failed: %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	for _, objectPart := range result.(minio.ListObjectPartsResult).ObjectParts {
+		if objectPart.PartNumber == body.PartNumber {
+			ctx.JSON(http.StatusOK, GenChunkURLResult{
+				Completed: true,
+			})
+			return
+		}
+	}
+
+	url, err := m.source.GenMultipartSignedURL(ctx.Request.Context(),
+		datasource.WithBucket(body.Bucket),
+		datasource.WithBucketPath(body.BucketPath),
+		datasource.WithUploadID(body.UploadID),
+		datasource.WithPartNumber(fmt.Sprintf("%d", body.PartNumber)),
+		datasource.WithFileName(fileChunk.FileName))
 	if err != nil {
 		klog.Errorf("genMultiPartSignedURL failed: %s", err)
-		klog.Errorf("failed to get multipart signed url error %s, md5 %s", err, md5)
+		klog.Errorf("failed to get multipart signed url error %s, md5 %s", err, body.MD5)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": "failed to get multipart signed url",
 		})
 		return
 	}
 
-	result := MultipartUploadURLResult{
-		URL: url,
-	}
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, GenChunkURLResult{
+		Completed: false,
+		URL:       url,
+	})
 }
 
-type CompleteBody struct {
-	MD5        string `json:"md5"`
-	BucketPath string `json:"bucket_path"`
-	Bucket     string `json:"bucket"`
-	FileName   string `json:"file_name"`
-	Size       uint64 `json:"size"`
-	UploadID   string `json:"uploadID"`
-}
-
-// CompleteMultipart why use form-data, compatible with front-end
 func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 	var body CompleteBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -346,16 +382,11 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	fileChunk, err := models.GetFileChunkByMD5(body.Bucket, body.BucketPath, body.MD5)
-	if err != nil {
-		klog.Errorf("failed to get file chunk error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-
-	_, err = completeMultiPartUpload(ctx.Request.Context(), body.Bucket, body.BucketPath, body.UploadID, fileChunk.FileName)
+	err := m.source.Complete(ctx.Request.Context(),
+		datasource.WithBucket(body.Bucket),
+		datasource.WithBucketPath(body.BucketPath),
+		datasource.WithUploadID(body.UploadID),
+		datasource.WithFileName(body.FileName))
 	if err != nil {
 		klog.Errorf("complte multipart error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -364,47 +395,8 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		return
 	}
 
-	fileChunk.IsUploaded = models.FileNotUploaded
-	if err = models.UpdateFileChunk(fileChunk); err != nil {
-		klog.Errorf("update file chunk error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
+	_ = m.store.Delete([3]string{body.Bucket, body.BucketPath, body.MD5})
 	ctx.JSON(http.StatusOK, "success")
-}
-
-func (m *minioAPI) UpdateMultipart(ctx *gin.Context) {
-	md5 := ctx.PostForm(md5Query)
-	etag := ctx.PostForm("etag")
-	chunkNumber := ctx.PostForm("chunkNumber")
-	bucket := ctx.PostForm(bucketQuery)
-	bucketPath := ctx.PostForm(bucketPathQuery)
-	fileChunk, err := models.GetFileChunkByMD5(bucket, bucketPath, md5)
-	if err != nil {
-		klog.Errorf("failed to get file chunk error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to get file chunk",
-		})
-		return
-	}
-	fileChunk.CompletedParts += fmt.Sprintf("%s-%s", chunkNumber, strings.ReplaceAll(etag, "\"", ""))
-	err = models.UpdateFileChunk(fileChunk)
-	if err != nil {
-		klog.Errorf("failed to update file chunk error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	ctx.JSON(http.StatusOK, "success")
-}
-
-type DelteFileBody struct {
-	Files      []string `json:"files"`
-	Bucket     string   `json:"bucket"`
-	BucketPath string   `json:"bucket_path"`
 }
 
 func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
@@ -416,20 +408,11 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 		})
 		return
 	}
-	client, _, err := minio1.GetClients()
-	if err != nil {
-		klog.Errorf("can't get oss client error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "can't get oss client",
-		})
-		return
-	}
+
 	bucketPath := strings.TrimSuffix(body.BucketPath, "/")
 	for _, f := range body.Files {
 		go func(fn string) {
-			if err := client.RemoveObject(context.Background(), body.Bucket, fmt.Sprintf("%s/%s", bucketPath, fn), minio.RemoveObjectOptions{
-				ForceDelete: true,
-			}); err != nil {
+			if err := m.source.Remove(context.TODO(), &v1alpha1.OSS{Bucket: body.Bucket, Object: fmt.Sprintf("%s/%s", bucketPath, fn)}); err != nil {
 				klog.Errorf("faile to delete file %s/%s from bucket %s, error %s", bucketPath, fn, body.Bucket, err)
 			}
 		}(f)
@@ -437,122 +420,132 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "success")
 }
 
-func isObjectExist(ctx context.Context, bucketName string, objectName string) (bool, error) {
-	isExist := false
-	// TODO doneCh?
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-
-	client, _, err := minio1.GetClients()
-	if err != nil {
-		klog.Errorf("getClients failed: %s", err)
-		return isExist, err
-	}
-
-	objectCh := client.ListObjects(ctx, bucketName, minio.ListObjectsOptions{Prefix: objectName, Recursive: false})
-	object, ok := <-objectCh
-	if !ok || object.Err != nil {
-		klog.Errorf("ListObjects failed: %s", object.Err)
-		return isExist, object.Err
-	}
-	isExist = true
-	return isExist, nil
-}
-
-func newMultiPartUpload(ctx context.Context, bucketName, bucktPath, fileName string, size uint64) (string, error) {
-	_, minioClient, err := minio1.GetClients()
-	if err != nil {
-		klog.Errorf("getClient failed: %s", err)
-		return "", err
-	}
-
-	objectName := fmt.Sprintf("%s/%s", bucktPath, fileName)
-
-	return minioClient.NewMultipartUpload(ctx, bucketName, objectName, minio.PutObjectOptions{
-		UserTags: map[string]string{
-			"creationTimestamp": time.Now().Format(time.RFC3339),
-			"size":              fmt.Sprintf("%d", size),
-		},
-	})
-}
-
-func genMultiPartSignedURL(ctx context.Context, bucket, bucketPath string, uploadID string, partNumber int, fileName string, partSize int64) (string, error) {
-	_, client, err := minio1.GetClients()
-	if err != nil {
-		klog.Errorf("getClient failed: %s", err)
-		return "", err
-	}
-
-	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
-	u, err := client.Presign(ctx, http.MethodPut, bucket, objectName, PresignedUploadPartURLExpireTime, url.Values{
-		"uploadId":   []string{uploadID},
-		"partNumber": []string{fmt.Sprintf("%d", partNumber)},
-	})
-	if err != nil {
-		klog.Errorf("Presign failed: %s", err)
-		return "", err
-	}
-	return u.String(), nil
-}
-
-func completeMultiPartUpload(ctx context.Context, bucket, bucketPath string, uploadID string, fileName string) (string, error) {
-	var partNumberMarker, maxParts int
-	_, core, err := minio1.GetClients()
-	if err != nil {
-		klog.Errorf("getClient failed: %s", err)
-		return "", err
-	}
-
-	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
-
-	// TODO ? partNumberMarker, maxParts
-	listObjectPartsResult, err := core.ListObjectParts(ctx, bucket, objectName, uploadID, partNumberMarker, maxParts)
-	if err != nil {
-		klog.Errorf("ListObjectParts failed: %s", err)
-		return "", err
-	}
-	var completeMultipartUpload CompleteMultipartUpload
-	for _, objectPart := range listObjectPartsResult.ObjectParts {
-		completeMultipartUpload.Parts = append(completeMultipartUpload.Parts, minio.CompletePart{
-			PartNumber: objectPart.PartNumber,
-			ETag:       objectPart.ETag,
+func (m *minioAPI) Abort(ctx *gin.Context) {
+	var body CompleteBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		klog.Errorf("failed to parse body error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "need content-type application/json",
 		})
+		return
 	}
-	sort.Sort(completedParts(completeMultipartUpload.Parts))
 
-	uploadInfo, err := core.CompleteMultipartUpload(ctx, bucket, objectName, uploadID, completeMultipartUpload.Parts, minio.PutObjectOptions{})
-	if err != nil {
-		klog.Errorf("CompleteMultipartUpload failed: %s", err)
-		return "", err
+	if err := m.source.Abort(ctx.Request.Context(), datasource.WithBucket(body.Bucket), datasource.WithBucketPath(body.BucketPath),
+		datasource.WithFileName(body.FileName), datasource.WithUploadID(body.UploadID)); err != nil {
+		klog.Errorf("failed to stop file upload, error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
 	}
-	return uploadInfo.ETag, nil
+	ctx.JSON(http.StatusOK, "success")
 }
 
-func RegisterMinIOAPI(e *gin.Engine, conf config.ServerConfig) {
-	api := minioAPI{conf: conf}
-	group := e.Group("/minio")
+func (m *minioAPI) StatFile(ctx *gin.Context) {
+	fileName := ctx.Query("fileName")
+	bucket := ctx.Query(bucketQuery)
+	bucketPath := ctx.Query(bucketPathQuery)
 
-	group.GET("/model/files/get_chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetSuccessChunks)
-	group.GET("/versioneddataset/files/get_chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetSuccessChunks)
-	group.GET("get_chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetSuccessChunks)
+	anyObject, err := m.source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{
+		Object: fmt.Sprintf("%s/%s", bucketPath, fileName),
+		Bucket: bucket,
+	})
+	if err != nil {
+		klog.Errorf("stat file %s/%s/%s error %s", bucket, bucketPath, fileName, err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	info, ok := anyObject.(minio.ObjectInfo)
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": "can't get file information",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"size": info.Size,
+	})
+}
 
-	// POST
-	group.GET("/model/files/new_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.NewMultipart)
-	group.GET("/versioneddataset/files/new_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.NewMultipart)
-	group.GET("new_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.NewMultipart)
+func (m *minioAPI) Download(ctx *gin.Context) {
+	fromStr := ctx.Query("from")
+	endStr := ctx.Query("end")
+	var (
+		from, end int64
+	)
+	_, err := fmt.Sscanf(fromStr, "%d", &from)
+	if err != nil {
+		klog.Errorf("from %s is illegal, set default 0", fromStr)
+		from = 0
+	}
+	_, err = fmt.Sscanf(endStr, "%d", &end)
+	if err != nil {
+		klog.Errorf("from %s is illegal, set default 0", fromStr)
+		end = 0
+	}
 
-	group.GET("/model/files/get_multipart_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetMultipartUploadURL)
-	group.GET("/versioneddataset/files/get_multipart_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetMultipartUploadURL)
-	group.GET("get_multipart_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetMultipartUploadURL)
+	bucket := ctx.Query(bucketQuery)
+	bucketPath := ctx.Query(bucketPathQuery)
+	fileName := ctx.Query("fileName")
 
-	group.POST("/model/files/update_chunk", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "update", "models"), api.UpdateMultipart)
-	group.POST("/versioneddataset/files/update_chunk", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "update", "versioneddatasets"), api.UpdateMultipart)
-	group.POST("update_chunk", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "update", "models"), api.UpdateMultipart)
+	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
+	opt := minio.GetObjectOptions{}
+	_ = opt.SetRange(from, end)
+	info, err := m.source.Client.GetObject(ctx.Request.Context(), bucket, objectName, opt)
+	if err != nil {
+		klog.Errorf("failed to get object %s/%s range %d-%d errro %s", bucket, objectName, from, end, err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	_, _ = io.Copy(ctx.Writer, info)
+}
 
-	group.POST("/model/files/complete_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.CompleteMultipart)
-	group.POST("/versioneddataset/files/complete_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.CompleteMultipart)
-	group.POST("complete_multipart", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.CompleteMultipart)
+func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
+	c, err := client.GetClient(nil)
+	if err != nil {
+		panic(err)
+	}
+	systemDatasource, err := config.GetSystemDatasource(context.TODO(), nil, c)
+	if err != nil {
+		panic(err)
+	}
+	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
 
-	group.DELETE("/model/files/delete_files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "models"), api.DeleteFiles)
-	group.DELETE("/versioneddataset/files/delete_files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "versioneddatasets"), api.DeleteFiles)
+	oss, err := datasource.NewOSSWithDynamciClient(context.TODO(), c, endpoint)
+	if err != nil {
+		panic(err)
+	}
+
+	api := minioAPI{conf: conf, store: cache.NewMemCache(), source: oss}
+
+	{
+		// model apis
+		group.GET("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetSuccessChunks)
+		group.POST("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.NewMultipart)
+		group.POST("/model/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetMultipartUploadURL)
+		group.PUT("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.CompleteMultipart)
+		group.PUT("/model/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.Abort)
+		group.DELETE("/model/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "models"), api.DeleteFiles)
+		group.GET("/model/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.StatFile)
+		group.GET("/model/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.Download)
+	}
+
+	{
+		// versioneddataset apis
+		group.GET("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetSuccessChunks)
+		group.POST("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.NewMultipart)
+		group.POST("/versioneddataset/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetMultipartUploadURL)
+		group.PUT("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.CompleteMultipart)
+		group.PUT("/versioneddataset/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.Abort)
+		group.DELETE("/versioneddataset/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "versioneddatasets"), api.DeleteFiles)
+		group.GET("/versioneddataset/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.StatFile)
+		group.GET("/versioneddataset/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.Download)
+	}
 }

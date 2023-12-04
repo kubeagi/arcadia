@@ -18,12 +18,10 @@ package config
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -89,38 +87,6 @@ func GetGateway(ctx context.Context, c client.Client, cli dynamic.Interface) (*G
 		return nil, ErrNoConfigGateway
 	}
 	return config.Gateway, nil
-}
-
-func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
-	datasource, err := GetSystemDatasource(ctx, nil, c)
-	if err != nil {
-		return nil, err
-	}
-	if datasource.Spec.Enpoint.URL == "" {
-		return nil, ErrNoConfigMinIO
-	}
-	m := MinIO{
-		MinioAddress: datasource.Spec.Enpoint.URL,
-	}
-	m.MinioSecure = !datasource.Spec.Enpoint.Insecure
-	namespace := datasource.Namespace
-	if datasource.Spec.Enpoint.AuthSecret.Namespace != nil {
-		namespace = *datasource.Spec.Enpoint.AuthSecret.Namespace
-	}
-	secretObj, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-		Namespace(namespace).Get(ctx, datasource.Spec.Enpoint.AuthSecret.Name, v1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	data, found, err := unstructured.NestedStringMap(secretObj.Object, "data")
-	if !found || err != nil {
-		return nil, ErrNoConfigMinIO
-	}
-	password, _ := base64.StdEncoding.DecodeString(data["rootPassword"])
-	user, _ := base64.StdEncoding.DecodeString(data["rootUser"])
-	m.MinioAccessKeyID = string(user)
-	m.MinioSecretAccessKey = string(password)
-	return &m, nil
 }
 
 func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (config *Config, err error) {

@@ -67,7 +67,7 @@ func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.Versi
 	}
 
 	s := &Scheduler{ctx: ctx1, cancel: cancel, ds: instance, client: c, remove: remove}
-	exectuor, err := butcher.NewButcher[JobPayload](newExecutor(ctx1, c, oss.Client, instance, fileStatus, remove), butcher.BufferSize(bufSize), butcher.MaxWorker(maxWorkers))
+	exectuor, err := butcher.NewButcher[JobPayload](newExecutor(ctx1, c, oss, instance, fileStatus, remove), butcher.BufferSize(bufSize), butcher.MaxWorker(maxWorkers))
 	if err != nil {
 		cancel()
 		return nil, err

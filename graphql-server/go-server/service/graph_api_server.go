@@ -52,7 +52,7 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 }
 
-func RegisterGraphQL(g *gin.Engine, conf config.ServerConfig) {
+func RegisterGraphQL(g *gin.Engine, bg *gin.RouterGroup, conf config.ServerConfig) {
 	if conf.EnablePlayground {
 		endpoint := "/bff"
 		if conf.PlaygroundEndpointPrefix != "" {
@@ -63,5 +63,5 @@ func RegisterGraphQL(g *gin.Engine, conf config.ServerConfig) {
 		g.GET("/", gin.WrapH(playground.Handler("Arcadia-Graphql-Server", endpoint)))
 	}
 
-	g.POST("/bff", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "", ""), graphqlHandler())
+	bg.POST("", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "", ""), graphqlHandler())
 }
