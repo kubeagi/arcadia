@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'graphql-server/go-server/graph/schema/**'
+      - 'graphql-server/go-server/graph/schema/*.gql'
   workflow_dispatch:
 
 jobs:

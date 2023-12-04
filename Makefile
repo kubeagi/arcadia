@@ -259,9 +259,15 @@ run-graphql-server:
 # sdk for graphql-server api
 GRL_SDK_GENERATOR_IMAGE ?= yuntijs/gql-sdk-generator:latest
 GRAPH_API_ENDPOINT ?= http://0.0.0.0:8888/bff
+# TODO change this config to a more constant value: /kubeagi-apis/bff after frontend code is ready
+GRAPH_CLIENT_ENDPOINT ?= https://portal.172.22.96.136.nip.io/kubeagi-apis/bff
 .PHONY: gql-sdk-generator
 gql-sdk-generator:
-	docker run --rm --net=host --env SDK_PACKAGE_NAME=@yuntijs/arcadia-bff-sdk --env SDK_YUNTI_NAME=ArcadiaBffSDK --env GRAPH_API_ENDPOINT=${GRAPH_API_ENDPOINT} -v $(shell pwd)/graphql-server/go-server/graph/schema:/schema -v ~/.npmrc:/root/.npmrc ${GRL_SDK_GENERATOR_IMAGE}
+	docker run --rm --net=host --env SDK_PACKAGE_NAME=@yuntijs/arcadia-bff-sdk \
+	--env SDK_YUNTI_NAME=ArcadiaBffSDK --env GRAPH_API_ENDPOINT=${GRAPH_API_ENDPOINT} \
+	--env GRAPH_CLIENT_ENDPOINT=${GRAPH_CLIENT_ENDPOINT} \
+	-v $(shell pwd)/graphql-server/go-server/graph/schema:/schema \
+	-v ~/.npmrc:/root/.npmrc ${GRL_SDK_GENERATOR_IMAGE}
 
 # prepare for git push
 .PHONY: prepare-push
