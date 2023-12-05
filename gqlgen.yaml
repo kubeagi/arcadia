@@ -100,7 +100,7 @@ models:
         resolver: true
       updateDatasource:
         resolver: true
-      deleteDatasource:
+      deleteDatasources:
         resolver: true
   ModelQuery:
     fields:
@@ -114,7 +114,7 @@ models:
         resolver: true
       updateModel:
         resolver: true
-      deleteModel:
+      deleteModels:
         resolver: true
   EmbedderQuery:
     fields:
@@ -128,7 +128,7 @@ models:
         resolver: true
       updateEmbedder:
         resolver: true
-      deleteEmbedder:
+      deleteEmbedders:
         resolver: true
   KnowledgeBaseMutation:
     fields:
@@ -195,4 +195,18 @@ models:
   VersionedDataset:
     fields:
       files:
+        resolver: true
+  WorkerQuery:
+    fields:
+      getWorker:
+        resolver: true
+      listWorkers:
+        resolver: true
+  WorkerMutation:
+    fields:
+      createWorker:
+        resolver: true
+      updateWorker:
+        resolver: true
+      deleteWorkers:
         resolver: true

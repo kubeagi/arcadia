@@ -25,14 +25,7 @@ import (
 
 // ModelSpec defines the desired state of Model
 type ModelSpec struct {
-	// Creator defines dataset creator(AUTO-FILLED by webhook)
-	Creator string `json:"creator,omitempty"`
-
-	// DisplayName defines dataset display name
-	DisplayName string `json:"displayName"`
-
-	// Description defines datasource description
-	Description string `json:"description,omitempty"`
+	CommonSpec `json:",inline"`
 
 	// Type defines what kind of model this is
 	// Comma seperated field which can be wrapped by {llm,embdding}

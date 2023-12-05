@@ -95,6 +95,8 @@ spec:
                     description: Object must end with a slash "/" if it is a directory
                     type: string
                 type: object
+            required:
+            - endpoint
             type: object
           status:
             description: DatasourceStatus defines the observed state of Datasource

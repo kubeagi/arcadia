@@ -8,6 +8,8 @@ import (
 	"context"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
 )
 
@@ -18,27 +20,7 @@ func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *
 		return nil, err
 	}
 
-	url, authSecret, bucket, displayname, description := "", "", "", "", ""
-	var insecure bool
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.Endpointinput != nil {
-		if input.Endpointinput.URL != nil {
-			url = *input.Endpointinput.URL
-		}
-		insecure = *input.Endpointinput.Insecure
-		if input.Endpointinput.AuthSecret.Name != "" {
-			authSecret = input.Endpointinput.AuthSecret.Name
-		}
-	}
-	if input.Ossinput != nil && input.Ossinput.Bucket != nil {
-		bucket = *input.Ossinput.Bucket
-	}
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-	return datasource.CreateDatasource(ctx, c, input.Name, input.Namespace, url, authSecret, bucket, displayname, description, insecure)
+	return datasource.CreateDatasource(ctx, c, input)
 }
 
 // UpdateDatasource is the resolver for the updateDatasource field.
@@ -47,35 +29,16 @@ func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *
 	if err != nil {
 		return nil, err
 	}
-	name, displayname := "", ""
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-	if input.Name != "" {
-		name = input.Name
-
-	}
-	return datasource.UpdateDatasource(ctx, c, name, input.Namespace, displayname)
+	return datasource.UpdateDatasource(ctx, c, input)
 }
 
 // DeleteDatasource is the resolver for the deleteDatasource field.
-func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteCommonInput) (*string, error) {
+func (r *datasourceMutationResolver) DeleteDatasources(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteCommonInput) (*string, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	return datasource.DeleteDatasource(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
+	return datasource.DeleteDatasources(ctx, c, input)
 }
 
 // GetDatasource is the resolver for the getDatasource field.
@@ -88,12 +51,13 @@ func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *genera
 }
 
 // ListDatasources is the resolver for the listDatasources field.
-func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *generated.DatasourceQuery, input generated.ListDatasourceInput) (*generated.PaginatedResult, error) {
-	c, err := getClientFromCtx(ctx)
+func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *generated.DatasourceQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
 	if err != nil {
 		return nil, err
 	}
-	return datasource.ListDatasources(ctx, c, &input)
+	return datasource.ListDatasources(ctx, c, input)
 }
 
 // Datasource is the resolver for the Datasource field.

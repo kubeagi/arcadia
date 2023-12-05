@@ -1,8 +1,0 @@
-apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: Datasource
-metadata:
-  name: arcadia-local
-  namespace: arcadia
-spec:
-  displayName: "本地存储数据源"
-  description: "这是一个由本地上传的文件组成的数据源"

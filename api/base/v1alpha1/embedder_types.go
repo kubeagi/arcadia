@@ -30,7 +30,7 @@ type EmbedderSpec struct {
 	CommonSpec `json:",inline"`
 
 	// ServiceType indicates the source type of embedding service
-	ServiceType embeddings.EmbeddingType `json:"serviceType,omitempty"`
+	Type embeddings.EmbeddingType `json:"type,omitempty"`
 
 	// Provider defines the provider info which provide this embedder service
 	Provider `json:"provider,omitempty"`

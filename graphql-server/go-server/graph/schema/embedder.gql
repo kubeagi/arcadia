@@ -16,7 +16,7 @@ mutation createEmbedder($input: CreateEmbedderInput!) {
         }
         insecure
       }
-      serviceType
+      type
       updateTimestamp
     }
   }
@@ -40,21 +40,21 @@ mutation updateEmbedder($input: UpdateEmbedderInput) {
         }
         insecure
       }
-      serviceType
+      type
       updateTimestamp
     }
   }
 }
 
 # delete
-mutation deleteEmbedder($input: DeleteCommonInput!) {
+mutation deleteEmbedders($input: DeleteCommonInput!) {
   Embedder {
-    deleteEmbedder(input: $input)
+    deleteEmbedders(input: $input)
   }
 }
 
 # list embedders
-query listEmbedders($input: ListEmbedderInput!) {
+query listEmbedders($input: ListCommonInput!) {
   Embedder {
     listEmbedders(input: $input) {
     totalCount
@@ -75,7 +75,7 @@ query listEmbedders($input: ListEmbedderInput!) {
           }
           insecure
         }
-        serviceType
+        type
         updateTimestamp
       }
       }
@@ -101,7 +101,7 @@ query getEmbedder($name: String!, $namespace: String!) {
           }
           insecure
         }
-        serviceType
+        type
         updateTimestamp
     }
   }

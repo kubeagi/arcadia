@@ -7,7 +7,7 @@ type Embedder {
     displayName: String
     description: String
     endpoint: Endpoint
-    serviceType: String
+    type: String
     updateTimestamp: Time
 }
 
@@ -22,11 +22,18 @@ input CreateEmbedderInput {
     annotations: Map
     """模型服务资源展示名称作为显示，并提供编辑"""
     displayName: String
+    
     """模型服务资源描述"""
     description: String
-    endpointinput: EndpointInput
-    """模型服务类型"""
-    serviceType: String
+
+    """模型服务访问信息(必填)"""
+    endpointinput: EndpointInput!
+
+    """
+    向量化模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
 }
 
 input UpdateEmbedderInput {
@@ -34,38 +41,27 @@ input UpdateEmbedderInput {
     name: String!
     """模型服务创建命名空间"""
     namespace: String!
+
     """模型服务资源标签"""
     labels: Map
     """模型服务资源注释"""
     annotations: Map
+
     """模型服务资源展示名称作为显示，并提供编辑"""
     displayName: String
     """模型服务资源描述"""
     description: String
 }
 
-input ListEmbedderInput {
-    name: String
-    namespace: String!
-    displayName: String
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-    page: Int
-    pageSize: Int
-    keyword: String
-}
-
 type EmbedderQuery {
     getEmbedder(name: String!, namespace: String!): Embedder!
-    listEmbedders(input: ListEmbedderInput!): PaginatedResult!
+    listEmbedders(input: ListCommonInput!): PaginatedResult!
 }
 
 type EmbedderMutation {
     createEmbedder(input: CreateEmbedderInput!): Embedder!
     updateEmbedder(input: UpdateEmbedderInput): Embedder!
-    deleteEmbedder(input: DeleteCommonInput): Void
+    deleteEmbedders(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {

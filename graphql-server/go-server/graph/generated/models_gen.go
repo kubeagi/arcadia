@@ -80,9 +80,10 @@ type CreateDatasourceInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 数据源资源描述
 	Description *string `json:"description,omitempty"`
-	// 提供对象存储时输入条件
-	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
-	Ossinput      *OssInput      `json:"ossinput,omitempty"`
+	// 数据源的访问信息输入
+	Endpointinput EndpointInput `json:"endpointinput"`
+	// 数据源为对象存储类型时的输入
+	Ossinput *OssInput `json:"ossinput,omitempty"`
 }
 
 type CreateEmbedderInput struct {
@@ -97,10 +98,12 @@ type CreateEmbedderInput struct {
 	// 模型服务资源展示名称作为显示，并提供编辑
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型服务资源描述
-	Description   *string        `json:"description,omitempty"`
-	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
-	// 模型服务类型
-	ServiceType *string `json:"serviceType,omitempty"`
+	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息(必填)
+	Endpointinput EndpointInput `json:"endpointinput"`
+	// 向量化模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
 }
 
 // 创建知识库的输入
@@ -164,6 +167,25 @@ type CreateVersionedDatasetInput struct {
 	FileGrups []*FileGroup `json:"fileGrups,omitempty"`
 	// 界面上创建新版本选择从某个版本集成的时候，填写version字段
 	InheritedFrom *string `json:"inheritedFrom,omitempty"`
+}
+
+// 创建模型服务worker的输入
+type CreateWorkerInput struct {
+	// 模型资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型资源展示名称作为显示，并提供编辑
+	DisplayName *string `json:"displayName,omitempty"`
+	// 模型资源描述
+	Description *string `json:"description,omitempty"`
+	// worker对应的模型
+	// 规则: 相同namespace下的模型名称
+	// 规则: 必填
+	Model string `json:"model"`
+	// worker运行所需的资源
+	// 规则: 必填
+	Resources ResourcesInput `json:"resources"`
 }
 
 type DataProcessConfig struct {
@@ -345,6 +367,8 @@ type DatasetQuery struct {
 
 // 数据源: 定义了对某一个具备数据存储能力服务的访问信息，供后续向该数据源获取数据使用
 type Datasource struct {
+	// 模型id,为CR资源中的metadata.uid
+	ID *string `json:"id,omitempty"`
 	// 名称
 	// 规则: 遵循k8s命名
 	// 规则: 非空
@@ -379,9 +403,9 @@ type Datasource struct {
 func (Datasource) IsPageNode() {}
 
 type DatasourceMutation struct {
-	CreateDatasource Datasource `json:"createDatasource"`
-	UpdateDatasource Datasource `json:"updateDatasource"`
-	DeleteDatasource *string    `json:"deleteDatasource,omitempty"`
+	CreateDatasource  Datasource `json:"createDatasource"`
+	UpdateDatasource  Datasource `json:"updateDatasource"`
+	DeleteDatasources *string    `json:"deleteDatasources,omitempty"`
 }
 
 type DatasourceQuery struct {
@@ -418,16 +442,16 @@ type Embedder struct {
 	DisplayName     *string                `json:"displayName,omitempty"`
 	Description     *string                `json:"description,omitempty"`
 	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
-	ServiceType     *string                `json:"serviceType,omitempty"`
+	Type            *string                `json:"type,omitempty"`
 	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
 }
 
 func (Embedder) IsPageNode() {}
 
 type EmbedderMutation struct {
-	CreateEmbedder Embedder `json:"createEmbedder"`
-	UpdateEmbedder Embedder `json:"updateEmbedder"`
-	DeleteEmbedder *string  `json:"deleteEmbedder,omitempty"`
+	CreateEmbedder  Embedder `json:"createEmbedder"`
+	UpdateEmbedder  Embedder `json:"updateEmbedder"`
+	DeleteEmbedders *string  `json:"deleteEmbedders,omitempty"`
 }
 
 type EmbedderQuery struct {
@@ -447,7 +471,8 @@ type Endpoint struct {
 
 // 对象存储终端输入
 type EndpointInput struct {
-	URL *string `json:"url,omitempty"`
+	// 地址(必填)
+	URL string `json:"url"`
 	// secret验证密码
 	AuthSecret *TypedObjectReferenceInput `json:"authSecret,omitempty"`
 	// 默认true
@@ -585,43 +610,6 @@ type ListDatasetInput struct {
 	Keyword *string `json:"keyword,omitempty"`
 }
 
-// 数据源分页列表查询的输入
-type ListDatasourceInput struct {
-	// namespace用来确定资源
-	// 规则: 必填
-	Namespace string `json:"namespace"`
-	// name用来唯一确定资源
-	Name *string `json:"name,omitempty"`
-	// 展示名
-	DisplayName *string `json:"displayName,omitempty"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-	// 分页页码，
-	// 规则: 从1开始，默认是1
-	Page *int `json:"page,omitempty"`
-	// 每页数量，
-	// 规则: 默认10
-	PageSize *int `json:"pageSize,omitempty"`
-	// 关键词: 模糊匹配
-	// 规则: namespace,name,displayName,contentType,annotations中如果包含该字段则返回
-	Keyword *string `json:"keyword,omitempty"`
-}
-
-type ListEmbedderInput struct {
-	Name        *string `json:"name,omitempty"`
-	Namespace   string  `json:"namespace"`
-	DisplayName *string `json:"displayName,omitempty"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-	Page          *int    `json:"page,omitempty"`
-	PageSize      *int    `json:"pageSize,omitempty"`
-	Keyword       *string `json:"keyword,omitempty"`
-}
-
 // 知识库分页列表查询的输入
 type ListKnowledgeBaseInput struct {
 	Name        *string `json:"name,omitempty"`
@@ -692,9 +680,9 @@ type Model struct {
 func (Model) IsPageNode() {}
 
 type ModelMutation struct {
-	CreateModel Model   `json:"createModel"`
-	UpdateModel Model   `json:"updateModel"`
-	DeleteModel *string `json:"deleteModel,omitempty"`
+	CreateModel  Model   `json:"createModel"`
+	UpdateModel  Model   `json:"updateModel"`
+	DeleteModels *string `json:"deleteModels,omitempty"`
 }
 
 type ModelQuery struct {
@@ -707,13 +695,13 @@ type Oss struct {
 	// 所用的bucket名称
 	Bucket *string `json:"bucket,omitempty"`
 	// 所用的object路径(可为前缀)
-	Object *string `json:"Object,omitempty"`
+	Object *string `json:"object,omitempty"`
 }
 
 // 文件输入
 type OssInput struct {
-	Bucket *string `json:"bucket,omitempty"`
-	Object *string `json:"Object,omitempty"`
+	Bucket string  `json:"bucket"`
+	Object *string `json:"object,omitempty"`
 }
 
 type PaginatedDataProcessItem struct {
@@ -728,6 +716,25 @@ type PaginatedResult struct {
 	Page        *int       `json:"page,omitempty"`
 	PageSize    *int       `json:"pageSize,omitempty"`
 	TotalCount  int        `json:"totalCount"`
+}
+
+// 模型服务worker节点的资源(limits)
+type Resources struct {
+	CPU       *string `json:"cpu,omitempty"`
+	Memory    *string `json:"memory,omitempty"`
+	NvidiaGpu *string `json:"nvidiaGPU,omitempty"`
+}
+
+// 资源配置的输入
+type ResourcesInput struct {
+	// cpu配置
+	// 规则: 必填
+	CPU string `json:"cpu"`
+	// memory配置
+	// 规则: 必填
+	Memory string `json:"memory"`
+	// gpu配置
+	NvidiaGpu *string `json:"nvidiaGPU,omitempty"`
 }
 
 type TypedObjectReference struct {
@@ -778,6 +785,10 @@ type UpdateDatasourceInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 如不更新，则为空
 	Description *string `json:"description,omitempty"`
+	// 数据源的访问信息输入
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 数据源为对象存储类型时的输入
+	Ossinput *OssInput `json:"ossinput,omitempty"`
 }
 
 type UpdateEmbedderInput struct {
@@ -853,6 +864,24 @@ type UpdateVersionedDatasetInput struct {
 	Released *int `json:"released,omitempty"`
 }
 
+// 模型更新的输入
+type UpdateWorkerInput struct {
+	// 模型资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型资标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 模型资源展示名称作为显示，并提供编辑
+	DisplayName *string `json:"displayName,omitempty"`
+	// 模型资源描述
+	Description *string `json:"description,omitempty"`
+	// worker运行所需的资源
+	Resources *ResourcesInput `json:"resources,omitempty"`
+}
+
 // VersionedDataset
 // 数据集的版本信息。
 // 主要记录版本名字，数据的来源，以及文件的同步状态
@@ -901,6 +930,56 @@ type VersionedDatasetMutation struct {
 type VersionedDatasetQuery struct {
 	GetVersionedDataset   VersionedDataset `json:"getVersionedDataset"`
 	ListVersionedDatasets PaginatedResult  `json:"listVersionedDatasets"`
+}
+
+// 本地模型服务节点
+type Worker struct {
+	// 模型id,为CR资源中的metadata.uid
+	ID *string `json:"id,omitempty"`
+	// 名称
+	// 规则: 遵循k8s命名
+	Name string `json:"name"`
+	// 所在的namespace(文件上传时作为bucket)
+	// 规则: 获取当前项目对应的命名空间
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 创建者，为当前用户的用户名
+	// 规则: webhook启用后自动添加，默认为空
+	Creator *string `json:"creator,omitempty"`
+	// 展示名
+	DisplayName *string `json:"displayName,omitempty"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// 创建时间
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	// 更新时间
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// worker对应的模型
+	// 规则: 相同namespace下的模型名称
+	// 规则: 必填
+	Model string `json:"model"`
+	// worker运行所需的资源
+	// 规则: 必填
+	Resources Resources `json:"resources"`
+	// 状态
+	Status *string `json:"status,omitempty"`
+}
+
+func (Worker) IsPageNode() {}
+
+type WorkerMutation struct {
+	CreateWorker  Worker  `json:"createWorker"`
+	UpdateWorker  Worker  `json:"updateWorker"`
+	DeleteWorkers *string `json:"deleteWorkers,omitempty"`
+}
+
+type WorkerQuery struct {
+	GetWorker   Worker          `json:"getWorker"`
+	ListWorkers PaginatedResult `json:"listWorkers"`
 }
 
 // 文件详情

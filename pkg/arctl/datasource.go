@@ -80,38 +80,56 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 			}
 
 			var endpointAuthSecret string
-			if endpointURL != "" {
-				// create auth secret for datasource
-				if endpointAuthUser != "" && endpointAuthPwd != "" {
-					endpointAuthSecret = fmt.Sprintf("datasource-%s-authsecret", name)
-					secret := corev1.Secret{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "Secret",
-							APIVersion: corev1.SchemeGroupVersion.String(),
-						},
-						ObjectMeta: metav1.ObjectMeta{Name: endpointAuthSecret, Namespace: namespace},
-						Data: map[string][]byte{
-							"rootUser":     []byte(endpointAuthUser),
-							"rootPassword": []byte(endpointAuthPwd),
-						},
-					}
-					unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
-					if err != nil {
-						return fmt.Errorf("failed to convert auth secret: %w", err)
-					}
-					_, err = kubeClient.Resource(schema.GroupVersionResource{
-						Group:    corev1.SchemeGroupVersion.Group,
-						Version:  corev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
-					}).Namespace(namespace).Create(cmd.Context(), &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
-					if err != nil {
-						return fmt.Errorf("failed to create auth secret: %w", err)
-					}
-					klog.Infof("Successfully created authsecret %s\n", endpointAuthSecret)
+
+			// create auth secret for datasource
+			if endpointAuthUser != "" && endpointAuthPwd != "" {
+				endpointAuthSecret = fmt.Sprintf("datasource-%s-authsecret", name)
+				secret := corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Secret",
+						APIVersion: corev1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: metav1.ObjectMeta{Name: endpointAuthSecret, Namespace: namespace},
+					Data: map[string][]byte{
+						"rootUser":     []byte(endpointAuthUser),
+						"rootPassword": []byte(endpointAuthPwd),
+					},
 				}
+				unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
+				if err != nil {
+					return fmt.Errorf("failed to convert auth secret: %w", err)
+				}
+				_, err = kubeClient.Resource(schema.GroupVersionResource{
+					Group:    corev1.SchemeGroupVersion.Group,
+					Version:  corev1.SchemeGroupVersion.Version,
+					Resource: "secrets",
+				}).Namespace(namespace).Create(cmd.Context(), &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
+				if err != nil {
+					return fmt.Errorf("failed to create auth secret: %w", err)
+				}
+				klog.Infof("Successfully created authsecret %s\n", endpointAuthSecret)
 			}
 
-			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, name, namespace, endpointURL, endpointAuthSecret, ossBucket, displayName, description, endpointInsecure)
+			input := generated.CreateDatasourceInput{
+				Name:        name,
+				Namespace:   namespace,
+				DisplayName: &displayName,
+				Description: &description,
+				Endpointinput: generated.EndpointInput{
+					URL:      endpointURL,
+					Insecure: &endpointInsecure,
+				},
+			}
+			if ossBucket != "" {
+				input.Ossinput = &generated.OssInput{Bucket: ossBucket}
+			}
+			if endpointAuthSecret != "" {
+				input.Endpointinput.AuthSecret = &generated.TypedObjectReferenceInput{
+					Name: endpointAuthSecret,
+					Kind: "Secret",
+				}
+			}
+			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, input)
 			if err != nil {
 				return err
 			}
@@ -129,6 +147,10 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 
 	// Endpoint flags
 	cmd.Flags().StringVar(&endpointURL, "endpoint-url", "", "The endpoint url to access datasource.If not provided,a empty datasource will be created")
+	if err := cmd.MarkFlagRequired("endpoint-url"); err != nil {
+		panic(err)
+	}
+
 	cmd.Flags().StringVar(&endpointAuthUser, "endpoint-auth-user", "", "The endpoint's user for datasource authentication")
 	cmd.Flags().StringVar(&endpointAuthPwd, "endpoint-auth-password", "", "The endpoint's user password for datasource authentication")
 	cmd.Flags().BoolVar(&endpointInsecure, "endpoint-insecure", true, "Whether to access datasource without secure check.Default is yes")
@@ -166,7 +188,7 @@ func DatasourceListCmd(kubeClient dynamic.Interface, namespace string) *cobra.Co
 		Use:   "list [usage]",
 		Short: "List datasources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, &generated.ListDatasourceInput{
+			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, generated.ListCommonInput{
 				Namespace: namespace,
 			})
 			if err != nil {
@@ -209,7 +231,10 @@ func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				}
 				klog.Infof("Successfully deleted authsecret %s\n", ds.Endpoint.AuthSecret.Name)
 			}
-			_, err = datasource.DeleteDatasource(cmd.Context(), kubeClient, name, namespace, "", "")
+			_, err = datasource.DeleteDatasources(cmd.Context(), kubeClient, &generated.DeleteCommonInput{
+				Name:      &name,
+				Namespace: namespace,
+			})
 			if err != nil {
 				return fmt.Errorf("faield to delete datasource: %w", err)
 			}

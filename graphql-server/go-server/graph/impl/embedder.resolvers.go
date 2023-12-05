@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/embedder"
@@ -19,26 +18,7 @@ func (r *embedderMutationResolver) CreateEmbedder(ctx context.Context, obj *gene
 		return nil, err
 	}
 
-	url, authSecret, displayname, description, servicetype := "", "", "", "", ""
-	if input.Endpointinput != nil {
-		if input.Endpointinput.URL != nil {
-			url = *input.Endpointinput.URL
-		}
-		if input.Endpointinput.AuthSecret.Name != "" {
-			authSecret = input.Endpointinput.AuthSecret.Name
-		}
-	}
-
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.ServiceType != nil {
-		servicetype = *input.ServiceType
-	}
-	return embedder.CreateEmbedder(ctx, c, input.Name, input.Namespace, url, authSecret, displayname, description, servicetype)
+	return embedder.CreateEmbedder(ctx, c, input)
 }
 
 // UpdateEmbedder is the resolver for the updateEmbedder field.
@@ -58,24 +38,13 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 	return embedder.UpdateEmbedder(ctx, c, name, input.Namespace, displayname)
 }
 
-// DeleteEmbedder is the resolver for the deleteEmbedder field.
-func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteCommonInput) (*string, error) {
+// DeleteEmbedders is the resolver for the deleteEmbedders field.
+func (r *embedderMutationResolver) DeleteEmbedders(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteCommonInput) (*string, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	return embedder.DeleteEmbedder(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
+	return embedder.DeleteEmbedders(ctx, c, input)
 }
 
 // GetEmbedder is the resolver for the getEmbedder field.
@@ -88,52 +57,12 @@ func (r *embedderQueryResolver) GetEmbedder(ctx context.Context, obj *generated.
 }
 
 // ListEmbedders is the resolver for the listEmbedders field.
-func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generated.EmbedderQuery, input generated.ListEmbedderInput) (*generated.PaginatedResult, error) {
+func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generated.EmbedderQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	name, displayName, labelSelector, fieldSelector := "", "", "", ""
-	page, pageSize := 1, 10
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.DisplayName != nil {
-		displayName = *input.DisplayName
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
-	}
-	result, err := embedder.ListEmbedders(ctx, c, input.Namespace, labelSelector, fieldSelector)
-	if err != nil {
-		return nil, err
-	}
-	var filteredResult []generated.PageNode
-	for idx, u := range result {
-		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(*u.DisplayName, displayName)) {
-			filteredResult = append(filteredResult, result[idx])
-		}
-	}
-
-	totalCount := len(filteredResult)
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       filteredResult[(page-1)*pageSize : end],
-	}, nil
+	return embedder.ListEmbedders(ctx, c, input)
 }
 
 // Embedder is the resolver for the Embedder field.

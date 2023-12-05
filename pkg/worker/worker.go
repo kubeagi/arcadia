@@ -193,7 +193,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	}
 
 	// init runner
-	switch w.Spec.Type {
+	switch w.Type() {
 	case arcadiav1alpha1.WorkerTypeFastchatVLLM:
 		r, err := NewRunnerFastchatVLLM(c, w.DeepCopy())
 		if err != nil {
@@ -207,7 +207,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		}
 		worker.r = r
 	default:
-		return nil, fmt.Errorf("worker %s with type %s not supported in worker", w.Name, w.Spec.Type)
+		return nil, fmt.Errorf("worker %s with type %s not supported in worker", w.Name, w.Type())
 	}
 
 	return worker, nil
@@ -325,11 +325,10 @@ func (worker *PodWorker) Start(ctx context.Context) error {
 	case Panic:
 		return err
 	case Update:
-		// TODO: check to decide whethere
-		// err = worker.c.Update(ctx, deployment)
-		// if err != nil {
-		// 	return fmt.Errorf("failed to create deployment with %w", err)
-		// }
+		err = worker.c.Update(ctx, deployment)
+		if err != nil {
+			return fmt.Errorf("failed to create deployment with %w", err)
+		}
 	case Create:
 		err = worker.c.Create(ctx, deployment)
 		if err != nil {

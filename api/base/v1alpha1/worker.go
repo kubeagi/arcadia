@@ -41,7 +41,8 @@ const (
 
 func (worker Worker) Type() WorkerType {
 	if worker.Spec.Type == "" {
-		return WorkerTypeUnknown
+		// use `fastchat` by default
+		return WorkerTypeFastchatNormal
 	}
 	return worker.Spec.Type
 }
@@ -106,7 +107,7 @@ func (worker Worker) BuildEmbedder() *Embedder {
 				Creator:     worker.Spec.Creator,
 				Description: "Embedder created by Worker(OpenAI compatible)",
 			},
-			ServiceType: embeddings.OpenAI,
+			Type: embeddings.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
 					Kind:      "Worker",

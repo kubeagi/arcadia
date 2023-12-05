@@ -1,5 +1,30 @@
-"""模型"""
-type Model {
+"""模型服务worker节点的资源(limits)"""
+type Resources {
+    cpu: String
+    memory: String
+    nvidiaGPU: String
+}
+
+"""资源配置的输入"""
+input ResourcesInput {
+    """
+    cpu配置
+    规则: 必填
+    """
+    cpu: String!
+    """
+    memory配置
+    规则: 必填
+    """
+    memory: String!
+    """
+    gpu配置
+    """
+    nvidiaGPU: String
+}
+
+"""本地模型服务节点"""
+type Worker {
     """
     模型id,为CR资源中的metadata.uid
     """
@@ -41,11 +66,17 @@ type Model {
     updateTimestamp: Time
 
     """
-    模型类型
-    规则: 目前支持 llm和embedding两种模型类型
-    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    worker对应的模型
+    规则: 相同namespace下的模型名称
+    规则: 必填
     """
-    types: String!
+    model: String!
+
+    """
+    worker运行所需的资源
+    规则: 必填
+    """
+    resources: Resources!
 
     """
     状态
@@ -53,8 +84,8 @@ type Model {
     status: String
 }
 
-"""创建模型的输入"""
-input CreateModelInput{
+"""创建模型服务worker的输入"""
+input CreateWorkerInput{
     """模型资源名称（不可同名）"""
     name: String!
     """模型创建命名空间"""
@@ -66,15 +97,21 @@ input CreateModelInput{
     description: String
 
     """
-    模型类型
-    规则: 目前支持 llm和embedding两种模型类型
-    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    worker对应的模型
+    规则: 相同namespace下的模型名称
+    规则: 必填
     """
-    types: String!
+    model: String!
+
+    """
+    worker运行所需的资源
+    规则: 必填
+    """
+    resources: ResourcesInput!
 }
 
 """模型更新的输入"""
-input UpdateModelInput {
+input UpdateWorkerInput {
     """模型资源名称（不可同名）"""
     name: String!
     """模型创建命名空间"""
@@ -84,34 +121,34 @@ input UpdateModelInput {
     labels: Map
     """模型资源注释"""
     annotations: Map
+    
     """模型资源展示名称作为显示，并提供编辑"""
     displayName: String
     """模型资源描述"""
     description: String
 
     """
-    模型类型
-    规则: 目前支持 llm和embedding两种模型类型
-    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    worker运行所需的资源
     """
-    types: String
+    resources: ResourcesInput
 }
 
-type ModelMutation {
-    createModel(input: CreateModelInput!): Model!
-    updateModel(input: UpdateModelInput): Model!
-    deleteModels(input: DeleteCommonInput): Void
+
+type WorkerMutation {
+    createWorker(input: CreateWorkerInput!): Worker!
+    updateWorker(input: UpdateWorkerInput): Worker!
+    deleteWorkers(input: DeleteCommonInput): Void
 }
 
-type ModelQuery {
-    getModel(name: String!, namespace: String!): Model!
-    listModels(input: ListCommonInput!): PaginatedResult!
+type WorkerQuery {
+    getWorker(name: String!, namespace: String!): Worker!
+    listWorkers(input: ListCommonInput!): PaginatedResult!
 }
 
 extend type Mutation {
-    Model: ModelMutation
+    Worker: WorkerMutation
 }
 
 extend type Query {
-    Model: ModelQuery
+    Worker: WorkerQuery
 }

@@ -1,0 +1,25 @@
+## Datasource secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: datasource-sample-authsecret
+  namespace: arcadia
+data:
+  rootUser: YWRtaW4=
+  rootPassword: UGFzc3cwcmQh
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name: datasource-sample
+  namespace: arcadia
+spec:
+  displayName: "数据源示例"
+  endpoint:
+    url: arcadia-minio.arcadia.svc.cluster.local:9000
+    authSecret:
+      kind: Secret
+      name: datasource-sample-authsecret
+    insecure: true
+  oss:
+    bucket: arcadia

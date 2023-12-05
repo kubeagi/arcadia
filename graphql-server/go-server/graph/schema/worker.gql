@@ -1,12 +1,12 @@
 # list
-query listModels($input: ListCommonInput!){
-  Model {
-    listModels(input: $input) {
+query listWorkers($input: ListCommonInput!){
+  Worker {
+    listWorkers(input: $input) {
       totalCount
       hasNextPage
       nodes {
         __typename
-        ... on Model {
+        ... on Worker {
           id
           creationTimestamp
           name
@@ -17,8 +17,13 @@ query listModels($input: ListCommonInput!){
           displayName
           description
           status
-          types
           updateTimestamp
+          model
+          resources {
+            cpu
+            memory
+            nvidiaGPU
+          }
         }
       }
     }
@@ -26,9 +31,9 @@ query listModels($input: ListCommonInput!){
 }
 
 # get
-query getModel($name: String!, $namespace: String!) {
-  Model {
-    getModel(name: $name, namespace: $namespace){
+query getWorker($name: String!, $namespace: String!) {
+  Worker {
+    getWorker(name: $name, namespace: $namespace){
           id
           creationTimestamp
           name
@@ -39,16 +44,15 @@ query getModel($name: String!, $namespace: String!) {
           displayName
           description
           status
-          types
           updateTimestamp
     }
   }
 }
 
 # create
-mutation createModel($input: CreateModelInput!) {
-  Model {
-    createModel(input: $input) {
+mutation createWorker($input: CreateWorkerInput!) {
+  Worker {
+    createWorker(input: $input) {
           id
           creationTimestamp
           name
@@ -59,16 +63,21 @@ mutation createModel($input: CreateModelInput!) {
           displayName
           description
           status
-          types
           updateTimestamp
+          model
+          resources {
+            cpu
+            memory
+            nvidiaGPU
+          }
     }
   }
 }
 
 # update
-mutation updateModel($input: UpdateModelInput) {
-  Model {
-    updateModel(input: $input){
+mutation updateWorker($input: UpdateWorkerInput) {
+  Worker {
+    updateWorker(input: $input){
           id
           creationTimestamp
           name
@@ -79,15 +88,19 @@ mutation updateModel($input: UpdateModelInput) {
           displayName
           description
           status
-          types
           updateTimestamp
+          resources {
+            cpu
+            memory
+            nvidiaGPU
+          }
     }
   }
 }
 
 # delete
-mutation deleteModels($input: DeleteCommonInput) {
-  Model {
-    deleteModels(input: $input)
+mutation deleteWorkers($input: DeleteCommonInput) {
+  Worker {
+    deleteWorkers(input: $input)
   }
 }

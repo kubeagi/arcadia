@@ -31,24 +31,14 @@ func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.
 	return md.UpdateModel(ctx, c, input)
 }
 
-// DeleteModel is the resolver for the deleteModel field.
-func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteCommonInput) (*string, error) {
+// DeleteModels is the resolver for the deleteModels field.
+func (r *modelMutationResolver) DeleteModels(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteCommonInput) (*string, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	return md.DeleteModel(ctx, c, name, input.Namespace, labelSelector, fieldSelector)
+
+	return md.DeleteModels(ctx, c, input)
 }
 
 // GetModel is the resolver for the getModel field.

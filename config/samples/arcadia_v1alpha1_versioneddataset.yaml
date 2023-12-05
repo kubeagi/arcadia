@@ -11,7 +11,7 @@ spec:
   fileGroups:
     - source:
         kind: Datasource
-        name: arcadia-local
+        name: datasource-sample
         namespace: arcadia
       paths:
         - qa.csv
