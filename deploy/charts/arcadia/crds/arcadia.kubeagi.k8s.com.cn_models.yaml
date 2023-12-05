@@ -36,20 +36,18 @@ spec:
             description: ModelSpec defines the desired state of Model
             properties:
               creator:
-                description: Creator defines dataset creator(AUTO-FILLED by webhook)
+                description: Creator defines datasource creator (AUTO-FILLED by webhook)
                 type: string
               description:
                 description: Description defines datasource description
                 type: string
               displayName:
-                description: DisplayName defines dataset display name
+                description: DisplayName defines datasource display name
                 type: string
               types:
                 description: Type defines what kind of model this is Comma seperated
                   field which can be wrapped by {llm,embdding}
                 type: string
-            required:
-            - displayName
             type: object
           status:
             description: ModelStatus defines the observed state of Model

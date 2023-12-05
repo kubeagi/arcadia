@@ -108,14 +108,11 @@ func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
 	if err != nil {
 		return nil, err
 	}
-	if datasource.Spec.Enpoint == nil {
+	if datasource.Spec.Enpoint.URL == "" {
 		return nil, ErrNoConfigMinIO
 	}
 	m := MinIO{
 		MinioAddress: datasource.Spec.Enpoint.URL,
-	}
-	if datasource.Spec.Enpoint == nil {
-		return nil, ErrNoConfigMinIO
 	}
 	m.MinioSecure = !datasource.Spec.Enpoint.Insecure
 	namespace := datasource.Namespace

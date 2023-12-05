@@ -383,7 +383,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		return errVectorStoreNotReady
 	}
 	var em langchainembeddings.Embedder
-	switch embedder.Spec.ServiceType { // nolint: gocritic
+	switch embedder.Spec.Type { // nolint: gocritic
 	case embeddings.ZhiPuAI:
 		apiKey, err := embedder.AuthAPIKey(ctx, r.Client)
 		if err != nil {

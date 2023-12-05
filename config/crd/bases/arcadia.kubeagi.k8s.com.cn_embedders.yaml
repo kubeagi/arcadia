@@ -112,7 +112,7 @@ spec:
                     - name
                     type: object
                 type: object
-              serviceType:
+              type:
                 description: ServiceType indicates the source type of embedding service
                 type: string
             type: object

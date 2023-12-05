@@ -161,7 +161,7 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
-	switch instance.Spec.ServiceType {
+	switch instance.Spec.Type {
 	case embeddings.ZhiPuAI:
 		embedClient := zhipuai.NewZhiPuAI(apiKey)
 		res, err := embedClient.Validate()
@@ -178,7 +178,7 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 		msg = res.String()
 
 	default:
-		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.ServiceType))
+		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.Type))
 	}
 
 	return r.UpdateStatus(ctx, instance, msg, err)

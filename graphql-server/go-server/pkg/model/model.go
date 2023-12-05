@@ -99,9 +99,11 @@ func CreateModel(ctx context.Context, c dynamic.Interface, input generated.Creat
 			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.ModelSpec{
-			DisplayName: displayName,
-			Description: description,
-			Types:       types,
+			CommonSpec: v1alpha1.CommonSpec{
+				DisplayName: displayName,
+				Description: description,
+			},
+			Types: types,
 		},
 	}
 	unstructuredModel, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&model)
@@ -156,15 +158,26 @@ func UpdateModel(ctx context.Context, c dynamic.Interface, input *generated.Upda
 	return md, nil
 }
 
-func DeleteModel(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
+func DeleteModels(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
+	name := ""
+	labelSelector, fieldSelector := "", ""
+	if input.Name != nil {
+		name = *input.Name
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
 	if name != "" {
-		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 			LabelSelector: labelSelector,
 			FieldSelector: fieldSelector,
 		})
@@ -220,6 +233,11 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListCo
 			}
 		}
 		result = append(result, m)
+
+		// break if page size matches
+		if len(result) == pageSize {
+			break
+		}
 	}
 
 	end := page * pageSize

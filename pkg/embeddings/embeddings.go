@@ -23,7 +23,6 @@ type EmbeddingType string
 const (
 	OpenAI  EmbeddingType = "openai"
 	ZhiPuAI EmbeddingType = "zhipuai"
-	Local   EmbeddingType = "local"
 )
 
 type Embedding interface {

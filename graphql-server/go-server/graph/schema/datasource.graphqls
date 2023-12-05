@@ -13,13 +13,18 @@ type Oss {
     """所用的bucket名称"""
     bucket: String
     """所用的object路径(可为前缀)"""
-    Object: String
+    object: String
 }
 
 """
 数据源: 定义了对某一个具备数据存储能力服务的访问信息，供后续向该数据源获取数据使用
 """
 type Datasource {
+    """
+    模型id,为CR资源中的metadata.uid
+    """
+    id: String
+
     """
     名称
     规则: 遵循k8s命名
@@ -68,7 +73,8 @@ type Datasource {
 
 """对象存储终端输入"""
 input EndpointInput {
-    url: String
+    """地址(必填)"""
+    url: String!
     """secret验证密码"""
     authSecret: TypedObjectReferenceInput
     """默认true"""
@@ -77,8 +83,8 @@ input EndpointInput {
 
 """文件输入"""
 input OssInput {
-    bucket: String
-    Object: String
+    bucket: String!
+    object: String
 }
 
 """新增数据源时输入条件"""
@@ -106,8 +112,10 @@ input CreateDatasourceInput {
     """数据源资源描述"""
     description: String
 
-    """提供对象存储时输入条件"""
-    endpointinput: EndpointInput
+    """数据源的访问信息输入"""
+    endpointinput: EndpointInput!
+
+    """数据源为对象存储类型时的输入"""
     ossinput: OssInput
 }
 
@@ -133,57 +141,24 @@ input UpdateDatasourceInput {
     displayName: String
     """如不更新，则为空"""
     description: String
+
+    """数据源的访问信息输入"""
+    endpointinput: EndpointInput
+
+    """数据源为对象存储类型时的输入"""
+    ossinput: OssInput
 }
 
-"""数据源分页列表查询的输入"""
-input ListDatasourceInput {
-    """
-    namespace用来确定资源
-    规则: 必填
-    """
-    namespace: String!
-    """name用来唯一确定资源"""
-    name: String
-
-    """展示名"""
-    displayName: String
-
-
-
-    """标签选择器"""    
-    labelSelector: String
-    """字段选择器"""   
-    fieldSelector: String
-
-
-    """
-    分页页码，
-    规则: 从1开始，默认是1
-    """
-    page: Int
-
-    """
-    每页数量，
-    规则: 默认10
-    """
-    pageSize: Int
-
-    """
-    关键词: 模糊匹配
-    规则: namespace,name,displayName,contentType,annotations中如果包含该字段则返回
-    """
-    keyword: String
-}
 
 type DatasourceQuery {
     getDatasource(name: String!, namespace: String!): Datasource!
-    listDatasources(input: ListDatasourceInput!): PaginatedResult!
+    listDatasources(input: ListCommonInput!): PaginatedResult!
 }
 
 type DatasourceMutation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
-    deleteDatasource(input: DeleteCommonInput): Void
+    deleteDatasources(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {

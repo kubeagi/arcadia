@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
@@ -159,20 +158,6 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	var ds datasource.Datasource
 	var info any
 	switch instance.Spec.Type() {
-	case arcadiav1alpha1.DatasourceTypeLocal:
-		system, err := config.GetSystemDatasource(ctx, r.Client)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
-		endpoint := system.Spec.Enpoint.DeepCopy()
-		if endpoint != nil && endpoint.AuthSecret != nil {
-			endpoint.AuthSecret.WithNameSpace(system.Namespace)
-		}
-		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, err)
-		}
-		info = &arcadiav1alpha1.OSS{Bucket: instance.Namespace}
 	case arcadiav1alpha1.DatasourceTypeOSS:
 		endpoint := instance.Spec.Enpoint.DeepCopy()
 		// set auth secret's namespace to the datasource's namespace

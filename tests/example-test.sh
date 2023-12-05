@@ -185,12 +185,12 @@ helm install -narcadia arcadia deploy/charts/arcadia --set deployment.image=cont
 info "4. check system datasource arcadia-minio(system datasource)"
 waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"
 
-info "5. create and verify local datasource"
-kubectl apply -f config/samples/arcadia_v1alpha1_local_datasource.yaml
-waitCRDStatusReady "Datasource" "arcadia" "arcadia-local"
-datasourceType=$(kubectl get datasource -n arcadia arcadia-local -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
-if [[ $datasourceType != "local" ]]; then
-	error "Datasource should local but got $datasourceType"
+info "5. create and verify a oss datasource"
+kubectl apply -f config/samples/arcadia_v1alpha1_datasource.yaml
+waitCRDStatusReady "Datasource" "arcadia" "datasource-sample"
+datasourceType=$(kubectl get datasource -n arcadia datasource-sample -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
+if [[ $datasourceType != "oss" ]]; then
+	error "Datasource should be oss but got $datasourceType"
 	exit 1
 fi
 
@@ -214,9 +214,9 @@ kubectl port-forward -n arcadia svc/arcadia-minio 9000:9000 >/dev/null 2>&1 &
 minio_pid=$!
 sleep 3
 info "port-forward minio in pid: $minio_pid"
-bucket=$(kubectl get datasource -n arcadia arcadia-minio -o json | jq -r .spec.oss.bucket)
-s3_key=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootUser" | base64 --decode)
-s3_secret=$(kubectl get secrets -n arcadia arcadia-minio -o json | jq -r ".data.rootPassword" | base64 --decode)
+bucket=$(kubectl get datasource -n arcadia datasource-sample -o json | jq -r .spec.oss.bucket)
+s3_key=$(kubectl get secrets -n arcadia datasource-sample-authsecret -o json | jq -r ".data.rootUser" | base64 --decode)
+s3_secret=$(kubectl get secrets -n arcadia datasource-sample-authsecret -o json | jq -r ".data.rootPassword" | base64 --decode)
 export MC_HOST_arcadiatest=http://${s3_key}:${s3_secret}@127.0.0.1:9000
 mc cp pkg/documentloaders/testdata/qa.csv arcadiatest/${bucket}/qa.csv
 info "add tags to these files"

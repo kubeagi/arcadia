@@ -19,6 +19,7 @@ package embedder
 import (
 	"context"
 	"sort"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,12 +28,12 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
-	model "github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
+func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
 	labels := make(map[string]interface{})
 	for k, v := range obj.GetLabels() {
 		labels[k] = v
@@ -45,7 +46,7 @@ func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
 	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
 	authsecretNamespace, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "namespace")
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	servicetype, _, _ := unstructured.NestedString(obj.Object, "spec", "serviceType")
+	servicetype, _, _ := unstructured.NestedString(obj.Object, "spec", "type")
 	updateTime := metav1.Now().Time
 	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if found && len(conditions) > 0 {
@@ -55,33 +56,49 @@ func embedder2model(obj *unstructured.Unstructured) *model.Embedder {
 			updateTime, _ = utils.RFC3339Time(timeStr)
 		}
 	}
-	endpoint := model.Endpoint{
+	endpoint := generated.Endpoint{
 		URL: &url,
-		AuthSecret: &model.TypedObjectReference{
+		AuthSecret: &generated.TypedObjectReference{
 			Kind:      "Secret",
 			Name:      authsecret,
 			Namespace: &authsecretNamespace,
 		},
 	}
 
-	md := model.Embedder{
+	md := generated.Embedder{
 		Name:            obj.GetName(),
 		Namespace:       obj.GetNamespace(),
 		Labels:          labels,
 		Annotations:     annotations,
 		DisplayName:     &displayName,
 		Endpoint:        &endpoint,
-		ServiceType:     &servicetype,
+		Type:            &servicetype,
 		UpdateTimestamp: &updateTime,
 	}
 	return &md
 }
 
-func CreateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, url, authsecret, displayname, description, servicetype string) (*model.Embedder, error) {
+func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.CreateEmbedderInput) (*generated.Embedder, error) {
+	authSecret, displayname, description, servicetype := "", "", "", ""
+
+	if input.Endpointinput.AuthSecret.Name != "" {
+		authSecret = input.Endpointinput.AuthSecret.Name
+	}
+
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
+	}
+	if input.Description != nil {
+		description = *input.Description
+	}
+	if input.Type != nil {
+		servicetype = *input.Type
+	}
+
 	embedder := v1alpha1.Embedder{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      input.Name,
+			Namespace: input.Namespace,
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Embedder",
@@ -90,18 +107,19 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, u
 		Spec: v1alpha1.EmbedderSpec{
 			CommonSpec: v1alpha1.CommonSpec{
 				DisplayName: displayname,
+				Description: description,
 			},
 			Provider: v1alpha1.Provider{
 				Enpoint: &v1alpha1.Endpoint{
-					URL: url,
+					URL: input.Endpointinput.URL,
 					AuthSecret: &v1alpha1.TypedObjectReference{
 						Kind:      "Secret",
-						Name:      authsecret,
-						Namespace: &namespace,
+						Name:      authSecret,
+						Namespace: &input.Namespace,
 					},
 				},
 			},
-			ServiceType: embeddings.EmbeddingType(servicetype),
+			Type: embeddings.EmbeddingType(servicetype),
 		},
 	}
 
@@ -110,7 +128,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, u
 		return nil, err
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"}).
-		Namespace(namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredEmbedder}, metav1.CreateOptions{})
+		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredEmbedder}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +136,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, u
 	return ds, nil
 }
 
-func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*model.Embedder, error) {
+func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*generated.Embedder, error) {
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"})
 	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -134,15 +152,27 @@ func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, d
 	return ds, nil
 }
 
-func DeleteEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
+func DeleteEmbedders(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
+	name := ""
+	labelSelector, fieldSelector := "", ""
+	if input.Name != nil {
+		name = *input.Name
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
+
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"})
 	if name != "" {
-		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 			LabelSelector: labelSelector,
 			FieldSelector: fieldSelector,
 		})
@@ -152,27 +182,70 @@ func DeleteEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, l
 	}
 	return nil, nil
 }
-func ListEmbedders(ctx context.Context, c dynamic.Interface, namespace, labelSelector, fieldSelector string) ([]*model.Embedder, error) {
+func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+	keyword, labelSelector, fieldSelector := "", "", ""
+	page, pageSize := 1, 10
+	if input.Keyword != nil {
+		keyword = *input.Keyword
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
+	if input.Page != nil && *input.Page > 0 {
+		page = *input.Page
+	}
+	if input.PageSize != nil && *input.PageSize > 0 {
+		pageSize = *input.PageSize
+	}
+
 	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"}
 	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
 		FieldSelector: fieldSelector,
 	}
-	us, err := c.Resource(dsSchema).Namespace(namespace).List(ctx, listOptions)
+	us, err := c.Resource(dsSchema).Namespace(input.Namespace).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
 	sort.Slice(us.Items, func(i, j int) bool {
 		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
 	})
-	result := make([]*model.Embedder, len(us.Items))
-	for idx, u := range us.Items {
-		result[idx] = embedder2model(&u)
+
+	totalCount := len(us.Items)
+
+	result := make([]generated.PageNode, 0, pageSize)
+	for _, u := range us.Items {
+		m := embedder2model(&u)
+		// filter based on `keyword`
+		if keyword != "" {
+			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
+				continue
+			}
+		}
+		result = append(result, m)
+
+		// break if page size matches
+		if len(result) == pageSize {
+			break
+		}
 	}
-	return result, nil
+
+	end := page * pageSize
+	if end > totalCount {
+		end = totalCount
+	}
+
+	return &generated.PaginatedResult{
+		TotalCount:  totalCount,
+		HasNextPage: end < totalCount,
+		Nodes:       result,
+	}, nil
 }
 
-func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace string) (*model.Embedder, error) {
+func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Embedder, error) {
 	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"})
 	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {

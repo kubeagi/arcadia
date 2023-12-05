@@ -15,6 +15,7 @@ mutation createDatasource($input: CreateDatasourceInput!) {
       }
       oss {
         bucket
+        object
       }
     }
   }
@@ -37,20 +38,21 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
       }
       oss {
         bucket
+        object
       }
     }
   }
 }
 
 # delete
-mutation deleteDatasource($input: DeleteCommonInput!) {
+mutation deleteDatasources($input: DeleteCommonInput!) {
   Datasource {
-    deleteDatasource(input: $input)
+    deleteDatasources(input: $input)
   }
 }
 
 # list datasources
-query listDatasources($input: ListDatasourceInput!) {
+query listDatasources($input: ListCommonInput!) {
   Datasource {
     listDatasources(input: $input) {
     totalCount
@@ -71,6 +73,7 @@ query listDatasources($input: ListDatasourceInput!) {
         }
         oss {
           bucket
+          object
         }
       }
       }
@@ -95,6 +98,7 @@ query getDatasource($name: String!, $namespace: String!) {
       }
       oss {
         bucket
+        object
       }
     }
   }
