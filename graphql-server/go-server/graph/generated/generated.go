@@ -179,7 +179,7 @@ type ComplexityRoot struct {
 
 	DatasetMutation struct {
 		CreateDataset  func(childComplexity int, input *CreateDatasetInput) int
-		DeleteDatasets func(childComplexity int, input *DeleteDatasetInput) int
+		DeleteDatasets func(childComplexity int, input *DeleteCommonInput) int
 		UpdateDataset  func(childComplexity int, input *UpdateDatasetInput) int
 	}
 
@@ -206,7 +206,7 @@ type ComplexityRoot struct {
 
 	DatasourceMutation struct {
 		CreateDatasource func(childComplexity int, input CreateDatasourceInput) int
-		DeleteDatasource func(childComplexity int, input *DeleteDatasourceInput) int
+		DeleteDatasource func(childComplexity int, input *DeleteCommonInput) int
 		UpdateDatasource func(childComplexity int, input *UpdateDatasourceInput) int
 	}
 
@@ -230,7 +230,7 @@ type ComplexityRoot struct {
 
 	EmbedderMutation struct {
 		CreateEmbedder func(childComplexity int, input CreateEmbedderInput) int
-		DeleteEmbedder func(childComplexity int, input *DeleteEmbedderInput) int
+		DeleteEmbedder func(childComplexity int, input *DeleteCommonInput) int
 		UpdateEmbedder func(childComplexity int, input *UpdateEmbedderInput) int
 	}
 
@@ -273,7 +273,7 @@ type ComplexityRoot struct {
 
 	KnowledgeBaseMutation struct {
 		CreateKnowledgeBase func(childComplexity int, input CreateKnowledgeBaseInput) int
-		DeleteKnowledgeBase func(childComplexity int, input *DeleteKnowledgeBaseInput) int
+		DeleteKnowledgeBase func(childComplexity int, input *DeleteCommonInput) int
 		UpdateKnowledgeBase func(childComplexity int, input *UpdateKnowledgeBaseInput) int
 	}
 
@@ -299,7 +299,7 @@ type ComplexityRoot struct {
 
 	ModelMutation struct {
 		CreateModel func(childComplexity int, input CreateModelInput) int
-		DeleteModel func(childComplexity int, input *DeleteModelInput) int
+		DeleteModel func(childComplexity int, input *DeleteCommonInput) int
 		UpdateModel func(childComplexity int, input *UpdateModelInput) int
 	}
 
@@ -422,7 +422,7 @@ type DatasetResolver interface {
 type DatasetMutationResolver interface {
 	CreateDataset(ctx context.Context, obj *DatasetMutation, input *CreateDatasetInput) (*Dataset, error)
 	UpdateDataset(ctx context.Context, obj *DatasetMutation, input *UpdateDatasetInput) (*Dataset, error)
-	DeleteDatasets(ctx context.Context, obj *DatasetMutation, input *DeleteDatasetInput) (*string, error)
+	DeleteDatasets(ctx context.Context, obj *DatasetMutation, input *DeleteCommonInput) (*string, error)
 }
 type DatasetQueryResolver interface {
 	GetDataset(ctx context.Context, obj *DatasetQuery, name string, namespace string) (*Dataset, error)
@@ -431,7 +431,7 @@ type DatasetQueryResolver interface {
 type DatasourceMutationResolver interface {
 	CreateDatasource(ctx context.Context, obj *DatasourceMutation, input CreateDatasourceInput) (*Datasource, error)
 	UpdateDatasource(ctx context.Context, obj *DatasourceMutation, input *UpdateDatasourceInput) (*Datasource, error)
-	DeleteDatasource(ctx context.Context, obj *DatasourceMutation, input *DeleteDatasourceInput) (*string, error)
+	DeleteDatasource(ctx context.Context, obj *DatasourceMutation, input *DeleteCommonInput) (*string, error)
 }
 type DatasourceQueryResolver interface {
 	GetDatasource(ctx context.Context, obj *DatasourceQuery, name string, namespace string) (*Datasource, error)
@@ -440,7 +440,7 @@ type DatasourceQueryResolver interface {
 type EmbedderMutationResolver interface {
 	CreateEmbedder(ctx context.Context, obj *EmbedderMutation, input CreateEmbedderInput) (*Embedder, error)
 	UpdateEmbedder(ctx context.Context, obj *EmbedderMutation, input *UpdateEmbedderInput) (*Embedder, error)
-	DeleteEmbedder(ctx context.Context, obj *EmbedderMutation, input *DeleteEmbedderInput) (*string, error)
+	DeleteEmbedder(ctx context.Context, obj *EmbedderMutation, input *DeleteCommonInput) (*string, error)
 }
 type EmbedderQueryResolver interface {
 	GetEmbedder(ctx context.Context, obj *EmbedderQuery, name string, namespace string) (*Embedder, error)
@@ -449,7 +449,7 @@ type EmbedderQueryResolver interface {
 type KnowledgeBaseMutationResolver interface {
 	CreateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input CreateKnowledgeBaseInput) (*KnowledgeBase, error)
 	UpdateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input *UpdateKnowledgeBaseInput) (*KnowledgeBase, error)
-	DeleteKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input *DeleteKnowledgeBaseInput) (*string, error)
+	DeleteKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input *DeleteCommonInput) (*string, error)
 }
 type KnowledgeBaseQueryResolver interface {
 	GetKnowledgeBase(ctx context.Context, obj *KnowledgeBaseQuery, name string, namespace string) (*KnowledgeBase, error)
@@ -458,7 +458,7 @@ type KnowledgeBaseQueryResolver interface {
 type ModelMutationResolver interface {
 	CreateModel(ctx context.Context, obj *ModelMutation, input CreateModelInput) (*Model, error)
 	UpdateModel(ctx context.Context, obj *ModelMutation, input *UpdateModelInput) (*Model, error)
-	DeleteModel(ctx context.Context, obj *ModelMutation, input *DeleteModelInput) (*string, error)
+	DeleteModel(ctx context.Context, obj *ModelMutation, input *DeleteCommonInput) (*string, error)
 }
 type ModelQueryResolver interface {
 	GetModel(ctx context.Context, obj *ModelQuery, name string, namespace string) (*Model, error)
@@ -1058,7 +1058,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.DatasetMutation.DeleteDatasets(childComplexity, args["input"].(*DeleteDatasetInput)), true
+		return e.complexity.DatasetMutation.DeleteDatasets(childComplexity, args["input"].(*DeleteCommonInput)), true
 
 	case "DatasetMutation.updateDataset":
 		if e.complexity.DatasetMutation.UpdateDataset == nil {
@@ -1209,7 +1209,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.DatasourceMutation.DeleteDatasource(childComplexity, args["input"].(*DeleteDatasourceInput)), true
+		return e.complexity.DatasourceMutation.DeleteDatasource(childComplexity, args["input"].(*DeleteCommonInput)), true
 
 	case "DatasourceMutation.updateDatasource":
 		if e.complexity.DatasourceMutation.UpdateDatasource == nil {
@@ -1339,7 +1339,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.EmbedderMutation.DeleteEmbedder(childComplexity, args["input"].(*DeleteEmbedderInput)), true
+		return e.complexity.EmbedderMutation.DeleteEmbedder(childComplexity, args["input"].(*DeleteCommonInput)), true
 
 	case "EmbedderMutation.updateEmbedder":
 		if e.complexity.EmbedderMutation.UpdateEmbedder == nil {
@@ -1560,7 +1560,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.KnowledgeBaseMutation.DeleteKnowledgeBase(childComplexity, args["input"].(*DeleteKnowledgeBaseInput)), true
+		return e.complexity.KnowledgeBaseMutation.DeleteKnowledgeBase(childComplexity, args["input"].(*DeleteCommonInput)), true
 
 	case "KnowledgeBaseMutation.updateKnowledgeBase":
 		if e.complexity.KnowledgeBaseMutation.UpdateKnowledgeBase == nil {
@@ -1704,7 +1704,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.ModelMutation.DeleteModel(childComplexity, args["input"].(*DeleteModelInput)), true
+		return e.complexity.ModelMutation.DeleteModel(childComplexity, args["input"].(*DeleteCommonInput)), true
 
 	case "ModelMutation.updateModel":
 		if e.complexity.ModelMutation.UpdateModel == nil {
@@ -2228,12 +2228,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateVersionedDatasetInput,
 		ec.unmarshalInputDataProcessConfigItem,
 		ec.unmarshalInputDataProcessDetailsInput,
+		ec.unmarshalInputDeleteCommonInput,
 		ec.unmarshalInputDeleteDataProcessInput,
-		ec.unmarshalInputDeleteDatasetInput,
-		ec.unmarshalInputDeleteDatasourceInput,
-		ec.unmarshalInputDeleteEmbedderInput,
-		ec.unmarshalInputDeleteKnowledgeBaseInput,
-		ec.unmarshalInputDeleteModelInput,
 		ec.unmarshalInputDeleteVersionedDatasetInput,
 		ec.unmarshalInputEndpointInput,
 		ec.unmarshalInputFileFilter,
@@ -2675,21 +2671,6 @@ input UpdateDatasetInput {
     description: String
 }
 
-"""数据集删除的输入"""
-input DeleteDatasetInput {
-    """
-    name, namespace用来确定资源
-    """
-    name: String
-    namespace: String!
-    
-    """标签选择器"""    
-    labelSelector: String
-
-    """字段选择器"""   
-    fieldSelector: String
-}
-
 """数据集分页列表查询的输入"""
 input ListDatasetInput {
     """
@@ -2755,7 +2736,7 @@ type DatasetMutation {
     规则: 支持通过标签选择器，将满足标签的dataset全部删除
     规则: 如果提供了这两个参数，以名字列表为主。
     """
-    deleteDatasets(input: DeleteDatasetInput): Void
+    deleteDatasets(input: DeleteCommonInput): Void
 }
 
 extend type Query {
@@ -2903,20 +2884,6 @@ input UpdateDatasourceInput {
     description: String
 }
 
-"""删除数据源的输入"""
-input DeleteDatasourceInput {
-    """
-    name, namespace用来确定资源
-    """
-    name: String
-    namespace: String!
-
-    """标签选择器"""    
-    labelSelector: String
-    """字段选择器"""   
-    fieldSelector: String
-}
-
 """数据源分页列表查询的输入"""
 input ListDatasourceInput {
     """
@@ -2965,7 +2932,7 @@ type DatasourceQuery {
 type DatasourceMutation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
-    deleteDatasource(input: DeleteDatasourceInput): Void
+    deleteDatasource(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {
@@ -3022,15 +2989,6 @@ input UpdateEmbedderInput {
     description: String
 }
 
-input DeleteEmbedderInput {
-    name: String
-    namespace: String!
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
 input ListEmbedderInput {
     name: String
     namespace: String!
@@ -3052,7 +3010,7 @@ type EmbedderQuery {
 type EmbedderMutation {
     createEmbedder(input: CreateEmbedderInput!): Embedder!
     updateEmbedder(input: UpdateEmbedderInput): Embedder!
-    deleteEmbedder(input: DeleteEmbedderInput): Void
+    deleteEmbedder(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {
@@ -3093,6 +3051,15 @@ input ListCommonInput {
     规则: 默认10
     """
     pageSize: Int
+}
+
+input DeleteCommonInput {
+    name: String
+    namespace: String!
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
 }
 
 scalar Time
@@ -3311,17 +3278,6 @@ input UpdateKnowledgeBaseInput {
     fileGroups: [filegroupinput!]
 }
 
-"""知识库删除的输入"""
-input DeleteKnowledgeBaseInput {
-    name: String
-    namespace: String!
-
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
 """知识库分页列表查询的输入"""
 input ListKnowledgeBaseInput {
     name: String
@@ -3360,7 +3316,7 @@ type KnowledgeBaseQuery {
 type KnowledgeBaseMutation {
     createKnowledgeBase(input: CreateKnowledgeBaseInput!): KnowledgeBase!
     updateKnowledgeBase(input: UpdateKnowledgeBaseInput): KnowledgeBase!
-    deleteKnowledgeBase(input: DeleteKnowledgeBaseInput): Void
+    deleteKnowledgeBase(input: DeleteCommonInput): Void
 }
 
 # mutation
@@ -3471,34 +3427,25 @@ input UpdateModelInput {
     types: String
 }
 
-"""模型删除的输入"""
-input DeleteModelInput {
-    name: String 
-    namespace: String!
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
-
 type ModelMutation {
     createModel(input: CreateModelInput!): Model!
     updateModel(input: UpdateModelInput): Model!
-    deleteModel(input: DeleteModelInput): Void
+    deleteModel(input: DeleteCommonInput): Void
 }
 
 type ModelQuery {
     getModel(name: String!, namespace: String!): Model!
     listModels(input: ListCommonInput!): PaginatedResult!
 }
+
 extend type Mutation {
     Model: ModelMutation
 }
 
 extend type Query {
     Model: ModelQuery
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 	{Name: "../schema/versioned_dataset.graphqls", Input: `scalar Int64
 """
 VersionedDataset
@@ -3814,10 +3761,10 @@ func (ec *executionContext) field_DatasetMutation_createDataset_args(ctx context
 func (ec *executionContext) field_DatasetMutation_deleteDatasets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteDatasetInput
+	var arg0 *DeleteCommonInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteDatasetInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteDatasetInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3913,10 +3860,10 @@ func (ec *executionContext) field_DatasourceMutation_createDatasource_args(ctx c
 func (ec *executionContext) field_DatasourceMutation_deleteDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteDatasourceInput
+	var arg0 *DeleteCommonInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteDatasourceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteDatasourceInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3997,10 +3944,10 @@ func (ec *executionContext) field_EmbedderMutation_createEmbedder_args(ctx conte
 func (ec *executionContext) field_EmbedderMutation_deleteEmbedder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteEmbedderInput
+	var arg0 *DeleteCommonInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteEmbedderInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4081,10 +4028,10 @@ func (ec *executionContext) field_KnowledgeBaseMutation_createKnowledgeBase_args
 func (ec *executionContext) field_KnowledgeBaseMutation_deleteKnowledgeBase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteKnowledgeBaseInput
+	var arg0 *DeleteCommonInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteKnowledgeBaseInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteKnowledgeBaseInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4165,10 +4112,10 @@ func (ec *executionContext) field_ModelMutation_createModel_args(ctx context.Con
 func (ec *executionContext) field_ModelMutation_deleteModel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteModelInput
+	var arg0 *DeleteCommonInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteModelInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteModelInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7789,7 +7736,7 @@ func (ec *executionContext) _DatasetMutation_deleteDatasets(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DatasetMutation().DeleteDatasets(rctx, obj, fc.Args["input"].(*DeleteDatasetInput))
+		return ec.resolvers.DatasetMutation().DeleteDatasets(rctx, obj, fc.Args["input"].(*DeleteCommonInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8708,7 +8655,7 @@ func (ec *executionContext) _DatasourceMutation_deleteDatasource(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DatasourceMutation().DeleteDatasource(rctx, obj, fc.Args["input"].(*DeleteDatasourceInput))
+		return ec.resolvers.DatasourceMutation().DeleteDatasource(rctx, obj, fc.Args["input"].(*DeleteCommonInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9488,7 +9435,7 @@ func (ec *executionContext) _EmbedderMutation_deleteEmbedder(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.EmbedderMutation().DeleteEmbedder(rctx, obj, fc.Args["input"].(*DeleteEmbedderInput))
+		return ec.resolvers.EmbedderMutation().DeleteEmbedder(rctx, obj, fc.Args["input"].(*DeleteCommonInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10845,7 +10792,7 @@ func (ec *executionContext) _KnowledgeBaseMutation_deleteKnowledgeBase(ctx conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KnowledgeBaseMutation().DeleteKnowledgeBase(rctx, obj, fc.Args["input"].(*DeleteKnowledgeBaseInput))
+		return ec.resolvers.KnowledgeBaseMutation().DeleteKnowledgeBase(rctx, obj, fc.Args["input"].(*DeleteCommonInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11712,7 +11659,7 @@ func (ec *executionContext) _ModelMutation_deleteModel(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ModelMutation().DeleteModel(rctx, obj, fc.Args["input"].(*DeleteModelInput))
+		return ec.resolvers.ModelMutation().DeleteModel(rctx, obj, fc.Args["input"].(*DeleteCommonInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17554,6 +17501,62 @@ func (ec *executionContext) unmarshalInputDataProcessDetailsInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeleteCommonInput(ctx context.Context, obj interface{}) (DeleteCommonInput, error) {
+	var it DeleteCommonInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labelSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LabelSelector = data
+		case "fieldSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldSelector = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeleteDataProcessInput(ctx context.Context, obj interface{}) (DeleteDataProcessInput, error) {
 	var it DeleteDataProcessInput
 	asMap := map[string]interface{}{}
@@ -17577,286 +17580,6 @@ func (ec *executionContext) unmarshalInputDeleteDataProcessInput(ctx context.Con
 				return it, err
 			}
 			it.ID = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDeleteDatasetInput(ctx context.Context, obj interface{}) (DeleteDatasetInput, error) {
-	var it DeleteDatasetInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "namespace":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Namespace = data
-		case "labelSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LabelSelector = data
-		case "fieldSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FieldSelector = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDeleteDatasourceInput(ctx context.Context, obj interface{}) (DeleteDatasourceInput, error) {
-	var it DeleteDatasourceInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "namespace":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Namespace = data
-		case "labelSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LabelSelector = data
-		case "fieldSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FieldSelector = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDeleteEmbedderInput(ctx context.Context, obj interface{}) (DeleteEmbedderInput, error) {
-	var it DeleteEmbedderInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "namespace":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Namespace = data
-		case "labelSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LabelSelector = data
-		case "fieldSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FieldSelector = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDeleteKnowledgeBaseInput(ctx context.Context, obj interface{}) (DeleteKnowledgeBaseInput, error) {
-	var it DeleteKnowledgeBaseInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "namespace":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Namespace = data
-		case "labelSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LabelSelector = data
-		case "fieldSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FieldSelector = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDeleteModelInput(ctx context.Context, obj interface{}) (DeleteModelInput, error) {
-	var it DeleteModelInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "namespace", "labelSelector", "fieldSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "namespace":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Namespace = data
-		case "labelSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LabelSelector = data
-		case "fieldSelector":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FieldSelector = data
 		}
 	}
 
@@ -24204,51 +23927,19 @@ func (ec *executionContext) marshalODatasourceQuery2ᚖgithubᚗcomᚋkubeagiᚋ
 	return ec._DatasourceQuery(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalODeleteCommonInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteCommonInput(ctx context.Context, v interface{}) (*DeleteCommonInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDeleteCommonInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalODeleteDataProcessInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteDataProcessInput(ctx context.Context, v interface{}) (*DeleteDataProcessInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputDeleteDataProcessInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteDatasetInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteDatasetInput(ctx context.Context, v interface{}) (*DeleteDatasetInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteDatasetInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteDatasourceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteDatasourceInput(ctx context.Context, v interface{}) (*DeleteDatasourceInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteDatasourceInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteEmbedderInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteEmbedderInput(ctx context.Context, v interface{}) (*DeleteEmbedderInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteEmbedderInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteKnowledgeBaseInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteKnowledgeBaseInput(ctx context.Context, v interface{}) (*DeleteKnowledgeBaseInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteKnowledgeBaseInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteModelInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDeleteModelInput(ctx context.Context, v interface{}) (*DeleteModelInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteModelInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

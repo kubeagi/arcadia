@@ -93,7 +93,7 @@ mutation updateDataset($input: UpdateDatasetInput){
   }
 }
 
-mutation deleteDatasets($input: DeleteDatasetInput){
+mutation deleteDatasets($input: DeleteCommonInput){
   Dataset {
 	deleteDatasets(input: $input)
   }

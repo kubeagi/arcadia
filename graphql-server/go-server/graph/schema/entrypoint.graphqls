@@ -30,6 +30,15 @@ input ListCommonInput {
     pageSize: Int
 }
 
+input DeleteCommonInput {
+    name: String
+    namespace: String!
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+}
+
 scalar Time
 scalar Map
 scalar Void

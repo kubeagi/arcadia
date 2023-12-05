@@ -389,59 +389,17 @@ type DatasourceQuery struct {
 	ListDatasources PaginatedResult `json:"listDatasources"`
 }
 
+type DeleteCommonInput struct {
+	Name      *string `json:"name,omitempty"`
+	Namespace string  `json:"namespace"`
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+}
+
 type DeleteDataProcessInput struct {
 	ID string `json:"id"`
-}
-
-// 数据集删除的输入
-type DeleteDatasetInput struct {
-	// name, namespace用来确定资源
-	Name      *string `json:"name,omitempty"`
-	Namespace string  `json:"namespace"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-}
-
-// 删除数据源的输入
-type DeleteDatasourceInput struct {
-	// name, namespace用来确定资源
-	Name      *string `json:"name,omitempty"`
-	Namespace string  `json:"namespace"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-}
-
-type DeleteEmbedderInput struct {
-	Name      *string `json:"name,omitempty"`
-	Namespace string  `json:"namespace"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-}
-
-// 知识库删除的输入
-type DeleteKnowledgeBaseInput struct {
-	Name      *string `json:"name,omitempty"`
-	Namespace string  `json:"namespace"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
-}
-
-// 模型删除的输入
-type DeleteModelInput struct {
-	Name      *string `json:"name,omitempty"`
-	Namespace string  `json:"namespace"`
-	// 标签选择器
-	LabelSelector *string `json:"labelSelector,omitempty"`
-	// 字段选择器
-	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
 type DeleteVersionedDatasetInput struct {

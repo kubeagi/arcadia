@@ -9,15 +9,12 @@ import (
 	"strings"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/embedder"
 )
 
 // CreateEmbedder is the resolver for the createEmbedder field.
 func (r *embedderMutationResolver) CreateEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input generated.CreateEmbedderInput) (*generated.Embedder, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +43,7 @@ func (r *embedderMutationResolver) CreateEmbedder(ctx context.Context, obj *gene
 
 // UpdateEmbedder is the resolver for the updateEmbedder field.
 func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.UpdateEmbedderInput) (*generated.Embedder, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +59,8 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 }
 
 // DeleteEmbedder is the resolver for the deleteEmbedder field.
-func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteEmbedderInput) (*string, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteCommonInput) (*string, error) {
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +80,7 @@ func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *gene
 
 // GetEmbedder is the resolver for the getEmbedder field.
 func (r *embedderQueryResolver) GetEmbedder(ctx context.Context, obj *generated.EmbedderQuery, name string, namespace string) (*generated.Embedder, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +89,7 @@ func (r *embedderQueryResolver) GetEmbedder(ctx context.Context, obj *generated.
 
 // ListEmbedders is the resolver for the listEmbedders field.
 func (r *embedderQueryResolver) ListEmbedders(ctx context.Context, obj *generated.EmbedderQuery, input generated.ListEmbedderInput) (*generated.PaginatedResult, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}

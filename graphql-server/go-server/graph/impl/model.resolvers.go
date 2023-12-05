@@ -8,15 +8,12 @@ import (
 	"context"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	md "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 )
 
 // CreateModel is the resolver for the createModel field.
 func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.ModelMutation, input generated.CreateModelInput) (*generated.Model, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +23,7 @@ func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.
 
 // UpdateModel is the resolver for the updateModel field.
 func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.ModelMutation, input *generated.UpdateModelInput) (*generated.Model, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,9 +32,8 @@ func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.
 }
 
 // DeleteModel is the resolver for the deleteModel field.
-func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteModelInput) (*string, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteCommonInput) (*string, error) {
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +53,7 @@ func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.
 
 // GetModel is the resolver for the getModel field.
 func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQuery, name string, namespace string) (*generated.Model, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +62,7 @@ func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQ
 
 // ListModels is the resolver for the listModels field.
 func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}

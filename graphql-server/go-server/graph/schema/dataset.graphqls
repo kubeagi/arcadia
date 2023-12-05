@@ -132,21 +132,6 @@ input UpdateDatasetInput {
     description: String
 }
 
-"""数据集删除的输入"""
-input DeleteDatasetInput {
-    """
-    name, namespace用来确定资源
-    """
-    name: String
-    namespace: String!
-    
-    """标签选择器"""    
-    labelSelector: String
-
-    """字段选择器"""   
-    fieldSelector: String
-}
-
 """数据集分页列表查询的输入"""
 input ListDatasetInput {
     """
@@ -212,7 +197,7 @@ type DatasetMutation {
     规则: 支持通过标签选择器，将满足标签的dataset全部删除
     规则: 如果提供了这两个参数，以名字列表为主。
     """
-    deleteDatasets(input: DeleteDatasetInput): Void
+    deleteDatasets(input: DeleteCommonInput): Void
 }
 
 extend type Query {

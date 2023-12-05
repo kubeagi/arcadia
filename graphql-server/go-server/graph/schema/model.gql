@@ -86,7 +86,7 @@ mutation updateModel($input: UpdateModelInput) {
 }
 
 # delete
-mutation deleteModel($input: DeleteModelInput) {
+mutation deleteModel($input: DeleteCommonInput) {
   Model {
     deleteModel(input: $input)
   }

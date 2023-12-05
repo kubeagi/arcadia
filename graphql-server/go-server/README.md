@@ -1,18 +1,15 @@
 # graphql go server
 
-
-
 ## How to develop
 
 **There can only be one Query structure in all schemas, and Mutation can have one or none.**
 **Query and Mutation define the entry point to the service. The fields, functions, defined below these two structures are what the front-end uses to query.**
 
-
 Now that there is a `datasource` definition in the code, we can add new structures and related functions as follows.
 
 ### Add schema
 
-go to `graph` dir.
+go to `graph/schema` dir.
 
 ```shell
 cat << EOF > x.graphqls
@@ -24,7 +21,7 @@ EOF
 
 ### Add a query function
 
-The `graph/datasource.graphqls` file defines the Query structure, so we need to edit this file to add a function.
+The `graph/schema/datasource.graphqls` file defines the Query structure, so we need to edit this file to add a function.
 
 ```shell
 type Query {
@@ -34,6 +31,8 @@ type Query {
 ```
 
 ### generate resolver
+
+in the root dir of the project, update `gqlgen.yaml` file.
 
 in the root dir of the project:
 
@@ -52,7 +51,6 @@ func (r *queryResolver) FindX(ctx context.Context, input string) (string, error)
 The file `model/model_gen.go` has a new structure x that we defined.
 
 All we have to do is just implement the `FindX` function. And the content of the function is up to you to play with.
-
 
 ## How to run
 
@@ -89,9 +87,9 @@ Usage of ./bin/graphql-server:
         Paths to a kubeconfig. Only required if out-of-cluster.
 ```
 
-3. Run graphql-server 
+3. Run graphql-server
 
-> If you don't want to try playground,do not pass flag `-enable-plaground`
+> If you don't want to try playground, do not pass flag `-enable-plaground`
 
 ```shell
 ./bin/graphql-server -enable-playground --client-id=bff-client --client-secret=some-secret --master-url=https://k8s-adress --issuer-url=https://oidc-server
@@ -100,4 +98,3 @@ Usage of ./bin/graphql-server:
 4. Try apis with plaground
 
 Open http://localhost:8081/ in your browser!
-

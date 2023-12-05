@@ -169,7 +169,7 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
 }
 
 # delete
-mutation deleteKnowledgeBase($input: DeleteKnowledgeBaseInput) {
+mutation deleteKnowledgeBase($input: DeleteCommonInput) {
   KnowledgeBase {
     deleteKnowledgeBase(input: $input)
   }
