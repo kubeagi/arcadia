@@ -144,11 +144,11 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 				if v, ok := tagsMap[v1alpha1.ObjectCountTag]; ok {
 					tf.Count = &v
 				}
-			}
 
-			if v, ok := obj.UserTags[minio.CreationTimestamp]; ok {
-				if now, err := time.Parse(time.RFC3339, v); err == nil {
-					tf.CreationTimestamp = &now
+				if v, ok := tagsMap[minio.CreationTimestamp]; ok {
+					if now, err := time.Parse(time.RFC3339, v); err == nil {
+						tf.CreationTimestamp = &now
+					}
 				}
 			}
 			result = append(result, tf)
