@@ -64,7 +64,7 @@ func (r *knowledgeBaseMutationResolver) UpdateKnowledgeBase(ctx context.Context,
 }
 
 // DeleteKnowledgeBase is the resolver for the deleteKnowledgeBase field.
-func (r *knowledgeBaseMutationResolver) DeleteKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseMutation, input *generated.DeleteKnowledgeBaseInput) (*string, error) {
+func (r *knowledgeBaseMutationResolver) DeleteKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseMutation, input *generated.DeleteCommonInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {

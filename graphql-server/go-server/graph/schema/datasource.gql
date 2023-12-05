@@ -43,7 +43,7 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
 }
 
 # delete
-mutation deleteDatasource($input: DeleteDatasourceInput!) {
+mutation deleteDatasource($input: DeleteCommonInput!) {
   Datasource {
     deleteDatasource(input: $input)
   }

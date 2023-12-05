@@ -232,7 +232,7 @@ func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.Up
 	return dataset2model(obj)
 }
 
-func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.DeleteDatasetInput) (*string, error) {
+func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
 	none := ""
 	listOptions := v1.ListOptions{}
 	if input.Name == nil && input.LabelSelector == nil && input.FieldSelector == nil {

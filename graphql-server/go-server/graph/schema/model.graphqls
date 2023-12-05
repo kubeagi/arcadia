@@ -97,21 +97,10 @@ input UpdateModelInput {
     types: String
 }
 
-"""模型删除的输入"""
-input DeleteModelInput {
-    name: String 
-    namespace: String!
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
-
 type ModelMutation {
     createModel(input: CreateModelInput!): Model!
     updateModel(input: UpdateModelInput): Model!
-    deleteModel(input: DeleteModelInput): Void
+    deleteModel(input: DeleteCommonInput): Void
 }
 
 type ModelQuery {

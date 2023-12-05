@@ -47,7 +47,7 @@ mutation updateEmbedder($input: UpdateEmbedderInput) {
 }
 
 # delete
-mutation deleteEmbedder($input: DeleteEmbedderInput!) {
+mutation deleteEmbedder($input: DeleteCommonInput!) {
   Embedder {
     deleteEmbedder(input: $input)
   }

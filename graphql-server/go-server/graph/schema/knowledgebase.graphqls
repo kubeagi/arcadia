@@ -186,17 +186,6 @@ input UpdateKnowledgeBaseInput {
     fileGroups: [filegroupinput!]
 }
 
-"""知识库删除的输入"""
-input DeleteKnowledgeBaseInput {
-    name: String
-    namespace: String!
-
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
 """知识库分页列表查询的输入"""
 input ListKnowledgeBaseInput {
     name: String
@@ -235,7 +224,7 @@ type KnowledgeBaseQuery {
 type KnowledgeBaseMutation {
     createKnowledgeBase(input: CreateKnowledgeBaseInput!): KnowledgeBase!
     updateKnowledgeBase(input: UpdateKnowledgeBaseInput): KnowledgeBase!
-    deleteKnowledgeBase(input: DeleteKnowledgeBaseInput): Void
+    deleteKnowledgeBase(input: DeleteCommonInput): Void
 }
 
 # mutation

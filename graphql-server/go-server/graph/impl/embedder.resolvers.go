@@ -63,7 +63,7 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 }
 
 // DeleteEmbedder is the resolver for the deleteEmbedder field.
-func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteEmbedderInput) (*string, error) {
+func (r *embedderMutationResolver) DeleteEmbedder(ctx context.Context, obj *generated.EmbedderMutation, input *generated.DeleteCommonInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {

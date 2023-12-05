@@ -44,15 +44,6 @@ input UpdateEmbedderInput {
     description: String
 }
 
-input DeleteEmbedderInput {
-    name: String
-    namespace: String!
-    """标签选择器"""
-    labelSelector: String
-    """字段选择器"""
-    fieldSelector: String
-}
-
 input ListEmbedderInput {
     name: String
     namespace: String!
@@ -74,7 +65,7 @@ type EmbedderQuery {
 type EmbedderMutation {
     createEmbedder(input: CreateEmbedderInput!): Embedder!
     updateEmbedder(input: UpdateEmbedderInput): Embedder!
-    deleteEmbedder(input: DeleteEmbedderInput): Void
+    deleteEmbedder(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {

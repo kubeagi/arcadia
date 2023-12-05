@@ -63,7 +63,7 @@ func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *
 }
 
 // DeleteDatasource is the resolver for the deleteDatasource field.
-func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteDatasourceInput) (*string, error) {
+func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteCommonInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {

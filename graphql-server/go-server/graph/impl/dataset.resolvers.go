@@ -51,7 +51,7 @@ func (r *datasetMutationResolver) UpdateDataset(ctx context.Context, obj *genera
 }
 
 // DeleteDatasets is the resolver for the deleteDatasets field.
-func (r *datasetMutationResolver) DeleteDatasets(ctx context.Context, obj *generated.DatasetMutation, input *generated.DeleteDatasetInput) (*string, error) {
+func (r *datasetMutationResolver) DeleteDatasets(ctx context.Context, obj *generated.DatasetMutation, input *generated.DeleteCommonInput) (*string, error) {
 	idtoken := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(idtoken)
 	if err != nil {

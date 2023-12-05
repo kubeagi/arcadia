@@ -135,20 +135,6 @@ input UpdateDatasourceInput {
     description: String
 }
 
-"""删除数据源的输入"""
-input DeleteDatasourceInput {
-    """
-    name, namespace用来确定资源
-    """
-    name: String
-    namespace: String!
-
-    """标签选择器"""    
-    labelSelector: String
-    """字段选择器"""   
-    fieldSelector: String
-}
-
 """数据源分页列表查询的输入"""
 input ListDatasourceInput {
     """
@@ -197,7 +183,7 @@ type DatasourceQuery {
 type DatasourceMutation {
     createDatasource(input: CreateDatasourceInput!): Datasource!
     updateDatasource(input: UpdateDatasourceInput): Datasource!
-    deleteDatasource(input: DeleteDatasourceInput): Void
+    deleteDatasource(input: DeleteCommonInput): Void
 }
 # mutation
 extend type Mutation {

@@ -36,7 +36,7 @@ func (r *modelMutationResolver) UpdateModel(ctx context.Context, obj *generated.
 }
 
 // DeleteModel is the resolver for the deleteModel field.
-func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteModelInput) (*string, error) {
+func (r *modelMutationResolver) DeleteModel(ctx context.Context, obj *generated.ModelMutation, input *generated.DeleteCommonInput) (*string, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
