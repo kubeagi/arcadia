@@ -10,16 +10,13 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataset"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/versioneddataset"
 )
 
 // Versions is the resolver for the versions field.
 func (r *datasetResolver) Versions(ctx context.Context, obj *generated.Dataset, input generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
-	idtoken := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(idtoken)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +29,7 @@ func (r *datasetResolver) Versions(ctx context.Context, obj *generated.Dataset, 
 
 // CreateDataset is the resolver for the createDataset field.
 func (r *datasetMutationResolver) CreateDataset(ctx context.Context, obj *generated.DatasetMutation, input *generated.CreateDatasetInput) (*generated.Dataset, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +38,7 @@ func (r *datasetMutationResolver) CreateDataset(ctx context.Context, obj *genera
 
 // UpdateDataset is the resolver for the updateDataset field.
 func (r *datasetMutationResolver) UpdateDataset(ctx context.Context, obj *generated.DatasetMutation, input *generated.UpdateDatasetInput) (*generated.Dataset, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +47,7 @@ func (r *datasetMutationResolver) UpdateDataset(ctx context.Context, obj *genera
 
 // DeleteDatasets is the resolver for the deleteDatasets field.
 func (r *datasetMutationResolver) DeleteDatasets(ctx context.Context, obj *generated.DatasetMutation, input *generated.DeleteCommonInput) (*string, error) {
-	idtoken := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(idtoken)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +56,7 @@ func (r *datasetMutationResolver) DeleteDatasets(ctx context.Context, obj *gener
 
 // GetDataset is the resolver for the getDataset field.
 func (r *datasetQueryResolver) GetDataset(ctx context.Context, obj *generated.DatasetQuery, name string, namespace string) (*generated.Dataset, error) {
-	idtoken := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(idtoken)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +65,7 @@ func (r *datasetQueryResolver) GetDataset(ctx context.Context, obj *generated.Da
 
 // ListDatasets is the resolver for the listDatasets field.
 func (r *datasetQueryResolver) ListDatasets(ctx context.Context, obj *generated.DatasetQuery, input *generated.ListDatasetInput) (*generated.PaginatedResult, error) {
-	idtoken := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(idtoken)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -9,16 +9,13 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/knowledgebase"
 	"github.com/kubeagi/arcadia/pkg/config"
 )
 
 // CreateKnowledgeBase is the resolver for the createKnowledgeBase field.
 func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseMutation, input generated.CreateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +52,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 
 // UpdateKnowledgeBase is the resolver for the updateKnowledgeBase field.
 func (r *knowledgeBaseMutationResolver) UpdateKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseMutation, input *generated.UpdateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +61,7 @@ func (r *knowledgeBaseMutationResolver) UpdateKnowledgeBase(ctx context.Context,
 
 // DeleteKnowledgeBase is the resolver for the deleteKnowledgeBase field.
 func (r *knowledgeBaseMutationResolver) DeleteKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseMutation, input *generated.DeleteCommonInput) (*string, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +81,7 @@ func (r *knowledgeBaseMutationResolver) DeleteKnowledgeBase(ctx context.Context,
 
 // GetKnowledgeBase is the resolver for the getKnowledgeBase field.
 func (r *knowledgeBaseQueryResolver) GetKnowledgeBase(ctx context.Context, obj *generated.KnowledgeBaseQuery, name string, namespace string) (*generated.KnowledgeBase, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +90,7 @@ func (r *knowledgeBaseQueryResolver) GetKnowledgeBase(ctx context.Context, obj *
 
 // ListKnowledgeBases is the resolver for the listKnowledgeBases field.
 func (r *knowledgeBaseQueryResolver) ListKnowledgeBases(ctx context.Context, obj *generated.KnowledgeBaseQuery, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}

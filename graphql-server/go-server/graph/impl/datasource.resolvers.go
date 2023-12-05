@@ -8,15 +8,12 @@ import (
 	"context"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
 )
 
 // CreateDatasource is the resolver for the createDatasource field.
 func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *generated.DatasourceMutation, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +43,7 @@ func (r *datasourceMutationResolver) CreateDatasource(ctx context.Context, obj *
 
 // UpdateDatasource is the resolver for the updateDatasource field.
 func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +60,7 @@ func (r *datasourceMutationResolver) UpdateDatasource(ctx context.Context, obj *
 
 // DeleteDatasource is the resolver for the deleteDatasource field.
 func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *generated.DatasourceMutation, input *generated.DeleteCommonInput) (*string, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +80,7 @@ func (r *datasourceMutationResolver) DeleteDatasource(ctx context.Context, obj *
 
 // GetDatasource is the resolver for the getDatasource field.
 func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *generated.DatasourceQuery, name string, namespace string) (*generated.Datasource, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +89,7 @@ func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *genera
 
 // ListDatasources is the resolver for the listDatasources field.
 func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *generated.DatasourceQuery, input generated.ListDatasourceInput) (*generated.PaginatedResult, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
