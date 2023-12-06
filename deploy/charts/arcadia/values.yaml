@@ -6,7 +6,7 @@ global:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 deployment:
-  image: kubebb/arcadia:v0.0.1
+  image: kubeagi/arcadia:v0.1.0
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -37,7 +37,7 @@ fastchat:
 # @section oss is used as default Object-Storage-Service for arcadia which provides the capability to
 # - host user-uploaded data files as local datasource
 # - host user-uploaded models
-# The following params comes from kubebb/minio in repository https://kubebb.github.io/components
+# The following params comes from kubeagi/minio in repository https://kubebb.github.io/components
 # @param oss.enabled Enable Object-Storage-Service in arcadia
 # @param oss.buckets List of default buckets in arcadia
 minio:
@@ -84,9 +84,9 @@ vectorstore:
     distanceFunction: cosine
 
 dataprocess:
-  enabled: true
-  repository: kubebb/arcadia-data-processing
-  tag: "v0.0.1"
+  enabled: false
+  repository: kubeagi/data-processing
+  tag: v0.1.0
   port: 28888
   env:
     minio:

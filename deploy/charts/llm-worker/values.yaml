@@ -2,10 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 image:
-  repository: kubebb/arcadia-fastchat-worker
+  repository: kubeagi/arcadia-fastchat-worker
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v0.0.1"
+  tag: "v0.1.0"
   env:
   - name: FASTCHAT_MODEL_NAME
     value: "baichuan2-7b"
@@ -15,7 +15,7 @@ image:
     value: "http://arcadia-fastchat.arcadia.svc.cluster.local:21001"
 
 init:
-  image: kubebb/minio-mc
+  image: kubeagi/minio-mc
   pullPolicy: IfNotPresent
   tag: "RELEASE.2023-01-28T20-29-38Z"
   env:

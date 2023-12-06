@@ -92,7 +92,7 @@ func (loader *LoaderOSS) Build(ctx context.Context, model *arcadiav1alpha1.Typed
 	}
 	container := &corev1.Container{
 		Name:            "loader",
-		Image:           "kubebb/minio-mc:RELEASE.2023-01-28T20-29-38Z",
+		Image:           "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z",
 		ImagePullPolicy: "IfNotPresent",
 		Command: []string{
 			"/bin/bash",

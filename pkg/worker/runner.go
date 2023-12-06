@@ -72,7 +72,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 	// read worker address
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubebb/arcadia-fastchat-worker:v0.0.1",
+		Image:           "kubeagi/arcadia-fastchat-worker:v0.1.0",
 		ImagePullPolicy: "IfNotPresent",
 		Command: []string{
 			"/bin/bash",
@@ -113,7 +113,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 	// read worker address
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubebb/arcadia-fastchat-worker:vllm-v0.0.1",
+		Image:           "kubeagi/arcadia-fastchat-worker:vllm-v0.1.0",
 		ImagePullPolicy: "IfNotPresent",
 		Command: []string{
 			"/bin/bash",
