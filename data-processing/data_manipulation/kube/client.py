@@ -13,17 +13,17 @@
 # limitations under the License.
 
 
-from kubernetes import client, config
-from kubernetes.client import CustomObjectsApi
 import logging
 import os
 import traceback
 
 from common import log_tag_const
-from .custom_resources import (arcadia_resource_datasets,
-                              arcadia_resource_datasources,
-                              arcadia_resource_versioneddatasets)
+from kubernetes import client, config
+from kubernetes.client import CustomObjectsApi
 
+from .custom_resources import (arcadia_resource_datasets,
+                               arcadia_resource_datasources,
+                               arcadia_resource_versioneddatasets)
 
 logger = logging.getLogger(__name__)
 

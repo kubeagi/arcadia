@@ -13,15 +13,5 @@
 # limitations under the License.
 
 
-###
-# 去重
-# @author: wangxinbiao
-# @date: 2023-11-02 14:42:01
-# modify history
-# ==== 2023-11-02 14:42:01 ====
-# author: wangxinbiao
-# content:
-# 1) 基本功能实现
-###
-async def remove_duplicates(opt={}):
-    return opt['text']
+def remove_duplicates(text):
+    return text

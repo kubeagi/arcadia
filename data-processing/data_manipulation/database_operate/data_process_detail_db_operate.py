@@ -14,17 +14,17 @@
 
 
 import ulid
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-async def insert_transform_info(req_json, opt={}):
+def insert_transform_info(
+    req_json,
+    pool
+):
     """Insert a transform info"""
-    pool = opt['pool']
-   
     now = date_time_utils.now_str()
-    user = 'admin'
+    user = req_json['create_user']
     program = '数据处理任务详情-新增'
 
     params = {
@@ -33,7 +33,7 @@ async def insert_transform_info(req_json, opt={}):
         'file_name': req_json['file_name'],
         'transform_type': req_json['transform_type'],
         'pre_content': req_json['pre_content'],
-        'post_content': req_json['pre_content'],
+        'post_content': req_json['post_content'],
         'create_datetime': now,
         'create_user': user,
         'create_program': program,
@@ -73,16 +73,17 @@ async def insert_transform_info(req_json, opt={}):
         )
     """.strip()
 
-    res =  await postgresql_pool_client.execute_update(pool, sql, params)
+    res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
 
-async def insert_question_answer_info(req_json, opt={}):
+def insert_question_answer_info(
+    req_json,
+    pool
+):
     """Insert a question answer info"""
-    pool = opt['pool']
-   
     now = date_time_utils.now_str()
-    user = 'admin'
+    user = req_json['create_user']
     program = '数据处理任务问题和答案-新增'
 
     params = {
@@ -128,16 +129,61 @@ async def insert_question_answer_info(req_json, opt={}):
         )
     """.strip()
 
-    res =  await postgresql_pool_client.execute_update(pool, sql, params)
+    res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
 
-async def transform_list_by_task_id(req_json,opt={}):
-    """Get list for the transform info with task id"""
-    pool = opt['pool']
-
+def list_file_name_for_transform(
+    req_json,
+    pool
+):
+    """List file name for tansform in the task detail.
+  
+      req_json is a dictionary object. for example:
+      {
+          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+          "transform_type": "remove_invisible_characters"
+      }
+      pool: databasec connection pool;
+    """
     params = {
-        'task_id': req_json['task_id']
+      'task_id': req_json['task_id'],
+      'transform_type': req_json['transform_type'],
+    }
+
+    sql = """
+      select 
+        file_name 
+        from public.data_process_task_detail
+      where 
+      task_id = %(task_id)s and
+      transform_type = %(transform_type)s
+      group by file_name
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+
+
+def top_n_list_transform_for_preview(
+    req_json,
+    pool
+):
+    """List transform info with task id, file name and 
+    tansform type for preview.
+    
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "file_name": "MyFile.pdf",
+        "transform_type": "remove_invisible_characters"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['task_id'],
+      'file_name': req_json['file_name'],
+      'transform_type': req_json['transform_type']
     }
 
     sql = """
@@ -147,23 +193,67 @@ async def transform_list_by_task_id(req_json,opt={}):
           file_name,
           transform_type,
           pre_content,
-          post_content
+          post_content,
+          update_datetime
         from
           public.data_process_task_detail
         where
-          task_id = %(task_id)s
+          task_id = %(task_id)s and 
+          file_name = %(file_name)s and
+          transform_type = %(transform_type)s
+        order by update_datetime desc
+        limit 10
     """.strip()
 
-    res = await postgresql_pool_client.execute_sql(pool,sql,params)
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+  
+
+def list_file_name_in_qa_by_task_id(
+    req_json,
+    pool
+):
+    """List file name in question answer with task id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['task_id']
+    }
+
+    sql = """
+      select 
+        file_name 
+        from public.data_process_task_question_answer
+      where 
+      task_id = %(task_id)s
+      group by file_name
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
 
-async def question_answer_info_by_task_id(req_json,opt={}):
-    """ question answer info with task id"""
-    pool = opt['pool']
-
+def top_n_list_qa_for_preview(
+    req_json,
+    pool
+):
+    """List question answer info with task id for preview.
+    
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "file_name": "MyFile.pdf"
+    }
+    pool: databasec connection pool;
+    """
     params = {
-        'task_id': req_json['task_id']
+      'task_id': req_json['task_id'],
+      'file_name': req_json['file_name']
     }
 
     sql = """
@@ -176,9 +266,11 @@ async def question_answer_info_by_task_id(req_json,opt={}):
         from
           public.data_process_task_question_answer
         where
-          task_id = %(task_id)s
+          task_id = %(task_id)s and 
+          file_name = %(file_name)s
+        order by update_datetime desc
+        limit 10
     """.strip()
 
-    res = await postgresql_pool_client.execute_sql(pool,sql,params)
+    res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
-

@@ -18,33 +18,38 @@ from pathlib import Path
 import ujson
 
 
-def pretty_print(opt={}):
-    data = opt.get('data', {})
-
-    print(ujson.dumps(data,
-                      ensure_ascii=False,
-                      escape_forward_slashes=False,
-                      indent=4))
-
-
-def get_str_empty(opt={}):
-    json_item = opt['json_item']
-    json_key = opt['json_key']
-
+def get_str_empty(
+    json_item,
+    json_key
+):
     if json_item.get(json_key, '') is None:
         return ''
 
     return json_item.get(json_key, '')
 
 
-def write_json_file(opt={}):
-    file_name = Path(opt['file_name'])
+def write_json_file(
+    file_name,
+    data,
+    indent=None,
+    ensure_ascii=None,
+    escape_forward_slashes=None
+):
+    file_name = Path(file_name)
     with open(file_name, 'w', encoding='utf-8') as outfile:
-        dump(opt['data'], outfile, opt)
+        dump(
+            data,
+            outfile,
+            indent,
+            ensure_ascii,
+            escape_forward_slashes
+        )
 
 
-def read_json_file(opt={}):
-    file_name = Path(opt['file_name'])
+def read_json_file(
+    file_name
+):
+    file_name = Path(file_name)
     json_result = None
     with open(file_name, 'r', encoding='utf-8') as f:
         json_result = ujson.load(f)
@@ -52,10 +57,18 @@ def read_json_file(opt={}):
     return json_result
 
 
-def dumps(json_data, opt={}):
-    indent = opt.get('indent', 2)
-    ensure_ascii = opt.get('ensure_ascii', False)
-    escape_forward_slashes = opt.get('escape_forward_slashes', False)
+def dumps(
+    json_data,
+    indent=None,
+    ensure_ascii=None,
+    escape_forward_slashes=None
+):
+    if indent is None:
+        indent=2
+    if ensure_ascii is None:
+        ensure_ascii=False
+    if escape_forward_slashes is None:
+        escape_forward_slashes=False
 
     ujson.dumps(json_data,
                 indent=indent,
@@ -63,13 +76,23 @@ def dumps(json_data, opt={}):
                 escape_forward_slashes=escape_forward_slashes)
 
 
-def dump(json_data, file, opt={}):
-    indent = opt.get('indent', 2)
-    ensure_ascii = opt.get('ensure_ascii', False)
-    escape_forward_slashes = opt.get('escape_forward_slashes', False)
+def dump(
+    json_data,
+    file,
+    indent=None,
+    ensure_ascii=None,
+    escape_forward_slashes=None
+):
+    if indent is None:
+        indent=2
+    if ensure_ascii is None:
+        ensure_ascii=False
+    if escape_forward_slashes is None:
+        escape_forward_slashes=False
 
     ujson.dump(json_data,
                file,
                indent=indent,
                ensure_ascii=ensure_ascii,
                escape_forward_slashes=escape_forward_slashes)
+

@@ -25,8 +25,15 @@ MINIO_STORE_PROCESS = "Minio Store Process"
 DATA_PROCESS_DETAIL = "Data Process Detail"
 
 PDF_HANDLE = "PDF Handle"
+CSV_HANDLE = "CSV Handle"
 QA_SPLIT = "Question Answer Split"
+
+CLEAN_TRANSFORM = "Clean Transform"
+PRIVACY_TRANSFORM = "Privacy Transform"
 
 THREADING = "Threading"
 
+ZHI_PU_AI = "Zhi Pu AI"
+OPEN_AI = "Open AI"
 
+CONFIG = "Config"

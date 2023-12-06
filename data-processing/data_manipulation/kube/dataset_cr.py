@@ -14,16 +14,19 @@
 
 import logging
 
-from . import client
 from utils import date_time_utils
 
+from . import client
 
 logger = logging.getLogger(__name__)
 
-async def update_dataset_k8s_cr(opt={}):
+def update_dataset_k8s_cr(
+    bucket_name,
+    version_data_set_name,
+    reason
+):
     """ Update the condition info for the dataset.
     
-    opt is a dictionary object. It has the following keys:
     bucket_name: bucket name;
     version_data_set_name: version dataset name;
     reason: the update reason;
@@ -32,8 +35,8 @@ async def update_dataset_k8s_cr(opt={}):
         kube = client.KubeEnv()
 
         one_cr_datasets = kube.get_versioneddatasets_status(
-                                opt['bucket_name'], 
-                                opt['version_data_set_name']
+                                bucket_name, 
+                                version_data_set_name
                             )
 
         conditions = one_cr_datasets['status']['conditions']
@@ -51,21 +54,21 @@ async def update_dataset_k8s_cr(opt={}):
         if found_index is None:
             conditions.append({
                 'lastTransitionTime': now_utc_str,
-                'reason': opt['reason'],
+                'reason': reason,
                 'status': "True",
                 "type": "DataProcessing"
             })
         else:
             conditions[found_index] = {
                 'lastTransitionTime': now_utc_str,
-                'reason': opt['reason'],
+                'reason': reason,
                 'status': "True",
                 "type": "DataProcessing"
             }
 
         kube.patch_versioneddatasets_status(
-            opt['bucket_name'], 
-            opt['version_data_set_name'],
+            bucket_name, 
+            version_data_set_name,
             {
             'status': {
                 'conditions': conditions
