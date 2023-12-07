@@ -62,23 +62,10 @@ type Datasource {
     """数据源连接状态"""
     status: String
 
-    """文件数量"""
-    fileCount: Int
-
     """创建时间"""
     creationTimestamp: Time
     """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
     updateTimestamp: Time
-}
-
-"""对象存储终端输入"""
-input EndpointInput {
-    """地址(必填)"""
-    url: String!
-    """secret验证密码"""
-    authSecret: TypedObjectReferenceInput
-    """默认true"""
-    insecure: Boolean
 }
 
 """文件输入"""

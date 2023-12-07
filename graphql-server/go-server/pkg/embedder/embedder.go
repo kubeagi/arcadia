@@ -29,6 +29,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -79,11 +80,7 @@ func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
 }
 
 func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.CreateEmbedderInput) (*generated.Embedder, error) {
-	authSecret, displayname, description, servicetype := "", "", "", ""
-
-	if input.Endpointinput.AuthSecret.Name != "" {
-		authSecret = input.Endpointinput.AuthSecret.Name
-	}
+	displayname, description, servicetype := "", "", ""
 
 	if input.DisplayName != nil {
 		displayname = *input.DisplayName
@@ -112,15 +109,28 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 			Provider: v1alpha1.Provider{
 				Enpoint: &v1alpha1.Endpoint{
 					URL: input.Endpointinput.URL,
-					AuthSecret: &v1alpha1.TypedObjectReference{
-						Kind:      "Secret",
-						Name:      authSecret,
-						Namespace: &input.Namespace,
-					},
 				},
 			},
 			Type: embeddings.EmbeddingType(servicetype),
 		},
+	}
+
+	// create auth secret
+	if input.Endpointinput.Auth != nil {
+		// create auth secret
+		secret := common.MakeAuthSecretName(embedder.Name, "embedder")
+		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}, *input.Endpointinput.Auth, nil)
+		if err != nil {
+			return nil, err
+		}
+		embedder.Spec.Enpoint.AuthSecret = &v1alpha1.TypedObjectReference{
+			Kind:      "Secret",
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}
 	}
 
 	unstructuredEmbedder, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&embedder)
@@ -132,6 +142,20 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 	if err != nil {
 		return nil, err
 	}
+
+	// update auth secret owner reference
+	if input.Endpointinput.Auth != nil {
+		// user obj as the owner
+		secret := common.MakeAuthSecretName(embedder.Name, "embedder")
+		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}, *input.Endpointinput.Auth, obj)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	ds := embedder2model(obj)
 	return ds, nil
 }

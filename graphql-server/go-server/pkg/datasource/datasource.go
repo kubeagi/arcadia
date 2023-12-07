@@ -29,14 +29,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
-
-var dsSchema = schema.GroupVersionResource{
-	Group:    v1alpha1.GroupVersion.Group,
-	Version:  v1alpha1.GroupVersion.Version,
-	Resource: "datasources",
-}
 
 func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 	datasource := &v1alpha1.Datasource{}
@@ -101,7 +96,6 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 
 func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
 	var displayname, description string
-	var insecure bool
 
 	if input.Description != nil {
 		description = *input.Description
@@ -109,11 +103,9 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 	if input.DisplayName != nil {
 		displayname = *input.DisplayName
 	}
-	if input.Endpointinput.Insecure != nil {
-		insecure = *input.Endpointinput.Insecure
-	}
 
-	datasource := v1alpha1.Datasource{
+	// create datasource
+	datasource := &v1alpha1.Datasource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
@@ -127,20 +119,20 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 				DisplayName: displayname,
 				Description: description,
 			},
-			Enpoint: v1alpha1.Endpoint{
-				URL:      input.Endpointinput.URL,
-				Insecure: insecure,
-			},
 		},
 	}
 
-	if input.Endpointinput.AuthSecret != nil {
-		datasource.Spec.Enpoint.AuthSecret = &v1alpha1.TypedObjectReference{
-			Kind:      "Secret",
-			Name:      input.Endpointinput.AuthSecret.Name,
-			Namespace: &input.Namespace,
-		}
+	// make endpoint
+	endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &datasource.APIVersion,
+		Kind:      datasource.Kind,
+		Name:      datasource.Name,
+		Namespace: &datasource.Namespace,
+	}, input.Endpointinput)
+	if err != nil {
+		return nil, err
 	}
+	datasource.Spec.Enpoint = endpoint
 
 	if input.Ossinput != nil {
 		datasource.Spec.OSS = &v1alpha1.OSS{
@@ -160,13 +152,31 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 	if err != nil {
 		return nil, err
 	}
+
+	// update auth secret with owner reference
+	if input.Endpointinput.Auth != nil {
+		// user obj as the owner
+		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			APIGroup:  &common.CoreV1APIGroup,
+			Kind:      "Secret",
+			Name:      common.MakeAuthSecretName(datasource.Name, "datasource"),
+			Namespace: &input.Namespace,
+		}, *input.Endpointinput.Auth, obj)
+		if err != nil {
+			return nil, err
+		}
+	}
 	ds := datasource2model(obj)
 	return ds, nil
 }
 
 func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
-	obj, err := resource.Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Datasource",
+		Name:      input.Name,
+		Namespace: &input.Namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -196,17 +206,14 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 
 	// Update endpoint
 	if input.Endpointinput != nil {
-		endpoint := v1alpha1.Endpoint{
-			URL: input.Endpointinput.URL,
-		}
-		if input.Endpointinput.Insecure != nil {
-			endpoint.Insecure = *input.Endpointinput.Insecure
-		}
-		if input.Endpointinput.AuthSecret != nil {
-			endpoint.AuthSecret = &v1alpha1.TypedObjectReference{
-				Name: input.Endpointinput.AuthSecret.Name,
-				Kind: "Secret",
-			}
+		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
+			APIGroup:  &datasource.APIVersion,
+			Kind:      datasource.Kind,
+			Name:      datasource.Name,
+			Namespace: &datasource.Namespace,
+		}, *input.Endpointinput)
+		if err != nil {
+			return nil, err
 		}
 		datasource.Spec.Enpoint = endpoint
 	}
@@ -227,7 +234,10 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 		return nil, err
 	}
 
-	updatedObject, err := resource.Namespace(input.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.UpdateOptions{})
+	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup: &common.ArcadiaAPIGroup,
+		Kind:     "Datasource",
+	}, unstructuredDatasource, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +298,7 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.L
 		FieldSelector: fieldSelector,
 	}
 
-	datasList, err := c.Resource(dsSchema).Namespace(input.Namespace).List(ctx, listOptions)
+	datasList, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Datasource")).Namespace(input.Namespace).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -328,8 +338,12 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.L
 }
 
 func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Datasource, error) {
-	resource := c.Resource(dsSchema)
-	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	u, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Datasource",
+		Name:      name,
+		Namespace: &namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

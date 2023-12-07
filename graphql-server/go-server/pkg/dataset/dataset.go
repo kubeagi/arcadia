@@ -25,18 +25,12 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 )
-
-var datasetSchema = schema.GroupVersionResource{
-	Group:    v1alpha1.GroupVersion.Group,
-	Version:  v1alpha1.GroupVersion.Version,
-	Resource: "datasets",
-}
 
 func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds := &generated.Dataset{}
@@ -117,7 +111,7 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(datasetSchema).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, v1.CreateOptions{})
+	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, v1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +130,7 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 			listOptions.FieldSelector = *input.FieldSelector
 		}
 	}
-	datastList, err := c.Resource(datasetSchema).Namespace(input.Namespace).List(ctx, listOptions)
+	datastList, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +197,7 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 }
 
 func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasetInput) (*generated.Dataset, error) {
-	obj, err := c.Resource(datasetSchema).Namespace(input.Namespace).Get(ctx, input.Name, v1.GetOptions{})
+	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Get(ctx, input.Name, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +219,7 @@ func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.Up
 	if input.Description != nil && *input.Description != description {
 		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
 	}
-	obj, err = c.Resource(datasetSchema).Namespace(input.Namespace).Update(ctx, obj, v1.UpdateOptions{})
+	obj, err = c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Update(ctx, obj, v1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -248,12 +242,12 @@ func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.D
 			listOptions.FieldSelector = *input.FieldSelector
 		}
 	}
-	err := c.Resource(datasetSchema).Namespace(input.Namespace).DeleteCollection(ctx, v1.DeleteOptions{}, listOptions)
+	err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).DeleteCollection(ctx, v1.DeleteOptions{}, listOptions)
 	return &none, err
 }
 
 func GetDataset(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Dataset, error) {
-	obj, err := c.Resource(datasetSchema).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

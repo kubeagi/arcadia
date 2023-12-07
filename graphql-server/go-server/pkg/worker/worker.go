@@ -31,6 +31,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	gqlmodel "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -42,7 +43,7 @@ var (
 	scheme = schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"}
 )
 
-func worker2model(obj *unstructured.Unstructured) *generated.Worker {
+func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Worker {
 	worker := &v1alpha1.Worker{}
 	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
 		return &generated.Worker{}
@@ -64,7 +65,9 @@ func worker2model(obj *unstructured.Unstructured) *generated.Worker {
 	// conditioned status
 	condition := worker.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-	status := string(condition.Status)
+
+	// Unknown,Pending ,WorkerRunning ,Error
+	status := string(condition.Reason)
 
 	// resources
 	cpu := worker.Spec.Resources.Limits[v1.ResourceCPU]
@@ -80,7 +83,7 @@ func worker2model(obj *unstructured.Unstructured) *generated.Worker {
 	}
 
 	// wrap Worker
-	md := generated.Worker{
+	w := generated.Worker{
 		ID:                &id,
 		Name:              worker.Name,
 		Namespace:         worker.Namespace,
@@ -92,8 +95,17 @@ func worker2model(obj *unstructured.Unstructured) *generated.Worker {
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
 		Resources:         resources,
+		Model:             worker.Spec.Model.Name,
+		ModelTypes:        "unknown",
 	}
-	return &md
+
+	// read worker's models
+	model, err := gqlmodel.ReadModel(ctx, c, worker.Spec.Model.Name, worker.Namespace)
+	if err == nil {
+		w.ModelTypes = model.Types
+	}
+
+	return &w
 }
 
 func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.CreateWorkerInput) (*generated.Worker, error) {
@@ -148,7 +160,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	if err != nil {
 		return nil, err
 	}
-	return worker2model(obj), nil
+	return worker2model(ctx, c, obj), nil
 }
 
 func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
@@ -208,7 +220,7 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		return nil, err
 	}
 
-	return worker2model(updatedObject), nil
+	return worker2model(ctx, c, updatedObject), nil
 }
 
 func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -241,11 +253,14 @@ func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.De
 	return nil, nil
 }
 
-func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
-	keyword, labelSelector, fieldSelector := "", "", ""
+func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput) (*generated.PaginatedResult, error) {
+	keyword, modelTypes, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
 		keyword = *input.Keyword
+	}
+	if input.ModelTypes != nil {
+		modelTypes = *input.ModelTypes
 	}
 	if input.FieldSelector != nil {
 		fieldSelector = *input.FieldSelector
@@ -278,13 +293,19 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListC
 
 	result := make([]generated.PageNode, 0, pageSize)
 	for _, u := range us.Items {
-		m := worker2model(&u)
+		m := worker2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
 				continue
 			}
 		}
+		if modelTypes != "" {
+			if !strings.Contains(m.ModelTypes, modelTypes) {
+				continue
+			}
+		}
+
 		result = append(result, m)
 
 		// break if page size matches
@@ -311,5 +332,5 @@ func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string
 	if err != nil {
 		return nil, err
 	}
-	return worker2model(u), nil
+	return worker2model(ctx, c, u), nil
 }

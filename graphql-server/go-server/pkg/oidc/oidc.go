@@ -81,7 +81,7 @@ func OIDCKubeGetter(idtoken string) func() (*clientcmdapi.Config, error) {
 						Name: "oidc",
 						Config: map[string]string{
 							"client-id":      clientID1,
-							"client-secret":  clientID1,
+							"client-secret":  clientSecret1,
 							"id-token":       idtoken,
 							"idp-issuer-url": issuerURL1,
 						},

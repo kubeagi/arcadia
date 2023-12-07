@@ -73,6 +73,11 @@ type Worker {
     model: String!
 
     """
+    worker对应的模型类型
+    """
+    modelTypes: String!
+
+    """
     worker运行所需的资源
     规则: 必填
     """
@@ -80,6 +85,11 @@ type Worker {
 
     """
     状态
+    规则: 目前分为四种状态
+      - Unknown: 未知
+      - Pending: 发布中
+      - WorkerRunning: 已发布
+      - Error: 异常
     """
     status: String
 }
@@ -133,6 +143,32 @@ input UpdateWorkerInput {
     resources: ResourcesInput
 }
 
+input ListWorkerInput {
+    namespace: String!
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
+
+    modelTypes: String
+}
 
 type WorkerMutation {
     createWorker(input: CreateWorkerInput!): Worker!
@@ -142,7 +178,7 @@ type WorkerMutation {
 
 type WorkerQuery {
     getWorker(name: String!, namespace: String!): Worker!
-    listWorkers(input: ListCommonInput!): PaginatedResult!
+    listWorkers(input: ListWorkerInput!): PaginatedResult!
 }
 
 extend type Mutation {
