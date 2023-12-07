@@ -18,10 +18,12 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
 
+	miniogo "github.com/minio/minio-go/v7"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +32,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
 	"github.com/kubeagi/arcadia/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
 
 func obj2model(obj *unstructured.Unstructured) *generated.Model {
@@ -259,4 +263,75 @@ func ReadModel(ctx context.Context, c dynamic.Interface, name, namespace string)
 		return nil, err
 	}
 	return obj2model(u), nil
+}
+
+func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {
+	prefix := fmt.Sprintf("model/%s/", modelName)
+	minioClient, _, err := minio.GetClients()
+	if err != nil {
+		return nil, err
+	}
+	keyword := ""
+	if input != nil && input.Keyword != nil {
+		keyword = *input.Keyword
+	}
+	objecttInfoList := minioutils.ListObjectCompleteInfo(ctx, namespace, prefix, minioClient)
+	sort.Slice(objecttInfoList, func(i, j int) bool {
+		return objecttInfoList[i].LastModified.After(objecttInfoList[j].LastModified)
+	})
+
+	result := make([]generated.PageNode, 0)
+	for _, obj := range objecttInfoList {
+		if keyword == "" || strings.Contains(obj.Key, keyword) {
+			tf := generated.F{
+				Path: strings.TrimPrefix(obj.Key, prefix),
+				Time: &obj.LastModified,
+			}
+			size := utils.BytesToSizedStr(obj.Size)
+			tf.Size = &size
+			tags, err := minioClient.GetObjectTagging(ctx, namespace, obj.Key, miniogo.GetObjectTaggingOptions{})
+			if err == nil {
+				tagsMap := tags.ToMap()
+				if v, ok := tagsMap[v1alpha1.ObjectTypeTag]; ok {
+					tf.FileType = v
+				}
+
+				if v, ok := tagsMap[v1alpha1.ObjectCountTag]; ok {
+					tf.Count = &v
+				}
+				if v, ok := tagsMap[minio.CreationTimestamp]; ok {
+					if now, err := time.Parse(time.RFC3339, v); err == nil {
+						tf.CreationTimestamp = &now
+					}
+				}
+			}
+			result = append(result, tf)
+		}
+	}
+	page, size := 1, 10
+	if input != nil && input.Page != nil && *input.Page > 0 {
+		page = *input.Page
+	}
+	if input != nil && input.PageSize != nil && *input.PageSize > 0 {
+		size = *input.PageSize
+	}
+
+	total := len(result)
+	end := page * size
+	if end > total {
+		end = total
+	}
+	start := (page - 1) * size
+	if start < total {
+		result = result[start:end]
+	} else {
+		result = make([]generated.PageNode, 0)
+	}
+	return &generated.PaginatedResult{
+		TotalCount:  total,
+		HasNextPage: end < total,
+		Nodes:       result,
+		Page:        &page,
+		PageSize:    &size,
+	}, nil
 }

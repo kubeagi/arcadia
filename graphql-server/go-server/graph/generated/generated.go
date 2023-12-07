@@ -49,6 +49,7 @@ type ResolverRoot interface {
 	EmbedderQuery() EmbedderQueryResolver
 	KnowledgeBaseMutation() KnowledgeBaseMutationResolver
 	KnowledgeBaseQuery() KnowledgeBaseQueryResolver
+	Model() ModelResolver
 	ModelMutation() ModelMutationResolver
 	ModelQuery() ModelQueryResolver
 	Mutation() MutationResolver
@@ -292,6 +293,7 @@ type ComplexityRoot struct {
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
 		DisplayName       func(childComplexity int) int
+		Files             func(childComplexity int, input *FileFilter) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -494,6 +496,9 @@ type KnowledgeBaseMutationResolver interface {
 type KnowledgeBaseQueryResolver interface {
 	GetKnowledgeBase(ctx context.Context, obj *KnowledgeBaseQuery, name string, namespace string) (*KnowledgeBase, error)
 	ListKnowledgeBases(ctx context.Context, obj *KnowledgeBaseQuery, input ListKnowledgeBaseInput) (*PaginatedResult, error)
+}
+type ModelResolver interface {
+	Files(ctx context.Context, obj *Model, input *FileFilter) (*PaginatedResult, error)
 }
 type ModelMutationResolver interface {
 	CreateModel(ctx context.Context, obj *ModelMutation, input CreateModelInput) (*Model, error)
@@ -1697,6 +1702,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Model.DisplayName(childComplexity), true
+
+	case "Model.files":
+		if e.complexity.Model.Files == nil {
+			break
+		}
+
+		args, err := ec.field_Model_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Model.Files(childComplexity, args["input"].(*FileFilter)), true
 
 	case "Model.id":
 		if e.complexity.Model.ID == nil {
@@ -3451,7 +3468,11 @@ type KnowledgeBase {
     """
     fileGroupDetails: [filegroupdetail]
     
-    """知识库整体连接状态"""
+    """
+    知识库整体连接状态
+    规则: True 代表正常 False代表异常  
+    规则: Deleting 代表删除中
+    """
     status: String
     """知识库状态的原因"""
     reason: String
@@ -3619,6 +3640,11 @@ type Model {
     状态
     """
     status: String
+
+    """
+    模型包含文件列表
+    """
+    files(input: FileFilter): PaginatedResult!
 }
 
 """创建模型的输入"""
@@ -4598,6 +4624,21 @@ func (ec *executionContext) field_ModelQuery_listModels_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Model_files_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *FileFilter
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOFileFilter2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐFileFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12089,6 +12130,73 @@ func (ec *executionContext) fieldContext_Model_status(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Model_files(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_files(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Model().Files(rctx, obj, fc.Args["input"].(*FileFilter))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Model_files_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelMutation_createModel(ctx context.Context, field graphql.CollectedField, obj *ModelMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ModelMutation_createModel(ctx, field)
 	if err != nil {
@@ -12152,6 +12260,8 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "files":
+				return ec.fieldContext_Model_files(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -12233,6 +12343,8 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "files":
+				return ec.fieldContext_Model_files(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -12366,6 +12478,8 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "files":
+				return ec.fieldContext_Model_files(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -23265,12 +23379,12 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 		case "name":
 			out.Values[i] = ec._Model_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "namespace":
 			out.Values[i] = ec._Model_namespace(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "labels":
 			out.Values[i] = ec._Model_labels(ctx, field, obj)
@@ -23289,10 +23403,46 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 		case "types":
 			out.Values[i] = ec._Model_types(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "status":
 			out.Values[i] = ec._Model_status(ctx, field, obj)
+		case "files":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Model_files(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -1,5 +1,5 @@
 # list
-query listModels($input: ListCommonInput!){
+query listModels($input: ListCommonInput!,$filesInput: FileFilter){
   Model {
     listModels(input: $input) {
       totalCount
@@ -19,6 +19,19 @@ query listModels($input: ListCommonInput!){
           status
           types
           updateTimestamp
+          files(input: $filesInput) {
+            totalCount
+            hasNextPage
+            nodes {
+              ... on F {
+              path
+              time
+              fileType
+              count
+              size
+              creationTimestamp  
+            }
+          }
         }
       }
     }
@@ -26,21 +39,35 @@ query listModels($input: ListCommonInput!){
 }
 
 # get
-query getModel($name: String!, $namespace: String!) {
+query getModel($name: String!, $namespace: String!,$filesInput: FileFilter) {
   Model {
     getModel(name: $name, namespace: $namespace){
-          id
-          creationTimestamp
-          name
-          namespace
-          labels
-          annotations
-          creator
-          displayName
-          description
-          status
-          types
-          updateTimestamp
+      id
+      creationTimestamp
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      status
+      types
+      updateTimestamp
+      files(input: $filesInput: FileFilter) {
+        totalCount
+        hasNextPage
+        nodes {
+          ... on F {
+            path
+            time
+            fileType
+            count
+            size
+            creationTimestamp  
+          }
+        }
+      }
     }
   }
 }
@@ -49,18 +76,18 @@ query getModel($name: String!, $namespace: String!) {
 mutation createModel($input: CreateModelInput!) {
   Model {
     createModel(input: $input) {
-          id
-          creationTimestamp
-          name
-          namespace
-          labels
-          annotations
-          creator
-          displayName
-          description
-          status
-          types
-          updateTimestamp
+      id
+      creationTimestamp
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      status
+      types
+      updateTimestamp
     }
   }
 }
@@ -69,18 +96,18 @@ mutation createModel($input: CreateModelInput!) {
 mutation updateModel($input: UpdateModelInput) {
   Model {
     updateModel(input: $input){
-          id
-          creationTimestamp
-          name
-          namespace
-          labels
-          annotations
-          creator
-          displayName
-          description
-          status
-          types
-          updateTimestamp
+      id
+      creationTimestamp
+      name
+      namespace
+      labels
+      annotations
+      creator
+      displayName
+      description
+      status
+      types
+      updateTimestamp
     }
   }
 }

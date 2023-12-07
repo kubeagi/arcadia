@@ -11,6 +11,15 @@ import (
 	md "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 )
 
+// Files is the resolver for the files field.
+func (r *modelResolver) Files(ctx context.Context, obj *generated.Model, input *generated.FileFilter) (*generated.PaginatedResult, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return md.ModelFiles(ctx, c, obj.Name, obj.Namespace, input)
+}
+
 // CreateModel is the resolver for the createModel field.
 func (r *modelMutationResolver) CreateModel(ctx context.Context, obj *generated.ModelMutation, input generated.CreateModelInput) (*generated.Model, error) {
 	c, err := getClientFromCtx(ctx)
@@ -70,11 +79,15 @@ func (r *queryResolver) Model(ctx context.Context) (*generated.ModelQuery, error
 	return &generated.ModelQuery{}, nil
 }
 
+// Model returns generated.ModelResolver implementation.
+func (r *Resolver) Model() generated.ModelResolver { return &modelResolver{r} }
+
 // ModelMutation returns generated.ModelMutationResolver implementation.
 func (r *Resolver) ModelMutation() generated.ModelMutationResolver { return &modelMutationResolver{r} }
 
 // ModelQuery returns generated.ModelQueryResolver implementation.
 func (r *Resolver) ModelQuery() generated.ModelQueryResolver { return &modelQueryResolver{r} }
 
+type modelResolver struct{ *Resolver }
 type modelMutationResolver struct{ *Resolver }
 type modelQueryResolver struct{ *Resolver }
