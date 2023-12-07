@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,7 +47,7 @@ var (
 	ErrNoConfigGateway     = fmt.Errorf("config Gateway in configmap is not found")
 	ErrNoConfigMinIO       = fmt.Errorf("config MinIO in comfigmap is not found")
 	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
-	ErrNoConfigStreamkit   = fmt.Errorf("config Streamkit in comfigmap is not found")
+	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
@@ -143,14 +144,17 @@ func GetConfigDynamic(ctx context.Context, c dynamic.Interface) (config *Config,
 	cmNamespace := utils.GetCurrentNamespace()
 	u, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
 	if err != nil {
+		klog.Errorln("failed to get configmap resource", err, cmNamespace, cmName)
 		return nil, ErrNoConfig
 	}
 	data, found, err := unstructured.NestedStringMap(u.Object, "data")
 	if err != nil || !found {
+		klog.Errorln("failed to get data from configmap", err)
 		return nil, ErrNoConfig
 	}
 	value, ok := data["config"]
 	if !ok || len(value) == 0 {
+		klog.Errorln("no config file from configmap", err)
 		return nil, ErrNoConfig
 	}
 	if err = yaml.Unmarshal([]byte(value), &config); err != nil {
@@ -191,13 +195,13 @@ func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.
 }
 
 // Get the configuration of streamlit tool
-func GetStreamlit(ctx context.Context, c client.Client) (*Streamkit, error) {
+func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
 	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	if config.Streamkit == nil {
-		return nil, ErrNoConfigStreamkit
+	if config.Streamlit == nil {
+		return nil, ErrNoConfigStreamlit
 	}
-	return config.Streamkit, nil
+	return config.Streamlit, nil
 }

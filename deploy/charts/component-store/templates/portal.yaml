@@ -1,0 +1,7 @@
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Portal
+metadata:
+  name: component-store
+spec:
+  entry: /component-store-public/index.html
+  path: /component-store

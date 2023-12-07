@@ -1,4 +1,3 @@
-{{- if .Values.portal.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,47 +13,25 @@ spec:
       labels:
         app: {{ .Release.Name }}-portal
     spec:
-      serviceAccountName: {{ .Release.Name }}
       containers:
-        - name: graphql-server
-          image: {{ .Values.deployment.image }}
-          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+        - image: {{ .Values.portal.image }}
+          imagePullPolicy: IfNotPresent
+          name: kubeagi-portal
           ports:
-            - containerPort: {{ .Values.portal.port }}
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-            - name: DEFAULT_CONFIG
-              value: {{ .Release.Name }}-config
-          command: 
-            - "./graphql-server"
-          args:
-            - "--enable-playground={{ .Values.portal.enableplayground }}"
-            - "--port={{ .Values.portal.port }}"
-            - "--playground-endpoint-prefix={{ .Values.portal.ingress.path }}"
-          {{- if .Values.portal.oidc.enabled }}
-            - "--enable-oidc={{ .Values.portal.oidc.enabled }}"
-            - "--client-id={{ .Values.portal.oidc.clientID }}"
-            - "--client-secret={{ .Values.portal.oidc.clientSecret }}"
-            - "--master-url={{ .Values.portal.oidc.masterURL }}"
-            - "--issuer-url={{ .Values.portal.oidc.issuerURL }}"
-          {{- end }}
-          {{- if .Values.dataprocess.enabled }}
-            - "--data-processing-url={{ .Values.portal.dataProcessURL }}"
-          {{- end }}
+          - containerPort: 80
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-portal-server
+  name: {{ .Release.Name }}-portal
   namespace: {{ .Release.Namespace }}
 spec:
   type: ClusterIP
@@ -65,46 +42,3 @@ spec:
       port: {{ .Values.portal.port }}
       protocol: TCP
       targetPort: {{ .Values.portal.port }}
----
-{{- if .Values.portal.ingress.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Release.Name }}-portal-ingress
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    description: kubeagi-ingress
-    displayName: kubeagi-ingress
-    httpSend: /
-    ingress-lb: portal-ingress
-    kubernetes.io/ingress.class: portal-ingress
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_cache static-cache;
-      proxy_cache_valid 404 10m;
-      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
-      proxy_cache_bypass $http_x_purge;
-      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
-      rewrite ^/({{ .Values.portal.ingress.path }})(/|$)(.*)$ /$3 break;
-    nginx.ingress.kubernetes.io/enable-access-log: "false"
-    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
-    nginx.ingress.kubernetes.io/load-balance: round_robin
-    nginx.ingress.kubernetes.io/proxy-body-size: ""
-    nginx.ingress.kubernetes.io/proxy-buffering: "on"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
-    nginx.ingress.kubernetes.io/server-alias: ""
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/upstream-vhost: $host
-spec:
-  rules:
-    - host: {{ .Values.portal.ingress.host }}
-      http:
-        paths:
-          - pathType: Prefix
-            path: "/{{ .Values.portal.ingress.path }}"
-            backend:
-              service:
-                name: {{ .Release.Name }}-portal-server
-                port:
-                  number: {{ .Values.portal.port }}
-{{- end }}
-{{- end }}

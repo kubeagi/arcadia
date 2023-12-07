@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-controller
   namespace: {{ .Release.Namespace }}
   labels:
     control-plane: {{ .Release.Name }}-arcadia
@@ -40,8 +40,8 @@ spec:
                 fieldPath: metadata.namespace
           - name: DEFAULT_CONFIG
             value: {{ .Release.Name }}-config
-        image: {{ .Values.deployment.image }}
-        imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+        image: {{ .Values.controller.image }}
+        imagePullPolicy: {{ .Values.controller.imagePullPolicy }}
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -62,7 +62,6 @@ spec:
           periodSeconds: 10
         # TODO(user): Configure the resources accordingly based on the project requirements.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        resources: {{ toYaml .Values.deployment.resources | nindent 10 }} 
+        resources: {{ toYaml .Values.controller.resources | nindent 10 }} 
       serviceAccountName: {{ .Release.Name }}
       terminationGracePeriodSeconds: 10
-

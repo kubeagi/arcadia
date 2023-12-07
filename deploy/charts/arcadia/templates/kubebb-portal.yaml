@@ -1,0 +1,7 @@
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Portal
+metadata:
+  name: kubeagi-portal
+spec:
+  entry: /kubeagi-portal-public/index.html
+  path: /kubeagi-portal

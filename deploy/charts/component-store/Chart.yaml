@@ -1,0 +1,19 @@
+apiVersion: v2
+name: component-store
+description: Component store to list, view and deploy various components.
+type: application
+version: 0.0.2
+icon: https://avatars.githubusercontent.com/u/85277200
+keywords:
+  - kubebb
+sources:
+  - https://github.com/kubebb/component-store
+maintainers:
+  - name: bjwswang
+    url: https://github.com/bjwswang
+  - name: Carrotzpc
+    url: https://github.com/Carrotzpc
+  - name: dayuy
+    url: https://github.com/dayuy
+  - name: Jandiasnow
+    url: https://github.com/Jandiasnow

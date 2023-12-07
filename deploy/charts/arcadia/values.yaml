@@ -1,12 +1,12 @@
 global:
   oss:
     bucket: &default-oss-bucket "arcadia"
-# @section deployment is used as default deployment configurations for arcadia
+# @section controller is used as the core controller for arcadia
 # @param image Image to be used
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
-deployment:
-  image: kubeagi/arcadia:v0.1.0
+controller:
+  image: kubeagi/arcadia:v0.1.0-20231207-11c8738
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -15,24 +15,46 @@ deployment:
     requests:
       cpu: 10m
       memory: 64Mi
+# graphql and bff server
+apiserver:
+  image: kubeagi/arcadia:v0.1.0-20231207-11c8738
+  enableplayground: false
+  # update the namespace if we use different one
+  dataProcessURL: http://arcadia-dataprocess:28888
+  port: 8081
+  ingress:
+    path: kubeagi-apis
+    host: portal.<replaced-ingress-nginx-ip>.nip.io
+  oidc:
+    enabled: true
+    clientID: bff-client
+    issuerURL: https://portal.<replaced-ingress-nginx-ip>.nip.io/oidc
+    clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
+    masterURL: https://k8s.<replaced-ingress-nginx-ip>.nip.io
+# portal
+portal:
+  enabled: true
+  image: yuntibuild/kubeagi-portal:0.1.0
+  port: 80
+  ingress:
+    path: kubeagi-portal-public
+    host: portal.<replaced-ingress-nginx-ip>.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:
+  image:
+    repository: kubeagi/arcadia-fastchat
+    # Use either v0.1.0 or vllm-v0.1.0(with vllm enabled)
+    tag: v0.1.0
   ingress:
     enabled: false
     className: portal-ingress
     hosts:
-      - host: fastchat-api.fastchat.arcadia.com
+      - host: fastchat-api.<replaced-ingress-nginx-ip>.nip.io
         paths:
           - path: /
             port: 8000
             pathType: ImplementationSpecific
-      - host: fastchat-controller.fastchat.arcadia.com
-        paths:
-          - path: /
-            port: 21001
-            pathType: ImplementationSpecific
-
 
 # @section oss is used as default Object-Storage-Service for arcadia which provides the capability to
 # - host user-uploaded data files as local datasource
@@ -41,13 +63,32 @@ fastchat:
 # @param oss.enabled Enable Object-Storage-Service in arcadia
 # @param oss.buckets List of default buckets in arcadia
 minio:
+  image:
+    repository: kubeagi/minio
+    tag: RELEASE.2023-02-10T18-48-39Z
   mode: standalone
   rootUser: "admin"
   rootPassword: "Passw0rd!"
   persistence:
     enabled: true
-    storageClass: ""
+    storageClass: "openebs-hostpath"
     size: 30Gi
+  ingress:
+    api:
+      enabled: true
+      port: 9000
+      host: minio-api.<replaced-ingress-nginx-ip>.nip.io
+    console:
+      enabled: false
+      port: 9001
+      host: minio-console.<replaced-ingress-nginx-ip>.nip.io
+    cert:
+      ipAddresses:
+      - <replaced-ingress-nginx-ip>
+      dnsNames:
+      - minio-api.<replaced-ingress-nginx-ip>.nip.io
+      - minio-console.<replaced-ingress-nginx-ip>.nip.io
+
   buckets:
     # Name of the bucket
     - name: *default-oss-bucket
@@ -62,46 +103,33 @@ minio:
       # bucket [true|false] NOTE: versioning is enabled by default if you use locking
       objectlocking: false
 
-portal:
-  enabled: false
-  port: 8081
-  ingress:
-    path: ""
-    enabled: false
-    host: portal.172.22.96.167.nip.io
-  enableplayground: false
-  dataProcessURL: http://arcadia-dataprocess.svc.cluster.local:28888
-  oidc:
-    enabled: false
-    clientID: bff-client
-    issuerURL: https://portal.172.22.96.167.nip.io/oidc
-    clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
-    masterURL: https://k8s.172.22.96.167.nip.io
-
 vectorstore:
-  url: http://chroma-chromadb.arcadia.svc:8000
+  # update the namespace if we use different one, update to pgvector later
+  url: http://arcadia-chromadb:8000
   chroma:
     distanceFunction: cosine
 
 dataprocess:
-  enabled: false
-  repository: kubeagi/data-processing
-  tag: v0.1.0
+  enabled: true
+  image: kubeagi/data-processing:v0.1.0
   port: 28888
   env:
     minio:
-      accessKey: os4GDEmSZaJwweoj
-      secretKey: ROVfENZuyUtpRNOT4mtTQicA3CPASQ89
-      apiURL: https://kubeagi-minio.172.22.96.136.nip.io
-      secure: false
-    zhipu:
-      key: zhipu
-      knowledge:
-        chunkSize: 500
-        chunkOverlap: 50
+      apiURL: http://arcadia-minio:9000
+    knowledge:
+      chunkSize: 500
+      chunkOverlap: 50
     postgres:
-      host: 172.22.96.136
-      port: 30030
+      # update to the actual values
+      host: postgresql
+      port: 5432
       user: admin
       password: Passw0rd!
       database: arcadia
+
+chromadb:
+  image:
+    repository: ghcr.io/amikos-tech/chromadb-chart/chroma
+  chromadb:
+    dataVolumeStorageClass: "openebs-hostpath"
+    apiVersion: "0.4.14"

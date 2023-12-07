@@ -42,13 +42,13 @@ If you don't have a kubernetes cluster, you can schedule a [kind cluster](https:
 - [Schedule a kind cluster without GPU enabled](./docs/kind.md)
 - [Schedule a kind cluster with GPU enabled](./docs/kind_gpu.md)
 
-### Install Arcadia
 
-```shell
-  helm repo add arcadia https://kubeagi.github.io/arcadia
-  helm repo update
-  helm install --namespace arcadia --create-namespace arcadia arcadia/arcadia 
-```
+### Documentation
+
+[Install Arcadia](./docs/installation.md)
+
+[Run LLM application](./docs/run-llm-application.md)
+
 
 ## CLI
 

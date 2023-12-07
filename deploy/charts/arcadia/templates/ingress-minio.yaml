@@ -1,0 +1,77 @@
+{{- if .Values.minio.ingress.api.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-minio-api-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    description: minio-api-ingress
+    displayName: minio-api-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+spec:
+  tls:
+    - hosts:
+      - {{ .Values.minio.ingress.api.host }}
+      secretName: minio-root-secret
+  rules:
+    - host: {{ .Values.minio.ingress.api.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: {{ .Release.Name }}-minio
+                port:
+                  number: {{ .Values.minio.ingress.api.port }}
+{{- end }}
+---
+{{- if .Values.minio.ingress.console.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-minio-console-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    description: minio-console-ingress
+    displayName: minio-console-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+spec:
+  tls:
+    - hosts:
+      - {{ .Values.minio.ingress.api.host }}
+      secretName: minio-root-secret
+  rules:
+    - host: {{ .Values.minio.ingress.console.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: {{ .Release.Name }}-minio-console
+                port:
+                  number: {{ .Values.minio.ingress.console.port }}
+{{- end }}

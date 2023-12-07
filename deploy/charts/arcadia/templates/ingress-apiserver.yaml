@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-apiserver-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    description: kubeagi-apiserver-ingress
+    displayName: kubeagi-apiserver-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite ^/({{ .Values.apiserver.ingress.path }})(/|$)(.*)$ /$3 break;
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+spec:
+  rules:
+    - host: {{ .Values.apiserver.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/{{ .Values.apiserver.ingress.path }}"
+            backend:
+              service:
+                name: {{ .Release.Name }}-apiserver
+                port:
+                  number: {{ .Values.apiserver.port }}
