@@ -413,6 +413,7 @@ type DatasourceMutation struct {
 
 type DatasourceQuery struct {
 	GetDatasource   Datasource      `json:"getDatasource"`
+	CheckDatasource Datasource      `json:"checkDatasource"`
 	ListDatasources PaginatedResult `json:"listDatasources"`
 }
 

@@ -30,6 +30,10 @@ import (
 var (
 	DefaultNamespace  = "default"
 	ErrNoResourceKind = errors.New("must provide resource kind")
+
+	// Common status
+	StatusTrue  = "True"
+	StatusFalse = "False"
 )
 
 // Resource operations

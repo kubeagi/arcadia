@@ -133,7 +133,7 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 		if verb != "" {
 			allowed, err := cani(client, oidcIDtoken, resources, verb, namespace)
 			if err != nil {
-				ctx.AbortWithStatusJSON(http.StatusInsufficientStorage, gin.H{
+				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 					"message": "some error occurred in checking the permissions",
 				})
 				return

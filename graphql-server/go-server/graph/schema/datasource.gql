@@ -127,3 +127,15 @@ query getDatasource($name: String!, $namespace: String!) {
     }
   }
 }
+
+
+# create
+query checkDatasource($input: CreateDatasourceInput!) {
+  Datasource {
+    checkDatasource(input: $input) {
+        name
+        namespace
+        status
+    }
+  }
+}
