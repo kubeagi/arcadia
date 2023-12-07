@@ -21,16 +21,20 @@ type AddDataProcessInput struct {
 	DataProcessConfigInfo []*DataProcessConfigItem `json:"data_process_config_info,omitempty"`
 	BucketName            string                   `json:"bucket_name"`
 	VersionDataSetName    string                   `json:"version_data_set_name"`
+	Namespace             string                   `json:"namespace"`
+	Creator               string                   `json:"creator"`
 }
 
 type AllDataProcessListByCountInput struct {
-	Keyword string `json:"keyword"`
+	Keyword   string `json:"keyword"`
+	Namespace string `json:"namespace"`
 }
 
 type AllDataProcessListByPageInput struct {
 	PageIndex int    `json:"pageIndex"`
 	PageSize  int    `json:"pageSize"`
 	Keyword   string `json:"keyword"`
+	Namespace string `json:"namespace"`
 }
 
 type AuthInput struct {
@@ -244,6 +248,7 @@ type DataProcessDetailsItem struct {
 	FileNum            int                  `json:"file_num"`
 	StartTime          string               `json:"start_time"`
 	EndTime            string               `json:"end_time"`
+	Creator            string               `json:"creator"`
 	Config             []*DataProcessConfig `json:"config,omitempty"`
 }
 

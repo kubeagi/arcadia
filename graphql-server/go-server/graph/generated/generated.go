@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 
 	DataProcessDetailsItem struct {
 		Config             func(childComplexity int) int
+		Creator            func(childComplexity int) int
 		EndTime            func(childComplexity int) int
 		FileNum            func(childComplexity int) int
 		FileType           func(childComplexity int) int
@@ -713,6 +714,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessDetailsItem.Config(childComplexity), true
+
+	case "DataProcessDetailsItem.creator":
+		if e.complexity.DataProcessDetailsItem.Creator == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.Creator(childComplexity), true
 
 	case "DataProcessDetailsItem.end_time":
 		if e.complexity.DataProcessDetailsItem.EndTime == nil {
@@ -2665,10 +2673,12 @@ input AllDataProcessListByPageInput {
   pageIndex: Int!
   pageSize: Int!
   keyword: String!
+  namespace: String!
 }
 
 input AllDataProcessListByCountInput {
   keyword: String!
+  namespace: String!
 }
 
 input AddDataProcessInput {
@@ -2682,6 +2692,8 @@ input AddDataProcessInput {
   data_process_config_info: [DataProcessConfigItem!]
   bucket_name: String!
   version_data_set_name: String!
+  namespace: String!
+  creator: String!
 }
 
 # 文件条目
@@ -2787,6 +2799,7 @@ type DataProcessDetailsItem {
   file_num: Int!
   start_time: String!
   end_time: String!
+  creator: String!
   config: [DataProcessConfig!]
 }
 
@@ -5746,6 +5759,8 @@ func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Con
 				return ec.fieldContext_DataProcessDetailsItem_start_time(ctx, field)
 			case "end_time":
 				return ec.fieldContext_DataProcessDetailsItem_end_time(ctx, field)
+			case "creator":
+				return ec.fieldContext_DataProcessDetailsItem_creator(ctx, field)
 			case "config":
 				return ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
 			}
@@ -6271,6 +6286,50 @@ func (ec *executionContext) _DataProcessDetailsItem_end_time(ctx context.Context
 }
 
 func (ec *executionContext) fieldContext_DataProcessDetailsItem_end_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_creator(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataProcessDetailsItem",
 		Field:      field,
@@ -18728,7 +18787,7 @@ func (ec *executionContext) unmarshalInputAddDataProcessInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "file_type", "pre_data_set_name", "pre_data_set_version", "file_names", "post_data_set_name", "post_data_set_version", "data_process_config_info", "bucket_name", "version_data_set_name"}
+	fieldsInOrder := [...]string{"name", "file_type", "pre_data_set_name", "pre_data_set_version", "file_names", "post_data_set_name", "post_data_set_version", "data_process_config_info", "bucket_name", "version_data_set_name", "namespace", "creator"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18825,6 +18884,24 @@ func (ec *executionContext) unmarshalInputAddDataProcessInput(ctx context.Contex
 				return it, err
 			}
 			it.VersionDataSetName = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "creator":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creator"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Creator = data
 		}
 	}
 
@@ -18838,7 +18915,7 @@ func (ec *executionContext) unmarshalInputAllDataProcessListByCountInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"keyword"}
+	fieldsInOrder := [...]string{"keyword", "namespace"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18854,6 +18931,15 @@ func (ec *executionContext) unmarshalInputAllDataProcessListByCountInput(ctx con
 				return it, err
 			}
 			it.Keyword = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
 		}
 	}
 
@@ -18867,7 +18953,7 @@ func (ec *executionContext) unmarshalInputAllDataProcessListByPageInput(ctx cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"pageIndex", "pageSize", "keyword"}
+	fieldsInOrder := [...]string{"pageIndex", "pageSize", "keyword", "namespace"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18901,6 +18987,15 @@ func (ec *executionContext) unmarshalInputAllDataProcessListByPageInput(ctx cont
 				return it, err
 			}
 			it.Keyword = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
 		}
 	}
 
@@ -21547,6 +21642,11 @@ func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast
 			}
 		case "end_time":
 			out.Values[i] = ec._DataProcessDetailsItem_end_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "creator":
+			out.Values[i] = ec._DataProcessDetailsItem_creator(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
