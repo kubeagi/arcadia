@@ -116,6 +116,10 @@ models:
         resolver: true
       deleteModels:
         resolver: true
+  Model:
+    fields:
+      files:
+        resolver: true
   EmbedderQuery:
     fields:
       getEmbedder:

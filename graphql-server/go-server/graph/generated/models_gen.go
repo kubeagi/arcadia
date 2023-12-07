@@ -557,6 +557,8 @@ type KnowledgeBase struct {
 	// fileGroupDetails为知识库中所处理的文件组的详细内容和状态
 	FileGroupDetails []*Filegroupdetail `json:"fileGroupDetails,omitempty"`
 	// 知识库整体连接状态
+	// 规则: True 代表正常 False代表异常
+	// 规则: Deleting 代表删除中
 	Status *string `json:"status,omitempty"`
 	// 知识库状态的原因
 	Reason *string `json:"reason,omitempty"`
@@ -699,6 +701,8 @@ type Model struct {
 	Types string `json:"types"`
 	// 状态
 	Status *string `json:"status,omitempty"`
+	// 模型包含文件列表
+	Files PaginatedResult `json:"files"`
 }
 
 func (Model) IsPageNode() {}

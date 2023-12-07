@@ -51,6 +51,11 @@ type Model {
     状态
     """
     status: String
+
+    """
+    模型包含文件列表
+    """
+    files(input: FileFilter): PaginatedResult!
 }
 
 """创建模型的输入"""
