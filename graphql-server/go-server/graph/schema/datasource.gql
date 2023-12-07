@@ -2,21 +2,27 @@
 mutation createDatasource($input: CreateDatasourceInput!) {
   Datasource {
     createDatasource(input: $input) {
-      name
-      namespace
-      displayName
-      endpoint {
-        url
-        authSecret {
-          kind
-          name
+        id
+        name
+        namespace
+        creator
+        displayName
+        description
+        endpoint {
+          url
+          authSecret {
+            kind
+            name
+          }
+          insecure
         }
-        insecure
-      }
-      oss {
-        bucket
-        object
-      }
+        oss {
+          bucket
+          object
+        }
+        creationTimestamp
+        updateTimestamp
+        status
     }
   }
 }
@@ -25,21 +31,27 @@ mutation createDatasource($input: CreateDatasourceInput!) {
 mutation updateDatasource($input: UpdateDatasourceInput) {
   Datasource {
     updateDatasource(input: $input) {
-      name
-      namespace
-      displayName
-      endpoint {
-        url
-        authSecret {
-          kind
-          name
+        id
+        name
+        namespace
+        creator
+        displayName
+        description
+        endpoint {
+          url
+          authSecret {
+            kind
+            name
+          }
+          insecure
         }
-        insecure
-      }
-      oss {
-        bucket
-        object
-      }
+        oss {
+          bucket
+          object
+        }
+        creationTimestamp
+        updateTimestamp
+        status
     }
   }
 }
@@ -60,9 +72,12 @@ query listDatasources($input: ListCommonInput!) {
     nodes {
       __typename
       ... on Datasource {
+        id
         name
         namespace
+        creator
         displayName
+        description
         endpoint {
           url
           authSecret {
@@ -75,6 +90,9 @@ query listDatasources($input: ListCommonInput!) {
           bucket
           object
         }
+        creationTimestamp
+        updateTimestamp
+        status
       }
       }
     }
@@ -85,21 +103,27 @@ query listDatasources($input: ListCommonInput!) {
 query getDatasource($name: String!, $namespace: String!) {
   Datasource {
     getDatasource(name: $name, namespace: $namespace) {
-      name
-      namespace
-      displayName
-      endpoint {
-        url
-        authSecret {
-          kind
-          name
+        id
+        name
+        namespace
+        creator
+        displayName
+        description
+        endpoint {
+          url
+          authSecret {
+            kind
+            name
+          }
+          insecure
         }
-        insecure
-      }
-      oss {
-        bucket
-        object
-      }
+        oss {
+          bucket
+          object
+        }
+        creationTimestamp
+        updateTimestamp
+        status
     }
   }
 }

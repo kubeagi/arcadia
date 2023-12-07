@@ -20,7 +20,6 @@ import (
 	"context"
 	"sort"
 	"strings"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,6 +33,13 @@ import (
 )
 
 func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBase {
+	knowledgebase := &v1alpha1.KnowledgeBase{}
+	if err := utils.UnstructuredToStructured(obj, knowledgebase); err != nil {
+		return &generated.KnowledgeBase{}
+	}
+
+	id := string(knowledgebase.GetUID())
+
 	labels := make(map[string]interface{})
 	for k, v := range obj.GetLabels() {
 		labels[k] = v
@@ -42,96 +48,76 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 	for k, v := range obj.GetAnnotations() {
 		annotations[k] = v
 	}
-	id := string(obj.GetUID())
-	creationtimestamp := obj.GetCreationTimestamp().Time
-	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	embedder, _, _ := unstructured.NestedMap(obj.Object, "spec", "embedder")
-	embeddernp, _ := embedder["namespace"].(string)
-	vectorStore, _, _ := unstructured.NestedMap(obj.Object, "spec", "vectorStore")
-	vectorStorenp := vectorStore["namespace"].(string)
+	creationtimestamp := knowledgebase.GetCreationTimestamp().Time
+
+	// conditioned status
+	condition := knowledgebase.Status.GetCondition(v1alpha1.TypeReady)
+	status := string(condition.Status)
+	reason := string(condition.Reason)
+	message := condition.Message
+
+	// if delete timestamp is not nil, mark status as Deletting
+	if knowledgebase.DeletionTimestamp != nil {
+		status = "Deleting"
+	}
+
 	apiversion := obj.GetAPIVersion()
-	fileGroupDetails, _, _ := unstructured.NestedSlice(obj.Object, "status", "fileGroupDetail")
+
 	var filegroupdetails []*generated.Filegroupdetail
-	for _, filegroupdetail := range fileGroupDetails {
-		fileDetails := filegroupdetail.(map[string]interface{})["fileDetails"].([]interface{})
+	for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
 		var filedetails []*generated.Filedetail
-		fns := filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["namespace"].(string)
-		for _, filedetailsmap := range fileDetails {
-			detail, ok := filedetailsmap.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			fileType, _ := detail["type"].(string)
-			count, _ := detail["count"].(string)
-			size, _ := detail["size"].(string)
-			path, _ := detail["path"].(string)
-			phase, _ := detail["phase"].(string)
-
-			var updateTime time.Time
-			lastUpdateTime, ok := detail["lastUpdateTime"].(string)
-			if ok {
-				updateTime, _ = utils.RFC3339Time(lastUpdateTime)
-			}
-
+		fns := filegroupdetail.Source.Namespace
+		for _, detail := range filegroupdetail.FileDetails {
 			filedetail := &generated.Filedetail{
-				FileType:        fileType,
-				Count:           count,
-				Size:            size,
-				Path:            path,
-				Phase:           phase,
-				UpdateTimestamp: &updateTime,
+				FileType:        detail.Type,
+				Count:           detail.Count,
+				Size:            detail.Size,
+				Path:            detail.Path,
+				Phase:           string(detail.Phase),
+				UpdateTimestamp: &detail.LastUpdateTime.Time,
 			}
 			filedetails = append(filedetails, filedetail)
 		}
 		filegroupdetail := &generated.Filegroupdetail{
 			Source: &generated.TypedObjectReference{
-				Kind:      filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["kind"].(string),
-				Name:      filegroupdetail.(map[string]interface{})["source"].(map[string]interface{})["name"].(string),
-				Namespace: &fns,
+				Kind:      filegroupdetail.Source.Kind,
+				Name:      filegroupdetail.Source.Name,
+				Namespace: fns,
 			},
 			Filedetails: filedetails,
 		}
 		filegroupdetails = append(filegroupdetails, filegroupdetail)
 	}
-	status := ""
-	var updateTime time.Time
-	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
-	if found && len(conditions) > 0 {
-		condition, ok := conditions[0].(map[string]interface{})
-		if ok {
-			timeStr, _ := condition["lastTransitionTime"].(string)
-			updateTime, _ = utils.RFC3339Time(timeStr)
-			status, _ = condition["status"].(string)
-		}
-	} else {
-		status = "unknow"
-	}
 
 	md := generated.KnowledgeBase{
-		ID:          &id,
-		Name:        obj.GetName(),
-		Namespace:   obj.GetNamespace(),
-		Labels:      labels,
-		Annotations: annotations,
+		ID:                &id,
+		Name:              obj.GetName(),
+		Namespace:         obj.GetNamespace(),
+		Labels:            labels,
+		Annotations:       annotations,
+		DisplayName:       &knowledgebase.Spec.DisplayName,
+		Description:       &knowledgebase.Spec.Description,
+		CreationTimestamp: &creationtimestamp,
+		UpdateTimestamp:   &condition.LastTransitionTime.Time,
+		// Embedder info
 		Embedder: &generated.TypedObjectReference{
 			APIGroup:  &apiversion,
-			Kind:      embedder["kind"].(string),
-			Name:      embedder["name"].(string),
-			Namespace: &embeddernp,
+			Kind:      knowledgebase.Spec.Embedder.Kind,
+			Name:      knowledgebase.Spec.Embedder.Name,
+			Namespace: knowledgebase.Spec.Embedder.Namespace,
 		},
+		// Vector info
 		VectorStore: &generated.TypedObjectReference{
 			APIGroup:  &apiversion,
-			Kind:      vectorStore["kind"].(string),
-			Name:      vectorStore["name"].(string),
-			Namespace: &vectorStorenp,
+			Kind:      knowledgebase.Spec.VectorStore.Kind,
+			Name:      knowledgebase.Spec.VectorStore.Name,
+			Namespace: knowledgebase.Spec.VectorStore.Namespace,
 		},
-		FileGroupDetails:  filegroupdetails,
-		DisplayName:       &displayName,
-		Description:       &description,
-		Status:            &status,
-		CreationTimestamp: &creationtimestamp,
-		UpdateTimestamp:   &updateTime,
+		FileGroupDetails: filegroupdetails,
+		// Status info
+		Status:  &status,
+		Reason:  &reason,
+		Message: &message,
 	}
 	return &md
 }

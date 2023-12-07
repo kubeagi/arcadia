@@ -5,6 +5,21 @@ type Mutation{
     hello(name: String!): String!
 }
 
+"""对象存储终端输入"""
+input EndpointInput {
+    """地址(必填)"""
+    url: String!
+    """secret验证密码"""
+    auth: AuthInput
+    """默认true"""
+    insecure: Boolean
+}
+
+input AuthInput {
+    username: String!
+    password: String!
+}
+
 input ListCommonInput {
     namespace: String!
 

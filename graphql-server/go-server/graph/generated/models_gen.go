@@ -33,6 +33,11 @@ type AllDataProcessListByPageInput struct {
 	Keyword   string `json:"keyword"`
 }
 
+type AuthInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type CountDataProcessItem struct {
 	Status  int    `json:"status"`
 	Data    int    `json:"data"`
@@ -392,8 +397,6 @@ type Datasource struct {
 	Oss *Oss `json:"oss,omitempty"`
 	// 数据源连接状态
 	Status *string `json:"status,omitempty"`
-	// 文件数量
-	FileCount *int `json:"fileCount,omitempty"`
 	// 创建时间
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
@@ -474,7 +477,7 @@ type EndpointInput struct {
 	// 地址(必填)
 	URL string `json:"url"`
 	// secret验证密码
-	AuthSecret *TypedObjectReferenceInput `json:"authSecret,omitempty"`
+	Auth *AuthInput `json:"auth,omitempty"`
 	// 默认true
 	Insecure *bool `json:"insecure,omitempty"`
 }
@@ -555,6 +558,10 @@ type KnowledgeBase struct {
 	FileGroupDetails []*Filegroupdetail `json:"fileGroupDetails,omitempty"`
 	// 知识库整体连接状态
 	Status *string `json:"status,omitempty"`
+	// 知识库状态的原因
+	Reason *string `json:"reason,omitempty"`
+	// 知识库状态的原因的详细内容
+	Message *string `json:"message,omitempty"`
 }
 
 func (KnowledgeBase) IsPageNode() {}
@@ -641,6 +648,23 @@ type ListVersionedDatasetInput struct {
 	// 每页数量，默认10
 	PageSize *int    `json:"pageSize,omitempty"`
 	Keyword  *string `json:"keyword,omitempty"`
+}
+
+type ListWorkerInput struct {
+	Namespace string `json:"namespace"`
+	// 关键词: 模糊匹配
+	Keyword *string `json:"keyword,omitempty"`
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	// 分页页码，
+	// 规则: 从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，
+	// 规则: 默认10
+	PageSize   *int    `json:"pageSize,omitempty"`
+	ModelTypes *string `json:"modelTypes,omitempty"`
 }
 
 // 模型
@@ -962,10 +986,17 @@ type Worker struct {
 	// 规则: 相同namespace下的模型名称
 	// 规则: 必填
 	Model string `json:"model"`
+	// worker对应的模型类型
+	ModelTypes string `json:"modelTypes"`
 	// worker运行所需的资源
 	// 规则: 必填
 	Resources Resources `json:"resources"`
 	// 状态
+	// 规则: 目前分为四种状态
+	//   - Unknown: 未知
+	//   - Pending: 发布中
+	//   - WorkerRunning: 已发布
+	//   - Error: 异常
 	Status *string `json:"status,omitempty"`
 }
 

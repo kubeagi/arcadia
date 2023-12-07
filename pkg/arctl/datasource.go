@@ -24,8 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
@@ -79,37 +77,6 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				return errors.New("set --empty if you want to create a empty datasource")
 			}
 
-			var endpointAuthSecret string
-
-			// create auth secret for datasource
-			if endpointAuthUser != "" && endpointAuthPwd != "" {
-				endpointAuthSecret = fmt.Sprintf("datasource-%s-authsecret", name)
-				secret := corev1.Secret{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Secret",
-						APIVersion: corev1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: metav1.ObjectMeta{Name: endpointAuthSecret, Namespace: namespace},
-					Data: map[string][]byte{
-						"rootUser":     []byte(endpointAuthUser),
-						"rootPassword": []byte(endpointAuthPwd),
-					},
-				}
-				unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
-				if err != nil {
-					return fmt.Errorf("failed to convert auth secret: %w", err)
-				}
-				_, err = kubeClient.Resource(schema.GroupVersionResource{
-					Group:    corev1.SchemeGroupVersion.Group,
-					Version:  corev1.SchemeGroupVersion.Version,
-					Resource: "secrets",
-				}).Namespace(namespace).Create(cmd.Context(), &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
-				if err != nil {
-					return fmt.Errorf("failed to create auth secret: %w", err)
-				}
-				klog.Infof("Successfully created authsecret %s\n", endpointAuthSecret)
-			}
-
 			input := generated.CreateDatasourceInput{
 				Name:        name,
 				Namespace:   namespace,
@@ -120,15 +87,19 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 					Insecure: &endpointInsecure,
 				},
 			}
+
+			// create auth secret for datasource
+			if endpointAuthUser != "" && endpointAuthPwd != "" {
+				input.Endpointinput.Auth = &generated.AuthInput{
+					Username: endpointAuthUser,
+					Password: endpointAuthPwd,
+				}
+			}
+
 			if ossBucket != "" {
 				input.Ossinput = &generated.OssInput{Bucket: ossBucket}
 			}
-			if endpointAuthSecret != "" {
-				input.Endpointinput.AuthSecret = &generated.TypedObjectReferenceInput{
-					Name: endpointAuthSecret,
-					Kind: "Secret",
-				}
-			}
+
 			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, input)
 			if err != nil {
 				return err

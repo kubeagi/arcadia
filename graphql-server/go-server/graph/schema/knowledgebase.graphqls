@@ -125,8 +125,16 @@ type KnowledgeBase {
     """
     fileGroupDetails: [filegroupdetail]
     
-    """知识库整体连接状态"""
+    """
+    知识库整体连接状态
+    规则: True 代表正常 False代表异常  
+    规则: Deleting 代表删除中
+    """
     status: String
+    """知识库状态的原因"""
+    reason: String
+    """知识库状态的原因的详细内容"""
+    message: String
 }
 
 """源文件输入"""

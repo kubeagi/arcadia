@@ -60,7 +60,7 @@ func (r *workerQueryResolver) GetWorker(ctx context.Context, obj *generated.Work
 }
 
 // ListWorkers is the resolver for the listWorkers field.
-func (r *workerQueryResolver) ListWorkers(ctx context.Context, obj *generated.WorkerQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+func (r *workerQueryResolver) ListWorkers(ctx context.Context, obj *generated.WorkerQuery, input generated.ListWorkerInput) (*generated.PaginatedResult, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err

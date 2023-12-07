@@ -16,6 +16,8 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
           displayName
           description
           status
+          reason
+          message
           updateTimestamp
           embedder {
             kind
@@ -59,6 +61,8 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
           displayName
           description
           status
+          reason
+          message
           updateTimestamp
           embedder {
             kind
@@ -100,6 +104,8 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
           displayName
           description
           status
+          reason
+          message
           updateTimestamp
           embedder {
             kind
@@ -141,6 +147,8 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
           displayName
           description
           status
+          reason
+          message
           updateTimestamp
           embedder {
             kind
