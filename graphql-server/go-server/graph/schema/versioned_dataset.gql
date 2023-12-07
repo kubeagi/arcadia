@@ -47,6 +47,7 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
       dataProcessStatus
       files(input: $fileInput){
         totalCount
+        hasNextPage
         nodes {
           ... on F {
             path
@@ -66,6 +67,7 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
   VersionedDataset{
       listVersionedDatasets(input: $input) {
         totalCount
+        hasNextPage
         nodes {
           ... on VersionedDataset {
             id
@@ -82,6 +84,7 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
             dataProcessStatus
             files(input: $fileInput){
               totalCount
+              hasNextPage
               nodes {
                 ... on F {
                   path

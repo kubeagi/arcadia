@@ -214,6 +214,7 @@ type ComplexityRoot struct {
 	}
 
 	DatasourceQuery struct {
+		CheckDatasource func(childComplexity int, input CreateDatasourceInput) int
 		GetDatasource   func(childComplexity int, name string, namespace string) int
 		ListDatasources func(childComplexity int, input ListCommonInput) int
 	}
@@ -477,6 +478,7 @@ type DatasourceMutationResolver interface {
 }
 type DatasourceQueryResolver interface {
 	GetDatasource(ctx context.Context, obj *DatasourceQuery, name string, namespace string) (*Datasource, error)
+	CheckDatasource(ctx context.Context, obj *DatasourceQuery, input CreateDatasourceInput) (*Datasource, error)
 	ListDatasources(ctx context.Context, obj *DatasourceQuery, input ListCommonInput) (*PaginatedResult, error)
 }
 type EmbedderMutationResolver interface {
@@ -1278,6 +1280,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DatasourceMutation.UpdateDatasource(childComplexity, args["input"].(*UpdateDatasourceInput)), true
+
+	case "DatasourceQuery.checkDatasource":
+		if e.complexity.DatasourceQuery.CheckDatasource == nil {
+			break
+		}
+
+		args, err := ec.field_DatasourceQuery_checkDatasource_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DatasourceQuery.CheckDatasource(childComplexity, args["input"].(CreateDatasourceInput)), true
 
 	case "DatasourceQuery.getDatasource":
 		if e.complexity.DatasourceQuery.GetDatasource == nil {
@@ -3166,6 +3180,7 @@ input UpdateDatasourceInput {
 
 type DatasourceQuery {
     getDatasource(name: String!, namespace: String!): Datasource!
+    checkDatasource(input: CreateDatasourceInput!): Datasource!
     listDatasources(input: ListCommonInput!): PaginatedResult!
 }
 
@@ -4333,6 +4348,21 @@ func (ec *executionContext) field_DatasourceMutation_updateDatasource_args(ctx c
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUpdateDatasourceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐUpdateDatasourceInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_DatasourceQuery_checkDatasource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateDatasourceInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNCreateDatasourceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐCreateDatasourceInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -9329,6 +9359,89 @@ func (ec *executionContext) fieldContext_DatasourceQuery_getDatasource(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _DatasourceQuery_checkDatasource(ctx context.Context, field graphql.CollectedField, obj *DatasourceQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DatasourceQuery_checkDatasource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.DatasourceQuery().CheckDatasource(rctx, obj, fc.Args["input"].(CreateDatasourceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Datasource)
+	fc.Result = res
+	return ec.marshalNDatasource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐDatasource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DatasourceQuery_checkDatasource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DatasourceQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Datasource_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Datasource_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_Datasource_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_Datasource_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_Datasource_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_Datasource_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_Datasource_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_Datasource_description(ctx, field)
+			case "endpoint":
+				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "oss":
+				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "status":
+				return ec.fieldContext_Datasource_status(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Datasource_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_Datasource_updateTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Datasource", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DatasourceQuery_checkDatasource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DatasourceQuery_listDatasources(ctx context.Context, field graphql.CollectedField, obj *DatasourceQuery) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DatasourceQuery_listDatasources(ctx, field)
 	if err != nil {
@@ -13641,6 +13754,8 @@ func (ec *executionContext) fieldContext_Query_Datasource(ctx context.Context, f
 			switch field.Name {
 			case "getDatasource":
 				return ec.fieldContext_DatasourceQuery_getDatasource(ctx, field)
+			case "checkDatasource":
+				return ec.fieldContext_DatasourceQuery_checkDatasource(ctx, field)
 			case "listDatasources":
 				return ec.fieldContext_DatasourceQuery_listDatasources(ctx, field)
 			}
@@ -22564,6 +22679,42 @@ func (ec *executionContext) _DatasourceQuery(ctx context.Context, sel ast.Select
 					}
 				}()
 				res = ec._DatasourceQuery_getDatasource(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "checkDatasource":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DatasourceQuery_checkDatasource(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

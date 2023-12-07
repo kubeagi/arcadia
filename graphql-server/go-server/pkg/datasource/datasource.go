@@ -18,9 +18,14 @@ package datasource
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"sort"
 	"strings"
 
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +35,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -348,4 +354,39 @@ func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace st
 		return nil, err
 	}
 	return datasource2model(u), nil
+}
+
+// CheckDatasource
+func CheckDatasource(ctx context.Context, c dynamic.Interface, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
+	if input.Ossinput != nil {
+		var insecure bool
+		if input.Endpointinput.Insecure != nil {
+			insecure = !*input.Endpointinput.Insecure
+		}
+		mc, err := minio.New(input.Endpointinput.URL, &minio.Options{
+			Creds:  credentials.NewStaticV4(input.Endpointinput.Auth.Username, input.Endpointinput.Auth.Password, ""),
+			Secure: insecure,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		ok, err := mc.BucketExists(ctx, input.Ossinput.Bucket)
+		if err != nil {
+			return nil, errors.Wrap(err, "Check bucket")
+		}
+		if !ok {
+			return nil, datasource.ErrOSSNoSuchBucket
+		}
+		return &generated.Datasource{
+			Namespace: input.Namespace,
+			Name:      input.Name,
+			Status:    &common.StatusTrue,
+		}, nil
+	}
+	return nil, datasource.ErrUnknowDatasourceType
 }

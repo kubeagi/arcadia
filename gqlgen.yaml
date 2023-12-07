@@ -94,6 +94,8 @@ models:
         resolver: true
       listDatasources:
         resolver: true
+      checkDatasource:
+        resolver: true
   DatasourceMutation:
     fields:
       createDatasource:

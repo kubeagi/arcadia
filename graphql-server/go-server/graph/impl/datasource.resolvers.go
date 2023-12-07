@@ -50,6 +50,15 @@ func (r *datasourceQueryResolver) GetDatasource(ctx context.Context, obj *genera
 	return datasource.ReadDatasource(ctx, c, name, namespace)
 }
 
+// CheckDatasource is the resolver for the checkDatasource field.
+func (r *datasourceQueryResolver) CheckDatasource(ctx context.Context, obj *generated.DatasourceQuery, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return datasource.CheckDatasource(ctx, c, input)
+}
+
 // ListDatasources is the resolver for the listDatasources field.
 func (r *datasourceQueryResolver) ListDatasources(ctx context.Context, obj *generated.DatasourceQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	token := auth.ForOIDCToken(ctx)

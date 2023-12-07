@@ -1,5 +1,5 @@
 # list
-query listWorkers($input: ListCommonInput!){
+query listWorkers($input: ListWorkerInput!){
   Worker {
     listWorkers(input: $input) {
       totalCount

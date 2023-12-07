@@ -2,6 +2,7 @@ query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatase
   Dataset {
     listDatasets(input: $input) {
       totalCount
+      hasNextPage
       nodes {
         ... on Dataset {
           name
@@ -14,6 +15,7 @@ query listDatasets($input: ListDatasetInput, $versionsInput: ListVersionedDatase
           field
           versions(input: $versionsInput) {
             totalCount
+            hasNextPage
             nodes {
               ... on VersionedDataset {
                 name
@@ -50,6 +52,7 @@ query getDataset($name: String!, $namespace: String!, $versionsInput: ListVersio
       field
       versions(input: $versionsInput) {
         totalCount
+        hasNextPage
         nodes {
           ... on VersionedDataset {
             name

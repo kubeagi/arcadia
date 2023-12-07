@@ -35,28 +35,24 @@ import (
 
 func graphqlHandler() gin.HandlerFunc {
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &impl.Resolver{}}))
-	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
-		rc := graphql.GetFieldContext(ctx)
-		klog.Infoln("Entered", rc.Object, rc.Field.Name)
-		res, err = next(ctx)
-		klog.Infoln("Left", rc.Object, rc.Field.Name, "=>", res, err)
-		return res, err
+
+	srv.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		oc := graphql.GetOperationContext(ctx)
+		klog.V(5).Infof("RawRequest: %s", oc.RawQuery)
+		return next(ctx)
 	})
+	srv.AroundResponses(func(ctx context.Context, next graphql.ResponseHandler) *graphql.Response {
+		response := next(ctx)
+		klog.V(5).Infof("RawResponse: %s", response.Data)
+		return response
+	})
+
 	return func(c *gin.Context) {
 		srv.ServeHTTP(c.Writer, c.Request)
 	}
 }
 
 func RegisterGraphQL(g *gin.Engine, conf config.ServerConfig) {
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &impl.Resolver{}}))
-	srv.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
-		rc := graphql.GetFieldContext(ctx)
-		klog.Infoln("Entered", rc.Object, rc.Field.Name)
-		res, err = next(ctx)
-		klog.Infoln("Left", rc.Object, rc.Field.Name, "=>", res, err)
-		return res, err
-	})
-
 	if conf.EnablePlayground {
 		endpoint := "/bff"
 		if conf.PlaygroundEndpointPrefix != "" {

@@ -139,6 +139,7 @@ input UpdateDatasourceInput {
 
 type DatasourceQuery {
     getDatasource(name: String!, namespace: String!): Datasource!
+    checkDatasource(input: CreateDatasourceInput!): Datasource!
     listDatasources(input: ListCommonInput!): PaginatedResult!
 }
 
