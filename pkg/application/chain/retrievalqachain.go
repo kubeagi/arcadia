@@ -72,7 +72,14 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ dynamic.Interface, args ma
 	chain := chains.NewRetrievalQA(chains.NewStuffDocuments(llmChain), retriever)
 	l.RetrievalQA = chain
 	args["query"] = args["question"]
-	out, err := chains.Predict(ctx, l.RetrievalQA, args)
+	var out string
+	var err error
+	if needStream, ok := args["need_stream"].(bool); ok && needStream {
+		option := chains.WithStreamingFunc(stream(args))
+		out, err = chains.Predict(ctx, l.RetrievalQA, args, option)
+	} else {
+		out, err = chains.Predict(ctx, l.RetrievalQA, args)
+	}
 	klog.Infof("out:%v, err:%s", out, err)
 	if err == nil {
 		args["answer"] = out

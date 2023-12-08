@@ -17,12 +17,14 @@ limitations under the License.
 package zhipuai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"strings"
 
-	lanchainllm "github.com/tmc/langchaingo/llms"
+	"github.com/r3labs/sse/v2"
+	langchainllm "github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
 )
@@ -37,7 +39,7 @@ type ZhiPuAILLM struct {
 	ZhiPuAI
 }
 
-func (z ZhiPuAILLM) Call(ctx context.Context, prompt string, options ...lanchainllm.CallOption) (string, error) {
+func (z ZhiPuAILLM) Call(ctx context.Context, prompt string, options ...langchainllm.CallOption) (string, error) {
 	r, err := z.Generate(ctx, []string{prompt}, options...)
 	if err != nil {
 		return "", err
@@ -48,7 +50,11 @@ func (z ZhiPuAILLM) Call(ctx context.Context, prompt string, options ...lanchain
 	return r[0].Text, nil
 }
 
-func (z ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...lanchainllm.CallOption) ([]*lanchainllm.Generation, error) {
+func (z ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...langchainllm.CallOption) ([]*langchainllm.Generation, error) {
+	opts := langchainllm.CallOptions{}
+	for _, opt := range options {
+		opt(&opts)
+	}
 	params := DefaultModelParams()
 	if len(prompts) == 0 {
 		return nil, ErrEmptyPrompt
@@ -58,6 +64,25 @@ func (z ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...l
 	}
 	klog.Infoln("prompt:", prompts[0])
 	client := NewZhiPuAI(z.apiKey)
+	needStream := opts.StreamingFunc != nil
+	if needStream {
+		res := bytes.NewBuffer(nil)
+		err := client.SSEInvoke(params, func(event *sse.Event) {
+			if string(event.Event) == "finish" {
+				return
+			}
+			_, _ = res.Write(event.Data)
+			_ = opts.StreamingFunc(ctx, event.Data)
+		})
+		if err != nil {
+			return nil, err
+		}
+		return []*langchainllm.Generation{
+			{
+				Text: res.String(),
+			},
+		}, nil
+	}
 	resp, err := client.Invoke(params)
 	if err != nil {
 		return nil, err
@@ -67,15 +92,15 @@ func (z ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...l
 	if err := json.Unmarshal([]byte(resp.Data.Choices[0].Content), &s); err != nil {
 		return nil, err
 	}
-	return []*lanchainllm.Generation{
+	return []*langchainllm.Generation{
 		{
 			Text: strings.TrimSpace(s),
 		},
 	}, nil
 }
 
-func (z ZhiPuAILLM) GeneratePrompt(ctx context.Context, promptValues []schema.PromptValue, options ...lanchainllm.CallOption) (lanchainllm.LLMResult, error) {
-	return lanchainllm.GeneratePrompt(ctx, z, promptValues, options...)
+func (z ZhiPuAILLM) GeneratePrompt(ctx context.Context, promptValues []schema.PromptValue, options ...langchainllm.CallOption) (langchainllm.LLMResult, error) {
+	return langchainllm.GeneratePrompt(ctx, z, promptValues, options...)
 }
 
 func (z ZhiPuAILLM) GetNumTokens(text string) int {

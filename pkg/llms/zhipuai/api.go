@@ -138,7 +138,7 @@ func (z *ZhiPuAI) SSEInvoke(params ModelParams, handler func(*sse.Event)) error 
 	if err != nil {
 		return err
 	}
-	return Stream(url, token, params, ZhipuaiModelDefaultTimeout, nil)
+	return Stream(url, token, params, ZhipuaiModelDefaultTimeout, handler)
 }
 
 func (z *ZhiPuAI) Validate() (llms.Response, error) {

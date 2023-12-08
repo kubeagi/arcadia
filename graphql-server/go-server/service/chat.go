@@ -16,6 +16,7 @@ limitations under the License.
 package service
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -31,12 +32,27 @@ func chatHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		resp, err := chat.AppRun(c, req)
+		stream := req.ResponseMode == chat.Streaming
+		resp, respStreamChain, err := chat.AppRun(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, resp)
+		if !stream {
+			c.JSON(http.StatusOK, resp)
+			return
+		}
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+		c.Stream(func(w io.Writer) bool {
+			if msg, ok := <-respStreamChain; ok {
+				c.SSEvent("", msg)
+				return true
+			}
+			return false
+		})
 	}
 }
 func RegisteryChat(g *gin.Engine, conf config.ServerConfig) {

@@ -65,7 +65,6 @@ func Stream(apiURL, token string, params ModelParams, timeout time.Duration, han
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("%v", resp)
 	// parse response body as stream events
 	eventChan, errorChan := NewSSEClient().Events(resp)
 

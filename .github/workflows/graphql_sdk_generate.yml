@@ -32,6 +32,6 @@ jobs:
           echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
       - name: make sdk
         run: |
-          kubectl port-forward svc/arcadia-portal-server -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
+          kubectl port-forward svc/arcadia-apiserver -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
           export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
           make gql-sdk-generator

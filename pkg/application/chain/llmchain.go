@@ -59,7 +59,14 @@ func (l *LLMChain) Run(ctx context.Context, _ dynamic.Interface, args map[string
 	}
 	chain := chains.NewLLMChain(llm, prompt)
 	l.LLMChain = *chain
-	out, err := chains.Predict(ctx, l.LLMChain, args)
+	var out string
+	var err error
+	if needStream, ok := args["need_stream"].(bool); ok && needStream {
+		option := chains.WithStreamingFunc(stream(args))
+		out, err = chains.Predict(ctx, l.LLMChain, args, option)
+	} else {
+		out, err = chains.Predict(ctx, l.LLMChain, args)
+	}
 	if err == nil {
 		args["answer"] = out
 	}
