@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/tmc/langchaingo/llms"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -56,19 +55,9 @@ func (z *ZhipuLLM) Init(ctx context.Context, cli dynamic.Interface, args map[str
 	if err != nil {
 		return err
 	}
-	var apiKey string
-	if instance.Spec.Enpoint != nil && instance.Spec.Enpoint.AuthSecret != nil {
-		authSecret := &corev1.Secret{}
-		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-			Namespace(z.Ref.GetNamespace()).Get(ctx, instance.Spec.Enpoint.AuthSecret.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), authSecret)
-		if err != nil {
-			return err
-		}
-		apiKey = string(authSecret.Data["apiKey"])
+	apiKey, err := instance.AuthAPIKeyByDynamicCli(ctx, cli)
+	if err != nil {
+		return err
 	}
 	llm := zhipuai.NewZhiPuAI(apiKey)
 	z.ZhiPuAI = *llm

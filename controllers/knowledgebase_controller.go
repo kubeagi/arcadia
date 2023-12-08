@@ -173,7 +173,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	vectorStoreReq := kb.Spec.VectorStore
 	fileGroupsReq := kb.Spec.FileGroups
 	if embedderReq == nil || vectorStoreReq == nil || len(fileGroupsReq) == 0 {
-		r.setCondition(kb, kb.PendingCondition("emberder or vectorstore or filegroups is not setting"))
+		r.setCondition(kb, kb.PendingCondition("embedder or vectorstore or filegroups is not setting"))
 		return kb, ctrl.Result{}, nil
 	}
 
@@ -397,7 +397,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		}
 	}
 	data, err := io.ReadAll(file) // TODO Load large files in pieces to save memory
-	// TODO Line or single line byte exceeds emberder limit
+	// TODO Line or single line byte exceeds embedder limit
 	if err != nil {
 		return err
 	}

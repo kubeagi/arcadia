@@ -31,9 +31,13 @@ type NodeConfig struct {
 // ApplicationSpec defines the desired state of Application
 type ApplicationSpec struct {
 	CommonSpec `json:",inline"`
-	// 开场白，只给客户看的内容，引导客户首次输入
+	// Icon base64 image icon
+	Icon string `json:"icon,omitempty"`
+	// IsPublic Set whether the current application provides services to the public
+	IsPublic bool `json:"isPublic,omitempty"`
+	// prologue, show in the chat top
 	Prologue string `json:"prologue,omitempty"`
-	// 节点
+	// Nodes
 	// +kubebuilder:validation:Required
 	Nodes []Node `json:"nodes"`
 }

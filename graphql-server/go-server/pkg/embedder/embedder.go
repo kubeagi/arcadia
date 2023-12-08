@@ -30,19 +30,12 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
-	labels := make(map[string]interface{})
-	for k, v := range obj.GetLabels() {
-		labels[k] = v
-	}
-	annotations := make(map[string]interface{})
-	for k, v := range obj.GetAnnotations() {
-		annotations[k] = v
-	}
 	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
 	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
 	authsecretNamespace, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "namespace")
@@ -69,8 +62,8 @@ func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
 	md := generated.Embedder{
 		Name:            obj.GetName(),
 		Namespace:       obj.GetNamespace(),
-		Labels:          labels,
-		Annotations:     annotations,
+		Labels:          graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:     graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:     &displayName,
 		Endpoint:        &endpoint,
 		Type:            &servicetype,

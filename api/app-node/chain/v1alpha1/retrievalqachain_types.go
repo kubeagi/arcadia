@@ -23,36 +23,23 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
-// LLMChainSpec defines the desired state of LLMChain
-type LLMChainSpec struct {
+// RetrievalQAChainSpec defines the desired state of RetrievalQAChain
+type RetrievalQAChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
 	CommonChainConfig `json:",inline"`
 
-	Input  LLMChainInput `json:"input"`
-	Output Output        `json:"output"`
+	Input  RetrievalQAChainInput `json:"input"`
+	Output Output                `json:"output"`
 }
 
-type LLMChainInput struct {
-	LLM    node.LLMRef    `json:"llm"`
-	Prompt node.PromptRef `json:"prompt"`
-}
-type Output struct {
-	node.CommonOrInPutOrOutputRef `json:",inline"`
+type RetrievalQAChainInput struct {
+	LLMChainInput `json:",inline"`
+	Retriever     node.RetrieverRef `json:"retriever"`
 }
 
-type CommonChainConfig struct {
-	// 记忆相关参数
-	Memory Memory `json:"memory,omitempty"`
-}
-
-type Memory struct {
-	// 能记住的最大 token 数
-	MaxTokenLimit int `json:"maxTokenLimit,omitempty"`
-}
-
-// LLMChainStatus defines the observed state of LLMChain
-type LLMChainStatus struct {
+// RetrievalQAChainStatus defines the observed state of RetrievalQAChain
+type RetrievalQAChainStatus struct {
 	// ObservedGeneration is the last observed generation.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -64,24 +51,27 @@ type LLMChainStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// LLMChain is the Schema for the LLMChains API
-type LLMChain struct {
+// RetrievalQAChain is a chain used for question-answering against a retriever.
+// First the chain gets documents from the retriever, then the documents
+// and the query are used as input to another chain.Typically, that chain
+// combines the documents into a prompt that is sent to a llm.
+type RetrievalQAChain struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LLMChainSpec   `json:"spec,omitempty"`
-	Status LLMChainStatus `json:"status,omitempty"`
+	Spec   RetrievalQAChainSpec   `json:"spec,omitempty"`
+	Status RetrievalQAChainStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// LLMChainList contains a list of LLMChain
-type LLMChainList struct {
+// RetrievalQAChainList contains a list of RetrievalQAChain
+type RetrievalQAChainList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LLMChain `json:"items"`
+	Items           []RetrievalQAChain `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LLMChain{}, &LLMChainList{})
+	SchemeBuilder.Register(&RetrievalQAChain{}, &RetrievalQAChainList{})
 }

@@ -63,6 +63,7 @@ func (z ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...l
 		return nil, err
 	}
 	var s string
+	klog.Infoln("resp:", resp.String())
 	if err := json.Unmarshal([]byte(resp.Data.Choices[0].Content), &s); err != nil {
 		return nil, err
 	}

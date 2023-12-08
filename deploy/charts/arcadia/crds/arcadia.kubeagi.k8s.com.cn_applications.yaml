@@ -44,8 +44,15 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              icon:
+                description: Icon base64 image icon
+                type: string
+              isPublic:
+                description: IsPublic Set whether the current application provides
+                  services to the public
+                type: boolean
               nodes:
-                description: 节点
+                description: Nodes
                 items:
                   properties:
                     description:
@@ -83,7 +90,7 @@ spec:
                   type: object
                 type: array
               prologue:
-                description: 开场白，只给客户看的内容，引导客户首次输入
+                description: prologue, show in the chat top
                 type: string
             required:
             - nodes

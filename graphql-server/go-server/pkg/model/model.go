@@ -33,19 +33,12 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
+	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
 
 func obj2model(obj *unstructured.Unstructured) *generated.Model {
-	labels := make(map[string]interface{})
-	for k, v := range obj.GetLabels() {
-		labels[k] = v
-	}
-	annotations := make(map[string]interface{})
-	for k, v := range obj.GetAnnotations() {
-		annotations[k] = v
-	}
 	id := string(obj.GetUID())
 	creationtimestamp := obj.GetCreationTimestamp().Time
 	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
@@ -69,8 +62,8 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
-		Labels:            labels,
-		Annotations:       annotations,
+		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &displayName,
 		Description:       &description,
 		Status:            &status,
@@ -130,16 +123,8 @@ func UpdateModel(ctx context.Context, c dynamic.Interface, input *generated.Upda
 		return nil, err
 	}
 
-	l := make(map[string]string)
-	for k, v := range input.Labels {
-		l[k] = v.(string)
-	}
-	a := make(map[string]string)
-	for k, v := range input.Annotations {
-		a[k] = v.(string)
-	}
-	obj.SetLabels(l)
-	obj.SetAnnotations(a)
+	obj.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	obj.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 
 	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
 	if input.DisplayName != nil && *input.DisplayName != displayname {

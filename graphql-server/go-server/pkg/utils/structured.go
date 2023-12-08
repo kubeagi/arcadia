@@ -1,5 +1,5 @@
 /*
-Copyright 2023 KubeAGI.
+Copyright 2023 The KubeAGI Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,11 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package utils
 
-const (
-	InputNode                    = "Input"
-	OutputNode                   = "Output"
-	ApplicationTypeLabel         = Group + "/application-type"
-	KnowledgeBaseApplicationType = "KnowledgeBase"
+import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+func MapAny2Str(input map[string]interface{}) map[string]string {
+	out, _, _ := unstructured.NestedStringMap(input)
+	return out
+}
+
+func MapStr2Any(input map[string]string) map[string]any {
+	output := map[string]any{}
+	_ = unstructured.SetNestedStringMap(output, input)
+	return output
+}

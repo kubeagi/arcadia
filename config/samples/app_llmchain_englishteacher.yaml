@@ -101,7 +101,7 @@ metadata:
   namespace: arcadia
 type: Opaque
 data:
-  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+  apiKey: "MTZlZDcxYzcwMDE0NGFiMjIyMmI5YmEwZDFhMTBhZTUuUTljWVZtWWxmdjlnZGtDeQ==" # replace this with your API key
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: LLM

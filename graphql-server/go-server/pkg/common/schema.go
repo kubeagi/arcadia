@@ -27,6 +27,7 @@ import (
 
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
+	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
@@ -56,6 +57,26 @@ var (
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "datasets",
 		},
+		"application": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "applications",
+		},
+		"prompt": {
+			Group:    apiprompt.GroupVersion.Group,
+			Version:  apiprompt.GroupVersion.Version,
+			Resource: "prompts",
+		},
+		"chain": {
+			Group:    apichain.GroupVersion.Group,
+			Version:  apichain.GroupVersion.Version,
+			Resource: "chains",
+		},
+		"retriever": {
+			Group:    apiretriever.GroupVersion.Group,
+			Version:  apiretriever.GroupVersion.Version,
+			Resource: "retrievers",
+		},
 	}
 )
 
@@ -79,4 +100,5 @@ func init() {
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(apichain.AddToScheme(scheme))
 	utilruntime.Must(apiprompt.AddToScheme(scheme))
+	utilruntime.Must(apiretriever.AddToScheme(scheme))
 }

@@ -455,6 +455,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - retrievalqachains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - retrievalqachains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - retrievalqachains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - prompt.arcadia.kubeagi.k8s.com.cn
   resources:
   - prompts
@@ -476,6 +502,32 @@ rules:
   - prompt.arcadia.kubeagi.k8s.com.cn
   resources:
   - prompts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebaseretrievers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebaseretrievers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebaseretrievers/status
   verbs:
   - get
   - patch
