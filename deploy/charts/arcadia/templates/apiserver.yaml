@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-apiserver
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-apiserver
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-apiserver
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+        - name: graphql-server
+          image: {{ .Values.apiserver.image }}
+          ports:
+            - containerPort: {{ .Values.apiserver.port }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: DEFAULT_CONFIG
+              value: {{ .Release.Name }}-config
+          command:
+            - "./graphql-server"
+          args:
+            - "--enable-playground={{ .Values.apiserver.enableplayground }}"
+            - "--port={{ .Values.apiserver.port }}"
+            - "--playground-endpoint-prefix={{ .Values.apiserver.ingress.path }}"
+          {{- if .Values.apiserver.oidc.enabled }}
+            - "--enable-oidc={{ .Values.apiserver.oidc.enabled }}"
+            - "--client-id={{ .Values.apiserver.oidc.clientID }}"
+            - "--client-secret={{ .Values.apiserver.oidc.clientSecret }}"
+            - "--master-url={{ .Values.apiserver.oidc.masterURL }}"
+            - "--issuer-url={{ .Values.apiserver.oidc.issuerURL }}"
+          {{- end }}
+          {{- if .Values.dataprocess.enabled }}
+            - "--data-processing-url={{ .Values.apiserver.dataProcessURL }}"
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-apiserver
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-apiserver
+  ports:
+    - name: api
+      port: {{ .Values.apiserver.port }}
+      protocol: TCP
+      targetPort: {{ .Values.apiserver.port }}

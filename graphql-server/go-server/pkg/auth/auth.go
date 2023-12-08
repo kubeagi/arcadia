@@ -77,8 +77,8 @@ func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespac
 				Resource:  resource,
 				Namespace: namespace,
 			},
-			//Groups: u.Groups,
-			User: u.Name,
+			Groups: u.Groups,
+			User:   u.Name,
 		},
 	}
 	obj, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&av)

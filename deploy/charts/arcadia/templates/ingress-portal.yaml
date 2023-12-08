@@ -1,0 +1,40 @@
+{{- if .Values.portal.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-portal-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    description: kubeagi-portal-ingress
+    displayName: kubeagi-portal-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_cache static-cache;
+      proxy_cache_valid 404 10m;
+      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+      proxy_cache_bypass $http_x_purge;
+      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+spec:
+  rules:
+    - host: {{ .Values.portal.ingress.host }}
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: "/{{ .Values.portal.ingress.path }}"
+            backend:
+              service:
+                name: {{ .Release.Name }}-portal
+                port:
+                  number: {{ .Values.portal.port }}
+{{- end }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  config.yaml: |-
+    log:
+      # 支持 log,error,warn,debug,verbose 5 个日志等级的组合
+      levels: log,error,warn,verbose
+    k8s:
+      cluster:
+        name: kube-oidc-proxy
+        server: https://kube-oidc-proxy.u4a-system.svc
+        skipTLSVerify: true
+kind: ConfigMap
+metadata:
+  name: component-store-bff-server-config
+  namespace: {{ .Release.Namespace }}

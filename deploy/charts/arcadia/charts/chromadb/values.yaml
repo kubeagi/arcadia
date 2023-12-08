@@ -1,0 +1,138 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+#  repository: ghcr.io/chroma-core/chroma
+  repository: ghcr.io/amikos-tech/chromadb-chart/chroma
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+
+service:
+  type: NodePort #use ClusterIP for internal only and LoadBalancer for external
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: { }
+    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: [ ]
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+#  requests:
+#    cpu: 100m
+#    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+
+podSpec:
+  terminationGracePeriodSeconds: 5
+  securityContext: { }
+  podAnnotations: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # fsGroup: 2000
+  annotations: { }
+  initContainers: [ ]
+readinessProbe:
+  failureThreshold: 20
+  timeoutSeconds: 10
+  periodSeconds: 5
+livenessProbe:
+  failureThreshold: 40
+  timeoutSeconds: 10
+  periodSeconds: 5
+startupProbe:
+  failureThreshold: 1000
+  periodSeconds: 5
+  initialDelaySeconds: 10
+
+chromadb:
+  apiVersion: "0.4.14"
+  allowReset: false
+  isPersistent: true
+  persistDirectory: /index_data
+  logConfigFileLocation: config/log_config.yaml
+  anonymizedTelemetry: false
+  corsAllowOrigins:
+    - "*"
+#  apiImpl: "chromadb.api.fastapi.FastAPI" # this doesn't seem to be working.
+  apiImpl: "chromadb.api.segment.SegmentAPI"
+  serverHost: "0.0.0.0"
+  serverHttpPort: 8000
+  dataVolumeSize: "1Gi"
+  dataVolumeStorageClass: null
+  auth:
+    enabled: true
+    type: "token" # possible values: basic, token
+    basic:
+      username: "chroma"
+      password: null  # The string used as the auth.basic password. Only used if value not null, otherwise a random string will be generated and used.
+      config:
+        env:
+          - name: CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER
+            value: "chromadb.auth.providers.HtpasswdFileServerAuthCredentialsProvider"
+          - name: CHROMA_SERVER_AUTH_PROVIDER
+            value: "chromadb.auth.basic.BasicAuthServerProvider"
+          - name: CHROMA_SERVER_AUTH_CREDENTIALS_FILE
+            value: "/chroma/auth/server.htpasswd"
+    token:
+      headerType: "AUTHORIZATION" #possible values AUTHORIZATION, X_CHROMA_TOKEN
+      value: null # The string used as the token (value). Only used if value not null, otherwise a random string will be generated and used.
+      config:
+        env:
+          - name: CHROMA_SERVER_AUTH_CREDENTIALS
+            valueFrom:
+              secretKeyRef:
+                name: chromadb-auth
+                key: token
+          - name: CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER
+            value: "chromadb.auth.token.TokenConfigServerAuthCredentialsProvider"
+          - name: CHROMA_SERVER_AUTH_PROVIDER
+            value: "chromadb.auth.token.TokenAuthServerProvider"

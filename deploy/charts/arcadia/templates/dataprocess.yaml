@@ -17,25 +17,24 @@ spec:
     spec:
       containers:
         - name: data-process
-          image: {{ .Values.dataprocess.repository }}:{{ .Values.dataprocess.tag }}
-          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+          image: {{ .Values.dataprocess.image }}
           ports:
             - containerPort: {{ .Values.dataprocess.port }}
           env:
             - name: MINIO_ACCESSKEY
-              value: {{ .Values.dataprocess.env.minio.accessKey }}
+              value: "to-be-replaced"
             - name: MINIO_SECRETKEY
-              value: {{ .Values.dataprocess.env.minio.secretKey }}
+              value: "to-be-replaced"
             - name: MINIO_API_URL
               value: {{ .Values.dataprocess.env.minio.apiURL }}
             - name: MINIO_SECURE
               value: "{{ .Values.dataprocess.env.minio.secure }}"
             - name: ZHIPU_AI_KEY
-              value: {{ .Values.dataprocess.env.zhipu.key }}
+              value: "to-be-replaced"
             - name: KNOWLEDGE_CHUNK_SIZE
-              value: "{{ .Values.dataprocess.env.zhipu.knowledge.chunkSize }}"
+              value: "{{ .Values.dataprocess.env.knowledge.chunkSize }}"
             - name: KNOWLEDGE_CHUNK_OVERLAP
-              value: "{{ .Values.dataprocess.env.zhipu.knowledge.chunkOverlap }}"
+              value: "{{ .Values.dataprocess.env.knowledge.chunkOverlap }}"
             - name: PG_HOST
               value: {{ .Values.dataprocess.env.postgres.host }}
             - name: PG_PORT

@@ -52,7 +52,7 @@ func NewStreamlitDeployer(ctx context.Context, client client.Client, instance *c
 
 func (st *StreamlitDeployer) Install() error {
 	// Check if streamlit already installed
-	exist, _ := st.streamkitInstalled()
+	exist, _ := st.streamlitInstalled()
 	if exist {
 		klog.Info(("Streamlit app already exists"))
 		return nil
@@ -65,7 +65,7 @@ func (st *StreamlitDeployer) Install() error {
 
 	namespace := st.namespace.Name
 	// lookup streamlit image from config
-	streamkitConfig, err := config.GetStreamlit(st.ctx, st.client)
+	streamlitConfig, err := config.GetStreamlit(st.ctx, st.client)
 	if err != nil {
 		klog.Errorln("failed to get streamlit config", err)
 		return err
@@ -123,7 +123,7 @@ func (st *StreamlitDeployer) Install() error {
 		return err
 	}
 	// 3. Create the deployment
-	streamkitImage := streamkitConfig.Image
+	streamlitImage := streamlitConfig.Image
 	streamlitDeployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      StreamlitAppName,
@@ -142,7 +142,7 @@ func (st *StreamlitDeployer) Install() error {
 					Containers: []corev1.Container{
 						{
 							Name:  StreamlitAppName,
-							Image: streamkitImage,
+							Image: streamlitImage,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "STREAMLIT_UI_HIDE_SIDEBAR_NAV",
@@ -154,7 +154,7 @@ func (st *StreamlitDeployer) Install() error {
 								},
 								{
 									Name:  "STREAMLIT_SERVER_BASE_URL_PATH",
-									Value: fmt.Sprintf("/%s/%s", streamkitConfig.ContextPath, namespace),
+									Value: fmt.Sprintf("%s/%s", streamlitConfig.ContextPath, namespace),
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -193,7 +193,7 @@ func (st *StreamlitDeployer) Install() error {
 	}
 
 	// 4. Create the ingress to expose the streamlit app
-	ingressClassName := &streamkitConfig.IngressClassName
+	ingressClassName := &streamlitConfig.IngressClassName
 	pathType := networkv1.PathTypePrefix
 
 	streamlitIngress := networkv1.Ingress{
@@ -205,12 +205,12 @@ func (st *StreamlitDeployer) Install() error {
 			IngressClassName: ingressClassName,
 			Rules: []networkv1.IngressRule{
 				{
-					Host: streamkitConfig.Host,
+					Host: streamlitConfig.Host,
 					IngressRuleValue: networkv1.IngressRuleValue{
 						HTTP: &networkv1.HTTPIngressRuleValue{
 							Paths: []networkv1.HTTPIngressPath{
 								{
-									Path:     streamkitConfig.ContextPath,
+									Path:     streamlitConfig.ContextPath,
 									PathType: &pathType,
 									Backend: networkv1.IngressBackend{
 										Service: &networkv1.IngressServiceBackend{
@@ -238,7 +238,7 @@ func (st *StreamlitDeployer) Install() error {
 
 func (st *StreamlitDeployer) Uninstall() error {
 	// Check if streamlit already installed
-	exist, _ := st.streamkitInstalled()
+	exist, _ := st.streamlitInstalled()
 	if !exist {
 		klog.V(5).Infoln("Streamlit app does not exist, skip uninstall")
 		return nil
@@ -308,7 +308,7 @@ func (st *StreamlitDeployer) Uninstall() error {
 }
 
 // Check if streamlit app already installed
-func (st *StreamlitDeployer) streamkitInstalled() (bool, error) {
+func (st *StreamlitDeployer) streamlitInstalled() (bool, error) {
 	streamlitService := corev1.Service{}
 	err := st.client.Get(st.ctx, types.NamespacedName{Namespace: st.namespace.Name, Name: StreamlitAppName}, &streamlitService)
 	if err == nil && streamlitService.ObjectMeta.Name != "" {

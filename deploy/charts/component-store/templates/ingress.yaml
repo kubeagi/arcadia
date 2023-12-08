@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    description: component-store-ingress
+    displayName: component-store-ingress
+    httpSend: /
+    ingress-lb: {{ .Values.ingressClassName }}
+    kubernetes.io/ingress.class: {{ .Values.ingressClassName }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_cache static-cache;
+      proxy_cache_valid 404 10m;
+      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+      proxy_cache_bypass $http_x_purge;
+      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+      rewrite ^/(component-store-apis)(/|$)(.*)$ /$3 break;
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: ""
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+  labels:
+    ingress-lb: {{ .Values.ingressClassName }}
+  name: component-store
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+    - host: {{ .Values.ingressDomain }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: component-store
+                port:
+                  number: 8066
+            path: /component-store-apis
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: component-store
+                port:
+                  number: 8066
+            path: /component-store-public
+            pathType: ImplementationSpecific

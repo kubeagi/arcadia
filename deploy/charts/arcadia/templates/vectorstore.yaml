@@ -3,6 +3,9 @@ kind: VectorStore
 metadata:
   name:  {{ .Release.Name }}-vectorstore
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
 spec:
   displayName: "向量数据库"
   description: "默认系统向量数据库"

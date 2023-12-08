@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: component-store
+  name: component-store
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      port: 8066
+      protocol: TCP
+      targetPort: 8066
+  selector:
+    app: component-store
+  sessionAffinity: None
+  type: ClusterIP

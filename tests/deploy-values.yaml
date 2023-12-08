@@ -24,22 +24,22 @@ apiserver:
   port: 8081
   ingress:
     path: kubeagi-apis
-    host: portal.<replaced-ingress-nginx-ip>.nip.io
+    host: portal.test.nip.io
   oidc:
-    enabled: true
+    enabled: false
     clientID: bff-client
-    issuerURL: https://portal.<replaced-ingress-nginx-ip>.nip.io/oidc
+    issuerURL: https://portal.test.nip.io/oidc
     clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
-    masterURL: https://k8s.<replaced-ingress-nginx-ip>.nip.io
+    masterURL: https://k8s.test.nip.io
 # portal
 portal:
   enabled: true
-  kubebbEnabled: true
+  kubebbEnabled: false
   image: yuntibuild/kubeagi-portal:0.1.0
   port: 80
   ingress:
     path: kubeagi-portal-public
-    host: portal.<replaced-ingress-nginx-ip>.nip.io
+    host: portal.test.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:
@@ -51,7 +51,7 @@ fastchat:
     enabled: false
     className: portal-ingress
     hosts:
-      - host: fastchat-api.<replaced-ingress-nginx-ip>.nip.io
+      - host: fastchat-api.test.nip.io
         paths:
           - path: /
             port: 8000
@@ -72,25 +72,26 @@ minio:
   rootPassword: "Passw0rd!"
   persistence:
     enabled: true
-    storageClass: "openebs-hostpath"
+    storageClass: "standard"
     size: 30Gi
   ingress:
-    enabled: true
+    # disable for test scenario
+    enabled: false
     api:
-      enabled: true
-      insecure: false
+      enabled: false
+      insecure: true
       port: 9000
-      host: minio-api.<replaced-ingress-nginx-ip>.nip.io
+      host: arcadia-minio:9000
     console:
       enabled: false
       port: 9001
-      host: minio-console.<replaced-ingress-nginx-ip>.nip.io
+      host: minio-console:9001
     cert:
       ipAddresses:
-      - <replaced-ingress-nginx-ip>
+      - test
       dnsNames:
-      - minio-api.<replaced-ingress-nginx-ip>.nip.io
-      - minio-console.<replaced-ingress-nginx-ip>.nip.io
+      - minio-api.test.nip.io
+      - minio-console.test.nip.io
 
   buckets:
     # Name of the bucket
@@ -134,5 +135,5 @@ chromadb:
   image:
     repository: ghcr.io/amikos-tech/chromadb-chart/chroma
   chromadb:
-    dataVolumeStorageClass: "openebs-hostpath"
+    dataVolumeStorageClass: "standard"
     apiVersion: "0.4.14"

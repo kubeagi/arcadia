@@ -1,0 +1,359 @@
+{{- if .Values.portal.kubebbEnabled }}
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-data-source
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-data-source","data":"<path d=\"M64 428.8zm448 96c246.4 0
+    448-70.4 448-156.8V220.8C960 134.4 758.4 64 512 64 268.8 64 70.4 131.2 64 217.6V368c3.2
+    86.4 201.6 156.8 448 156.8zM134.4 262.4c16 0 28.8 12.8 28.8 28.8S150.4 320 134.4
+    320s-28.8-12.8-28.8-28.8 12.8-28.8 28.8-28.8z\"></path><path d=\"M956.8 435.2c-12.8
+    83.2-208 147.2-448 147.2-236.8 0-432-64-448-147.2v150.4c0 86.4 201.6 156.8 448
+    156.8s448-70.4 448-156.8V435.2zM134.4 617.6c-16 0-28.8-12.8-28.8-28.8s12.8-28.8
+    28.8-28.8 28.8 12.8 28.8 28.8-12.8 28.8-28.8 28.8z\" opacity=\"0.8\"></path><path
+    d=\"M512 803.2c-236.8 0-432-64-448-147.2v150.4c0 86.4 201.6 156.8 448 156.8s448-70.4
+    448-156.8V656h-3.2C944 736 748.8 803.2 512 803.2zm-377.6 32c-16 0-28.8-12.8-28.8-28.8s12.8-28.8
+    28.8-28.8 28.8 12.8 28.8 28.8-12.8 28.8-28.8 28.8z\" opacity=\"0.6\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-data
+    uid: ""
+  pathname: /kubeagi-portal/data-source
+  project: true
+  rankingInColumn: 100
+  tenant: true
+  text: 数据源
+  textEn: 数据源
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-dataset
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-dataset","data":"<path d=\"M512 470.4c-9.6 0-16-3.2-25.6-6.4l-320-150.4c-25.6-12.8-38.4-44.8-25.6-70.4
+    6.4-12.8 16-22.4 25.6-25.6l304-144c25.6-12.8 57.6-12.8 83.2 0l304 144c25.6 12.8
+    38.4 44.8 25.6 70.4-6.4 12.8-16 22.4-25.6 25.6L537.6 464c-9.6 3.2-16 6.4-25.6
+    6.4z\"></path><path d=\"M428.8 960c-9.6 0-16-3.2-22.4-6.4l-288-134.4c-19.2-9.6-28.8-28.8-28.8-48V422.4c0-19.2
+    9.6-38.4 25.6-48 16-9.6 35.2-9.6 51.2 0l288 134.4c16 9.6 28.8 28.8 28.8 48v345.6c0
+    19.2-9.6 38.4-25.6 48-9.6 6.4-19.2 9.6-28.8 9.6z\" opacity=\"0.8\"></path><path
+    d=\"M595.2 960c-9.6 0-19.2-3.2-25.6-6.4-16-9.6-25.6-28.8-25.6-48V560c0-19.2 9.6-38.4
+    28.8-48L864 374.4c16-9.6 35.2-6.4 48 0 16 9.6 25.6 28.8 25.6 48V768c0 19.2-9.6
+    38.4-28.8 48L617.6 950.4c-6.4 6.4-16 9.6-22.4 9.6z\" opacity=\"0.6\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-data
+    uid: ""
+  pathname: /kubeagi-portal/dataset
+  project: true
+  rankingInColumn: 200
+  tenant: true
+  text: 数据集
+  textEn: 数据集
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-data-handle
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-data-handle","data":"<path d=\"M921.6 736L656 470.4c-32
+    86.4-99.2 153.6-185.6 182.4L736 918.4c51.2 51.2 134.4 51.2 185.6 0 51.2-48 51.2-131.2
+    0-182.4z\" opacity=\"0.8\"></path><path d=\"M656 473.6c22.4-64 25.6-137.6 0-208-57.6-156.8-230.4-240-390.4-182.4l160
+    160c19.2 19.2 19.2 51.2 0 70.4L310.4 428.8c-19.2 19.2-51.2 19.2-70.4 0l-160-160c-38.4
+    112-12.8 236.8 70.4 320 86.4 86.4 211.2 108.8 316.8 70.4C556.8 627.2 624 560 656
+    473.6z\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-data
+    uid: ""
+  pathname: /kubeagi-portal/data-handle
+  project: true
+  rankingInColumn: 300
+  tenant: true
+  text: 数据处理
+  textEn: 数据处理
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-knowledge
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-knowledge","data":"<path d=\"M336 960H64V64h272v896zM198.4
+    675.2c-28.8 0-54.4 25.6-54.4 54.4 0 28.8 25.6 54.4 54.4 54.4 28.8 0 54.4-25.6
+    54.4-54.4 0-28.8-22.4-54.4-54.4-54.4zm-92.8-406.4v41.6h188.8v-41.6H105.6zm0-124.8v41.6h188.8V144H105.6z\"></path><path
+    d=\"M646.4 960h-272V64h272v896zM512 675.2c-28.8 0-54.4 25.6-54.4 54.4 0 28.8 25.6
+    54.4 54.4 54.4 28.8 0 54.4-25.6 54.4-54.4 0-28.8-25.6-54.4-54.4-54.4zm-96-406.4v41.6h188.8v-41.6H416zm0-124.8v41.6h188.8V144H416z\"
+    opacity=\"0.8\"></path><path d=\"M960 960H688V64h272v896zM825.6 675.2c-28.8 0-54.4
+    25.6-54.4 54.4 0 28.8 25.6 54.4 54.4 54.4 28.8 0 54.4-25.6 54.4-54.4 0-28.8-25.6-54.4-54.4-54.4zm-96-406.4v41.6h188.8v-41.6H729.6zm0-124.8v41.6h188.8V144H729.6z\"
+    opacity=\"0.6\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-data
+    uid: ""
+  pathname: /kubeagi-portal/knowledge
+  project: true
+  rankingInColumn: 400
+  tenant: true
+  text: 知识库
+  textEn: 知识库
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-model-warehouse
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubebb-warehouse","data":"<path d=\"M1004.8 432h19.2L512 80 0 432z\"></path><path
+    d=\"M352 681.6h320v96H352zm0 160h320v96H352z\" opacity=\"0.6\"></path><path d=\"M128
+    425.6h128v512H128zm640 0h128v512H768zM256 432h512v128H256z\" opacity=\"0.8\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-model
+    uid: ""
+  pathname: /kubeagi-portal/model-warehouse
+  project: true
+  rankingInColumn: 100
+  tenant: true
+  text: 模型仓库
+  textEn: 模型仓库
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-model-service
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-model-service","data":"<path d=\"M627.2 656H396.8L512 464z\"></path><path
+    d=\"M307.2 662.4L0 806.4 476.8 28.8v361.6zm409.6 0l-169.6-272 6.4-361.6L1024 806.4z\"
+    opacity=\"0.6\"></path><path d=\"M348.8 720h320L1024 896H0z\" opacity=\"0.8\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-model
+    uid: ""
+  pathname: /kubeagi-portal/model-service
+  project: true
+  rankingInColumn: 200
+  tenant: true
+  text: 模型服务
+  textEn: 模型服务
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-model-app
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-model-app","data":"<path d=\"M371.2 92.8c16 0 32 6.4 44.8
+    19.2 12.8 12.8 19.2 25.6 19.2 44.8v246.4c0 16-6.4 32-19.2 44.8-12.8 12.8-25.6
+    19.2-44.8 19.2H124.8c-16 0-32-6.4-44.8-19.2-12.8-12.8-19.2-25.6-19.2-44.8V156.8c0-16
+    6.4-32 19.2-44.8 12.8-12.8 25.6-19.2 44.8-19.2h246.4z\" opacity=\"0.7\"></path><path
+    d=\"M371.2 588.8c16 0 32 6.4 44.8 19.2 12.8 12.8 19.2 25.6 19.2 44.8v249.6c0 16-6.4
+    32-19.2 44.8-12.8 12.8-25.6 19.2-44.8 19.2H124.8c-16 0-32-6.4-44.8-19.2-12.8-12.8-19.2-25.6-19.2-44.8V652.8c0-16
+    6.4-32 19.2-44.8 12.8-12.8 25.6-19.2 44.8-19.2h246.4z\" opacity=\"0.8\"></path><path
+    d=\"M867.2 588.8c16 0 32 6.4 44.8 19.2s19.2 25.6 19.2 44.8v249.6c0 16-6.4 32-19.2
+    44.8s-25.6 19.2-44.8 19.2H620.8c-16 0-32-6.4-44.8-19.2s-19.2-25.6-19.2-44.8V652.8c0-16
+    6.4-32 19.2-44.8 12.8-12.8 25.6-19.2 44.8-19.2h246.4z\" opacity=\"0.9\"></path><path
+    d=\"M1004.8 204.8c12.8 12.8 19.2 28.8 19.2 48s-6.4 32-19.2 44.8L819.2 483.2c-12.8
+    12.8-28.8 19.2-44.8 19.2s-32-6.4-44.8-19.2L544 297.6c-12.8-12.8-19.2-28.8-19.2-44.8s6.4-32
+    19.2-48L729.6 19.2C742.4 6.4 758.4 0 774.4 0s32 6.4 44.8 19.2l185.6 185.6z\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-app
+    uid: ""
+  pathname: /kubeagi-portal/model-app
+  project: true
+  rankingInColumn: 100
+  tenant: true
+  text: 模型应用
+  textEn: 模型应用
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-chat
+spec:
+  getTitleForReplaceSider: {}
+  icon: '{"name":"message-warn","data":"<defs><style></style></defs><path d=\"M226.096
+    938.656a24 24 0 01-24-24v-128H99.424c-30.88 0-56-25.12-56-56v-592c0-30.88 25.12-56
+    56-56h832c30.88 0 56 25.12 56 56v592c0 30.88-25.12 56-56 56H457.472L239.568 934.512a23.952
+    23.952 0 01-13.472 4.144zM99.424 130.672a8 8 0 00-8 8v592a8 8 0 008 8h126.672a24
+    24 0 0124 24v106.704l186.528-126.56a23.976 23.976 0 0113.472-4.144h481.328c4.4
+    0 8-3.6 8-8v-592a8 8 0 00-8-8h-832z\"></path><path d=\"M243.42399999999998 418.656a48
+    48 0 1096 0 48 48 0 10-96 0zM467.424 418.656a48 48 0 1096 0 48 48 0 10-96 0zM691.424
+    418.656a48 48 0 1096 0 48 48 0 10-96 0z\"></path><path d=\"M1024 820.288c0 15.056-12.208
+    27.264-27.264 27.264H560.592a27.264 27.264 0 01-27.264-27.264v-333.92c0-15.056
+    12.208-27.264 27.264-27.264h436.144c15.056 0 27.264 12.208 27.264 27.264v333.92z\"
+    opacity=\"0.15\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal-app
+    uid: ""
+  pathname: /kubeagi-portal/chat
+  project: true
+  rankingInColumn: 200
+  tenant: true
+  text: 对话管理
+  textEn: 对话管理
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-data
+spec:
+  getTitleForReplaceSider: {}
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal
+    uid: ""
+  rankingInColumn: 100
+  tenant: true
+  text: 数据管理
+  textEn: 数据管理
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-model
+spec:
+  getTitleForReplaceSider: {}
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal
+    uid: ""
+  rankingInColumn: 200
+  tenant: true
+  text: 模型管理
+  textEn: 模型管理
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal-app
+spec:
+  getTitleForReplaceSider: {}
+  parentOwnerReferences:
+    apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+    blockOwnerDeletion: false
+    controller: false
+    kind: Menu
+    name: yunti-kubeagi-portal
+    uid: ""
+  rankingInColumn: 300
+  tenant: true
+  text: 应用管理
+  textEn: 应用管理
+status: {}
+
+---
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Menu
+metadata:
+  creationTimestamp: null
+  labels:
+    portal: kubeagi-portal
+  name: yunti-kubeagi-portal
+spec:
+  column: 1
+  getTitleForReplaceSider: {}
+  icon: '{"name":"kubeagi-model-service","data":"<path d=\"M627.2 656H396.8L512 464z\"></path><path
+    d=\"M307.2 662.4L0 806.4 476.8 28.8v361.6zm409.6 0l-169.6-272 6.4-361.6L1024 806.4z\"
+    opacity=\"0.6\"></path><path d=\"M348.8 720h320L1024 896H0z\" opacity=\"0.8\"></path>"}'
+  parentOwnerReferences:
+    apiVersion: ""
+    kind: ""
+    name: ""
+    uid: ""
+  rankingInColumn: 100
+  tenant: true
+  text: LLMOps
+  textEn: LLMOps
+status: {}
+
+---
+{{- end }}

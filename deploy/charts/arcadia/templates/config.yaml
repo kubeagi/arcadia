@@ -14,6 +14,11 @@ data:
       kind: VectorStore
       name: '{{ .Release.Name }}-vectorstore'
       namespace: '{{ .Release.Namespace }}'
+    #streamlit:
+    #  image: 172.22.96.34/cluster_system/streamlit:v1.29.0
+    #  ingressClassName: portal-ingress
+    #  host: portal.172.22.96.136.nip.io
+    #  contextPath: /arcadia
 kind: ConfigMap
 metadata:
   labels:

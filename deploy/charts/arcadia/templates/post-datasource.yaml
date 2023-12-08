@@ -10,11 +10,11 @@ spec:
   displayName: "内置系统数据源"
   description: "Arcadia 内置系统数据源"
   endpoint:
-    url: {{ .Release.Name }}-minio.{{ .Release.Namespace }}.svc.cluster.local:9000
+    url: {{ .Values.minio.ingress.api.host }}
     authSecret:
       kind: Secret
       name: {{ .Release.Name }}-minio
-    insecure: true
+    insecure: {{ .Values.minio.ingress.api.insecure }}
   oss:
     # pre-defined buckets for arcadia
     bucket: {{ .Values.global.oss.bucket }}

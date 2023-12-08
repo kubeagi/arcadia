@@ -1,0 +1,27 @@
+{{- if .Values.minio.ingress.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-selfsigned-ca
+  namespace: {{ .Release.Namespace }}
+spec:
+  isCA: true
+  commonName: minio-selfsigned-ca
+  secretName: minio-root-secret
+  duration: 87600h # the certificate expiration date is 10 years.
+  renewBefore: 720h # renew certificate Before 1 month.
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+  ipAddresses: {{ toYaml .Values.minio.ingress.cert.ipAddresses | nindent 4 }}
+  dnsNames: {{ toYaml .Values.minio.ingress.cert.dnsNames | nindent 4 }}
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+{{- end }}

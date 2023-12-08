@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chart.fullname" . }}-log-config
+  namespace: {{ .Release.Namespace }}
+data:
+  log_config.yaml: |-
+    {{- .Files.Get "config/log_config.yaml" | nindent 4 }}
+---
+{{- if and (semverCompare ">= 0.4.8" .Values.chromadb.apiVersion) .Values.chromadb.auth.enabled (eq .Values.chromadb.auth.type "token") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chromadb-auth
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  token: {{ .Values.chromadb.auth.token.value | default ( randAlphaNum 32 ) | b64enc | quote }}
+  {{- if eq .Values.chromadb.auth.token.headerType "AUTHORIZATION" }}
+  header: {{ "Authorization" | b64enc | quote}}
+  {{- end }}
+  {{- if eq .Values.chromadb.auth.token.headerType "X_CHROMA_TOKEN" }}
+  header: {{ "X-Chroma-Token" | b64enc | quote}}
+  {{- end }}
+{{- end }}
+---
+{{- if and (semverCompare ">= 0.4.7" .Values.chromadb.apiVersion) .Values.chromadb.auth.enabled (eq .Values.chromadb.auth.type "basic") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chromadb-auth
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  username: {{ .Values.chromadb.auth.basic.username | b64enc | quote}}
+  password: {{ .Values.chromadb.auth.basic.password | default ( randAlphaNum 16 ) | b64enc | quote }}
+{{- end }}
+---
