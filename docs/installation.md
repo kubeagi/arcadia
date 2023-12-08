@@ -25,7 +25,7 @@ git clone https://github.com/kubeagi/arcadia.git
 Container images are available in the Docker Hub. You can pull and push to your image registry or use them directly if your cluster can access docker hub.
 ```
 # image of core controller
-docker pull kubeagi/arcadia-controller:v0.1.0
+docker pull kubeagi/arcadia:v0.1.0
 # image of data-processing
 docker pull kubeagi/data-processing:v0.1.0
 # image of fastchat and its workers
@@ -53,7 +53,7 @@ docker pull kubeagi/streamlit:v1.29.0
 
 1）Use an existing postgresql or use docker to create a new one.
 
-2）Use component management of kubebb to install postgresql, refer [repository management](http://kubebb.k8s.com.cn/docs/user-guid/repository_anagement)  
+2）Use component management of kubebb to install postgresql, refer [repository management](http://kubebb.k8s.com.cn/docs/user-guid/repository_anagement) and use the ```postgre-oci.yaml``` under deploy/charts folder to add postgresql repository and install it from component management.
 
 2. Create the namespace to install arcadia
 ```shell

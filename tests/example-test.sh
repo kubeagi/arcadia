@@ -180,7 +180,7 @@ kind load docker-image controller:example-e2e --name=$KindName
 
 info "3. install arcadia"
 kubectl create namespace arcadia
-helm install -narcadia arcadia deploy/charts/arcadia --set deployment.image=controller:example-e2e --wait --timeout $HelmTimeout
+helm install -narcadia arcadia deploy/charts/arcadia -f tests/deploy-values.yaml --set deployment.image=controller:example-e2e --wait --timeout $HelmTimeout
 
 info "4. check system datasource arcadia-minio(system datasource)"
 waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"
@@ -253,7 +253,7 @@ info "8 check app work fine"
 helm upgrade -narcadia arcadia deploy/charts/arcadia --reuse-values --wait --timeout $HelmTimeout --set portal.enabled=true
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
-kubectl port-forward svc/arcadia-portal-server -n arcadia 8081:8081 >/dev/null 2>&1 &
+kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
 portal_pid=$!
 info "port-forward portal in pid: $portal_pid"
 sleep 3

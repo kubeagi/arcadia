@@ -1,3 +1,4 @@
+{{- if .Values.minio.ingress.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -23,3 +24,4 @@ spec:
     name: selfsigned-issuer
     kind: ClusterIssuer
     group: cert-manager.io
+{{- end }}

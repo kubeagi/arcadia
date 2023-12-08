@@ -14,7 +14,7 @@ spec:
     authSecret:
       kind: Secret
       name: {{ .Release.Name }}-minio
-    insecure: true
+    insecure: {{ .Values.minio.ingress.api.insecure }}
   oss:
     # pre-defined buckets for arcadia
     bucket: {{ .Values.global.oss.bucket }}
