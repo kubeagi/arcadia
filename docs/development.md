@@ -71,3 +71,6 @@ func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return result, err
 }
 ```
+
+### Update helm dependency
+If you update the helm dependency of deploy/charts/arcadia package, you should run ```helm dependency update```, it'll update Chart.lock, or the helm package will fail at build stage.
