@@ -37,6 +37,7 @@ query listModels($input: ListCommonInput!,$filesInput: FileFilter){
     }
   }
 }
+}
 
 # get
 query getModel($name: String!, $namespace: String!,$filesInput: FileFilter) {
@@ -54,7 +55,7 @@ query getModel($name: String!, $namespace: String!,$filesInput: FileFilter) {
       status
       types
       updateTimestamp
-      files(input: $filesInput: FileFilter) {
+      files(input: $filesInput) {
         totalCount
         hasNextPage
         nodes {
