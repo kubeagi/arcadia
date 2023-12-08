@@ -5,5 +5,8 @@ dependencies:
 - name: fastchat
   repository: ""
   version: 0.0.3
-digest: sha256:83e82f20c59e9cdf2124a69f994aa7ded50ae9e764163dd8f21fa4ee1e0455d1
-generated: "2023-12-05T12:23:47.825552981Z"
+- name: chromadb
+  repository: ""
+  version: 0.1.19
+digest: sha256:f4ea00e67f6d08ebcccfdda9ec7450d21ed53601786b52ba024c3551c47b519e
+generated: "2023-12-08T16:57:58.738317+08:00"

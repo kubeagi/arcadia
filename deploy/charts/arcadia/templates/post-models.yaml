@@ -1,0 +1,143 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: baichuan2-7b
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "baichuan2-7b"
+  description: |
+    Baichuan2 为百川智能推出的新一代开源大语言模型,采用 2.6 万亿 Tokens 的高质量语料训练。
+    模型在通用、法律、医疗、数学、代码和多语言翻译六个领域的中英文和多语言权威数据集上进行了广泛测试,取得同尺寸中显著的优秀效果。
+    Baichuan2-7B 以70亿的参数在英文主流任务上与130亿参数量的LlaMA2基本持平。
+
+    优势:
+    - 训练集基于原生中文数据,适应中文场景
+    - 擅长生成与创作、角色扮演、上下文对话、知识百科等任务
+
+    官网: https://www.baichuan-ai.com/
+    Github: https://github.com/baichuan-inc/Baichuan2
+    HuggingFace: https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat
+    ModelScope: https://modelscope.cn/models/baichuan-inc/Baichuan2-7B-Chat/summary
+    arXiv: https://arxiv.org/abs/2309.10305
+
+    百川智能成立于2023年4月10日,由前搜狗公司CEO王小川创立。公司以帮助大众轻松、普惠地获取世界知识和专业服务为使命,致力于通过语言AI的突破,构建中国最优秀的大模型底座。
+  types: "llm,embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: chatglm2-6b
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "chatglm2-6b"
+  description: |
+    ChatGLM 是一个开源的,支持中英双语的对话语言模型。该模型基于 General Language Model (GLM) 架构,由北京智谱华章科技有限公司(简称“智谱AI”)推出。
+
+    ChatGLM2-6B 是第二代版本,引入如下新特性:
+    - 更强大的性能:ChatGLM2-6B 使用了 GLM 的混合目标函数,经过了 1.4T 中英标识符的预训练与人类偏好对齐训练。在 MMLU(+23%)、CEval(+33%)、GSM8K(+571%) 、BBH(+60%)等数据集上的性能取得了大幅度的提升,在同尺寸开源模型中具有较强的竞争力。
+    - 更长的上下文:基于 FlashAttention 技术,基座模型的上下文长度(Context Length)由 2K 扩展到 32K,并在对话阶段使用 8K 的上下文长度训练。
+    - 更高效的推理:基于 Multi-Query Attention 技术,ChatGLM2-6B 有更高效的推理速度和更低的显存占用:在官方的模型实现下,推理速度相比初代提升了 42%,INT4 量化下,6G 显存支持的对话长度由 1K 提升到了 8K。
+
+    优势:
+    - 原创预训练框架
+    - 开源先发优势,生态及社区活跃度高
+    - 具备商业化及完成度较高的 API 开放平台及对话助手产品
+
+    官网:https://www.zhipuai.cn/
+    Github: https://github.com/THUDM/ChatGLM2-6B
+    HuggingFace: https://huggingface.co/THUDM/chatglm2-6b
+    ModelScope: https://modelscope.cn/models/ZhipuAI/chatglm2-6b
+
+    北京智谱华章科技有限公司由清华大学计算机系技术成果转化而来,致力于打造新一代认知智能大模型,专注于做大模型的中国创新。
+  types: "llm,embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: qwen-7b-chat
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "qwen-7b-chat"
+  description: |
+    通义千问是开源的大语言系列模型,由阿里云推出。
+
+    亮点:
+    - 训练数据覆盖多语言(当前以中文和英文为主),总量高达3万亿token。
+    - 在相关基准评测中,Qwen 系列模型拿出非常有竞争力的表现,显著超出同规模模型并紧追一系列最强的闭源模型。
+    - Qwen-Chat 具备聊天、文字创作、摘要、信息抽取、翻译等能力,同时还具备一定的代码生成和简单数学推理的能力。
+    - 针对LLM对接外部系统等方面优化,具备较强的工具调用能力,以及最近备受关注的 Code Interpreter 的能力和扮演 Agent 的能力。
+
+    优势:
+    - 多模态方向进展较快
+    - 具备 API 开放平台
+
+    官网: https://qianwen.aliyun.com
+    Github: https://github.com/QwenLM/Qwen
+    HuggingFace: https://huggingface.co/Qwen/Qwen-7B-Chat
+    ModelScope: https://modelscope.cn/models/qwen/Qwen-7B-Chat
+    arXiv: https://arxiv.org/abs/2309.16609
+
+    通义为阿里云大模型的统一品牌,覆盖语言、听觉、多模态等领域,致力于实现类人智慧的通用智能。
+  types: "llm,embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: bge-large-zh-v1.5
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "bge-large-zh-v1.5"
+  description: |
+    BGE Embedding 是一个通用语义向量模型,由北京智源人工智能研究院(BAAI)推出。该模型在评测语义向量能力的各项榜单中名列前茅。
+
+    亮点:
+    - 高效预训练和大规模文本微调；
+    - 在两个大规模语料集上采用了 RetroMAE 预训练算法,进一步增强了模型的语义表征能力；
+    - 通过负采样和难负样例挖掘,增强了语义向量的判别力；
+    - 借鉴 Instruction Tuning 的策略,增强了在多任务场景下的通用能力。
+
+    优势:
+    - 向量化结果更准确
+    - 适应中文知识库场景
+    - 具备微调能力
+
+    官网: https://www.baai.ac.cn/
+    Github: https://github.com/FlagOpen/FlagEmbedding
+    HuggingFace: https://huggingface.co/BAAI/bge-large-zh-v1.5
+    arXiv: https://arxiv.org/pdf/2309.07597
+
+    北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
+  types: "embedding"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: m3e-base
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "m3e-base"
+  description: |
+    M3E(Moka Massive Mixed Embedding) 是文本嵌入模型，可以将自然语言转换成稠密的向量，由 MokaAI 训练并开源。
+
+    亮点：
+    - 训练脚本使用 uniem,通过千万级 (2200w+) 的中文句对数据集进行训练。
+    - 支持中英双语的同质文本相似度计算，异质文本检索等功能，未来还会支持代码检索。
+
+    优势：
+    - 体积较小，相对性能良好
+
+    官网: https://mokahr.com/
+    HuggingFace: https://huggingface.co/moka-ai/m3e-base
+
+    Moka(北京希瑞亚斯科技有限公司)成立于2015年,以“全员体验更好”为产品设计的核心理念,为大中型企业提供“AI原生”的人力资源管理全模块解决方案。
+  types: "embedding"
