@@ -224,8 +224,10 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 	}
 
 	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup: &common.ArcadiaAPIGroup,
-		Kind:     "Datasource",
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Datasource",
+		Namespace: &datasource.Namespace,
+		Name:      datasource.Name,
 	}, unstructuredDatasource, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
