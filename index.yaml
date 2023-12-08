@@ -918,6 +918,30 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.1.0/arcadia-0.1.0.tgz
     version: 0.1.0
+  component-store:
+  - apiVersion: v2
+    created: "2023-12-08T09:45:52.128982465Z"
+    description: Component store to list, view and deploy various components.
+    digest: d84eaaaf1a075d24088113ffa9fd16d01a14e93501085a86758d321faef67c4c
+    icon: https://avatars.githubusercontent.com/u/85277200
+    keywords:
+    - kubebb
+    maintainers:
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    - name: Carrotzpc
+      url: https://github.com/Carrotzpc
+    - name: dayuy
+      url: https://github.com/dayuy
+    - name: Jandiasnow
+      url: https://github.com/Jandiasnow
+    name: component-store
+    sources:
+    - https://github.com/kubebb/component-store
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/component-store-0.0.2/component-store-0.0.2.tgz
+    version: 0.0.2
   jupyterlab:
   - apiVersion: v2
     appVersion: 4.0.3
@@ -1006,4 +1030,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-12-06T05:47:40.591801589Z"
+generated: "2023-12-08T09:45:52.129131955Z"
