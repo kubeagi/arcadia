@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/strings/slices"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
@@ -37,6 +38,7 @@ type Input struct {
 	Question string
 	// History  []schema.ChatMessage
 	// overrideConfig
+	NeedStream bool
 }
 type Output struct {
 	Answer string
@@ -105,7 +107,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 		a.Nodes[node.Name] = n
 		if node.Name == inputNodeName {
 			a.StartingNodes = append(a.StartingNodes, n)
-		} else if node.Name == outputNodeName {
+		} else if slices.Contains(node.NextNodeName, outputNodeName) {
 			a.EndingNode = n
 		}
 	}
@@ -135,9 +137,10 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	return nil
 }
 
-func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Input) (output Output, err error) {
+func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Input) (output Output, outputStream chan string, err error) {
 	out := map[string]any{
-		"question": input.Question,
+		"question":      input.Question,
+		"answer_stream": make(chan string, 1000),
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
@@ -147,8 +150,12 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 	for e := waitRunningNodes.Front(); e != nil; e = e.Next() {
 		e := e.Value.(base.Node)
 		if !visited[e.Name()] {
+			out["need_stream"] = false
+			if a.EndingNode.Name() == e.Name() && input.NeedStream {
+				out["need_stream"] = true
+			}
 			if out, err = e.Run(ctx, cli, out); err != nil {
-				return Output{}, err
+				return Output{}, nil, err
 			}
 			visited[e.Name()] = true
 		}
@@ -157,9 +164,19 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 		}
 	}
 	if a, ok := out["answer"]; ok {
-		return Output{Answer: a.(string)}, nil
+		if answer, ok := a.(string); ok && len(answer) > 0 {
+			output = Output{Answer: answer}
+		}
 	}
-	return Output{}, errors.New("no answer")
+	if a, ok := out["answer_stream"]; ok {
+		if answer, ok := a.(chan string); ok && len(answer) > 0 {
+			outputStream = answer
+		}
+	}
+	if output.Answer == "" && outputStream == nil {
+		return Output{}, nil, errors.New("no answer")
+	}
+	return output, outputStream, nil
 }
 
 func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (base.Node, error) {

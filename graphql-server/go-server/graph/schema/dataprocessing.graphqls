@@ -24,10 +24,12 @@ input AllDataProcessListByPageInput {
   pageIndex: Int!
   pageSize: Int!
   keyword: String!
+  namespace: String!
 }
 
 input AllDataProcessListByCountInput {
   keyword: String!
+  namespace: String!
 }
 
 input AddDataProcessInput {
@@ -41,6 +43,8 @@ input AddDataProcessInput {
   data_process_config_info: [DataProcessConfigItem!]
   bucket_name: String!
   version_data_set_name: String!
+  namespace: String!
+  creator: String!
 }
 
 # 文件条目
@@ -146,6 +150,7 @@ type DataProcessDetailsItem {
   file_num: Int!
   start_time: String!
   end_time: String!
+  creator: String!
   config: [DataProcessConfig!]
 }
 
