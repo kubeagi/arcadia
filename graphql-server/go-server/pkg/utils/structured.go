@@ -26,7 +26,9 @@ func MapAny2Str(input map[string]interface{}) map[string]string {
 }
 
 func MapStr2Any(input map[string]string) map[string]any {
-	output := map[string]any{}
-	_ = unstructured.SetNestedStringMap(output, input)
+	output := make(map[string]any, len(input))
+	for k, v := range input {
+		output[k] = v
+	}
 	return output
 }
