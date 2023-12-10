@@ -65,11 +65,13 @@ type Prompt struct {
 }
 
 func DefaultModelParams() ModelParams {
+	// TODO: should allow user to configure the temperature and top_p of inference
+	// use 0.8 and 0.7 for now
 	return ModelParams{
 		Model:       ZhiPuAILite,
 		Method:      ZhiPuAIInvoke,
-		Temperature: 0.95, // zhipuai official
-		TopP:        0.7,  // zhipuai official
+		Temperature: 0.8, // more accurate?
+		TopP:        0.7,
 		Prompt:      []Prompt{},
 	}
 }

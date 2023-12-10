@@ -29,7 +29,7 @@ spec:
               value: {{ .Values.dataprocess.env.minio.apiURL }}
             - name: MINIO_SECURE
               value: "{{ .Values.dataprocess.env.minio.secure }}"
-            - name: ZHIPU_AI_KEY
+            - name: ZHIPUAI_API_KEY
               value: "to-be-replaced"
             - name: KNOWLEDGE_CHUNK_SIZE
               value: "{{ .Values.dataprocess.env.knowledge.chunkSize }}"

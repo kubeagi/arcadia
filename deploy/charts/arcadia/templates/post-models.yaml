@@ -1,7 +1,7 @@
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
-  name: baichuan2-7b
+  name: baichuan2-7b-chat
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"

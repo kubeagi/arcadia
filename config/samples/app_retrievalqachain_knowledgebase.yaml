@@ -41,7 +41,7 @@ spec:
       nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "RetrievalQA chain"
-      description: "chain是langchain的核心概念，RetrievalQAChain用于从retriver中提取信息，供llm调用"
+      description: "chain是langchain的核心概念，RetrievalQAChain用于从 retriever 中提取信息，供llm调用"
       ref:
         apiGroup: chain.arcadia.kubeagi.k8s.com.cn
         kind: RetrievalQAChain

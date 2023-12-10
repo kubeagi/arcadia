@@ -118,7 +118,8 @@ dataprocess:
   port: 28888
   env:
     minio:
-      apiURL: http://arcadia-minio:9000
+      secure: "False"
+      apiURL: arcadia-minio:9000
     knowledge:
       chunkSize: 500
       chunkOverlap: 50
@@ -134,5 +135,7 @@ chromadb:
   image:
     repository: ghcr.io/amikos-tech/chromadb-chart/chroma
   chromadb:
+    auth:
+      enabled: false
     dataVolumeStorageClass: "openebs-hostpath"
     apiVersion: "0.4.14"

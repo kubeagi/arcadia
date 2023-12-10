@@ -249,7 +249,7 @@ else
 	exit 1
 fi
 
-info "8 check app work fine"
+info "8 validation：simple app of llmchain can work normally"
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
 kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
@@ -258,6 +258,7 @@ info "port-forward portal in pid: $portal_pid"
 sleep 3
 curl -XPOST http://127.0.0.1:8081/chat --data '{"query":"hi, how are you?","response_mode":"blocking","conversion_id":"","app_name":"base-chat-english-teacher", "app_namespace":"arcadia"}' | jq -e '.message'
 
+info "9 validation：QA app using knowledgebase can work normally"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
