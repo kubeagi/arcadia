@@ -118,8 +118,10 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 		if err != nil {
 			return nil, err
 		}
+		// TODO: allow to configure how many relevant documents should be returned
+		// and the threshold of similiarity(0-1), use 5 and 0.3 by default for now
 		return &KnowledgeBaseRetriever{
-			vectorstores.ToRetriever(s, 5),
+			vectorstores.ToRetriever(s, 5, vectorstores.WithScoreThreshold(0.3)),
 			baseNode,
 		}, nil
 	default:
