@@ -116,7 +116,7 @@ func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// indicated by the deletion timestamp being set.
 	if kb.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(kb, arcadiav1alpha1.Finalizer) {
 		log.Info("Performing Finalizer Operations for KnowledgeBase before delete CR")
-		// TODO perform the finalizer operations here, for example: remove vectorstore data?
+		r.reconcileDelete(ctx, log, kb)
 		log.Info("Removing Finalizer for KnowledgeBase after successfully performing the operations")
 		controllerutil.RemoveFinalizer(kb, arcadiav1alpha1.Finalizer)
 		if err = r.Update(ctx, kb); err != nil {
@@ -497,4 +497,26 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	}
 	log.Info("handle file succeeded")
 	return nil
+}
+
+func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
+	vectorStore := &arcadiav1alpha1.VectorStore{}
+	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace()}, vectorStore); err != nil {
+		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
+		return
+	}
+	switch vectorStore.Spec.Type() { // nolint: gocritic
+	case arcadiav1alpha1.VectorStoreTypeChroma:
+		s, err := chroma.New(
+			chroma.WithChromaURL(vectorStore.Spec.Enpoint.URL),
+			chroma.WithDistanceFunction(vectorStore.Spec.Chroma.DistanceFunction),
+			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
+		)
+		if err != nil {
+			log.Error(err, "reconcile delete: init vector store error, may leave garbage data")
+		}
+		if err = s.RemoveCollection(); err != nil {
+			log.Error(err, "reconcile delete: remove vector store error, may leave garbage data")
+		}
+	}
 }
