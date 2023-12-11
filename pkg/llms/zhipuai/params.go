@@ -89,7 +89,7 @@ func (params *ModelParams) Unmarshal(bytes []byte) error {
 }
 
 // MergeZhiPuAI merges b to a  with this rule
-// - if a.x is emtpy and b.x is not, then a.x = b.x
+// - if a.x is empty and b.x is not, then a.x = b.x
 func MergeParams(a, b ModelParams) ModelParams {
 	if a.Model == "" && b.Model != "" {
 		a.Model = b.Model

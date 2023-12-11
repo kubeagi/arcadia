@@ -52,7 +52,7 @@ var (
 	llmType string
 	apiKey  string
 
-	// path to documents seperated by comma
+	// path to documents separated by comma
 	inputDocuments string
 
 	vectorStore      string
