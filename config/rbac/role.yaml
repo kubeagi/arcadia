@@ -481,6 +481,16 @@ rules:
   - patch
   - update
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
   - prompt.arcadia.kubeagi.k8s.com.cn
   resources:
   - prompts
