@@ -35,7 +35,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/embeddings"
-	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
+	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
@@ -534,7 +534,11 @@ func (cachedDS *Dataset) embedDocuments(ctx context.Context, documents []schema.
 			return err
 		}
 	case "openai":
-		embedder, err = openaiEmbeddings.NewOpenAI()
+		llm, err := openai.New()
+		if err != nil {
+			return err
+		}
+		embedder, err = embeddings.NewEmbedder(llm)
 		if err != nil {
 			return err
 		}

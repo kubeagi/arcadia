@@ -16,7 +16,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.8.4
-	github.com/tmc/langchaingo v0.0.0-20231017212009-949349d5ef9c
+	github.com/tmc/langchaingo v0.0.0-20231209214832-00f364f27fe2
 	github.com/valyala/fasthttp v1.49.0
 	github.com/vektah/gqlparser/v2 v2.5.10
 	k8s.io/api v0.24.2
@@ -45,7 +45,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
