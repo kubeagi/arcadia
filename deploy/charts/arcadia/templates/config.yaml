@@ -7,7 +7,7 @@ data:
       name: '{{ .Release.Name }}-minio'
       namespace: '{{ .Release.Namespace }}'
     gateway:
-      apiServer: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:8000'
+      apiServer: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:8000/v1'
       controller: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:21001'
     vectorStore:
       apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1

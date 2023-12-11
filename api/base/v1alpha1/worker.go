@@ -48,6 +48,17 @@ func (worker Worker) Type() WorkerType {
 	return worker.Spec.Type
 }
 
+// MakeRegistrationModelName generates a model name used to register itself into fastchat controller
+// {MODEL_NAME}-{WORKER_NAME}-{WORKER_NAMESPACE}
+// When multiple workers run a same model,its will overwrite the previuos registerd worker address.That's why we use a combined model name for registration.
+func (worker Worker) MakeRegistrationModelName() string {
+	modelRef := worker.Spec.Model
+	if modelRef == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s-%s-%s", modelRef.Name, worker.Name, worker.Namespace)
+}
+
 func (worker Worker) PendingCondition() Condition {
 	return Condition{
 		Type:               TypeReady,
@@ -105,7 +116,9 @@ func (worker Worker) BuildEmbedder() *Embedder {
 		},
 		Spec: EmbedderSpec{
 			CommonSpec: CommonSpec{
-				Creator:     worker.Spec.Creator,
+				Creator: worker.Spec.Creator,
+				// Use the model name as the displayname
+				DisplayName: worker.Spec.Model.Name,
 				Description: "Embedder created by Worker(OpenAI compatible)",
 			},
 			Type: embeddings.OpenAI,
@@ -128,7 +141,9 @@ func (worker Worker) BuildLLM() *LLM {
 		},
 		Spec: LLMSpec{
 			CommonSpec: CommonSpec{
-				Creator:     worker.Spec.Creator,
+				Creator: worker.Spec.Creator,
+				// Use the model name as the displayname
+				DisplayName: worker.Spec.Model.Name,
 				Description: "LLM created by Worker(OpenAI compatible)",
 			},
 			Type: llms.OpenAI,
@@ -141,12 +156,4 @@ func (worker Worker) BuildLLM() *LLM {
 			},
 		},
 	}
-}
-
-func (worker Worker) MakeRegistrationModelName() string {
-	modelRef := worker.Spec.Model
-	if modelRef == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s-%s-%s", modelRef.Name, worker.Name, worker.Namespace)
 }

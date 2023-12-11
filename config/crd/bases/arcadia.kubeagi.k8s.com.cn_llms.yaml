@@ -15,7 +15,17 @@ spec:
     singular: llm
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.displayName
+      name: display-name
+      type: string
+    - jsonPath: .spec.type
+      name: type
+      type: string
+    - jsonPath: .spec.provider
+      name: provider
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: LLM is the Schema for the llms API
@@ -79,8 +89,12 @@ spec:
                       insecure:
                         description: Insecure if the endpoint needs a secure connection
                         type: boolean
+                      internalURL:
+                        description: InternalURL for this endpoint which is much faster
+                          but only can be used inside this cluster
+                        type: string
                       url:
-                        description: URL chart repository address
+                        description: URL for this endpoint
                         type: string
                     type: object
                   worker:

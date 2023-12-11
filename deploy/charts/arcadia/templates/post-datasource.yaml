@@ -11,6 +11,7 @@ spec:
   description: "Arcadia 内置系统数据源"
   endpoint:
     url: {{ .Values.minio.ingress.api.host }}
+    internalURL: {{ .Release.Name }}-minio.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.minio.ingress.api.port }}
     authSecret:
       kind: Secret
       name: {{ .Release.Name }}-minio

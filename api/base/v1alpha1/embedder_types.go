@@ -30,7 +30,7 @@ type EmbedderSpec struct {
 	CommonSpec `json:",inline"`
 
 	// ServiceType indicates the source type of embedding service
-	Type embeddings.EmbeddingType `json:"type,omitempty"`
+	Type embeddings.EmbeddingType `json:"type"`
 
 	// Provider defines the provider info which provide this embedder service
 	Provider `json:"provider,omitempty"`
@@ -47,6 +47,8 @@ type EmbedderStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
+//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.spec.type`
+//+kubebuilder:printcolumn:name="provider",type=string,JSONPath=`.spec.provider`
 
 // Embedder is the Schema for the embeddings API
 type Embedder struct {

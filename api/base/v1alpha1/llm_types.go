@@ -41,6 +41,9 @@ type LLMStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="display-name",type=string,JSONPath=`.spec.displayName`
+//+kubebuilder:printcolumn:name="type",type=string,JSONPath=`.spec.type`
+//+kubebuilder:printcolumn:name="provider",type=string,JSONPath=`.spec.provider`
 
 // LLM is the Schema for the llms API
 type LLM struct {
