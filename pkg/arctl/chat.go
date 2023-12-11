@@ -24,7 +24,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/embeddings"
-	openaiEmbeddings "github.com/tmc/langchaingo/embeddings/openai"
+	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
@@ -146,7 +146,11 @@ func SimilaritySearch(ctx context.Context, homePath string) ([]schema.Document, 
 			return nil, err
 		}
 	case "openai":
-		embedder, err = openaiEmbeddings.NewOpenAI()
+		llm, err := openai.New()
+		if err != nil {
+			return nil, err
+		}
+		embedder, err = embeddings.NewEmbedder(llm)
 		if err != nil {
 			return nil, err
 		}

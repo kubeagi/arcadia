@@ -52,11 +52,11 @@ type Provider struct {
 
 // GetType returnes the type of this provider
 func (p Provider) GetType() ProviderType {
-	// if endpoint provided,then 3rd_party
+	// if endpoint provided, then 3rd_party
 	if p.Enpoint != nil {
 		return ProviderType3rdParty
 	}
-	// if worker provided,then worker
+	// if worker provided, then worker
 	if p.Worker != nil {
 		return ProviderTypeWorker
 	}

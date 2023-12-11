@@ -29,6 +29,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/tmc/langchaingo/documentloaders"
 	langchainembeddings "github.com/tmc/langchaingo/embeddings"
+	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -383,15 +384,47 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		return errVectorStoreNotReady
 	}
 	var em langchainembeddings.Embedder
-	switch embedder.Spec.Type { // nolint: gocritic
-	case embeddings.ZhiPuAI:
-		apiKey, err := embedder.AuthAPIKey(ctx, r.Client)
+	switch embedder.Spec.Provider.GetType() {
+	case arcadiav1alpha1.ProviderType3rdParty:
+		switch embedder.Spec.Type { // nolint: gocritic
+		case embeddings.ZhiPuAI:
+			apiKey, err := embedder.AuthAPIKey(ctx, r.Client)
+			if err != nil {
+				return err
+			}
+			em, err = zhipuaiembeddings.NewZhiPuAI(
+				zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
+			)
+			if err != nil {
+				return err
+			}
+		}
+	case arcadiav1alpha1.ProviderTypeWorker:
+		gatway, err := config.GetGateway(ctx, r.Client)
 		if err != nil {
 			return err
 		}
-		em, err = zhipuaiembeddings.NewZhiPuAI(
-			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
-		)
+		if gatway == nil {
+			return fmt.Errorf("global config gateway not found")
+		}
+		refWorker := embedder.Spec.Worker
+		if refWorker == nil {
+			return fmt.Errorf("embedder.spec.worker not defined")
+		}
+		worker := &arcadiav1alpha1.Worker{}
+		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: refWorker.GetNamespace(), Name: refWorker.Name}, worker); err != nil {
+			return err
+		}
+		refModel := worker.Spec.Model
+		if refModel == nil {
+			return fmt.Errorf("worker.spec.model not defined")
+		}
+		modelName := worker.MakeRegistrationModelName()
+		llm, err := openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatway.APIServer), openai.WithToken("fake"))
+		if err != nil {
+			return err
+		}
+		em, err = langchainembeddings.NewEmbedder(llm)
 		if err != nil {
 			return err
 		}
@@ -424,7 +457,6 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		textsplitter.WithChunkSize(300),
 		textsplitter.WithChunkOverlap(30),
 	)
-	// TODO tags -> qa or fulltext
 	// switch {
 	// case "token":
 	//	split = textsplitter.NewTokenSplitter(

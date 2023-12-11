@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -140,4 +141,12 @@ func (worker Worker) BuildLLM() *LLM {
 			},
 		},
 	}
+}
+
+func (worker Worker) MakeRegistrationModelName() string {
+	modelRef := worker.Spec.Model
+	if modelRef == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s-%s-%s", modelRef.Name, worker.Name, worker.Namespace)
 }
