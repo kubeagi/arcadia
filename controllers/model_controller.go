@@ -179,7 +179,7 @@ func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, in
 	var ds datasource.Datasource
 	var info any
 
-	system, err := config.GetSystemDatasource(ctx, r.Client)
+	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}
@@ -213,7 +213,7 @@ func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, i
 	var ds datasource.Datasource
 	var info any
 
-	system, err := config.GetSystemDatasource(ctx, r.Client)
+	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}

@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/llms/openai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
@@ -156,20 +155,20 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 	var msg string
 
 	// Check Auth availability
-	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
+	apiKey, err := instance.AuthAPIKey(ctx, r.Client, nil)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
 	switch instance.Spec.Type {
-	case embeddings.ZhiPuAI:
+	case arcadiav1alpha1.ZhiPuAI:
 		embedClient := zhipuai.NewZhiPuAI(apiKey)
 		res, err := embedClient.Validate()
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)
 		}
 		msg = res.String()
-	case embeddings.OpenAI:
+	case arcadiav1alpha1.OpenAI:
 		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Enpoint.URL)
 		res, err := embedClient.Validate()
 		if err != nil {

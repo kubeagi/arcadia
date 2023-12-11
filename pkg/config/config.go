@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/klog/v2"
 	"k8s.io/utils/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -50,8 +49,8 @@ var (
 	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
 )
 
-func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c)
+func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfig(ctx, c, cli)
 	if err != nil {
 		return nil, err
 	}
@@ -63,38 +62,26 @@ func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1
 		namespace = utils.GetCurrentNamespace()
 	}
 	source := &arcadiav1alpha1.Datasource{}
-	if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
-		return nil, err
+	if c != nil {
+		if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
+			return nil, err
+		}
+	} else {
+		obj, err := cli.Resource(schema.GroupVersionResource{Group: arcadiav1alpha1.GroupVersion.Group, Version: arcadiav1alpha1.GroupVersion.Version, Resource: "datasources"}).
+			Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, source)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return source, err
 }
 
-func GetSystemDatasourceDynamic(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfigDynamic(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-	name := config.SystemDatasource.Name
-	var namespace string
-	if config.SystemDatasource.Namespace != nil {
-		namespace = *config.SystemDatasource.Namespace
-	} else {
-		namespace = utils.GetCurrentNamespace()
-	}
-	source := &arcadiav1alpha1.Datasource{}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: arcadiav1alpha1.GroupVersion.Group, Version: arcadiav1alpha1.GroupVersion.Version, Resource: "datasources"}).
-		Namespace(namespace).Get(ctx, name, v1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, source); err != nil {
-		return nil, err
-	}
-	return source, nil
-}
-
-func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
-	config, err := GetConfig(ctx, c)
+func GetGateway(ctx context.Context, c client.Client, cli dynamic.Interface) (*Gateway, error) {
+	config, err := GetConfig(ctx, c, cli)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +92,7 @@ func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
 }
 
 func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
-	datasource, err := GetSystemDatasourceDynamic(ctx, c)
+	datasource, err := GetSystemDatasource(ctx, nil, c)
 	if err != nil {
 		return nil, err
 	}
@@ -136,42 +123,30 @@ func GetMinIO(ctx context.Context, c dynamic.Interface) (*MinIO, error) {
 	return &m, nil
 }
 
-func GetConfigDynamic(ctx context.Context, c dynamic.Interface) (config *Config, err error) {
-	cmName := env.GetString(EnvConfigKey, EnvConfigDefaultValue)
-	if cmName == "" {
-		return nil, ErrNoConfigEnv
-	}
-	cmNamespace := utils.GetCurrentNamespace()
-	u, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
-	if err != nil {
-		klog.Errorln("failed to get configmap resource", err, cmNamespace, cmName)
-		return nil, ErrNoConfig
-	}
-	data, found, err := unstructured.NestedStringMap(u.Object, "data")
-	if err != nil || !found {
-		klog.Errorln("failed to get data from configmap", err)
-		return nil, ErrNoConfig
-	}
-	value, ok := data["config"]
-	if !ok || len(value) == 0 {
-		klog.Errorln("no config file from configmap", err)
-		return nil, ErrNoConfig
-	}
-	if err = yaml.Unmarshal([]byte(value), &config); err != nil {
+func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (config *Config, err error) {
+	if err := utils.ValidateClient(c, cli); err != nil {
 		return nil, err
 	}
-	return config, nil
-}
-
-func GetConfig(ctx context.Context, c client.Client) (config *Config, err error) {
 	cmName := env.GetString(EnvConfigKey, EnvConfigDefaultValue)
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
 	cmNamespace := utils.GetCurrentNamespace()
 	cm := &corev1.ConfigMap{}
-	if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
-		return nil, err
+	if c != nil {
+		if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
+			return nil, err
+		}
+	} else {
+		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).
+			Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), cm)
+		if err != nil {
+			return nil, err
+		}
 	}
 	value, ok := cm.Data["config"]
 	if !ok || len(value) == 0 {
@@ -184,7 +159,7 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 }
 
 func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfigDynamic(ctx, c)
+	config, err := GetConfig(ctx, nil, c)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +171,7 @@ func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.
 
 // Get the configuration of streamlit tool
 func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
-	config, err := GetConfig(ctx, c)
+	config, err := GetConfig(ctx, c, nil)
 	if err != nil {
 		return nil, err
 	}
