@@ -28,9 +28,6 @@ type Config struct {
 	// Gateway to access LLM api services
 	Gateway *Gateway `json:"gateway,omitempty"`
 
-	// MinIO to access MinIO api services
-	MinIO *MinIO `json:"minIO,omitempty"`
-
 	// VectorStore to access VectorStore api services
 	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
 

@@ -15,7 +15,9 @@ resources:
 - bases/arcadia.kubeagi.k8s.com.cn_vectorstores.yaml
 - bases/arcadia.kubeagi.k8s.com.cn_applications.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_llmchains.yaml
+- bases/chain.arcadia.kubeagi.k8s.com.cn_retrievalqachains.yaml
 - bases/prompt.arcadia.kubeagi.k8s.com.cn_prompts.yaml
+- bases/retriever.arcadia.kubeagi.k8s.com.cn_knowledgebaseretrievers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

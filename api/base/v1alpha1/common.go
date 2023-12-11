@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -119,9 +121,13 @@ func (in *TypedObjectReference) GetNamespace() string {
 
 // Endpoint represents a reachable API endpoint.
 type Endpoint struct {
-	// URL chart repository address
+	// URL for this endpoint
 	// +kubebuilder:validation:Required
 	URL string `json:"url,omitempty"`
+
+	// InternalURL for this endpoint which is much faster but only can be used inside this cluster
+	// +kubebuilder:validation:Required
+	InternalURL string `json:"internalURL,omitempty"`
 
 	// AuthSecret if the chart repository requires auth authentication,
 	// set the username and password to secret, with the field user and password respectively.
@@ -129,6 +135,25 @@ type Endpoint struct {
 
 	// Insecure if the endpoint needs a secure connection
 	Insecure bool `json:"insecure,omitempty"`
+}
+
+// SchemeURL url with prefixed scheme
+func (endpoint Endpoint) SchemeURL() string {
+	prefix := "https"
+	if endpoint.Insecure {
+		prefix = "http"
+	}
+
+	return fmt.Sprintf("%s://%s", prefix, endpoint.URL)
+}
+
+// SchemeInternalURL returns internal url with prefixed scheme
+func (endpoint Endpoint) SchemeInternalURL() string {
+	prefix := "https"
+	if endpoint.Insecure {
+		prefix = "http"
+	}
+	return fmt.Sprintf("%s://%s", prefix, endpoint.InternalURL)
 }
 
 type CommonSpec struct {

@@ -82,8 +82,12 @@ spec:
                   insecure:
                     description: Insecure if the endpoint needs a secure connection
                     type: boolean
+                  internalURL:
+                    description: InternalURL for this endpoint which is much faster
+                      but only can be used inside this cluster
+                    type: string
                   url:
-                    description: URL chart repository address
+                    description: URL for this endpoint
                     type: string
                 type: object
               oss:

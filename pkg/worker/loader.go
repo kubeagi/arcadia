@@ -90,6 +90,14 @@ func (loader *LoaderOSS) Build(ctx context.Context, model *arcadiav1alpha1.Typed
 		// if !endpoint.Insecure {
 		// }
 	}
+
+	// user internal url if not empty
+	url := loader.endpoint.SchemeURL()
+	if loader.endpoint.InternalURL != "" {
+		loader.endpoint.Insecure = true
+		url = loader.endpoint.SchemeInternalURL()
+	}
+
 	container := &corev1.Container{
 		Name:            "loader",
 		Image:           "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z",
@@ -98,10 +106,10 @@ func (loader *LoaderOSS) Build(ctx context.Context, model *arcadiav1alpha1.Typed
 			"/bin/bash",
 			"-c",
 			`echo "Load models"
-mc alias set oss https://$MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --insecure
+mc alias set oss $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --insecure
 mc --insecure cp -r oss/$MINIO_MODEL_BUCKET/model/$MINIO_MODEL_NAME /data/models`},
 		Env: []corev1.EnvVar{
-			{Name: "MINIO_ENDPOINT", Value: loader.endpoint.URL},
+			{Name: "MINIO_ENDPOINT", Value: url},
 			{Name: "MINIO_ACCESS_KEY", Value: accessKeyID},
 			{Name: "MINIO_SECRET_KEY", Value: secretAccessKey},
 			// Bucket should be the same as current namespace

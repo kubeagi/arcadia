@@ -19,6 +19,12 @@ spec:
     - jsonPath: .spec.displayName
       name: display-name
       type: string
+    - jsonPath: .spec.type
+      name: type
+      type: string
+    - jsonPath: .spec.provider
+      name: provider
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -83,8 +89,12 @@ spec:
                       insecure:
                         description: Insecure if the endpoint needs a secure connection
                         type: boolean
+                      internalURL:
+                        description: InternalURL for this endpoint which is much faster
+                          but only can be used inside this cluster
+                        type: string
                       url:
-                        description: URL chart repository address
+                        description: URL for this endpoint
                         type: string
                     type: object
                   worker:
@@ -115,6 +125,8 @@ spec:
               type:
                 description: ServiceType indicates the source type of embedding service
                 type: string
+            required:
+            - type
             type: object
           status:
             description: EmbeddingsStatus defines the observed state of Embedder

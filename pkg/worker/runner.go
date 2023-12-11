@@ -119,13 +119,13 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			"/bin/bash",
 			"-c",
 			`echo "Run model worker..."
-			python3.9 -m fastchat.serve.vllm_worker --model-names $FASTCHAT_MODEL_NAME-$FASTCHAT_WORKER_NAME-$FASTCHAT_WORKER_NAMESPACE \
+			python3.9 -m fastchat.serve.vllm_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
 			--model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
 			--controller-address $FASTCHAT_CONTROLLER_ADDRESS \
 			--host 0.0.0.0 --port 21002 --trust-remote-code`},
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
-			{Name: "FASTCHAT_WORKER_NAME", Value: runner.w.Name},
+			{Name: "FASTCHAT_REGISTRATION_MODEL_NAME", Value: runner.w.MakeRegistrationModelName()},
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
