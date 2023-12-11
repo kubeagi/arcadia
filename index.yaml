@@ -3,6 +3,36 @@ entries:
   arcadia:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2023-12-11T14:03:26.204253343Z"
+    dependencies:
+    - name: minio
+      repository: ""
+      version: 5.0.13
+    - name: fastchat
+      repository: ""
+      version: 0.0.3
+    - name: chromadb
+      repository: ""
+      version: 0.1.19
+    description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
+    digest: cf47d2d3e9bf371ad8a6bd21a253e59f707289a5383b8bcaa062d3af41a62a60
+    keywords:
+    - LLMOps
+    - Kubernetes
+    maintainers:
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    - name: lanture1064
+      url: https://github.com/lanture1064
+    name: arcadia
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.1.39/arcadia-0.1.39.tgz
+    version: 0.1.39
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2023-12-08T12:56:55.391553926Z"
     dependencies:
     - name: minio
@@ -1060,4 +1090,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2023-12-08T12:56:55.391843717Z"
+generated: "2023-12-11T14:03:26.204519924Z"
