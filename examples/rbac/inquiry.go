@@ -33,14 +33,14 @@ Your answer should follow the below format:
 {{.OutputFormat}}
 `
 	defaultOutputFormat = `Rating: "xxx"
-Assesement: 
+Assessment:
 1. xxx
 2. xxx
 `
 	jsonOutputFormat = `
 {
 	"rating": "xxx",
-	"assesement": [
+	"assessment": [
 		"1. xxx",
 		"2. xxx",
 	]

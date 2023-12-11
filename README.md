@@ -5,7 +5,7 @@
     <a href="https://opensource.org/licenses/apache-2-0">
       <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/kubeagi/arcadia" />
     </a>
-    <a href="https://opensource.org/licenses/apache-2-0">
+    <a href="https://goreportcard.com/report/github.com/kubeagi/arcadia">
       <img alt="Go Report Card" src="https://goreportcard.com/badge/kubeagi/arcadia?style=flat-square" />
     </a>
   </p>
