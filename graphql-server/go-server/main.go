@@ -22,7 +22,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/service"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	_ "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 )
 
 func main() {
