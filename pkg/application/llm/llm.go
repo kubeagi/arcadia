@@ -19,7 +19,7 @@ package llm
 import (
 	"context"
 
-	"github.com/tmc/langchaingo/llms"
+	langchainllms "github.com/tmc/langchaingo/llms"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,27 +27,25 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
+	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 )
 
-var _ llms.LLM = (*ZhipuLLM)(nil)
-
-type ZhipuLLM struct {
+type LLM struct {
 	base.BaseNode
-	zhipuai.ZhiPuAILLM
+	langchainllms.LanguageModel
 }
 
-func NewZhipuLLM(baseNode base.BaseNode) *ZhipuLLM {
-	return &ZhipuLLM{
-		baseNode,
-		zhipuai.ZhiPuAILLM{},
+func NewLLM(baseNode base.BaseNode) *LLM {
+	return &LLM{
+		BaseNode: baseNode,
 	}
 }
 
-func (z *ZhipuLLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]any) error {
+func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]any) error {
+	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.LLM{}
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"}).
-		Namespace(z.Ref.GetNamespace()).Get(ctx, z.Ref.Name, metav1.GetOptions{})
+		Namespace(z.Ref.GetNamespace(ns)).Get(ctx, z.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -55,16 +53,15 @@ func (z *ZhipuLLM) Init(ctx context.Context, cli dynamic.Interface, args map[str
 	if err != nil {
 		return err
 	}
-	apiKey, err := instance.AuthAPIKeyByDynamicCli(ctx, cli)
+	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, nil, cli)
 	if err != nil {
 		return err
 	}
-	llm := zhipuai.NewZhiPuAI(apiKey)
-	z.ZhiPuAI = *llm
+	z.LanguageModel = llm
 	return nil
 }
 
-func (z *ZhipuLLM) Run(_ context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (z *LLM) Run(_ context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
 	args["llm"] = z
 	return args, nil
 }

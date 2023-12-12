@@ -117,7 +117,7 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 		return err
 	}
 
-	apiKey, err := llm.AuthAPIKey(ctx, r.Client)
+	apiKey, err := llm.AuthAPIKey(ctx, r.Client, nil)
 	if err != nil {
 		return r.UpdateStatus(ctx, prompt, nil, err)
 	}

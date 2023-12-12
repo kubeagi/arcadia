@@ -1,11 +1,11 @@
 /*
-Copyright 2023 KubeAGI.
+Copyright 2023 The KubeAGI Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package embeddings
+package langchainwrap
 
 import (
 	"context"
@@ -66,12 +66,12 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 		}
 		worker := &v1alpha1.Worker{}
 		if c != nil {
-			if err := c.Get(ctx, types.NamespacedName{Namespace: workerRef.GetNamespace(), Name: workerRef.Name}, worker); err != nil {
+			if err := c.Get(ctx, types.NamespacedName{Namespace: workerRef.GetNamespace(e.GetNamespace()), Name: workerRef.Name}, worker); err != nil {
 				return nil, err
 			}
 		} else {
 			obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: "workers"}).
-				Namespace(workerRef.GetNamespace()).Get(ctx, workerRef.Name, metav1.GetOptions{})
+				Namespace(workerRef.GetNamespace(e.GetNamespace())).Get(ctx, workerRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}

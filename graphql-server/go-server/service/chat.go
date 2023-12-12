@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/chat"
@@ -36,6 +37,7 @@ func chatHandler() gin.HandlerFunc {
 		resp, respStreamChain, err := chat.AppRun(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			klog.Infof("error resp: %v", err)
 			return
 		}
 		if !stream {

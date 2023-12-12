@@ -142,7 +142,7 @@ func (r *LLMReconciler) check3rdPartyLLM(ctx context.Context, logger logr.Logger
 	var msg string
 
 	// Check Auth availability
-	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
+	apiKey, err := instance.AuthAPIKey(ctx, r.Client, nil)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}

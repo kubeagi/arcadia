@@ -41,9 +41,10 @@ func NewPrompt(baseNode base.BaseNode) *Prompt {
 	}
 }
 func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.Prompt{}
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "prompts"}).
-		Namespace(p.Ref.GetNamespace()).Get(ctx, p.Ref.Name, metav1.GetOptions{})
+		Namespace(p.Ref.GetNamespace(ns)).Get(ctx, p.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return args, err
 	}
@@ -52,7 +53,7 @@ func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string
 		return args, err
 	}
 	template := prompts.NewChatPromptTemplate([]prompts.MessageFormatter{
-		prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}),
+		// prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}), // It's not working now, and it's counterproductive.
 		prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}),
 	})
 	// todo format
