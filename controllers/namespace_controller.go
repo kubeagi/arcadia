@@ -123,7 +123,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, error) {
-	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
 		klog.Errorf("get system datasource error %s", err)
 		return nil, err

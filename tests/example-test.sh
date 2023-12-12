@@ -264,4 +264,8 @@ waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
 curl -XPOST http://127.0.0.1:8081/chat --data '{"query":"旷工最小计算单位为多少天？","response_mode":"blocking","conversion_id":"","app_name":"base-chat-with-knowledgebase", "app_namespace":"arcadia"}' | jq -e '.message'
 
+info "10 show apiserver logs for debug"
+kubectl logs --tail=100 -n arcadia -l app=arcadia-apiserver >/tmp/apiserver.log
+cat /tmp/apiserver.log
+
 info "all finished! ✅"

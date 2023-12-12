@@ -23,13 +23,13 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/minio/minio-go/v7"
 	"github.com/tmc/langchaingo/documentloaders"
-	langchainembeddings "github.com/tmc/langchaingo/embeddings"
-	"github.com/tmc/langchaingo/llms/openai"
+	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,8 +46,6 @@ import (
 	"github.com/kubeagi/arcadia/pkg/datasource"
 	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
-	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -68,7 +66,9 @@ var (
 // KnowledgeBaseReconciler reconciles a KnowledgeBase object
 type KnowledgeBaseReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme                *runtime.Scheme
+	mu                    sync.Mutex
+	HasHandledSuccessPath map[string]bool
 }
 
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=knowledgebases,verbs=get;list;watch;create;update;patch;delete
@@ -253,7 +253,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		return errDataSourceNotReady
 	}
 
-	system, err := config.GetSystemDatasource(ctx, r.Client)
+	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
 		return err
 	}
@@ -290,6 +290,12 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 
 	errs := make([]error, 0)
 	for _, path := range group.Paths {
+		r.mu.Lock()
+		hasHandled := r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)]
+		r.mu.Unlock()
+		if hasHandled {
+			continue
+		}
 		fileDetail, ok := pathMap[path]
 		if !ok {
 			fileDetail = &arcadiav1alpha1.FileDetails{
@@ -361,6 +367,9 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 			fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
+		r.mu.Lock()
+		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)] = true
+		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
 	}
 	return utilerrors.NewAggregate(errs)
@@ -383,51 +392,9 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if !store.Status.IsReady() {
 		return errVectorStoreNotReady
 	}
-	var em langchainembeddings.Embedder
-	switch embedder.Spec.Provider.GetType() {
-	case arcadiav1alpha1.ProviderType3rdParty:
-		switch embedder.Spec.Type { // nolint: gocritic
-		case embeddings.ZhiPuAI:
-			apiKey, err := embedder.AuthAPIKey(ctx, r.Client)
-			if err != nil {
-				return err
-			}
-			em, err = zhipuaiembeddings.NewZhiPuAI(
-				zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
-			)
-			if err != nil {
-				return err
-			}
-		}
-	case arcadiav1alpha1.ProviderTypeWorker:
-		gatway, err := config.GetGateway(ctx, r.Client)
-		if err != nil {
-			return err
-		}
-		if gatway == nil {
-			return fmt.Errorf("global config gateway not found")
-		}
-		refWorker := embedder.Spec.Worker
-		if refWorker == nil {
-			return fmt.Errorf("embedder.spec.worker not defined")
-		}
-		worker := &arcadiav1alpha1.Worker{}
-		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: refWorker.GetNamespace(), Name: refWorker.Name}, worker); err != nil {
-			return err
-		}
-		refModel := worker.Spec.Model
-		if refModel == nil {
-			return fmt.Errorf("worker.spec.model not defined")
-		}
-		modelName := worker.MakeRegistrationModelName()
-		llm, err := openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatway.APIServer), openai.WithToken("fake"))
-		if err != nil {
-			return err
-		}
-		em, err = langchainembeddings.NewEmbedder(llm)
-		if err != nil {
-			return err
-		}
+	em, err := embeddings.GetLangchainEmbedder(ctx, embedder, r.Client, nil)
+	if err != nil {
+		return err
 	}
 	data, err := io.ReadAll(file) // TODO Load large files in pieces to save memory
 	// TODO Line or single line byte exceeds embedder limit
@@ -435,17 +402,22 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		return err
 	}
 	dataReader := bytes.NewReader(data)
+	var documents []schema.Document
 	var loader documentloaders.Loader
 	switch filepath.Ext(fileName) {
-	case "txt":
+	case ".txt":
 		loader = documentloaders.NewText(dataReader)
-	case "csv":
+	case ".csv":
 		if v == arcadiav1alpha1.ObjectTypeQA {
 			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName, "q", "a")
+			documents, err = loader.Load(ctx)
+			if err != nil {
+				return err
+			}
 		} else {
 			loader = documentloaders.NewCSV(dataReader)
 		}
-	case "html", "htm":
+	case ".html", ".htm":
 		loader = documentloaders.NewHTML(dataReader)
 	default:
 		loader = documentloaders.NewText(dataReader)
@@ -475,11 +447,15 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	//	)
 	//}
 
-	documents, err := loader.LoadAndSplit(ctx, split)
-	if err != nil {
-		return err
+	if len(documents) == 0 {
+		documents, err = loader.LoadAndSplit(ctx, split)
+		if err != nil {
+			return err
+		}
 	}
-
+	for i, doc := range documents {
+		log.V(5).Info(fmt.Sprintf("document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
+	}
 	switch store.Spec.Type() { // nolint: gocritic
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		s, err := chroma.New(
@@ -500,6 +476,13 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 }
 
 func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
+	r.mu.Lock()
+	for _, fg := range kb.Spec.FileGroups {
+		for _, path := range fg.Paths {
+			delete(r.HasHandledSuccessPath, r.hasHandledPathKey(kb, fg, path))
+		}
+	}
+	r.mu.Unlock()
 	vectorStore := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace()}, vectorStore); err != nil {
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
@@ -520,4 +503,12 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 			log.Error(err, "reconcile delete: remove vector store error, may leave garbage data")
 		}
 	}
+}
+
+func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {
+	sourceName := ""
+	if filegroup.Source != nil {
+		sourceName = filegroup.Source.Name
+	}
+	return kb.Name + "/" + kb.Namespace + "/" + sourceName + "/" + path
 }

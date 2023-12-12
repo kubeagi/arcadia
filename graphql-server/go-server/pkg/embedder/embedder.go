@@ -31,7 +31,6 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
-	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -104,7 +103,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 					URL: input.Endpointinput.URL,
 				},
 			},
-			Type: embeddings.EmbeddingType(servicetype),
+			Type: v1alpha1.EmbeddingType(servicetype),
 		},
 	}
 

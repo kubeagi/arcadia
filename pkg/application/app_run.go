@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -134,6 +135,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 			a.StartingNodes = append(a.StartingNodes, current)
 		}
 	}
+	klog.Infof("init application success ending node: %s\n", a.EndingNode)
 	return nil
 }
 
