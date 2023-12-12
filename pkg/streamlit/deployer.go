@@ -210,7 +210,8 @@ func (st *StreamlitDeployer) Install() error {
 						HTTP: &networkv1.HTTPIngressRuleValue{
 							Paths: []networkv1.HTTPIngressPath{
 								{
-									Path:     streamlitConfig.ContextPath,
+									// Ingress path should be the same as streamlit context path
+									Path:     fmt.Sprintf("%s/%s", streamlitConfig.ContextPath, namespace),
 									PathType: &pathType,
 									Backend: networkv1.IngressBackend{
 										Service: &networkv1.IngressServiceBackend{
