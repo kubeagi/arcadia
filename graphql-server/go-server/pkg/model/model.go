@@ -54,7 +54,7 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 	updateTime := condition.LastTransitionTime.Time
 
 	// Unknown,Pending ,WorkerRunning ,Error
-	status := string(condition.Reason)
+	status := string(condition.Status)
 
 	var systemModel bool
 	if obj.GetNamespace() == config.GetConfig().SystemNamespace {
