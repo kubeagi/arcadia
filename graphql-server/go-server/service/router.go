@@ -49,8 +49,10 @@ func NewServerAndRun(conf config.ServerConfig) {
 	if conf.EnableOIDC {
 		oidc.InitOIDCArgs(conf.IssuerURL, conf.MasterURL, conf.ClientSecret, conf.ClientID)
 	}
-	RegisterMinIOAPI(r, conf)
-	RegisterGraphQL(r, conf)
+
+	bffGroup := r.Group("/bff")
+	RegisterMinIOAPI(bffGroup, conf)
+	RegisterGraphQL(r, bffGroup, conf)
 	RegisteryChat(r, conf)
 
 	_ = r.Run(fmt.Sprintf("%s:%d", conf.Host, conf.Port))

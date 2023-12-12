@@ -37,6 +37,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/scheduler"
 	"github.com/kubeagi/arcadia/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/versioneddataset"
 )
 
 // VersionedDatasetReconciler reconciles a VersionedDataset object
@@ -227,7 +228,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 		return false, nil, err
 	}
 
-	update, deleteFileStatus := v1alpha1.CopyedFileGroup2Status(oss.Client, instance)
+	update, deleteFileStatus := versioneddataset.CopyedFileGroup2Status(oss, instance)
 	return update, deleteFileStatus, nil
 }
 

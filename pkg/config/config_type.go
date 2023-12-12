@@ -41,16 +41,6 @@ type Gateway struct {
 	Controller string `json:"controller,omitempty"`
 }
 
-// MinIO defines the way to access minio
-type MinIO struct {
-	MinioAddress         string `json:"minioAddress"`
-	MinioAccessKeyID     string `json:"minioAccessKeyId"`
-	MinioSecretAccessKey string `json:"minioSecretAccessKey"`
-	MinioSecure          bool   `json:"minioSecure"`
-	MinioBucket          string `json:"minioBucket"`
-	MinioBasePath        string `json:"minioBasePath"`
-}
-
 // Streamlit defines the configuration of streamlit app
 type Streamlit struct {
 	Image            string `json:"image"`

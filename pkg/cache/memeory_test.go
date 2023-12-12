@@ -1,6 +1,5 @@
 /*
 Copyright 2023 KubeAGI.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,17 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package scheduler
 
-import (
-	"github.com/kubeagi/arcadia/pkg/datasource"
-)
+package cache
 
-type JobPayload struct {
-	Src, Dst             string
-	SourceName           string
-	SrcBucket, DstBucket string
+import "testing"
 
-	Oss    *datasource.OSS
-	Remove bool
+func TestMemoryCache(t *testing.T) {
+	c := NewMemCache()
+	for i := 0; i < 10; i++ {
+		_ = c.Set(i, i)
+	}
+	for i := 0; i < 10; i++ {
+		if r, ok := c.Get(i); !ok || r.(int) != i {
+			t.Fatalf("set %d=%d, but the result %d obtained with key %d is not as expected %d", i, i, r.(int), i, i)
+		}
+	}
+	for i := 0; i < 10; i++ {
+		_ = c.Delete(i)
+	}
+	for i := 0; i < 10; i++ {
+		if r, ok := c.Get(i); ok && r.(int) == i {
+			t.Fatalf("all data has been erased, but results are still available. %d=%d", i, r)
+		}
+	}
 }

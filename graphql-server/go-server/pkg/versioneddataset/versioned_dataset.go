@@ -33,10 +33,11 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
-	"github.com/kubeagi/arcadia/pkg/utils/minioutils"
 )
 
 var (
@@ -98,15 +99,32 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 
 func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.VersionedDataset, filter *generated.FileFilter) (*generated.PaginatedResult, error) {
 	prefix := fmt.Sprintf("dataset/%s/%s/", input.Dataset.Name, input.Version)
-	minioClient, _, err := minio.GetClients()
-	if err != nil {
-		return nil, err
-	}
 	keyword := ""
 	if filter != nil && filter.Keyword != nil {
 		keyword = *filter.Keyword
 	}
-	objectInfoList := minioutils.ListObjectCompleteInfo(ctx, input.Namespace, prefix, minioClient)
+
+	systemDatasource, err := config.GetSystemDatasource(ctx, nil, c)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+
+	oss, err := datasource.NewOSSWithDynamciClient(ctx, c, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	anyObjectInfoList, err := oss.ListObjects(ctx, input.Namespace, miniogo.ListObjectsOptions{
+		Prefix:    prefix,
+		Recursive: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	objectInfoList := anyObjectInfoList.([]miniogo.ObjectInfo)
 	sort.Slice(objectInfoList, func(i, j int) bool {
 		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
 	})
@@ -123,7 +141,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 			tf.Size = &size
 
 			// parse tags
-			tags, err := minioClient.GetObjectTagging(ctx, input.Namespace, obj.Key, miniogo.GetObjectTaggingOptions{})
+			tags, err := oss.Client.GetObjectTagging(ctx, input.Namespace, obj.Key, miniogo.GetObjectTaggingOptions{})
 			if err == nil {
 				tagsMap := tags.ToMap()
 				if v, ok := tagsMap[v1alpha1.ObjectTypeTag]; ok {
@@ -135,7 +153,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 				}
 			}
 
-			if v, ok := obj.UserTags[minio.CreationTimestamp]; ok {
+			if v, ok := obj.UserTags[common.CreationTimestamp]; ok {
 				if now, err := time.Parse(time.RFC3339, v); err == nil {
 					tf.CreationTimestamp = &now
 				}

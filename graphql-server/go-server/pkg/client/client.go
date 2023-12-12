@@ -25,26 +25,18 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 )
 
-var getClient func(*string) (dynamic.Interface, error)
-
-func init() {
-	getClient = func(idtoken *string) (dynamic.Interface, error) {
-		var (
-			cfg *rest.Config
-			err error
-		)
-		if idtoken == nil {
-			cfg, err = ctrl.GetConfig()
-		} else {
-			cfg, err = clientcmd.BuildConfigFromKubeconfigGetter("", oidc.OIDCKubeGetter(*idtoken))
-		}
-		if err != nil {
-			return nil, err
-		}
-		return dynamic.NewForConfig(cfg)
-	}
-}
-
 func GetClient(idtoken *string) (dynamic.Interface, error) {
-	return getClient(idtoken)
+	var (
+		cfg *rest.Config
+		err error
+	)
+	if idtoken == nil {
+		cfg, err = ctrl.GetConfig()
+	} else {
+		cfg, err = clientcmd.BuildConfigFromKubeconfigGetter("", oidc.OIDCKubeGetter(*idtoken))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return dynamic.NewForConfig(cfg)
 }
