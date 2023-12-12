@@ -13,30 +13,22 @@
 # limitations under the License.
 
 
-import os
+import abc
+from typing import Any
 
 
-def get_file_name(
-    file_name,
-    handle_name
-):
-    """Get file name."""
-    file_extension = file_name.split('.')[-1].lower()
-    file_name_without_extension = file_name.rsplit('.', 1)[0]
+class Singleton(abc.ABCMeta, type):
+    """Singleton metaclass for ensuring only one instance of a class"""
 
-    return file_name_without_extension + '_' + handle_name + '.' + file_extension
+    _instances = {}
 
-
-def get_temp_file_path():
-    """Get temp file path"""
-    current_directory = os.getcwd()
-
-    csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
-
-    return csv_file_path
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        """Call method for the singleton metaclass"""
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
-
-def delete_file(file_path):
-    """Delete file"""
-    os.remove(file_path)
+class AbstractSingleton(abc.ABC, metaclass=Singleton):
+    """Abstract singleton class for ensuring only one instance of a class"""
+    pass

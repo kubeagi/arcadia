@@ -13,30 +13,10 @@
 # limitations under the License.
 
 
-import os
-
-
-def get_file_name(
-    file_name,
-    handle_name
-):
-    """Get file name."""
-    file_extension = file_name.split('.')[-1].lower()
-    file_name_without_extension = file_name.rsplit('.', 1)[0]
-
-    return file_name_without_extension + '_' + handle_name + '.' + file_extension
-
-
-def get_temp_file_path():
-    """Get temp file path"""
-    current_directory = os.getcwd()
-
-    csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
-
-    return csv_file_path
-
-
-
-def delete_file(file_path):
-    """Delete file"""
-    os.remove(file_path)
+def get_default_prompt_template():
+    prompt_template = """
+        {text}
+        
+        将上述内容提出最多 25 个问题。给出每个问题的答案。每个问题必须有答案。
+    """
+    return prompt_template

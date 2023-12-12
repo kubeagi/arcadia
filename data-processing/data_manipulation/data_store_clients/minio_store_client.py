@@ -15,21 +15,19 @@
 import logging
 import os
 import traceback
-import urllib3
-import traceback
 
+import urllib3
+from common import log_tag_const
+from common.config import config
 from minio import Minio
 from minio.commonconfig import Tags
 from minio.error import S3Error
-
-from common import config, log_tag_const
 from utils import file_utils
-
 
 logger = logging.getLogger(__name__)
 
 
-async def get_minio_client():
+def get_minio_client():
     """Get a new minio client."""
     return Minio(
         config.minio_api_url,
@@ -48,20 +46,20 @@ async def get_minio_client():
     )
     
     
-async def download(minio_client, opt={}):
+def download(
+    minio_client,
+    folder_prefix,
+    bucket_name,
+    file_name,
+):
     """Download a file.
 
     minio_client: minio client;
-
-    opt is a dictionary object. It has the following keys:
     folder_prefix: folder prefix;
     bucket_name: bucket name;
     file_name: file name;
     """
-    folder_prefix = opt['folder_prefix']
-    bucket_name = opt['bucket_name']
-    file_name = opt['file_name']
-    file_path = await file_utils.get_temp_file_path()
+    file_path = file_utils.get_temp_file_path()
 
     # 如果文件夹不存在，则创建
     directory_path = file_path + 'original'
@@ -77,21 +75,22 @@ async def download(minio_client, opt={}):
     )
 
 
-async def upload_files_to_minio_with_tags(minio_client, opt={}):
+def upload_files_to_minio_with_tags(
+    minio_client,
+    local_folder,
+    minio_bucket,
+    minio_prefix,
+    support_type,
+    data_volumes_file,
+):
     """Upload the files to minio with tags
     
-    opt is a dictionary object. It has the following keys:
     local_folder: local folder;
     minio_bucket: bucket name;
     minio_prefix: folder prefix;
     support_type: support type
     data_volumes_file: data volumes file
     """
-    local_folder=opt['local_folder']
-    minio_bucket=opt['minio_bucket']
-    minio_prefix=opt['minio_prefix']
-    support_type=opt['support_type']
-    data_volumes_file=opt['data_volumes_file']
 
     logger.debug(f"{log_tag_const.MINIO} 上传文件到minio中 {data_volumes_file}")
 
@@ -121,7 +120,7 @@ async def upload_files_to_minio_with_tags(minio_client, opt={}):
                 )
 
                 # 删除本地文件
-                await file_utils.delete_file(local_file_path)
+                file_utils.delete_file(local_file_path)
             except S3Error as ex:
                 logger.error(''.join([
                     f"{log_tag_const.MINIO} Error uploading {minio_object_name} ",

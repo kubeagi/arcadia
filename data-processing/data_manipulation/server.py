@@ -18,27 +18,26 @@ import logging
 import time
 
 import psycopg2
+from common import log_tag_const
+from common.config import config
+from controller import data_process_controller
+from database_clients import postgresql_pool_client
 from sanic import Sanic
 from sanic.response import json
 from sanic_cors import CORS
-
-from common import config, log_tag_const
-from controller import data_process_controller
-from utils import log_utils, sanic_utls
-from database_clients import postgresql_pool_client
-
+from utils import log_utils, sanic_utils
 
 # Initialize the log config
-log_utils.init_config({
-    'source_type': 'manipulate_server',
-    'log_dir': "log"
-})
+log_utils.init_config(
+    source_type='manipulate_server',
+    log_dir="log"
+)
 
 logger = logging.getLogger('manipulate_server')
 
 app = Sanic(name='data_manipulate')
 CORS(app)
-app.error_handler = sanic_utls.CustomErrorHandler()
+app.error_handler = sanic_utils.CustomErrorHandler()
 
 
 @app.middleware('request')
@@ -73,6 +72,39 @@ async def shutdown_web_server(app, loop):
 
 
 app.blueprint(data_process_controller.data_process)
+
+
+
+@app.route('test-config', methods=['POST'])
+async def test_config(request):
+    from common.config import config
+
+    data = {
+        'minio_access_key': config.minio_access_key,
+        'minio_secret_key': config.minio_secret_key,
+        'minio_api_url': config.minio_api_url,
+        'minio_secure': config.minio_secure,
+        'minio_dataset_prefix': config.minio_dataset_prefix,
+        'zhipuai_api_key': config.zhipuai_api_key,
+        'llm_use_type': config.llm_use_type,
+        'open_ai_default_key': config.open_ai_default_key,
+        'open_ai_default_base_url': config.open_ai_default_base_url,
+        'open_ai_default_model': config.open_ai_default_model,
+        'knowledge_chunk_size': config.knowledge_chunk_size,
+        'knowledge_chunk_overlap': config.knowledge_chunk_overlap,
+        'pg_host': config.pg_host,
+        'pg_port': config.pg_port,
+        'pg_user': config.pg_user,
+        'pg_password': config.pg_password,
+        'pg_database': config.pg_database
+
+    }
+   
+    return json({
+        'status': 200,
+        'message': '',
+        'data': data
+    })
 
 
 

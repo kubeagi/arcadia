@@ -13,3 +13,25 @@
 # limitations under the License.
 
 
+
+from abc import ABC, abstractmethod
+
+
+class BaseQAProvider(ABC):
+    """The Base class for the QA provider."""
+    @abstractmethod
+    def generate_qa_list(
+        self, 
+        text,
+        prompt_template=None
+    ):
+        """Generate the QA list.
+        
+        Parameters
+        ----------
+        text
+            use the text to generate QA list
+        prompt_template
+            the prompt template
+        """
+    

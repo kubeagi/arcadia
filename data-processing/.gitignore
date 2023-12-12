@@ -2,8 +2,8 @@
 __pycache__
 .ipynb_checkpoints
 
-mock_data
+data_manipulation/mock_data
 
-log
+data_manipulation/log
 
-file_handle/temp_file
+data_manipulation/file_handle/temp_file

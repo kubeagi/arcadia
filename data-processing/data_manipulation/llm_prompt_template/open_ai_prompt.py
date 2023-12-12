@@ -13,30 +13,17 @@
 # limitations under the License.
 
 
-import os
-
-
-def get_file_name(
-    file_name,
-    handle_name
-):
-    """Get file name."""
-    file_extension = file_name.split('.')[-1].lower()
-    file_name_without_extension = file_name.rsplit('.', 1)[0]
-
-    return file_name_without_extension + '_' + handle_name + '.' + file_extension
-
-
-def get_temp_file_path():
-    """Get temp file path"""
-    current_directory = os.getcwd()
-
-    csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
-
-    return csv_file_path
-
-
-
-def delete_file(file_path):
-    """Delete file"""
-    os.remove(file_path)
+def get_default_prompt_template():
+    prompt_template = """
+        {text}
+        
+        请将上述内容按照问题、答案成对的方式，提出问题，并给出每个问题的答案，每个问题必须有问题和对应的答案，并严格按照以下方式展示：
+        Q1: 问题。
+        A1: 答案。
+        Q2:
+        A2:
+        ……
+        严格按照QA的方式进行展示。
+    """
+    
+    return prompt_template

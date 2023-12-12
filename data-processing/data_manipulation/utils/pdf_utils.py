@@ -13,30 +13,22 @@
 # limitations under the License.
 
 
-import os
+from pypdf import PdfReader
 
 
-def get_file_name(
-    file_name,
-    handle_name
+def get_content(
+    file_path
 ):
-    """Get file name."""
-    file_extension = file_name.split('.')[-1].lower()
-    file_name_without_extension = file_name.rsplit('.', 1)[0]
+    """Get the content from a pdf file.
+    
+    file_path: file path;
+    """
+    reader = PdfReader(file_path)
+    content = ""
 
-    return file_name_without_extension + '_' + handle_name + '.' + file_extension
+    for page in reader.pages:
+        content += page.extract_text()
 
-
-def get_temp_file_path():
-    """Get temp file path"""
-    current_directory = os.getcwd()
-
-    csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
-
-    return csv_file_path
+    return content 
 
 
-
-def delete_file(file_path):
-    """Delete file"""
-    os.remove(file_path)
