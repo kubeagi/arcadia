@@ -17,10 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -48,14 +44,8 @@ func (worker Worker) Type() WorkerType {
 }
 
 // MakeRegistrationModelName generates a model name used to register itself into fastchat controller
-// {MODEL_NAME}-{WORKER_NAME}-{WORKER_NAMESPACE}
-// When multiple workers run a same model,its will overwrite the previuos registerd worker address.That's why we use a combined model name for registration.
 func (worker Worker) MakeRegistrationModelName() string {
-	modelRef := worker.Spec.Model
-	if modelRef == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s-%s-%s", modelRef.Name, worker.Name, worker.Namespace)
+	return string(worker.UID)
 }
 
 func (worker Worker) PendingCondition() Condition {
@@ -91,27 +81,11 @@ func (worker Worker) ErrorCondition(msg string) Condition {
 	}
 }
 
-func (worker Worker) generateUniqueName() string {
-	// Create a new SHA-256 hasher
-	hasher := sha256.New()
-
-	// Write the input string to the hasher
-	hasher.Write([]byte(worker.Name))
-
-	// Calculate the hash sum
-	hashSum := hasher.Sum(nil)
-
-	// Convert the hash sum to a hexadecimal string
-	hashString := hex.EncodeToString(hashSum)
-
-	return hashString[:10]
-}
-
 func (worker Worker) BuildEmbedder() *Embedder {
 	return &Embedder{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: worker.Namespace,
-			Name:      worker.generateUniqueName() + "-worker",
+			Name:      worker.Name,
 		},
 		Spec: EmbedderSpec{
 			CommonSpec: CommonSpec{
@@ -136,7 +110,7 @@ func (worker Worker) BuildLLM() *LLM {
 	return &LLM{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: worker.Namespace,
-			Name:      worker.generateUniqueName() + "-worker",
+			Name:      worker.Name,
 		},
 		Spec: LLMSpec{
 			CommonSpec: CommonSpec{
