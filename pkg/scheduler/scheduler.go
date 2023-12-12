@@ -49,7 +49,7 @@ func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.Versi
 
 	// TODO: Currently, we think there is only one default minio environment,
 	// so we get the minio client directly through the configuration.
-	systemDatasource, err := config.GetSystemDatasource(ctx1, c)
+	systemDatasource, err := config.GetSystemDatasource(ctx1, c, nil)
 	if err != nil {
 		klog.Errorf("generate new scheduler error %s", err)
 		cancel()

@@ -159,7 +159,7 @@ func (r *WorkerReconciler) Initialize(ctx context.Context, logger logr.Logger, i
 
 func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker) error {
 	// reconcile worker instance
-	system, err := config.GetSystemDatasource(ctx, r.Client)
+	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get system datasource with %w", err)
 	}

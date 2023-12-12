@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	langchainembeddings "github.com/tmc/langchaingo/embeddings"
+	"github.com/tmc/langchaingo/chains"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
@@ -28,13 +28,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
-	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 type KnowledgeBaseRetriever struct {
@@ -82,21 +81,10 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	if err != nil {
 		return nil, err
 	}
-	var em langchainembeddings.Embedder
-	switch embedder.Spec.Type { // nolint: gocritic
-	case embeddings.ZhiPuAI:
-		apiKey, err := embedder.AuthAPIKeyByDynamicCli(ctx, cli)
-		if err != nil {
-			return nil, err
-		}
-		em, err = zhipuaiembeddings.NewZhiPuAI(
-			zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
-		)
-		if err != nil {
-			return nil, err
-		}
+	em, err := embeddings.GetLangchainEmbedder(ctx, embedder, nil, cli)
+	if err != nil {
+		return nil, err
 	}
-
 	vectorStore := &v1alpha1.VectorStore{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "vectorstores"}).
 		Namespace(vectorStoreReq.GetNamespace()).Get(ctx, vectorStoreReq.Name, metav1.GetOptions{})
@@ -132,4 +120,62 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 func (l *KnowledgeBaseRetriever) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
 	args["retriever"] = l
 	return args, nil
+}
+
+// KnowledgeBaseStuffDocuments is similar to chains.StuffDocuments but with new joinDocuments method
+type KnowledgeBaseStuffDocuments struct {
+	chains.StuffDocuments
+}
+
+var _ chains.Chain = KnowledgeBaseStuffDocuments{}
+
+func (c KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Document) string {
+	var text string
+	docLen := len(docs)
+	for k, doc := range docs {
+		answer := doc.Metadata["a"]
+		answerBytes, _ := answer.([]byte)
+		text += doc.PageContent
+		if len(answerBytes) != 0 {
+			text = text + "\na: " + string(answerBytes)
+		}
+		if k != docLen-1 {
+			text += c.Separator
+		}
+	}
+	klog.Infof("get related text: %s\n", text)
+	return text
+}
+
+func NewStuffDocuments(llmChain *chains.LLMChain) KnowledgeBaseStuffDocuments {
+	return KnowledgeBaseStuffDocuments{
+		StuffDocuments: chains.NewStuffDocuments(llmChain),
+	}
+}
+
+func (c KnowledgeBaseStuffDocuments) Call(ctx context.Context, values map[string]any, options ...chains.ChainCallOption) (map[string]any, error) {
+	docs, ok := values[c.InputKey].([]langchaingoschema.Document)
+	if !ok {
+		return nil, fmt.Errorf("%w: %w", chains.ErrInvalidInputValues, chains.ErrInputValuesWrongType)
+	}
+
+	inputValues := make(map[string]any)
+	for key, value := range values {
+		inputValues[key] = value
+	}
+
+	inputValues[c.DocumentVariableName] = c.joinDocuments(docs)
+	return chains.Call(ctx, c.LLMChain, inputValues, options...)
+}
+
+func (c KnowledgeBaseStuffDocuments) GetMemory() langchaingoschema.Memory {
+	return c.StuffDocuments.GetMemory()
+}
+
+func (c KnowledgeBaseStuffDocuments) GetInputKeys() []string {
+	return c.StuffDocuments.GetInputKeys()
+}
+
+func (c KnowledgeBaseStuffDocuments) GetOutputKeys() []string {
+	return c.StuffDocuments.GetOutputKeys()
 }

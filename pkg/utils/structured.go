@@ -22,6 +22,8 @@ import (
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // UnstructuredToStructured convert unstructed object to a structured targe(must be a pointer)
@@ -43,5 +45,15 @@ func UnstructuredToStructured(unstructuredObj *unstructured.Unstructured, target
 		return err
 	}
 
+	return nil
+}
+
+func ValidateClient(c client.Client, cli dynamic.Interface) error {
+	if c == nil && cli == nil {
+		return fmt.Errorf("both client.Client and dynamic.Interface cannot be nil")
+	}
+	if c != nil && cli != nil {
+		return fmt.Errorf(" client.Client and dynamic.Interface cannot be set at the same time")
+	}
 	return nil
 }

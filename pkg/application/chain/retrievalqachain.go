@@ -28,6 +28,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/pkg/application/base"
+	appretriever "github.com/kubeagi/arcadia/pkg/application/retriever"
 )
 
 type RetrievalQAChain struct {
@@ -69,7 +70,13 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ dynamic.Interface, args ma
 	}
 
 	llmChain := chains.NewLLMChain(llm, prompt)
-	chain := chains.NewRetrievalQA(chains.NewStuffDocuments(llmChain), retriever)
+	var baseChain chains.Chain
+	if _, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
+		baseChain = appretriever.NewStuffDocuments(llmChain)
+	} else {
+		baseChain = chains.NewStuffDocuments(llmChain)
+	}
+	chain := chains.NewRetrievalQA(baseChain, retriever)
 	l.RetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
