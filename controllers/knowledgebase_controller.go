@@ -45,7 +45,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
-	"github.com/kubeagi/arcadia/pkg/embeddings"
+	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -179,7 +179,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	}
 
 	embedder := &arcadiav1alpha1.Embedder{}
-	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.Embedder.Name, Namespace: kb.Spec.Embedder.GetNamespace()}, embedder); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.Embedder.Name, Namespace: kb.Spec.Embedder.GetNamespace(kb.GetNamespace())}, embedder); err != nil {
 		if apierrors.IsNotFound(err) {
 			r.setCondition(kb, kb.PendingCondition("embedder is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
@@ -189,7 +189,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	}
 
 	vectorStore := &arcadiav1alpha1.VectorStore{}
-	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace()}, vectorStore); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace(kb.GetNamespace())}, vectorStore); err != nil {
 		if apierrors.IsNotFound(err) {
 			r.setCondition(kb, kb.PendingCondition("vectorStore is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
@@ -274,7 +274,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	var fileGroupDetail *arcadiav1alpha1.FileGroupDetail
 	pathMap := make(map[string]*arcadiav1alpha1.FileDetails, 1)
 	for i, detail := range kb.Status.FileGroupDetail {
-		if detail.Source != nil && detail.Source.Name == versionedDataset.Name && detail.Source.GetNamespace() == versionedDataset.GetNamespace() {
+		if detail.Source != nil && detail.Source.Name == versionedDataset.Name && detail.Source.GetNamespace(kb.GetNamespace()) == versionedDataset.GetNamespace() {
 			fileGroupDetail = &kb.Status.FileGroupDetail[i]
 			for i, detail := range fileGroupDetail.FileDetails {
 				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i] // FIXME 这样对不？
@@ -392,7 +392,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if !store.Status.IsReady() {
 		return errVectorStoreNotReady
 	}
-	em, err := embeddings.GetLangchainEmbedder(ctx, embedder, r.Client, nil)
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, nil)
 	if err != nil {
 		return err
 	}
@@ -484,7 +484,7 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 	}
 	r.mu.Unlock()
 	vectorStore := &arcadiav1alpha1.VectorStore{}
-	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace()}, vectorStore); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace(kb.GetNamespace())}, vectorStore); err != nil {
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
 		return
 	}

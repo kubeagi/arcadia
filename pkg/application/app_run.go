@@ -135,7 +135,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 			a.StartingNodes = append(a.StartingNodes, current)
 		}
 	}
-	klog.Infof("init application success ending node: %s\n", a.EndingNode)
+	klog.Infof("init application success ending node: %#v\n", a.EndingNode)
 	return nil
 }
 
@@ -203,7 +203,7 @@ func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectR
 	case "":
 		switch baseNode.Kind() {
 		case "llm":
-			return llm.NewLLM(ctx, baseNode, ref, cli)
+			return llm.NewLLM(baseNode), nil
 		case "input":
 			return base.NewInput(baseNode), nil
 		case "output":

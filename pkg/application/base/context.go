@@ -14,25 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package base
 
-import (
-	"context"
+import "context"
 
-	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
-	if e.Spec.Enpoint == nil {
-		return "", nil
-	}
-	return e.Spec.Enpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
-}
-
-type EmbeddingType string
+type contextKey string
 
 const (
-	OpenAI  EmbeddingType = "openai"
-	ZhiPuAI EmbeddingType = "zhipuai"
+	AppNamespaceContextKey contextKey = "app-ns"
 )
+
+func GetAppNamespace(ctx context.Context) string {
+	return ctx.Value(AppNamespaceContextKey).(string)
+}
+
+func SetAppNamespace(ctx context.Context, ns string) context.Context {
+	return context.WithValue(ctx, AppNamespaceContextKey, ns)
+}

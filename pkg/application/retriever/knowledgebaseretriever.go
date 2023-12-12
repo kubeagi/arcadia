@@ -33,7 +33,7 @@ import (
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
-	"github.com/kubeagi/arcadia/pkg/embeddings"
+	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 )
 
 type KnowledgeBaseRetriever struct {
@@ -42,9 +42,10 @@ type KnowledgeBaseRetriever struct {
 }
 
 func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli dynamic.Interface) (*KnowledgeBaseRetriever, error) {
+	ns := base.GetAppNamespace(ctx)
 	instance := &apiretriever.KnowledgeBaseRetriever{}
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
-		Namespace(baseNode.Ref.GetNamespace()).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
+		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 
 	knowledgebase := &v1alpha1.KnowledgeBase{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(baseNode.Ref.GetNamespace()).Get(ctx, knowledgebaseName, metav1.GetOptions{})
+		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, knowledgebaseName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 
 	embedder := &v1alpha1.Embedder{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"}).
-		Namespace(embedderReq.GetNamespace()).Get(ctx, embedderReq.Name, metav1.GetOptions{})
+		Namespace(embedderReq.GetNamespace(ns)).Get(ctx, embedderReq.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +82,13 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	if err != nil {
 		return nil, err
 	}
-	em, err := embeddings.GetLangchainEmbedder(ctx, embedder, nil, cli)
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cli)
 	if err != nil {
 		return nil, err
 	}
 	vectorStore := &v1alpha1.VectorStore{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "vectorstores"}).
-		Namespace(vectorStoreReq.GetNamespace()).Get(ctx, vectorStoreReq.Name, metav1.GetOptions{})
+		Namespace(vectorStoreReq.GetNamespace(ns)).Get(ctx, vectorStoreReq.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

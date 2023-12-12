@@ -31,6 +31,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/auth"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
 	"github.com/kubeagi/arcadia/pkg/application"
+	"github.com/kubeagi/arcadia/pkg/application/base"
 )
 
 var Conversions = map[string]Conversion{}
@@ -79,6 +80,7 @@ func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespB
 		Query:  req.Query,
 		Answer: "",
 	})
+	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
 	appRun, err := application.NewAppOrGetFromCache(ctx, app, c)
 	if err != nil {
 		return nil, nil, err

@@ -17,7 +17,16 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -112,8 +121,15 @@ func (in *TypedObjectReference) WithNameSpace(namespace string) {
 	in.Namespace = &namespace
 }
 
-func (in *TypedObjectReference) GetNamespace() string {
+// GetNamespace returns the namespace:
+// 1. if TypedObjectReference.namespace is not nil, return it
+// 2. if defaultNamespace is not empty, return it
+// 3. return env: POD_NAMESPACE value, usually operator's namespace
+func (in *TypedObjectReference) GetNamespace(defaultNamespace string) string {
 	if in.Namespace == nil {
+		if defaultNamespace != "" {
+			return defaultNamespace
+		}
 		return utils.GetCurrentNamespace()
 	}
 	return *in.Namespace
@@ -165,4 +181,30 @@ type CommonSpec struct {
 
 	// Description defines datasource description
 	Description string `json:"description,omitempty"`
+}
+
+func (endpoint Endpoint) AuthAPIKey(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (string, error) {
+	if endpoint.AuthSecret == nil {
+		return "", nil
+	}
+	if err := utils.ValidateClient(c, cli); err != nil {
+		return "", err
+	}
+	authSecret := &corev1.Secret{}
+	if c != nil {
+		if err := c.Get(ctx, types.NamespacedName{Name: endpoint.AuthSecret.Name, Namespace: endpoint.AuthSecret.GetNamespace(ns)}, authSecret); err != nil {
+			return "", err
+		}
+	} else {
+		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
+			Namespace(endpoint.AuthSecret.GetNamespace(ns)).Get(ctx, endpoint.AuthSecret.Name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), authSecret)
+		if err != nil {
+			return "", err
+		}
+	}
+	return string(authSecret.Data["apiKey"]), nil
 }
