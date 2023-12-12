@@ -509,8 +509,9 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		s, err := chroma.New(
 			chroma.WithChromaURL(vectorStore.Spec.Enpoint.URL),
-			chroma.WithDistanceFunction(vectorStore.Spec.Chroma.DistanceFunction),
 			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
+			// workaround to fix 'invalid options: missing embedder or openai api key'
+			chroma.WithOpenAiAPIKey("fake-api-key"),
 		)
 		if err != nil {
 			log.Error(err, "reconcile delete: init vector store error, may leave garbage data")

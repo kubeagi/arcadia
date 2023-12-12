@@ -1,6 +1,6 @@
 Here are some web based applications built using streamlit.
 
-### Simple chat application - English teacher
+## Simple chat application - English teacher
 
 * application definition: refer to config/samples/app_llmchain_englishteacher.yaml
 * application code: chat_app_english_teacher.py
