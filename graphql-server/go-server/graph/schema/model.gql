@@ -11,7 +11,7 @@ query listModels($input: ListModelInput!,$filesInput: FileFilter){
           creationTimestamp
           name
           namespace
-          system
+          systemModel
           labels
           annotations
           creator
@@ -48,7 +48,7 @@ query getModel($name: String!, $namespace: String!,$filesInput: FileFilter) {
       creationTimestamp
       name
       namespace
-      system
+      systemModel
       labels
       annotations
       creator
@@ -83,7 +83,7 @@ mutation createModel($input: CreateModelInput!) {
       creationTimestamp
       name
       namespace
-      system
+      systemModel
       labels
       annotations
       creator
@@ -104,7 +104,7 @@ mutation updateModel($input: UpdateModelInput) {
       creationTimestamp
       name
       namespace
-      system
+      systemModel
       labels
       annotations
       creator
