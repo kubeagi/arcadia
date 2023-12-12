@@ -14,7 +14,7 @@ func main() {
 		openai.WithToken("fake"),
 		// update base url to fastchat api server
 		openai.WithBaseURL("http://arcadia-fastchat.172.22.96.167.nip.io/v1"),
-		openai.WithModel("baichuan2-7b"),
+		openai.WithModel("fb219b5f-8f3e-49e1-8d5b-f0c6da481186"),
 	)
 	if err != nil {
 		log.Fatal(err)

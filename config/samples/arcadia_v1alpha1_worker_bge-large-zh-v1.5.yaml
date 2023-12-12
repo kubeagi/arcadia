@@ -11,7 +11,7 @@ spec:
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Worker
 metadata:
-  name: worker-bge
+  name: bge-large-zh
   namespace: arcadia
 spec:
   type: "fastchat"
