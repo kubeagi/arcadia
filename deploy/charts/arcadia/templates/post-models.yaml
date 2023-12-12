@@ -2,11 +2,12 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
   name: baichuan2-7b-chat
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
 spec:
-  displayName: "baichuan2-7b"
+  displayName: "baichuan2-7b-chat"
   description: |
     Baichuan2 为百川智能推出的新一代开源大语言模型,采用 2.6 万亿 Tokens 的高质量语料训练。
     模型在通用、法律、医疗、数学、代码和多语言翻译六个领域的中英文和多语言权威数据集上进行了广泛测试,取得同尺寸中显著的优秀效果。
@@ -29,6 +30,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
   name: chatglm2-6b
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
@@ -59,6 +61,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
   name: qwen-7b-chat
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
@@ -90,6 +93,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
   name: bge-large-zh-v1.5
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
@@ -121,6 +125,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
 metadata:
   name: m3e-base
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"

@@ -48,6 +48,11 @@ query getWorker($name: String!, $namespace: String!) {
           updateTimestamp
           model
           modelTypes
+          resources {
+            cpu
+            memory
+            nvidiaGPU
+          }
     }
   }
 }

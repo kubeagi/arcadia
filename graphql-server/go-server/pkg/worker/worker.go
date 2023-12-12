@@ -26,11 +26,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	gqlmodel "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -38,10 +38,6 @@ import (
 
 const (
 	NvidiaGPU = "nvidia.com/gpu"
-)
-
-var (
-	scheme = schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"}
 )
 
 func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Worker {
@@ -79,6 +75,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		ID:                &id,
 		Name:              worker.Name,
 		Namespace:         worker.Namespace,
+		Creator:           &worker.Spec.Creator,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &worker.Spec.DisplayName,
@@ -147,7 +144,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"}).
+	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).
 		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredWorker}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
@@ -156,7 +153,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 }
 
 func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
-	obj, err := c.Resource(scheme).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +195,12 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		return nil, err
 	}
 
-	updatedObject, err := c.Resource(scheme).Namespace(input.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructuredWorker}, metav1.UpdateOptions{})
+	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Worker",
+		Name:      input.Name,
+		Namespace: &input.Namespace,
+	}, unstructuredWorker, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +220,7 @@ func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.De
 	if input.LabelSelector != nil {
 		labelSelector = *input.LabelSelector
 	}
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"})
+	resource := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker"))
 	if name != "" {
 		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
@@ -258,12 +260,11 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 		pageSize = *input.PageSize
 	}
 
-	workerSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"}
 	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
 		FieldSelector: fieldSelector,
 	}
-	us, err := c.Resource(workerSchema).Namespace(input.Namespace).List(ctx, listOptions)
+	us, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).Namespace(input.Namespace).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +276,12 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	totalCount := len(us.Items)
 
 	result := make([]generated.PageNode, 0, pageSize)
-	for _, u := range us.Items {
+	pageStart := (page - 1) * pageSize
+	for index, u := range us.Items {
+		// skip if smaller than the start index
+		if index < pageStart {
+			continue
+		}
 		m := worker2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
@@ -310,8 +316,12 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 }
 
 func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Worker, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "workers"})
-	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	u, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Worker",
+		Name:      name,
+		Namespace: &namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

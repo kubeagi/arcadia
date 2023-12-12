@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubeagi-reader
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - models
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - models/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - models/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubeagi-reader
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeagi-reader
+subjects:
+- kind: Group
+  name: resource-reader

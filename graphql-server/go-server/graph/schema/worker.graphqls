@@ -167,6 +167,10 @@ input ListWorkerInput {
     """
     pageSize: Int
 
+    """
+    worker对应的模型类型
+    规则: 模型分为embedding和llm两大类。如果两者都有，则通过逗号隔开，如: "embedding,llm"
+    """
     modelTypes: String
 }
 
