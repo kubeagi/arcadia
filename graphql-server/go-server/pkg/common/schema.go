@@ -57,6 +57,16 @@ var (
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "datasets",
 		},
+		"model": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "models",
+		},
+		"worker": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "workers",
+		},
 		"application": {
 			Group:    v1alpha1.GroupVersion.Group,
 			Version:  v1alpha1.GroupVersion.Version,

@@ -18,6 +18,13 @@ type Model {
     """
     namespace: String!
 
+    """
+    模型是否是由系统提供
+    规则: 如果为true，则是系统系统的。
+    规则: 如果是系统提供的模型，不允许修改
+    """
+    systemModel: Boolean
+
     """一些用于标记，选择的的标签"""
     labels: Map
     """添加一些辅助性记录信息"""
@@ -108,9 +115,41 @@ type ModelMutation {
     deleteModels(input: DeleteCommonInput): Void
 }
 
+input ListModelInput {
+    namespace: String!
+
+    """
+    是否包含系统提供的模型
+    规则: 为true时，代表将同时获取系统提供的模型
+    规则: 默认为false
+    """
+    systemModel: Boolean
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
+}
+
 type ModelQuery {
     getModel(name: String!, namespace: String!): Model!
-    listModels(input: ListCommonInput!): PaginatedResult!
+    listModels(input: ListModelInput!): PaginatedResult!
 }
 
 extend type Mutation {

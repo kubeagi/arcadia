@@ -333,6 +333,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Status            func(childComplexity int) int
+		SystemModel       func(childComplexity int) int
 		Types             func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
 	}
@@ -345,7 +346,7 @@ type ComplexityRoot struct {
 
 	ModelQuery struct {
 		GetModel   func(childComplexity int, name string, namespace string) int
-		ListModels func(childComplexity int, input ListCommonInput) int
+		ListModels func(childComplexity int, input ListModelInput) int
 	}
 
 	Mutation struct {
@@ -553,7 +554,7 @@ type ModelMutationResolver interface {
 }
 type ModelQueryResolver interface {
 	GetModel(ctx context.Context, obj *ModelQuery, name string, namespace string) (*Model, error)
-	ListModels(ctx context.Context, obj *ModelQuery, input ListCommonInput) (*PaginatedResult, error)
+	ListModels(ctx context.Context, obj *ModelQuery, input ListModelInput) (*PaginatedResult, error)
 }
 type MutationResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
@@ -1989,6 +1990,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.Status(childComplexity), true
 
+	case "Model.systemModel":
+		if e.complexity.Model.SystemModel == nil {
+			break
+		}
+
+		return e.complexity.Model.SystemModel(childComplexity), true
+
 	case "Model.types":
 		if e.complexity.Model.Types == nil {
 			break
@@ -2061,7 +2069,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.ModelQuery.ListModels(childComplexity, args["input"].(ListCommonInput)), true
+		return e.complexity.ModelQuery.ListModels(childComplexity, args["input"].(ListModelInput)), true
 
 	case "Mutation.dataProcess":
 		if e.complexity.Mutation.DataProcess == nil {
@@ -2769,6 +2777,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputListCommonInput,
 		ec.unmarshalInputListDatasetInput,
 		ec.unmarshalInputListKnowledgeBaseInput,
+		ec.unmarshalInputListModelInput,
 		ec.unmarshalInputListVersionedDatasetInput,
 		ec.unmarshalInputListWorkerInput,
 		ec.unmarshalInputOssInput,
@@ -4045,6 +4054,13 @@ type Model {
     """
     namespace: String!
 
+    """
+    模型是否是由系统提供
+    规则: 如果为true，则是系统系统的。
+    规则: 如果是系统提供的模型，不允许修改
+    """
+    systemModel: Boolean
+
     """一些用于标记，选择的的标签"""
     labels: Map
     """添加一些辅助性记录信息"""
@@ -4135,9 +4151,41 @@ type ModelMutation {
     deleteModels(input: DeleteCommonInput): Void
 }
 
+input ListModelInput {
+    namespace: String!
+
+    """
+    是否包含系统提供的模型
+    规则: 为true时，代表将同时获取系统提供的模型
+    规则: 默认为false
+    """
+    systemModel: Boolean
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """标签选择器"""
+    labelSelector: String
+    """字段选择器"""
+    fieldSelector: String
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
+}
+
 type ModelQuery {
     getModel(name: String!, namespace: String!): Model!
-    listModels(input: ListCommonInput!): PaginatedResult!
+    listModels(input: ListModelInput!): PaginatedResult!
 }
 
 extend type Mutation {
@@ -4532,6 +4580,10 @@ input ListWorkerInput {
     """
     pageSize: Int
 
+    """
+    worker对应的模型类型
+    规则: 模型分为embedding和llm两大类。如果两者都有，则通过逗号隔开，如: "embedding,llm"
+    """
     modelTypes: String
 }
 
@@ -5157,10 +5209,10 @@ func (ec *executionContext) field_ModelQuery_getModel_args(ctx context.Context, 
 func (ec *executionContext) field_ModelQuery_listModels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 ListCommonInput
+	var arg0 ListModelInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx, tmp)
+		arg0, err = ec.unmarshalNListModelInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListModelInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13478,6 +13530,47 @@ func (ec *executionContext) fieldContext_Model_namespace(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Model_systemModel(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_systemModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemModel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_systemModel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Model_labels(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Model_labels(ctx, field)
 	if err != nil {
@@ -13962,6 +14055,8 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
 				return ec.fieldContext_Model_namespace(ctx, field)
+			case "systemModel":
+				return ec.fieldContext_Model_systemModel(ctx, field)
 			case "labels":
 				return ec.fieldContext_Model_labels(ctx, field)
 			case "annotations":
@@ -14045,6 +14140,8 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
 				return ec.fieldContext_Model_namespace(ctx, field)
+			case "systemModel":
+				return ec.fieldContext_Model_systemModel(ctx, field)
 			case "labels":
 				return ec.fieldContext_Model_labels(ctx, field)
 			case "annotations":
@@ -14180,6 +14277,8 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_name(ctx, field)
 			case "namespace":
 				return ec.fieldContext_Model_namespace(ctx, field)
+			case "systemModel":
+				return ec.fieldContext_Model_systemModel(ctx, field)
 			case "labels":
 				return ec.fieldContext_Model_labels(ctx, field)
 			case "annotations":
@@ -14232,7 +14331,7 @@ func (ec *executionContext) _ModelQuery_listModels(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ModelQuery().ListModels(rctx, obj, fc.Args["input"].(ListCommonInput))
+		return ec.resolvers.ModelQuery().ListModels(rctx, obj, fc.Args["input"].(ListModelInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22074,6 +22173,89 @@ func (ec *executionContext) unmarshalInputListKnowledgeBaseInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputListModelInput(ctx context.Context, obj interface{}) (ListModelInput, error) {
+	var it ListModelInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"namespace", "systemModel", "keyword", "labelSelector", "fieldSelector", "page", "pageSize"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "systemModel":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemModel"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SystemModel = data
+		case "keyword":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Keyword = data
+		case "labelSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LabelSelector = data
+		case "fieldSelector":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fieldSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FieldSelector = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputListVersionedDatasetInput(ctx context.Context, obj interface{}) (ListVersionedDatasetInput, error) {
 	var it ListVersionedDatasetInput
 	asMap := map[string]interface{}{}
@@ -25867,6 +26049,8 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "systemModel":
+			out.Values[i] = ec._Model_systemModel(ctx, field, obj)
 		case "labels":
 			out.Values[i] = ec._Model_labels(ctx, field, obj)
 		case "annotations":
@@ -28106,6 +28290,11 @@ func (ec *executionContext) unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋa
 
 func (ec *executionContext) unmarshalNListKnowledgeBaseInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListKnowledgeBaseInput(ctx context.Context, v interface{}) (ListKnowledgeBaseInput, error) {
 	res, err := ec.unmarshalInputListKnowledgeBaseInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNListModelInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListModelInput(ctx context.Context, v interface{}) (ListModelInput, error) {
+	res, err := ec.unmarshalInputListModelInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -727,6 +727,26 @@ type ListKnowledgeBaseInput struct {
 	Keyword *string `json:"keyword,omitempty"`
 }
 
+type ListModelInput struct {
+	Namespace string `json:"namespace"`
+	// 是否包含系统提供的模型
+	// 规则: 为true时，代表将同时获取系统提供的模型
+	// 规则: 默认为false
+	SystemModel *bool `json:"systemModel,omitempty"`
+	// 关键词: 模糊匹配
+	Keyword *string `json:"keyword,omitempty"`
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 字段选择器
+	FieldSelector *string `json:"fieldSelector,omitempty"`
+	// 分页页码，
+	// 规则: 从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，
+	// 规则: 默认10
+	PageSize *int `json:"pageSize,omitempty"`
+}
+
 type ListVersionedDatasetInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     *string `json:"namespace,omitempty"`
@@ -753,7 +773,9 @@ type ListWorkerInput struct {
 	Page *int `json:"page,omitempty"`
 	// 每页数量，
 	// 规则: 默认10
-	PageSize   *int    `json:"pageSize,omitempty"`
+	PageSize *int `json:"pageSize,omitempty"`
+	// worker对应的模型类型
+	// 规则: 模型分为embedding和llm两大类。如果两者都有，则通过逗号隔开，如: "embedding,llm"
 	ModelTypes *string `json:"modelTypes,omitempty"`
 }
 
@@ -768,6 +790,10 @@ type Model struct {
 	// 规则: 获取当前项目对应的命名空间
 	// 规则: 非空
 	Namespace string `json:"namespace"`
+	// 模型是否是由系统提供
+	// 规则: 如果为true，则是系统系统的。
+	// 规则: 如果是系统提供的模型，不允许修改
+	SystemModel *bool `json:"systemModel,omitempty"`
 	// 一些用于标记，选择的的标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
 	// 添加一些辅助性记录信息

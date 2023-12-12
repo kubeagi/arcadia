@@ -17,13 +17,18 @@ package config
 
 import (
 	"flag"
+	"os"
 
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/dataprocessing"
 )
 
+var s = &ServerConfig{}
+
 type ServerConfig struct {
+	SystemNamespace string
+
 	Host             string
 	Port             int
 	EnablePlayground bool
@@ -36,7 +41,7 @@ type ServerConfig struct {
 }
 
 func NewServerFlags() ServerConfig {
-	s := ServerConfig{}
+	flag.StringVar(&s.SystemNamespace, "system-namespace", os.Getenv("POD_NAMESPACE"), "system namespace where kubeagi has been installed")
 	flag.StringVar(&s.Host, "host", "", "bind to the host, default is 0.0.0.0")
 	flag.IntVar(&s.Port, "port", 8081, "service listening port")
 	flag.BoolVar(&s.EnablePlayground, "enable-playground", false, "enable the graphql playground")
@@ -52,5 +57,9 @@ func NewServerFlags() ServerConfig {
 	flag.Parse()
 
 	dataprocessing.Init(s.DataProcessURL)
-	return s
+	return *s
+}
+
+func GetConfig() ServerConfig {
+	return *s
 }

@@ -233,7 +233,12 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 	totalCount := len(us.Items)
 
 	result := make([]generated.PageNode, 0, pageSize)
-	for _, u := range us.Items {
+	pageStart := (page - 1) * pageSize
+	for index, u := range us.Items {
+		// skip if smaller than the start index
+		if index < pageStart {
+			continue
+		}
 		m := embedder2model(&u)
 		// filter based on `keyword`
 		if keyword != "" {

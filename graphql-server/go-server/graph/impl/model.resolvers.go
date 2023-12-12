@@ -60,7 +60,7 @@ func (r *modelQueryResolver) GetModel(ctx context.Context, obj *generated.ModelQ
 }
 
 // ListModels is the resolver for the listModels field.
-func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+func (r *modelQueryResolver) ListModels(ctx context.Context, obj *generated.ModelQuery, input generated.ListModelInput) (*generated.PaginatedResult, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err

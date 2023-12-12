@@ -31,7 +31,9 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/minio"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -39,37 +41,40 @@ import (
 )
 
 func obj2model(obj *unstructured.Unstructured) *generated.Model {
-	id := string(obj.GetUID())
-	creationtimestamp := obj.GetCreationTimestamp().Time
-	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-
-	types, _, _ := unstructured.NestedString(obj.Object, "spec", "types")
-	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	status := ""
-	var updateTime time.Time
-	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
-	if found && len(conditions) > 0 {
-		condition, ok := conditions[0].(map[string]interface{})
-		if ok {
-			timeStr, _ := condition["lastTransitionTime"].(string)
-			updateTime, _ = utils.RFC3339Time(timeStr)
-			status, _ = condition["status"].(string)
-		}
-	} else {
-		status = "unknow"
+	model := &v1alpha1.Model{}
+	if err := utils.UnstructuredToStructured(obj, model); err != nil {
+		return &generated.Model{}
 	}
+
+	id := string(model.GetUID())
+	creationtimestamp := model.GetCreationTimestamp().Time
+
+	// conditioned status
+	condition := model.Status.GetCondition(v1alpha1.TypeReady)
+	updateTime := condition.LastTransitionTime.Time
+
+	// Unknown,Pending ,WorkerRunning ,Error
+	status := string(condition.Reason)
+
+	var systemModel bool
+	if obj.GetNamespace() == config.GetConfig().SystemNamespace {
+		systemModel = true
+	}
+
 	md := generated.Model{
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
+		Creator:           &model.Spec.Creator,
+		SystemModel:       &systemModel,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
-		DisplayName:       &displayName,
-		Description:       &description,
-		Status:            &status,
-		Types:             types,
+		DisplayName:       &model.Spec.DisplayName,
+		Description:       &model.Spec.Description,
+		Types:             model.Spec.Types,
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
+		Status:            &status,
 	}
 	return &md
 }
@@ -177,7 +182,7 @@ func DeleteModels(ctx context.Context, c dynamic.Interface, input *generated.Del
 	return nil, nil
 }
 
-func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListModelInput) (*generated.PaginatedResult, error) {
 	keyword, labelSelector, fieldSelector := "", "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
@@ -196,24 +201,43 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListCo
 		pageSize = *input.PageSize
 	}
 
-	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"}
 	listOptions := metav1.ListOptions{
 		LabelSelector: labelSelector,
 		FieldSelector: fieldSelector,
 	}
-	us, err := c.Resource(dsSchema).Namespace(input.Namespace).List(ctx, listOptions)
+	models, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(input.Namespace).List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
+
 	// sort by creation time
-	sort.Slice(us.Items, func(i, j int) bool {
-		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
+	sort.Slice(models.Items, func(i, j int) bool {
+		return models.Items[i].GetCreationTimestamp().After(models.Items[j].GetCreationTimestamp().Time)
 	})
 
-	totalCount := len(us.Items)
+	// list models in kubeagi system namespace
+	if input.SystemModel != nil && *input.SystemModel {
+		systemModels, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(config.GetConfig().SystemNamespace).List(ctx, listOptions)
+		if err != nil {
+			return nil, err
+		}
+		// sort by creation time
+		sort.Slice(systemModels.Items, func(i, j int) bool {
+			return systemModels.Items[i].GetCreationTimestamp().After(systemModels.Items[j].GetCreationTimestamp().Time)
+		})
+		models.Items = append(systemModels.Items, models.Items...)
+	}
+
+	totalCount := len(models.Items)
 
 	result := make([]generated.PageNode, 0, pageSize)
-	for _, u := range us.Items {
+	pageStart := (page - 1) * pageSize
+	for index, u := range models.Items {
+		// skip if smaller than the start index
+		if index < pageStart {
+			continue
+		}
+
 		m := obj2model(&u)
 		// filter based on `keyword`
 		if keyword != "" {
