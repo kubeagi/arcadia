@@ -60,6 +60,11 @@ type Model {
     status: String
 
     """
+    详细信息
+    """
+    message: String
+
+    """
     模型包含文件列表
     """
     files(input: FileFilter): PaginatedResult!

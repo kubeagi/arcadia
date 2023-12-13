@@ -62,6 +62,8 @@ type Datasource {
     """数据源连接状态"""
     status: String
 
+    message: String
+
     """创建时间"""
     creationTimestamp: Time
     """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""

@@ -53,6 +53,7 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 	condition := model.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
 	status := string(condition.Status)
+	message := string(condition.Message)
 
 	var systemModel bool
 	if obj.GetNamespace() == config.GetConfig().SystemNamespace {
@@ -73,6 +74,7 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
 		Status:            &status,
+		Message:           &message,
 	}
 	return &md
 }

@@ -218,9 +218,9 @@ type CreateWorkerInput struct {
 	// 模型资源描述
 	Description *string `json:"description,omitempty"`
 	// worker对应的模型
-	// 规则: 相同namespace下的模型名称
+	// 规则: 必须指定模型准确的namespace
 	// 规则: 必填
-	Model string `json:"model"`
+	Model TypedObjectReferenceInput `json:"model"`
 	// worker运行所需的资源
 	// 规则: 必填
 	Resources ResourcesInput `json:"resources"`
@@ -430,7 +430,8 @@ type Datasource struct {
 	// 规则: 非空代表当前数据源为对象存储数据源
 	Oss *Oss `json:"oss,omitempty"`
 	// 数据源连接状态
-	Status *string `json:"status,omitempty"`
+	Status  *string `json:"status,omitempty"`
+	Message *string `json:"message,omitempty"`
 	// 创建时间
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间
@@ -472,16 +473,22 @@ type DeleteVersionedDatasetInput struct {
 }
 
 type Embedder struct {
-	Name            string                 `json:"name"`
-	Namespace       string                 `json:"namespace"`
-	Labels          map[string]interface{} `json:"labels,omitempty"`
-	Annotations     map[string]interface{} `json:"annotations,omitempty"`
-	Creator         *string                `json:"creator,omitempty"`
-	DisplayName     *string                `json:"displayName,omitempty"`
-	Description     *string                `json:"description,omitempty"`
-	Endpoint        *Endpoint              `json:"endpoint,omitempty"`
-	Type            *string                `json:"type,omitempty"`
-	UpdateTimestamp *time.Time             `json:"updateTimestamp,omitempty"`
+	ID          *string                `json:"id,omitempty"`
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	Creator     *string                `json:"creator,omitempty"`
+	DisplayName *string                `json:"displayName,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	// Embedder供应商类型：
+	// 规则: 分为两类: worker 或者 3rd_party
+	Provider          *string    `json:"provider,omitempty"`
+	Type              *string    `json:"type,omitempty"`
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
+	Status            *string    `json:"status,omitempty"`
+	Message           *string    `json:"message,omitempty"`
 }
 
 func (Embedder) IsPageNode() {}
@@ -815,6 +822,8 @@ type Model struct {
 	Types string `json:"types"`
 	// 状态
 	Status *string `json:"status,omitempty"`
+	// 详细信息
+	Message *string `json:"message,omitempty"`
 	// 模型包含文件列表
 	Files PaginatedResult `json:"files"`
 }
@@ -1130,7 +1139,7 @@ type Worker struct {
 	// worker对应的模型
 	// 规则: 相同namespace下的模型名称
 	// 规则: 必填
-	Model string `json:"model"`
+	Model TypedObjectReference `json:"model"`
 	// worker对应的模型类型
 	ModelTypes string `json:"modelTypes"`
 	// worker运行所需的资源
@@ -1143,6 +1152,8 @@ type Worker struct {
 	//   - Running: 已发布
 	//   - Error: 异常
 	Status *string `json:"status,omitempty"`
+	// 详细的状态消息描述
+	Message *string `json:"message,omitempty"`
 }
 
 func (Worker) IsPageNode() {}

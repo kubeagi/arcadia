@@ -17,8 +17,14 @@ query listWorkers($input: ListWorkerInput!){
           displayName
           description
           status
+          message
           updateTimestamp
-          model
+          model {
+            name
+            namespace
+            kind
+            apiGroup
+          }
           modelTypes
           resources {
             cpu
@@ -45,8 +51,14 @@ query getWorker($name: String!, $namespace: String!) {
           displayName
           description
           status
+          message
           updateTimestamp
-          model
+          model {
+            name
+            namespace
+            kind
+            apiGroup
+          }
           modelTypes
           resources {
             cpu
@@ -71,8 +83,14 @@ mutation createWorker($input: CreateWorkerInput!) {
           displayName
           description
           status
+          message
           updateTimestamp
-          model
+          model {
+            name
+            namespace
+            kind
+            apiGroup
+          }
           modelTypes
           resources {
             cpu
@@ -97,13 +115,19 @@ mutation updateWorker($input: UpdateWorkerInput) {
           displayName
           description
           status
+          message
           updateTimestamp
           resources {
             cpu
             memory
             nvidiaGPU
           }
-          model
+          model {
+            name
+            namespace
+            kind
+            apiGroup
+          }
           modelTypes
     }
   }

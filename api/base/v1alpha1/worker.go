@@ -43,6 +43,21 @@ func (worker Worker) Type() WorkerType {
 	return worker.Spec.Type
 }
 
+func (worker Worker) Model() TypedObjectReference {
+	if worker.Spec.Model == nil {
+		return TypedObjectReference{}
+	}
+	modelNs := worker.Namespace
+	if worker.Spec.Model.Namespace != nil {
+		modelNs = *worker.Spec.Model.Namespace
+	}
+	return TypedObjectReference{
+		Kind:      "Model",
+		Name:      worker.Spec.Model.Name,
+		Namespace: &modelNs,
+	}
+}
+
 // MakeRegistrationModelName generates a model name used to register itself into fastchat controller
 func (worker Worker) MakeRegistrationModelName() string {
 	return string(worker.UID)
