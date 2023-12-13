@@ -289,7 +289,7 @@ func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace s
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
 
-	oss, err := datasource.NewOSSWithDynamciClient(ctx, c, endpoint)
+	oss, err := datasource.NewOSS(ctx, nil, c, endpoint)
 	if err != nil {
 		return nil, err
 	}

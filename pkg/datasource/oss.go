@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
@@ -58,78 +59,41 @@ var (
 	ossDefaultGetTagOpt = minio.GetObjectTaggingOptions{}
 )
 
-func NewOSSWithDynamciClient(ctx context.Context, c dynamic.Interface, endpoint *v1alpha1.Endpoint) (*OSS, error) {
+func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
 		if endpoint.AuthSecret.Namespace == nil {
 			return nil, errors.New("no namepsace found for endpoint.authsecret")
 		}
-		secret, err := c.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-			Namespace(*endpoint.AuthSecret.Namespace).Get(ctx, endpoint.AuthSecret.Name, v1.GetOptions{})
-		if err != nil {
+		if err := utils.ValidateClient(c, dc); err != nil {
 			return nil, err
 		}
-		data, _, _ := unstructured.NestedStringMap(secret.Object, "data")
+		if dc != nil {
+			secret, err := dc.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
+				Namespace(*endpoint.AuthSecret.Namespace).Get(ctx, endpoint.AuthSecret.Name, v1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			data, _, _ := unstructured.NestedStringMap(secret.Object, "data")
 
-		if ds, err := base64.StdEncoding.DecodeString(data["rootUser"]); err == nil {
-			accessKeyID = string(ds)
+			if ds, err := base64.StdEncoding.DecodeString(data["rootUser"]); err == nil {
+				accessKeyID = string(ds)
+			}
+			if ds, err := base64.StdEncoding.DecodeString(data["rootPassword"]); err == nil {
+				secretAccessKey = string(ds)
+			}
 		}
-		if ds, err := base64.StdEncoding.DecodeString(data["rootPassword"]); err == nil {
-			secretAccessKey = string(ds)
+		if c != nil {
+			secret := corev1.Secret{}
+			if err := c.Get(ctx, types.NamespacedName{
+				Namespace: *endpoint.AuthSecret.Namespace,
+				Name:      endpoint.AuthSecret.Name,
+			}, &secret); err != nil {
+				return nil, err
+			}
+			accessKeyID = string(secret.Data["rootUser"])
+			secretAccessKey = string(secret.Data["rootPassword"])
 		}
-		// TODO: implement https(secure check)
-		// if !endpoint.Insecure {
-		// }
-	}
-
-	mc, err := minio.New(endpoint.URL, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: !endpoint.Insecure,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	core, err := minio.NewCore(endpoint.URL, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: !endpoint.Insecure,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &OSS{Client: mc, Core: core}, nil
-}
-
-func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
-	var accessKeyID, secretAccessKey string
-	if endpoint.AuthSecret != nil {
-		if endpoint.AuthSecret.Namespace == nil {
-			return nil, errors.New("no namepsace found for endpoint.authsecret")
-		}
-		secret := corev1.Secret{}
-		if err := c.Get(ctx, types.NamespacedName{
-			Namespace: *endpoint.AuthSecret.Namespace,
-			Name:      endpoint.AuthSecret.Name,
-		}, &secret); err != nil {
-			return nil, err
-		}
-		accessKeyID = string(secret.Data["rootUser"])
-		secretAccessKey = string(secret.Data["rootPassword"])
-
-		// TODO: implement https(secure check)
-		// if !endpoint.Insecure {
-		// }
 	}
 
 	mc, err := minio.New(endpoint.URL, &minio.Options{

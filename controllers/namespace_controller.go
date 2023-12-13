@@ -132,7 +132,7 @@ func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, e
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
 	if err != nil {
 		klog.Errorf("generate new minio client error %s", err)
 		return nil, err
