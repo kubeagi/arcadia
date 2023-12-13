@@ -25,6 +25,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -34,16 +35,14 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/oidc"
 	"github.com/kubeagi/arcadia/pkg/cache"
-	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
 type (
 	minioAPI struct {
 		conf   gqlconfig.ServerConfig
-		source *datasource.OSS
-
-		store cache.Cache
+		client dynamic.Interface
+		store  cache.Cache
 	}
 
 	Chunk struct {
@@ -138,8 +137,16 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 		Done: false,
 	}
 
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
 	// First check if the file already exists in minio
-	anyObject, err := m.source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{Bucket: bucketName, Object: objectName})
+	anyObject, err := source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{Bucket: bucketName, Object: objectName})
 	if err == nil {
 		objectInfo, ok := anyObject.(minio.ObjectInfo)
 		if !ok {
@@ -187,7 +194,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	// Checking already uploaded chunks
 	r.UploadID = fileChunk.UploadID
 	r.Chunks = make([]Chunk, 0)
-	result, err := m.source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(bucketName),
+	result, err := source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(bucketName),
 		datasource.WithBucketPath(bucketPath), datasource.WithFileName(fileChunk.FileName),
 		datasource.WithUploadID(fileChunk.UploadID))
 	if err != nil {
@@ -249,7 +256,15 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		return
 	}
 
-	uploadID, err := m.source.NewMultipartIdentifier(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	uploadID, err := source.NewMultipartIdentifier(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(body.FileName),
 		datasource.WithAnnotations(map[string]string{
 			"size":              fmt.Sprintf("%d", body.Size),
@@ -332,7 +347,15 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	}
 	fileChunk := fc.(*common.FileChunk)
 
-	result, err := m.source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	result, err := source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(fileChunk.FileName),
 		datasource.WithUploadID(body.UploadID))
 	if err != nil {
@@ -352,7 +375,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		}
 	}
 
-	url, err := m.source.GenMultipartSignedURL(ctx.Request.Context(),
+	url, err := source.GenMultipartSignedURL(ctx.Request.Context(),
 		datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath),
 		datasource.WithUploadID(body.UploadID),
@@ -382,7 +405,15 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	err := m.source.Complete(ctx.Request.Context(),
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	err = source.Complete(ctx.Request.Context(),
 		datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath),
 		datasource.WithUploadID(body.UploadID),
@@ -408,11 +439,19 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 		})
 		return
 	}
+	source, err := common.SystemDatasourceOSS(context.TODO(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
 
 	bucketPath := strings.TrimSuffix(body.BucketPath, "/")
 	for _, f := range body.Files {
 		go func(fn string) {
-			if err := m.source.Remove(context.TODO(), &v1alpha1.OSS{Bucket: body.Bucket, Object: fmt.Sprintf("%s/%s", bucketPath, fn)}); err != nil {
+			if err := source.Remove(context.TODO(), &v1alpha1.OSS{Bucket: body.Bucket, Object: fmt.Sprintf("%s/%s", bucketPath, fn)}); err != nil {
 				klog.Errorf("faile to delete file %s/%s from bucket %s, error %s", bucketPath, fn, body.Bucket, err)
 			}
 		}(f)
@@ -430,7 +469,15 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 		return
 	}
 
-	if err := m.source.Abort(ctx.Request.Context(), datasource.WithBucket(body.Bucket), datasource.WithBucketPath(body.BucketPath),
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	if err := source.Abort(ctx.Request.Context(), datasource.WithBucket(body.Bucket), datasource.WithBucketPath(body.BucketPath),
 		datasource.WithFileName(body.FileName), datasource.WithUploadID(body.UploadID)); err != nil {
 		klog.Errorf("failed to stop file upload, error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -438,6 +485,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 		})
 		return
 	}
+
 	ctx.JSON(http.StatusOK, "success")
 }
 
@@ -446,7 +494,15 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 	bucket := ctx.Query(bucketQuery)
 	bucketPath := ctx.Query(bucketPathQuery)
 
-	anyObject, err := m.source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	anyObject, err := source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{
 		Object: fmt.Sprintf("%s/%s", bucketPath, fileName),
 		Bucket: bucket,
 	})
@@ -493,7 +549,15 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
 	opt := minio.GetObjectOptions{}
 	_ = opt.SetRange(from, end)
-	info, err := m.source.Client.GetObject(ctx.Request.Context(), bucket, objectName, opt)
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	info, err := source.Client.GetObject(ctx.Request.Context(), bucket, objectName, opt)
 	if err != nil {
 		klog.Errorf("failed to get object %s/%s range %d-%d errro %s", bucket, objectName, from, end, err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -509,21 +573,8 @@ func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	if err != nil {
 		panic(err)
 	}
-	systemDatasource, err := config.GetSystemDatasource(context.TODO(), nil, c)
-	if err != nil {
-		panic(err)
-	}
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
-	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
-		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
-	}
 
-	oss, err := datasource.NewOSSWithDynamciClient(context.TODO(), c, endpoint)
-	if err != nil {
-		panic(err)
-	}
-
-	api := minioAPI{conf: conf, store: cache.NewMemCache(), source: oss}
+	api := minioAPI{conf: conf, store: cache.NewMemCache(), client: c}
 
 	{
 		// model apis
