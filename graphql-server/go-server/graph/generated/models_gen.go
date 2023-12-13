@@ -1140,7 +1140,7 @@ type Worker struct {
 	// 规则: 目前分为四种状态
 	//   - Unknown: 未知
 	//   - Pending: 发布中
-	//   - WorkerRunning: 已发布
+	//   - Running: 已发布
 	//   - Error: 异常
 	Status *string `json:"status,omitempty"`
 }
