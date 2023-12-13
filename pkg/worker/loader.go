@@ -49,7 +49,7 @@ func NewLoaderOSS(ctx context.Context, c client.Client, endpoint *arcadiav1alpha
 		return nil, errors.New("nil oss endpoint")
 	}
 
-	oss, err := datasource.NewOSS(ctx, c, endpoint)
+	oss, err := datasource.NewOSS(ctx, c, nil, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new oss client with %w", err)
 	}

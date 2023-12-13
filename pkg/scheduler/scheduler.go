@@ -59,7 +59,7 @@ func NewScheduler(ctx context.Context, c client.Client, instance *v1alpha1.Versi
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx1, c, endpoint)
+	oss, err := datasource.NewOSS(ctx1, c, nil, endpoint)
 	if err != nil {
 		cancel()
 		klog.Errorf("generate new minio client error %s", err)

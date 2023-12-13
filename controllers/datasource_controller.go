@@ -164,7 +164,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 		if endpoint.AuthSecret != nil {
 			endpoint.AuthSecret.WithNameSpace(instance.Namespace)
 		}
-		ds, err = datasource.NewOSS(ctx, r.Client, endpoint)
+		ds, err = datasource.NewOSS(ctx, r.Client, nil, endpoint)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}

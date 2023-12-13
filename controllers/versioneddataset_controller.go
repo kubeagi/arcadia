@@ -222,7 +222,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
 	if err != nil {
 		logger.Error(err, "Failed to generate new minio client")
 		return false, nil, err
@@ -242,7 +242,7 @@ func (r *VersionedDatasetReconciler) removeBucketFiles(ctx context.Context, logg
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
 	if err != nil {
 		logger.Error(err, "Failed to generate new minio client")
 		return err

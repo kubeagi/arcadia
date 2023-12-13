@@ -168,7 +168,7 @@ type Local struct {
 }
 
 func NewLocal(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*Local, error) {
-	oss, err := NewOSS(ctx, c, endpoint)
+	oss, err := NewOSS(ctx, c, nil, endpoint)
 	if err != nil {
 		return nil, err
 	}
