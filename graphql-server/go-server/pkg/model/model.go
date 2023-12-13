@@ -216,7 +216,7 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListMo
 	})
 
 	// list models in kubeagi system namespace
-	if input.SystemModel != nil && *input.SystemModel {
+	if input.SystemModel != nil && *input.SystemModel && input.Namespace != config.GetConfig().SystemNamespace {
 		systemModels, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(config.GetConfig().SystemNamespace).List(ctx, listOptions)
 		if err != nil {
 			return nil, err
