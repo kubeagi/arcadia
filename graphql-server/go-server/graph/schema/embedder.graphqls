@@ -1,4 +1,5 @@
 type Embedder {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -6,9 +7,17 @@ type Embedder {
     creator: String
     displayName: String
     description: String
-    endpoint: Endpoint
+    """
+    Embedder供应商类型：
+    规则: 分为两类: worker 或者 3rd_party
+    """
+    provider: String
+
     type: String
+    creationTimestamp: Time
     updateTimestamp: Time
+    status: String
+    message: String
 }
 
 input CreateEmbedderInput {

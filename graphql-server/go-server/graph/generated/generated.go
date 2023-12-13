@@ -203,6 +203,7 @@ type ComplexityRoot struct {
 		Endpoint          func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
+		Message           func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Oss               func(childComplexity int) int
@@ -223,16 +224,20 @@ type ComplexityRoot struct {
 	}
 
 	Embedder struct {
-		Annotations     func(childComplexity int) int
-		Creator         func(childComplexity int) int
-		Description     func(childComplexity int) int
-		DisplayName     func(childComplexity int) int
-		Endpoint        func(childComplexity int) int
-		Labels          func(childComplexity int) int
-		Name            func(childComplexity int) int
-		Namespace       func(childComplexity int) int
-		Type            func(childComplexity int) int
-		UpdateTimestamp func(childComplexity int) int
+		Annotations       func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		Description       func(childComplexity int) int
+		DisplayName       func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Labels            func(childComplexity int) int
+		Message           func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
+		Provider          func(childComplexity int) int
+		Status            func(childComplexity int) int
+		Type              func(childComplexity int) int
+		UpdateTimestamp   func(childComplexity int) int
 	}
 
 	EmbedderMutation struct {
@@ -330,6 +335,7 @@ type ComplexityRoot struct {
 		Files             func(childComplexity int, input *FileFilter) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
+		Message           func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Status            func(childComplexity int) int
@@ -445,6 +451,7 @@ type ComplexityRoot struct {
 		DisplayName       func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
+		Message           func(childComplexity int) int
 		Model             func(childComplexity int) int
 		ModelTypes        func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -1264,6 +1271,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datasource.Labels(childComplexity), true
 
+	case "Datasource.message":
+		if e.complexity.Datasource.Message == nil {
+			break
+		}
+
+		return e.complexity.Datasource.Message(childComplexity), true
+
 	case "Datasource.name":
 		if e.complexity.Datasource.Name == nil {
 			break
@@ -1378,6 +1392,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Embedder.Annotations(childComplexity), true
 
+	case "Embedder.creationTimestamp":
+		if e.complexity.Embedder.CreationTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Embedder.CreationTimestamp(childComplexity), true
+
 	case "Embedder.creator":
 		if e.complexity.Embedder.Creator == nil {
 			break
@@ -1399,12 +1420,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Embedder.DisplayName(childComplexity), true
 
-	case "Embedder.endpoint":
-		if e.complexity.Embedder.Endpoint == nil {
+	case "Embedder.id":
+		if e.complexity.Embedder.ID == nil {
 			break
 		}
 
-		return e.complexity.Embedder.Endpoint(childComplexity), true
+		return e.complexity.Embedder.ID(childComplexity), true
 
 	case "Embedder.labels":
 		if e.complexity.Embedder.Labels == nil {
@@ -1412,6 +1433,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Embedder.Labels(childComplexity), true
+
+	case "Embedder.message":
+		if e.complexity.Embedder.Message == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Message(childComplexity), true
 
 	case "Embedder.name":
 		if e.complexity.Embedder.Name == nil {
@@ -1426,6 +1454,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Embedder.Namespace(childComplexity), true
+
+	case "Embedder.provider":
+		if e.complexity.Embedder.Provider == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Provider(childComplexity), true
+
+	case "Embedder.status":
+		if e.complexity.Embedder.Status == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Status(childComplexity), true
 
 	case "Embedder.type":
 		if e.complexity.Embedder.Type == nil {
@@ -1968,6 +2010,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Model.Labels(childComplexity), true
+
+	case "Model.message":
+		if e.complexity.Model.Message == nil {
+			break
+		}
+
+		return e.complexity.Model.Message(childComplexity), true
 
 	case "Model.name":
 		if e.complexity.Model.Name == nil {
@@ -2565,6 +2614,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Worker.Labels(childComplexity), true
+
+	case "Worker.message":
+		if e.complexity.Worker.Message == nil {
+			break
+		}
+
+		return e.complexity.Worker.Message(childComplexity), true
 
 	case "Worker.model":
 		if e.complexity.Worker.Model == nil {
@@ -3358,6 +3414,8 @@ type Datasource {
     """数据源连接状态"""
     status: String
 
+    message: String
+
     """创建时间"""
     creationTimestamp: Time
     """更新时间, 这里更新指文件同步，或者数据处理完成后，做的更新操作的时间"""
@@ -3454,6 +3512,7 @@ extend type Query{
 }
 `, BuiltIn: false},
 	{Name: "../schema/embedder.graphqls", Input: `type Embedder {
+    id: String
     name: String!
     namespace: String!
     labels: Map
@@ -3461,9 +3520,17 @@ extend type Query{
     creator: String
     displayName: String
     description: String
-    endpoint: Endpoint
+    """
+    Embedder供应商类型：
+    规则: 分为两类: worker 或者 3rd_party
+    """
+    provider: String
+
     type: String
+    creationTimestamp: Time
     updateTimestamp: Time
+    status: String
+    message: String
 }
 
 input CreateEmbedderInput {
@@ -4096,6 +4163,11 @@ type Model {
     status: String
 
     """
+    详细信息
+    """
+    message: String
+
+    """
     模型包含文件列表
     """
     files(input: FileFilter): PaginatedResult!
@@ -4483,7 +4555,7 @@ type Worker {
     规则: 相同namespace下的模型名称
     规则: 必填
     """
-    model: String!
+    model: TypedObjectReference!
 
     """
     worker对应的模型类型
@@ -4505,6 +4577,9 @@ type Worker {
       - Error: 异常
     """
     status: String
+
+    """详细的状态消息描述"""
+    message: String
 }
 
 """创建模型服务worker的输入"""
@@ -4521,10 +4596,10 @@ input CreateWorkerInput{
 
     """
     worker对应的模型
-    规则: 相同namespace下的模型名称
+    规则: 必须指定模型准确的namespace
     规则: 必填
     """
-    model: String!
+    model: TypedObjectReferenceInput!
 
     """
     worker运行所需的资源
@@ -9581,6 +9656,47 @@ func (ec *executionContext) fieldContext_Datasource_status(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_message(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Datasource_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Datasource_creationTimestamp(ctx, field)
 	if err != nil {
@@ -9724,6 +9840,8 @@ func (ec *executionContext) fieldContext_DatasourceMutation_createDatasource(ctx
 				return ec.fieldContext_Datasource_oss(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Datasource_message(ctx, field)
 			case "creationTimestamp":
 				return ec.fieldContext_Datasource_creationTimestamp(ctx, field)
 			case "updateTimestamp":
@@ -9807,6 +9925,8 @@ func (ec *executionContext) fieldContext_DatasourceMutation_updateDatasource(ctx
 				return ec.fieldContext_Datasource_oss(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Datasource_message(ctx, field)
 			case "creationTimestamp":
 				return ec.fieldContext_Datasource_creationTimestamp(ctx, field)
 			case "updateTimestamp":
@@ -9942,6 +10062,8 @@ func (ec *executionContext) fieldContext_DatasourceQuery_getDatasource(ctx conte
 				return ec.fieldContext_Datasource_oss(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Datasource_message(ctx, field)
 			case "creationTimestamp":
 				return ec.fieldContext_Datasource_creationTimestamp(ctx, field)
 			case "updateTimestamp":
@@ -10025,6 +10147,8 @@ func (ec *executionContext) fieldContext_DatasourceQuery_checkDatasource(ctx con
 				return ec.fieldContext_Datasource_oss(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Datasource_message(ctx, field)
 			case "creationTimestamp":
 				return ec.fieldContext_Datasource_creationTimestamp(ctx, field)
 			case "updateTimestamp":
@@ -10110,6 +10234,47 @@ func (ec *executionContext) fieldContext_DatasourceQuery_listDatasources(ctx con
 	if fc.Args, err = ec.field_DatasourceQuery_listDatasources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_id(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -10407,8 +10572,8 @@ func (ec *executionContext) fieldContext_Embedder_description(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Embedder_endpoint(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Embedder_endpoint(ctx, field)
+func (ec *executionContext) _Embedder_provider(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_provider(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10421,7 +10586,7 @@ func (ec *executionContext) _Embedder_endpoint(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Endpoint, nil
+		return obj.Provider, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10430,27 +10595,19 @@ func (ec *executionContext) _Embedder_endpoint(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Endpoint)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOEndpoint2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEndpoint(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Embedder_endpoint(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Embedder_provider(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Embedder",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "url":
-				return ec.fieldContext_Endpoint_url(ctx, field)
-			case "authSecret":
-				return ec.fieldContext_Endpoint_authSecret(ctx, field)
-			case "insecure":
-				return ec.fieldContext_Endpoint_insecure(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Endpoint", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10497,6 +10654,47 @@ func (ec *executionContext) fieldContext_Embedder_type(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Embedder_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_creationTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreationTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_creationTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Embedder_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Embedder_updateTimestamp(ctx, field)
 	if err != nil {
@@ -10533,6 +10731,88 @@ func (ec *executionContext) fieldContext_Embedder_updateTimestamp(ctx context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_status(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_message(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10577,6 +10857,8 @@ func (ec *executionContext) fieldContext_EmbedderMutation_createEmbedder(ctx con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Embedder_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Embedder_name(ctx, field)
 			case "namespace":
@@ -10591,12 +10873,18 @@ func (ec *executionContext) fieldContext_EmbedderMutation_createEmbedder(ctx con
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
-			case "endpoint":
-				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "provider":
+				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
 				return ec.fieldContext_Embedder_type(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Embedder_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			case "status":
+				return ec.fieldContext_Embedder_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Embedder_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
 		},
@@ -10654,6 +10942,8 @@ func (ec *executionContext) fieldContext_EmbedderMutation_updateEmbedder(ctx con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Embedder_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Embedder_name(ctx, field)
 			case "namespace":
@@ -10668,12 +10958,18 @@ func (ec *executionContext) fieldContext_EmbedderMutation_updateEmbedder(ctx con
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
-			case "endpoint":
-				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "provider":
+				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
 				return ec.fieldContext_Embedder_type(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Embedder_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			case "status":
+				return ec.fieldContext_Embedder_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Embedder_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
 		},
@@ -10783,6 +11079,8 @@ func (ec *executionContext) fieldContext_EmbedderQuery_getEmbedder(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Embedder_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Embedder_name(ctx, field)
 			case "namespace":
@@ -10797,12 +11095,18 @@ func (ec *executionContext) fieldContext_EmbedderQuery_getEmbedder(ctx context.C
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
-			case "endpoint":
-				return ec.fieldContext_Embedder_endpoint(ctx, field)
+			case "provider":
+				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
 				return ec.fieldContext_Embedder_type(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_Embedder_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Embedder_updateTimestamp(ctx, field)
+			case "status":
+				return ec.fieldContext_Embedder_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Embedder_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Embedder", field.Name)
 		},
@@ -13943,6 +14247,47 @@ func (ec *executionContext) fieldContext_Model_status(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Model_message(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Model_files(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Model_files(ctx, field)
 	if err != nil {
@@ -14075,6 +14420,8 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
 			}
@@ -14160,6 +14507,8 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
 			}
@@ -14297,6 +14646,8 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_types(ctx, field)
 			case "status":
 				return ec.fieldContext_Model_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
 			}
@@ -17762,9 +18113,9 @@ func (ec *executionContext) _Worker_model(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(TypedObjectReference)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTypedObjectReference2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReference(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Worker_model(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17774,7 +18125,17 @@ func (ec *executionContext) fieldContext_Worker_model(ctx context.Context, field
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "apiGroup":
+				return ec.fieldContext_TypedObjectReference_apiGroup(ctx, field)
+			case "kind":
+				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TypedObjectReference", field.Name)
 		},
 	}
 	return fc, nil
@@ -17917,6 +18278,47 @@ func (ec *executionContext) fieldContext_Worker_status(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Worker_message(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _WorkerMutation_createWorker(ctx context.Context, field graphql.CollectedField, obj *WorkerMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_WorkerMutation_createWorker(ctx, field)
 	if err != nil {
@@ -17984,6 +18386,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_createWorker(ctx context
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
 				return ec.fieldContext_Worker_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Worker_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -18069,6 +18473,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_updateWorker(ctx context
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
 				return ec.fieldContext_Worker_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Worker_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -18206,6 +18612,8 @@ func (ec *executionContext) fieldContext_WorkerQuery_getWorker(ctx context.Conte
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
 				return ec.fieldContext_Worker_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Worker_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -21526,7 +21934,7 @@ func (ec *executionContext) unmarshalInputCreateWorkerInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("model"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNTypedObjectReferenceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -24681,6 +25089,8 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Datasource_oss(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._Datasource_status(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Datasource_message(ctx, field, obj)
 		case "creationTimestamp":
 			out.Values[i] = ec._Datasource_creationTimestamp(ctx, field, obj)
 		case "updateTimestamp":
@@ -25000,6 +25410,8 @@ func (ec *executionContext) _Embedder(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Embedder")
+		case "id":
+			out.Values[i] = ec._Embedder_id(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._Embedder_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -25020,12 +25432,18 @@ func (ec *executionContext) _Embedder(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Embedder_displayName(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._Embedder_description(ctx, field, obj)
-		case "endpoint":
-			out.Values[i] = ec._Embedder_endpoint(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._Embedder_provider(ctx, field, obj)
 		case "type":
 			out.Values[i] = ec._Embedder_type(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._Embedder_creationTimestamp(ctx, field, obj)
 		case "updateTimestamp":
 			out.Values[i] = ec._Embedder_updateTimestamp(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Embedder_status(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Embedder_message(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26072,6 +26490,8 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "status":
 			out.Values[i] = ec._Model_status(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Model_message(ctx, field, obj)
 		case "files":
 			field := field
 
@@ -27343,6 +27763,8 @@ func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "status":
 			out.Values[i] = ec._Worker_status(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Worker_message(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

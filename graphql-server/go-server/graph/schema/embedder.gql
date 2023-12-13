@@ -8,16 +8,11 @@ mutation createEmbedder($input: CreateEmbedderInput!) {
       annotations
       displayName
       description
-      endpoint {
-        url
-        authSecret {
-          kind
-          name
-        }
-        insecure
-      }
       type
+      provider
       updateTimestamp
+      status
+      message
     }
   }
 }
@@ -32,16 +27,11 @@ mutation updateEmbedder($input: UpdateEmbedderInput) {
       annotations
       displayName
       description
-      endpoint {
-        url
-        authSecret {
-          kind
-          name
-        }
-        insecure
-      }
+      provider
       type
       updateTimestamp
+      status
+      message
     }
   }
 }
@@ -67,16 +57,11 @@ query listEmbedders($input: ListCommonInput!) {
         annotations
         displayName
         description
-        endpoint {
-          url
-          authSecret {
-            kind
-            name
-          }
-          insecure
-        }
+        provider
         type
         updateTimestamp
+        status
+        message
       }
       }
     }
@@ -93,14 +78,7 @@ query getEmbedder($name: String!, $namespace: String!) {
         annotations
         displayName
         description
-        endpoint {
-          url
-          authSecret {
-            kind
-            name
-          }
-          insecure
-        }
+        provider
         type
         updateTimestamp
     }

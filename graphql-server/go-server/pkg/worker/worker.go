@@ -21,14 +21,17 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/graphql-server/go-server/config"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	gqlmodel "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
@@ -84,14 +87,24 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
 		Resources:         resources,
-		Model:             worker.Spec.Model.Name,
 		ModelTypes:        "unknown",
 	}
 
 	// read worker's models
-	model, err := gqlmodel.ReadModel(ctx, c, worker.Spec.Model.Name, worker.Namespace)
-	if err == nil {
-		w.ModelTypes = model.Types
+	if worker.Spec.Model != nil {
+		typedModel := worker.Model()
+		model, err := gqlmodel.ReadModel(ctx, c, typedModel.Name, *typedModel.Namespace)
+		if err != nil {
+			klog.V(1).ErrorS(err, "worker has no model defined", "worker")
+		} else {
+			w.ModelTypes = model.Types
+		}
+		w.Model = generated.TypedObjectReference{
+			APIGroup:  &common.ArcadiaAPIGroup,
+			Kind:      typedModel.Kind,
+			Name:      typedModel.Name,
+			Namespace: typedModel.Namespace,
+		}
 	}
 
 	return &w
@@ -104,6 +117,15 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	}
 	if input.Description != nil {
 		description = *input.Description
+	}
+
+	// set the model's namespace
+	modelNs := input.Namespace
+	if input.Model.Namespace != nil {
+		modelNs = *input.Model.Namespace
+		if modelNs != input.Namespace && modelNs != config.GetConfig().SystemNamespace {
+			return nil, errors.Errorf("You are trying to use a model in another namespace %s which is not our system namespace: %s", modelNs, config.GetConfig().SystemNamespace)
+		}
 	}
 
 	worker := v1alpha1.Worker{
@@ -121,8 +143,9 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 				Description: description,
 			},
 			Model: &v1alpha1.TypedObjectReference{
-				Name: input.Model,
-				Kind: "Model",
+				Name:      input.Model.Name,
+				Namespace: &modelNs,
+				Kind:      "Model",
 			},
 		},
 	}
@@ -226,13 +249,14 @@ func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.De
 		if err != nil {
 			return nil, err
 		}
-	}
-	err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	})
-	if err != nil {
-		return nil, err
+	} else {
+		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+			FieldSelector: fieldSelector,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil

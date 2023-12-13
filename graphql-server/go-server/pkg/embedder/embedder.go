@@ -35,38 +35,38 @@ import (
 )
 
 func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
-	url, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "url")
-	authsecret, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "name")
-	authsecretNamespace, _, _ := unstructured.NestedString(obj.Object, "spec", "endpoint", "authSecret", "namespace")
-	displayName, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	servicetype, _, _ := unstructured.NestedString(obj.Object, "spec", "type")
-	updateTime := metav1.Now().Time
-	conditions, found, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
-	if found && len(conditions) > 0 {
-		condition, ok := conditions[0].(map[string]interface{})
-		if ok {
-			timeStr, _ := condition["lastTransitionTime"].(string)
-			updateTime, _ = utils.RFC3339Time(timeStr)
-		}
-	}
-	endpoint := generated.Endpoint{
-		URL: &url,
-		AuthSecret: &generated.TypedObjectReference{
-			Kind:      "Secret",
-			Name:      authsecret,
-			Namespace: &authsecretNamespace,
-		},
+	embedder := &v1alpha1.Embedder{}
+	if err := utils.UnstructuredToStructured(obj, embedder); err != nil {
+		return &generated.Embedder{}
 	}
 
+	id := string(embedder.GetUID())
+	creationtimestamp := embedder.GetCreationTimestamp().Time
+
+	servicetype := string(embedder.Spec.Type)
+
+	// conditioned status
+	condition := embedder.Status.GetCondition(v1alpha1.TypeReady)
+	updateTime := condition.LastTransitionTime.Time
+	status := string(condition.Status)
+	message := string(condition.Message)
+
+	provider := string(embedder.Spec.Provider.GetType())
+
 	md := generated.Embedder{
-		Name:            obj.GetName(),
-		Namespace:       obj.GetNamespace(),
-		Labels:          graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:     graphqlutils.MapStr2Any(obj.GetAnnotations()),
-		DisplayName:     &displayName,
-		Endpoint:        &endpoint,
-		Type:            &servicetype,
-		UpdateTimestamp: &updateTime,
+		ID:                &id,
+		Name:              obj.GetName(),
+		Namespace:         obj.GetNamespace(),
+		CreationTimestamp: &creationtimestamp,
+		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		DisplayName:       &embedder.Spec.DisplayName,
+		Description:       &embedder.Spec.Description,
+		Type:              &servicetype,
+		Provider:          &provider,
+		Status:            &status,
+		Message:           &message,
+		UpdateTimestamp:   &updateTime,
 	}
 	return &md
 }

@@ -70,7 +70,7 @@ type Worker {
     规则: 相同namespace下的模型名称
     规则: 必填
     """
-    model: String!
+    model: TypedObjectReference!
 
     """
     worker对应的模型类型
@@ -92,6 +92,9 @@ type Worker {
       - Error: 异常
     """
     status: String
+
+    """详细的状态消息描述"""
+    message: String
 }
 
 """创建模型服务worker的输入"""
@@ -108,10 +111,10 @@ input CreateWorkerInput{
 
     """
     worker对应的模型
-    规则: 相同namespace下的模型名称
+    规则: 必须指定模型准确的namespace
     规则: 必填
     """
-    model: String!
+    model: TypedObjectReferenceInput!
 
     """
     worker运行所需的资源

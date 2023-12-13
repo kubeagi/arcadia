@@ -23,6 +23,7 @@ mutation createDatasource($input: CreateDatasourceInput!) {
         creationTimestamp
         updateTimestamp
         status
+        message
     }
   }
 }
@@ -52,6 +53,7 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
         creationTimestamp
         updateTimestamp
         status
+        message
     }
   }
 }
@@ -93,6 +95,7 @@ query listDatasources($input: ListCommonInput!) {
         creationTimestamp
         updateTimestamp
         status
+        message
       }
       }
     }
@@ -124,6 +127,7 @@ query getDatasource($name: String!, $namespace: String!) {
         creationTimestamp
         updateTimestamp
         status
+message
     }
   }
 }
@@ -136,6 +140,7 @@ query checkDatasource($input: CreateDatasourceInput!) {
         name
         namespace
         status
+message
     }
   }
 }
