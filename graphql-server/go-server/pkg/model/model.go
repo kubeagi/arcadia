@@ -52,8 +52,6 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 	// conditioned status
 	condition := model.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-
-	// Unknown,Pending ,WorkerRunning ,Error
 	status := string(condition.Status)
 
 	var systemModel bool

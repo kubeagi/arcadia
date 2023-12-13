@@ -63,7 +63,7 @@ func (worker Worker) ReadyCondition() Condition {
 	return Condition{
 		Type:               TypeReady,
 		Status:             corev1.ConditionTrue,
-		Reason:             "WorkerRunning",
+		Reason:             "Running",
 		Message:            "Work has been actively running",
 		LastTransitionTime: metav1.Now(),
 		LastSuccessfulTime: metav1.Now(),

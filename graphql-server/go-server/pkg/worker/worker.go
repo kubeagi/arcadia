@@ -54,7 +54,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	condition := worker.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
 
-	// Unknown,Pending ,WorkerRunning ,Error
+	// Unknown,Pending ,Running ,Error
 	status := string(condition.Reason)
 
 	// resources
