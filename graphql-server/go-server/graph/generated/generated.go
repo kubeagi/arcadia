@@ -458,6 +458,7 @@ type ComplexityRoot struct {
 		Namespace         func(childComplexity int) int
 		Resources         func(childComplexity int) int
 		Status            func(childComplexity int) int
+		Type              func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
 	}
 
@@ -2664,6 +2665,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Worker.Status(childComplexity), true
 
+	case "Worker.type":
+		if e.complexity.Worker.Type == nil {
+			break
+		}
+
+		return e.complexity.Worker.Type(childComplexity), true
+
 	case "Worker.updateTimestamp":
 		if e.complexity.Worker.UpdateTimestamp == nil {
 			break
@@ -4551,6 +4559,15 @@ type Worker {
     updateTimestamp: Time
 
     """
+    Worker类型
+    支持两种类型: 
+    - "fastchat" : fastchat提供的通用的推理服务模式
+    - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+    规则: 如果为空，则默认为 "fastchat"
+    """
+    type: String
+
+    """
     worker对应的模型
     规则: 相同namespace下的模型名称
     规则: 必填
@@ -4595,6 +4612,15 @@ input CreateWorkerInput{
     description: String
 
     """
+    Worker类型
+    支持两种类型: 
+    - "fastchat" : fastchat提供的通用的推理服务模式
+    - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+    规则: 如果为空，则默认为 "fastchat"
+    """
+    type: String
+
+    """
     worker对应的模型
     规则: 必须指定模型准确的namespace
     规则: 必填
@@ -4624,6 +4650,15 @@ input UpdateWorkerInput {
     displayName: String
     """模型资源描述"""
     description: String
+
+    """
+    Worker类型
+    支持两种类型: 
+    - "fastchat" : fastchat提供的通用的推理服务模式
+    - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+    规则: 如果为空，则不更新；如果type类型与当前类型相同，则不更新
+    """
+    type: String
 
     """
     worker运行所需的资源
@@ -18087,6 +18122,47 @@ func (ec *executionContext) fieldContext_Worker_updateTimestamp(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Worker_type(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Worker_model(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Worker_model(ctx, field)
 	if err != nil {
@@ -18378,6 +18454,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_createWorker(ctx context
 				return ec.fieldContext_Worker_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Worker_updateTimestamp(ctx, field)
+			case "type":
+				return ec.fieldContext_Worker_type(ctx, field)
 			case "model":
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
@@ -18465,6 +18543,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_updateWorker(ctx context
 				return ec.fieldContext_Worker_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Worker_updateTimestamp(ctx, field)
+			case "type":
+				return ec.fieldContext_Worker_type(ctx, field)
 			case "model":
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
@@ -18604,6 +18684,8 @@ func (ec *executionContext) fieldContext_WorkerQuery_getWorker(ctx context.Conte
 				return ec.fieldContext_Worker_creationTimestamp(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_Worker_updateTimestamp(ctx, field)
+			case "type":
+				return ec.fieldContext_Worker_type(ctx, field)
 			case "model":
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
@@ -21887,7 +21969,7 @@ func (ec *executionContext) unmarshalInputCreateWorkerInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "model", "resources"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "type", "model", "resources"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -21930,6 +22012,15 @@ func (ec *executionContext) unmarshalInputCreateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.Description = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		case "model":
 			var err error
 
@@ -23613,7 +23704,7 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "resources"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "type", "resources"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23674,6 +23765,15 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.Description = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		case "resources":
 			var err error
 
@@ -27746,6 +27846,8 @@ func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Worker_creationTimestamp(ctx, field, obj)
 		case "updateTimestamp":
 			out.Values[i] = ec._Worker_updateTimestamp(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._Worker_type(ctx, field, obj)
 		case "model":
 			out.Values[i] = ec._Worker_model(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

@@ -73,6 +73,8 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		NvidiaGpu: &nvidiaGPUStr,
 	}
 
+	workerType := string(worker.Type())
+
 	// wrap Worker
 	w := generated.Worker{
 		ID:                &id,
@@ -83,6 +85,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &worker.Spec.DisplayName,
 		Description:       &worker.Spec.Description,
+		Type:              &workerType,
 		Status:            &status,
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
@@ -128,6 +131,12 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 		}
 	}
 
+	// Use `fastchat` as the default worker type
+	workerType := v1alpha1.DefaultWorkerType()
+	if input.Type != nil {
+		workerType = v1alpha1.WorkerType(*input.Type)
+	}
+
 	worker := v1alpha1.Worker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
@@ -142,6 +151,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 				DisplayName: displayName,
 				Description: description,
 			},
+			Type: workerType,
 			Model: &v1alpha1.TypedObjectReference{
 				Name:      input.Model.Name,
 				Namespace: &modelNs,
@@ -194,6 +204,13 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 	}
 	if input.Description != nil {
 		worker.Spec.Description = *input.Description
+	}
+
+	// worker type
+	if input.Type != nil {
+		if worker.Type() != v1alpha1.WorkerType(*input.Type) {
+			worker.Spec.Type = v1alpha1.WorkerType(*input.Type)
+		}
 	}
 
 	// resources
