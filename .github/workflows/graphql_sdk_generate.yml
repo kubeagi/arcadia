@@ -7,6 +7,10 @@ on:
       - 'graphql-server/go-server/graph/schema/*.gql'
   workflow_dispatch:
 
+env:
+  GOPROXY: https://proxy.golang.org/,direct
+
+
 jobs:
   image:
     runs-on: ubuntu-latest

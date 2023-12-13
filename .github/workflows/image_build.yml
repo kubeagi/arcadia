@@ -6,13 +6,14 @@ on:
 env:
   GO_VER: 1.20
   GO_TAGS: ""
+  GOPROXY: https://proxy.golang.org/,direct
 
 jobs:
   image:
     if: github.repository == 'kubeagi/arcadia'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set Variable
@@ -28,25 +29,25 @@ jobs:
       - name: Show Variable
         run: echo "varibables ${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}"
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           buildkitd-flags: --debug
           config-inline: |
             [worker.oci]
               max-parallelism = 1
       - name: Login to the dockerhub Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - uses: benjlevesque/short-sha@v2.1
+      - uses: benjlevesque/short-sha@v2.2
         name: Get short commit sha
         id: short-sha
       - name: Build and push
         id: push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
@@ -62,8 +63,9 @@ jobs:
             GO_TAGS=${{ env.GO_TAGS }}
             BUILD_ID=${{ env.SEMREV_LABEL }}
             BUILD_DATE=${{ env.BUILD_DATE }}
+            GOPROXY=${{ env.GOPROXY }}
       - name: Build data processing image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: ./data-processing
           file: ./data-processing/Dockerfile
