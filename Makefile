@@ -48,6 +48,10 @@ endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+
+# GOPROXY is the proxy url to be used by go mod
+GOPROXY ?= https://goproxy.cn,direct
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
@@ -117,7 +121,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build -t ${IMG} --build-arg GOPROXY=${GOPROXY} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
