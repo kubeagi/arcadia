@@ -96,12 +96,19 @@ type (
 		FileName   string `json:"fileName"`
 		UploadID   string `json:"uploadID"`
 	}
+
+	ReadCSVResp struct {
+		Rows [][]string `json:"rows"`
+		More bool       `json:"more"`
+	}
 )
 
 const (
 	bucketQuery     = "bucket"
 	bucketPathQuery = "bucketPath"
 	md5Query        = "md5"
+
+	maxCSVLines = 100
 )
 
 /*
@@ -568,6 +575,68 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	_, _ = io.Copy(ctx.Writer, info)
 }
 
+func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
+	var (
+		page  int64
+		lines int64
+
+		bucket, bucketPath string
+		fileName           string
+	)
+	_, _ = fmt.Sscanf(ctx.Query("page"), "%d", &page)
+	_, _ = fmt.Sscanf(ctx.Query("size"), "%d", &lines)
+	if page <= 0 {
+		klog.Errorf("the minimum page should be 1")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "the minimum page should be 1",
+		})
+		return
+	}
+	if lines <= 0 || lines > maxCSVLines {
+		klog.Errorf("the number of lines read should be greater than zero and less than or equal to %d", maxCSVLines)
+		ctx.AbortWithStatusJSON(http.StatusBadGateway, gin.H{
+			"message": fmt.Sprintf("the number of lines read should be greater than zero and less than or equal to %d", maxCSVLines),
+		})
+		return
+	}
+	bucket = ctx.Query(bucketQuery)
+	bucketPath = ctx.Query(bucketPathQuery)
+	fileName = ctx.Query("fileName")
+
+	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	object, err := source.Client.GetObject(context.TODO(), bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		klog.Errorf("failed to get data, error is %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	startLine := (page-1)*lines + 1
+	result, err := common.ReadCSV(object, startLine, lines)
+	if err != nil && err != io.EOF {
+		klog.Errorf("there is an error reading the csv file, the error is %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	resp := ReadCSVResp{
+		Rows: result,
+		More: err == nil,
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
 func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	c, err := client.GetClient(nil)
 	if err != nil {
@@ -598,5 +667,6 @@ func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		group.DELETE("/versioneddataset/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "versioneddatasets"), api.DeleteFiles)
 		group.GET("/versioneddataset/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.StatFile)
 		group.GET("/versioneddataset/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.Download)
+		group.GET("/versioneddataset/files/csv", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.ReadCSVLines)
 	}
 }
