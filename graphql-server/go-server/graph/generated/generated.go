@@ -468,6 +468,7 @@ type ComplexityRoot struct {
 	}
 
 	Worker struct {
+		API               func(childComplexity int) int
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
@@ -2725,6 +2726,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VersionedDatasetQuery.ListVersionedDatasets(childComplexity, args["input"].(ListVersionedDatasetInput)), true
 
+	case "Worker.api":
+		if e.complexity.Worker.API == nil {
+			break
+		}
+
+		return e.complexity.Worker.API(childComplexity), true
+
 	case "Worker.annotations":
 		if e.complexity.Worker.Annotations == nil {
 			break
@@ -4813,6 +4821,9 @@ type Worker {
 
     """详细的状态消息描述"""
     message: String
+
+    """模型服务的api地址"""
+    api: String
 }
 
 """创建模型服务worker的输入"""
@@ -19429,6 +19440,47 @@ func (ec *executionContext) fieldContext_Worker_message(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Worker_api(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_api(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.API, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_api(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _WorkerMutation_createWorker(ctx context.Context, field graphql.CollectedField, obj *WorkerMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_WorkerMutation_createWorker(ctx, field)
 	if err != nil {
@@ -19500,6 +19552,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_createWorker(ctx context
 				return ec.fieldContext_Worker_status(ctx, field)
 			case "message":
 				return ec.fieldContext_Worker_message(ctx, field)
+			case "api":
+				return ec.fieldContext_Worker_api(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -19589,6 +19643,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_updateWorker(ctx context
 				return ec.fieldContext_Worker_status(ctx, field)
 			case "message":
 				return ec.fieldContext_Worker_message(ctx, field)
+			case "api":
+				return ec.fieldContext_Worker_api(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -19730,6 +19786,8 @@ func (ec *executionContext) fieldContext_WorkerQuery_getWorker(ctx context.Conte
 				return ec.fieldContext_Worker_status(ctx, field)
 			case "message":
 				return ec.fieldContext_Worker_message(ctx, field)
+			case "api":
+				return ec.fieldContext_Worker_api(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -29193,6 +29251,8 @@ func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Worker_status(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._Worker_message(ctx, field, obj)
+		case "api":
+			out.Values[i] = ec._Worker_api(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

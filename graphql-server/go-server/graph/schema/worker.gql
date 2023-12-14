@@ -26,6 +26,7 @@ query listWorkers($input: ListWorkerInput!){
             kind
             apiGroup
           }
+          api
           modelTypes
           resources {
             cpu
@@ -61,6 +62,7 @@ query getWorker($name: String!, $namespace: String!) {
             kind
             apiGroup
           }
+          api
           modelTypes
           resources {
             cpu
@@ -94,6 +96,7 @@ mutation createWorker($input: CreateWorkerInput!) {
             kind
             apiGroup
           }
+          api
           modelTypes
           resources {
             cpu
@@ -126,6 +129,7 @@ mutation updateWorker($input: UpdateWorkerInput) {
             memory
             nvidiaGPU
           }
+          api
           model {
             name
             namespace

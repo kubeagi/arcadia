@@ -9,6 +9,7 @@ data:
     gateway:
       apiServer: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:8000/v1'
       controller: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:21001'
+      externalApiServer: 'http://{{ .Values.apiserver.ingress.host }}/{{ .Values.apiserver.ingress.path }}'
     vectorStore:
       apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
       kind: VectorStore

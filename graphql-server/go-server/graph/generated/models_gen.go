@@ -1218,6 +1218,8 @@ type Worker struct {
 	Status *string `json:"status,omitempty"`
 	// 详细的状态消息描述
 	Message *string `json:"message,omitempty"`
+	// 模型服务的api地址
+	API *string `json:"api,omitempty"`
 }
 
 func (Worker) IsPageNode() {}

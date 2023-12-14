@@ -37,8 +37,9 @@ type Config struct {
 
 // Gateway defines the way to access llm apis host by Arcadia
 type Gateway struct {
-	APIServer  string `json:"apiServer,omitempty"`
-	Controller string `json:"controller,omitempty"`
+	ExternalAPIServer string `json:"externalApiServer,omitempty"`
+	APIServer         string `json:"apiServer,omitempty"`
+	Controller        string `json:"controller,omitempty"`
 }
 
 // Streamlit defines the configuration of streamlit app

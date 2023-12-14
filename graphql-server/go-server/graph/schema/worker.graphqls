@@ -104,6 +104,9 @@ type Worker {
 
     """详细的状态消息描述"""
     message: String
+
+    """模型服务的api地址"""
+    api: String
 }
 
 """创建模型服务worker的输入"""
