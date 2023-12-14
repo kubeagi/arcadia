@@ -36,7 +36,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -205,7 +204,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 			errs = append(errs, err)
 		}
 	}
-	if err := utilerrors.NewAggregate(errs); err != nil {
+	if err := errors.Join(errs...); err != nil {
 		r.setCondition(kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 	} else {
@@ -378,7 +377,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
 	}
-	return utilerrors.NewAggregate(errs)
+	return errors.Join(errs...)
 }
 
 func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logger, file io.ReadCloser, fileName string, tags map[string]string, kb *arcadiav1alpha1.KnowledgeBase, store *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder) (err error) {
