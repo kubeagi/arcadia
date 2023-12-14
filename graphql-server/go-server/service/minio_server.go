@@ -98,8 +98,8 @@ type (
 	}
 
 	ReadCSVResp struct {
-		Rows [][]string `json:"rows"`
-		More bool       `json:"more"`
+		Rows  [][]string `json:"rows"`
+		Total int64      `json:"total"`
 	}
 )
 
@@ -621,8 +621,10 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		})
 		return
 	}
+	defer object.Close()
+
 	startLine := (page-1)*lines + 1
-	result, err := common.ReadCSV(object, startLine, lines)
+	result, totalLines, err := common.ReadCSV(object, startLine, lines)
 	if err != nil && err != io.EOF {
 		klog.Errorf("there is an error reading the csv file, the error is %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -631,8 +633,8 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		return
 	}
 	resp := ReadCSVResp{
-		Rows: result,
-		More: err == nil,
+		Rows:  result,
+		Total: totalLines,
 	}
 	ctx.JSON(http.StatusOK, resp)
 }
