@@ -87,6 +87,11 @@ var (
 			Version:  apiretriever.GroupVersion.Version,
 			Resource: "retrievers",
 		},
+		"llm": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "llms",
+		},
 	}
 )
 

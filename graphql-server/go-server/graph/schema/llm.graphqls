@@ -1,0 +1,56 @@
+type LLM {
+    id: String
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String
+    description: String
+    """
+    LLM供应商类型：
+    规则: 分为两类: worker 或者 3rd_party
+    """
+    provider: String
+
+    type: String
+    creationTimestamp: Time
+    updateTimestamp: Time
+    status: String
+    message: String
+}
+
+input CreateLLMInput {
+     """模型服务资源名称（不可同名）"""
+    name: String!
+    """模型服务创建命名空间"""
+    namespace: String!
+    """模型服务资源标签"""
+    labels: Map
+    """模型服务资源注释"""
+    annotations: Map
+    """模型服务资源展示名称作为显示，并提供编辑"""
+    displayName: String
+    
+    """模型服务资源描述"""
+    description: String
+
+    """模型服务访问信息(必填)"""
+    endpointinput: EndpointInput!
+
+    """
+    模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
+}
+
+type LLMQuery {
+    getLLM(name: String!, namespace: String!): LLM!
+    listLLMs(input: ListCommonInput!): PaginatedResult!
+}
+
+# query
+extend type Query{
+    LLM: LLMQuery
+}

@@ -1,0 +1,41 @@
+# list embedders
+query listLLMs($input: ListCommonInput!) {
+  LLM {
+    listLLMs(input: $input) {
+    totalCount
+    hasNextPage
+    nodes {
+      ... on LLM {
+        name
+        namespace
+        labels
+        annotations
+        displayName
+        description
+        provider
+        type
+        updateTimestamp
+        status
+        message
+      }
+      }
+    }
+  }
+}
+
+# get LLM
+query getLLM($name: String!, $namespace: String!) {
+  LLM {
+    getLLM(name: $name, namespace: $namespace) {
+        name
+        namespace
+        labels
+        annotations
+        displayName
+        description
+        provider
+        type
+        updateTimestamp
+    }
+  }
+}

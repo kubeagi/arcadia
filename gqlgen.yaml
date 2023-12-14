@@ -230,3 +230,9 @@ models:
         resolver: true
       listKnowledgeBaseApplications:
         resolver: true
+  LLMQuery:
+    fields:
+      getLLM:
+        resolver: true
+      listLLMs:
+        resolver: true

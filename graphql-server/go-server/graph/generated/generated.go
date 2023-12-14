@@ -51,6 +51,7 @@ type ResolverRoot interface {
 	KnowledgeBaseApplicationQuery() KnowledgeBaseApplicationQueryResolver
 	KnowledgeBaseMutation() KnowledgeBaseMutationResolver
 	KnowledgeBaseQuery() KnowledgeBaseQueryResolver
+	LLMQuery() LLMQueryResolver
 	Model() ModelResolver
 	ModelMutation() ModelMutationResolver
 	ModelQuery() ModelQueryResolver
@@ -326,6 +327,28 @@ type ComplexityRoot struct {
 		ListKnowledgeBases func(childComplexity int, input ListKnowledgeBaseInput) int
 	}
 
+	LLM struct {
+		Annotations       func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		Description       func(childComplexity int) int
+		DisplayName       func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Labels            func(childComplexity int) int
+		Message           func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
+		Provider          func(childComplexity int) int
+		Status            func(childComplexity int) int
+		Type              func(childComplexity int) int
+		UpdateTimestamp   func(childComplexity int) int
+	}
+
+	LLMQuery struct {
+		GetLlm   func(childComplexity int, name string, namespace string) int
+		ListLLMs func(childComplexity int, input ListCommonInput) int
+	}
+
 	Model struct {
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
@@ -395,6 +418,7 @@ type ComplexityRoot struct {
 		Hello                    func(childComplexity int, name string) int
 		KnowledgeBase            func(childComplexity int) int
 		KnowledgeBaseApplication func(childComplexity int) int
+		Llm                      func(childComplexity int) int
 		Model                    func(childComplexity int) int
 		VersionedDataset         func(childComplexity int) int
 		Worker                   func(childComplexity int) int
@@ -552,6 +576,10 @@ type KnowledgeBaseQueryResolver interface {
 	GetKnowledgeBase(ctx context.Context, obj *KnowledgeBaseQuery, name string, namespace string) (*KnowledgeBase, error)
 	ListKnowledgeBases(ctx context.Context, obj *KnowledgeBaseQuery, input ListKnowledgeBaseInput) (*PaginatedResult, error)
 }
+type LLMQueryResolver interface {
+	GetLlm(ctx context.Context, obj *LLMQuery, name string, namespace string) (*Llm, error)
+	ListLLMs(ctx context.Context, obj *LLMQuery, input ListCommonInput) (*PaginatedResult, error)
+}
 type ModelResolver interface {
 	Files(ctx context.Context, obj *Model, input *FileFilter) (*PaginatedResult, error)
 }
@@ -584,6 +612,7 @@ type QueryResolver interface {
 	Embedder(ctx context.Context) (*EmbedderQuery, error)
 	KnowledgeBase(ctx context.Context) (*KnowledgeBaseQuery, error)
 	KnowledgeBaseApplication(ctx context.Context) (*KnowledgeBaseApplicationQuery, error)
+	Llm(ctx context.Context) (*LLMQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
 	VersionedDataset(ctx context.Context) (*VersionedDatasetQuery, error)
 	Worker(ctx context.Context) (*WorkerQuery, error)
@@ -1951,6 +1980,128 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KnowledgeBaseQuery.ListKnowledgeBases(childComplexity, args["input"].(ListKnowledgeBaseInput)), true
 
+	case "LLM.annotations":
+		if e.complexity.LLM.Annotations == nil {
+			break
+		}
+
+		return e.complexity.LLM.Annotations(childComplexity), true
+
+	case "LLM.creationTimestamp":
+		if e.complexity.LLM.CreationTimestamp == nil {
+			break
+		}
+
+		return e.complexity.LLM.CreationTimestamp(childComplexity), true
+
+	case "LLM.creator":
+		if e.complexity.LLM.Creator == nil {
+			break
+		}
+
+		return e.complexity.LLM.Creator(childComplexity), true
+
+	case "LLM.description":
+		if e.complexity.LLM.Description == nil {
+			break
+		}
+
+		return e.complexity.LLM.Description(childComplexity), true
+
+	case "LLM.displayName":
+		if e.complexity.LLM.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.LLM.DisplayName(childComplexity), true
+
+	case "LLM.id":
+		if e.complexity.LLM.ID == nil {
+			break
+		}
+
+		return e.complexity.LLM.ID(childComplexity), true
+
+	case "LLM.labels":
+		if e.complexity.LLM.Labels == nil {
+			break
+		}
+
+		return e.complexity.LLM.Labels(childComplexity), true
+
+	case "LLM.message":
+		if e.complexity.LLM.Message == nil {
+			break
+		}
+
+		return e.complexity.LLM.Message(childComplexity), true
+
+	case "LLM.name":
+		if e.complexity.LLM.Name == nil {
+			break
+		}
+
+		return e.complexity.LLM.Name(childComplexity), true
+
+	case "LLM.namespace":
+		if e.complexity.LLM.Namespace == nil {
+			break
+		}
+
+		return e.complexity.LLM.Namespace(childComplexity), true
+
+	case "LLM.provider":
+		if e.complexity.LLM.Provider == nil {
+			break
+		}
+
+		return e.complexity.LLM.Provider(childComplexity), true
+
+	case "LLM.status":
+		if e.complexity.LLM.Status == nil {
+			break
+		}
+
+		return e.complexity.LLM.Status(childComplexity), true
+
+	case "LLM.type":
+		if e.complexity.LLM.Type == nil {
+			break
+		}
+
+		return e.complexity.LLM.Type(childComplexity), true
+
+	case "LLM.updateTimestamp":
+		if e.complexity.LLM.UpdateTimestamp == nil {
+			break
+		}
+
+		return e.complexity.LLM.UpdateTimestamp(childComplexity), true
+
+	case "LLMQuery.getLLM":
+		if e.complexity.LLMQuery.GetLlm == nil {
+			break
+		}
+
+		args, err := ec.field_LLMQuery_getLLM_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.LLMQuery.GetLlm(childComplexity, args["name"].(string), args["namespace"].(string)), true
+
+	case "LLMQuery.listLLMs":
+		if e.complexity.LLMQuery.ListLLMs == nil {
+			break
+		}
+
+		args, err := ec.field_LLMQuery_listLLMs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.LLMQuery.ListLLMs(childComplexity, args["input"].(ListCommonInput)), true
+
 	case "Model.annotations":
 		if e.complexity.Model.Annotations == nil {
 			break
@@ -2319,6 +2470,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.KnowledgeBaseApplication(childComplexity), true
+
+	case "Query.LLM":
+		if e.complexity.Query.Llm == nil {
+			break
+		}
+
+		return e.complexity.Query.Llm(childComplexity), true
 
 	case "Query.Model":
 		if e.complexity.Query.Model == nil {
@@ -2826,6 +2984,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateEmbedderInput,
 		ec.unmarshalInputCreateKnowledgeBaseApplicationInput,
 		ec.unmarshalInputCreateKnowledgeBaseInput,
+		ec.unmarshalInputCreateLLMInput,
 		ec.unmarshalInputCreateModelInput,
 		ec.unmarshalInputCreateVersionedDatasetInput,
 		ec.unmarshalInputCreateWorkerInput,
@@ -3684,7 +3843,7 @@ type TypedObjectReference {
     namespace: String
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | KnowledgeBaseApplication
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | KnowledgeBaseApplication | LLM
 `, BuiltIn: false},
 	{Name: "../schema/knowledgebase.graphqls", Input: `"""
 文件组
@@ -4107,6 +4266,63 @@ input UpdateKnowledgeBaseApplicationInput {
     systemMessage: String
     """userMessage 用户 Prompt"""
     userMessage: String
+}
+`, BuiltIn: false},
+	{Name: "../schema/llm.graphqls", Input: `type LLM {
+    id: String
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String
+    description: String
+    """
+    LLM供应商类型：
+    规则: 分为两类: worker 或者 3rd_party
+    """
+    provider: String
+
+    type: String
+    creationTimestamp: Time
+    updateTimestamp: Time
+    status: String
+    message: String
+}
+
+input CreateLLMInput {
+     """模型服务资源名称（不可同名）"""
+    name: String!
+    """模型服务创建命名空间"""
+    namespace: String!
+    """模型服务资源标签"""
+    labels: Map
+    """模型服务资源注释"""
+    annotations: Map
+    """模型服务资源展示名称作为显示，并提供编辑"""
+    displayName: String
+    
+    """模型服务资源描述"""
+    description: String
+
+    """模型服务访问信息(必填)"""
+    endpointinput: EndpointInput!
+
+    """
+    模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
+}
+
+type LLMQuery {
+    getLLM(name: String!, namespace: String!): LLM!
+    listLLMs(input: ListCommonInput!): PaginatedResult!
+}
+
+# query
+extend type Query{
+    LLM: LLMQuery
 }
 `, BuiltIn: false},
 	{Name: "../schema/model.graphqls", Input: `"""模型"""
@@ -5239,6 +5455,45 @@ func (ec *executionContext) field_KnowledgeBaseQuery_listKnowledgeBases_args(ctx
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNListKnowledgeBaseInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListKnowledgeBaseInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_LLMQuery_getLLM_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["namespace"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_LLMQuery_listLLMs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ListCommonInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13740,6 +13995,738 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_listKnowledgeBases(c
 	return fc, nil
 }
 
+func (ec *executionContext) _LLM_id(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_name(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_namespace(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_labels(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Labels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_annotations(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_annotations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Annotations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_annotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_creator(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_displayName(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_description(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_provider(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_provider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_provider(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_type(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_creationTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreationTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_creationTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_updateTimestamp(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_updateTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_updateTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_status(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_message(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMQuery_getLLM(ctx context.Context, field graphql.CollectedField, obj *LLMQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMQuery_getLLM(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LLMQuery().GetLlm(rctx, obj, fc.Args["name"].(string), fc.Args["namespace"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Llm)
+	fc.Result = res
+	return ec.marshalNLLM2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLlm(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMQuery_getLLM(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LLM_id(ctx, field)
+			case "name":
+				return ec.fieldContext_LLM_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_LLM_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_LLM_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_LLM_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_LLM_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_LLM_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_LLM_description(ctx, field)
+			case "provider":
+				return ec.fieldContext_LLM_provider(ctx, field)
+			case "type":
+				return ec.fieldContext_LLM_type(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_LLM_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_LLM_updateTimestamp(ctx, field)
+			case "status":
+				return ec.fieldContext_LLM_status(ctx, field)
+			case "message":
+				return ec.fieldContext_LLM_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLM", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_LLMQuery_getLLM_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMQuery_listLLMs(ctx context.Context, field graphql.CollectedField, obj *LLMQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMQuery_listLLMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LLMQuery().ListLLMs(rctx, obj, fc.Args["input"].(ListCommonInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMQuery_listLLMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_LLMQuery_listLLMs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Model_id(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Model_id(ctx, field)
 	if err != nil {
@@ -16042,6 +17029,53 @@ func (ec *executionContext) fieldContext_Query_KnowledgeBaseApplication(ctx cont
 				return ec.fieldContext_KnowledgeBaseApplicationQuery_listKnowledgeBaseApplications(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type KnowledgeBaseApplicationQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_LLM(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_LLM(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Llm(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LLMQuery)
+	fc.Result = res
+	return ec.marshalOLLMQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLLMQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_LLM(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "getLLM":
+				return ec.fieldContext_LLMQuery_getLLM(ctx, field)
+			case "listLLMs":
+				return ec.fieldContext_LLMQuery_listLLMs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -21778,6 +22812,98 @@ func (ec *executionContext) unmarshalInputCreateKnowledgeBaseInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateLLMInput(ctx context.Context, obj interface{}) (CreateLLMInput, error) {
+	var it CreateLLMInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "endpointinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endpointinput"))
+			data, err := ec.unmarshalNEndpointInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐEndpointInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Endpointinput = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, obj interface{}) (CreateModelInput, error) {
 	var it CreateModelInput
 	asMap := map[string]interface{}{}
@@ -23898,6 +25024,13 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._KnowledgeBaseApplication(ctx, sel, obj)
+	case Llm:
+		return ec._LLM(ctx, sel, &obj)
+	case *Llm:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._LLM(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -26544,6 +27677,180 @@ func (ec *executionContext) _KnowledgeBaseQuery(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var lLMImplementors = []string{"LLM", "PageNode"}
+
+func (ec *executionContext) _LLM(ctx context.Context, sel ast.SelectionSet, obj *Llm) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLM")
+		case "id":
+			out.Values[i] = ec._LLM_id(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._LLM_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._LLM_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "labels":
+			out.Values[i] = ec._LLM_labels(ctx, field, obj)
+		case "annotations":
+			out.Values[i] = ec._LLM_annotations(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._LLM_creator(ctx, field, obj)
+		case "displayName":
+			out.Values[i] = ec._LLM_displayName(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._LLM_description(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._LLM_provider(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._LLM_type(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._LLM_creationTimestamp(ctx, field, obj)
+		case "updateTimestamp":
+			out.Values[i] = ec._LLM_updateTimestamp(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._LLM_status(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._LLM_message(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lLMQueryImplementors = []string{"LLMQuery"}
+
+func (ec *executionContext) _LLMQuery(ctx context.Context, sel ast.SelectionSet, obj *LLMQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLMQuery")
+		case "getLLM":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LLMQuery_getLLM(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "listLLMs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LLMQuery_listLLMs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var modelImplementors = []string{"Model", "PageNode"}
 
 func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, obj *Model) graphql.Marshaler {
@@ -27261,6 +28568,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_KnowledgeBaseApplication(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "LLM":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_LLM(ctx, field)
 				return res
 			}
 
@@ -28807,6 +30133,20 @@ func (ec *executionContext) marshalNKnowledgeBaseApplication2ᚖgithubᚗcomᚋk
 	return ec._KnowledgeBaseApplication(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLLM2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLlm(ctx context.Context, sel ast.SelectionSet, v Llm) graphql.Marshaler {
+	return ec._LLM(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLLM2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLlm(ctx context.Context, sel ast.SelectionSet, v *Llm) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LLM(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListCommonInput(ctx context.Context, v interface{}) (ListCommonInput, error) {
 	res, err := ec.unmarshalInputListCommonInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -29873,6 +31213,13 @@ func (ec *executionContext) marshalOKnowledgeBaseQuery2ᚖgithubᚗcomᚋkubeagi
 		return graphql.Null
 	}
 	return ec._KnowledgeBaseQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLLMQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLLMQuery(ctx context.Context, sel ast.SelectionSet, v *LLMQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LLMQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOListDatasetInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐListDatasetInput(ctx context.Context, v interface{}) (*ListDatasetInput, error) {
