@@ -70,9 +70,9 @@ def update_dataset_k8s_cr(
             bucket_name, 
             version_data_set_name,
             {
-            'status': {
-                'conditions': conditions
-            }
+                'status': {
+                    'conditions': conditions
+                }
             }
         )
 
@@ -86,5 +86,50 @@ def update_dataset_k8s_cr(
         return {
             'status': 400,
             'message': '更新数据集状态失败',
+            'data': ''
+        }
+
+def get_dataset_status_k8s_cr(
+    bucket_name,
+    version_data_set_name
+):
+    """ get the condition info for the dataset.
+    
+    bucket_name: bucket name;
+    version_data_set_name: version dataset name;
+    """
+    try:
+        dataset_status = None
+        kube = client.KubeEnv()
+
+        one_cr_datasets = kube.get_versioneddatasets_status(
+                                bucket_name, 
+                                version_data_set_name
+                            )
+
+        conditions = one_cr_datasets['status']['conditions']
+
+        found_index = None
+        for i in range(len(conditions)):
+            item = conditions[i]
+            if item['type'] == 'DataProcessing':
+                found_index = i
+                break
+
+        
+        result = None
+        if found_index:
+            dataset_status = conditions[found_index].get('reason')
+
+        return {
+            'status': 200,
+            'message': '获取数据集状态成功',
+            'data': dataset_status
+        }
+    except Exception as ex:
+        logger.error(str(ex))
+        return {
+            'status': 400,
+            'message': '获取数据集状态失败',
             'data': ''
         }

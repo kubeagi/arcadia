@@ -16,6 +16,7 @@
 import logging
 import re
 import traceback
+import time
 
 import zhipuai
 from common import log_tag_const
@@ -50,7 +51,6 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         prompt_template
             the prompt template
         """
-        print('xx', 'text', text)
         if prompt_template is None:
             prompt_template = zhi_pu_ai_prompt.get_default_prompt_template()
 
@@ -59,28 +59,69 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         )
         
         result = []
-        try:
-            response = zhipuai.model_api.invoke(
-                model="chatglm_6b",
-                prompt=[{"role": "user", "content": content}],
-                top_p=0.7,
-                temperature=0.9,
-            )
-            if response['success']:
-                result = self.__format_response_to_qa_list(response)
-            else:
-                logger.error(''.join([
-                    f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
-                    f"The error is: \n{response['msg']}\n"
-                ]))
-        except Exception as ex:
-            result = []
-            logger.error(''.join([
-                f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
-                f"The tracing error is: \n{traceback.format_exc()}\n"
+        status = 200
+        message = ''
+        invoke_count = 0
+        while True:
+            logger.debug(''.join([
+                f"{log_tag_const.ZHI_PU_AI} content.\n",
+                f"{content}\n"
             ]))
+            try:
+                if invoke_count >= int(config.llm_qa_retry_count):
+                    logger.error(''.join([
+                        f"{log_tag_const.ZHI_PU_AI} Cannot access the open ai service.\n",
+                        f"The tracing error is: \n{traceback.format_exc()}\n"
+                    ]))
 
-        return result
+                    status = 1000
+                    message = traceback.format_exc()
+
+                    break
+                else:
+                    # TODO: temperature and top_p/top_k should be configured later
+                    response = zhipuai.model_api.invoke(
+                        model="chatglm_6b",
+                        prompt=[{"role": "user", "content": content}],
+                        top_p=0.7,
+                        temperature=0.9,
+                    )
+                    if response['success']:
+                        result = self.__format_response_to_qa_list(response)
+                        if len(result) > 0:
+                            break
+                        elif invoke_count > int(config.llm_qa_retry_count):
+                            logger.error(''.join([
+                                f"{log_tag_const.ZHI_PU_AI} Cannot access the open ai service.\n",
+                                f"The tracing error is: \n{traceback.format_exc()}\n"
+                            ]))
+
+                            status = 1000
+                            message = traceback.format_exc()
+
+                            break
+                        else:
+                            logger.warn('failed to get QA list, wait for 10 seconds and retry')
+                            time.sleep(10) # sleep 10 seconds
+                            invoke_count += 1
+                    else:
+                        logger.error(''.join([
+                            f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
+                            f"The error is: \n{response['msg']}\n"
+                        ]))
+                        logger.warn('zhipuai request failed, wait for 10 seconds and retry')
+                        time.sleep(10) # sleep 10 seconds
+                        invoke_count += 1
+            except Exception as ex:
+                logger.warn('zhipuai request exception, wait for 10 seconds and retry')
+                time.sleep(10)
+                invoke_count += 1
+
+        return {
+            'status': status,
+            'message': message,
+            'data': result
+        }
 
 
     def __format_response_to_qa_list(self, response):

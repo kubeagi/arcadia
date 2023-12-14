@@ -12,30 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import docx
 
-KUBERNETES = "Kubernetes"
+def get_content(
+    file_path
+):
+    """Get the content from a word docx file.
+    
+    file_path: file path;
+    """
+    doc = docx.Document(file_path)
+    content = ""
+    for i in range(len(doc.paragraphs)):
+        para = doc.paragraphs[i]
+        text = para.text
+        content += text
 
-WEB_SERVER_ERROR = "Web Server Error"
-WEB_SERVER_ACCESS = "Web Server Access"
-
-DATABASE_POSTGRESQL = "DataBase PostgreSQL"
-MINIO = "Minio"
-MINIO_STORE_PROCESS = "Minio Store Process"
-
-DATA_PROCESS_DETAIL = "Data Process Detail"
-
-COMMON_HANDLE = "Common Handle"
-PDF_HANDLE = "PDF Handle"
-CSV_HANDLE = "CSV Handle"
-WORD_HANDLE = "Word Handle"
-QA_SPLIT = "Question Answer Split"
-
-CLEAN_TRANSFORM = "Clean Transform"
-PRIVACY_TRANSFORM = "Privacy Transform"
-
-THREADING = "Threading"
-
-ZHI_PU_AI = "Zhi Pu AI"
-OPEN_AI = "Open AI"
-
-CONFIG = "Config"
+    return content 

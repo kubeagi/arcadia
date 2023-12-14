@@ -22,7 +22,7 @@ from common import log_tag_const
 from common.config import config
 from data_store_clients import minio_store_client
 from database_operate import data_process_db_operate
-from file_handle import csv_handle, pdf_handle
+from file_handle import csv_handle, pdf_handle, word_handle
 from kube import dataset_cr
 from utils import file_utils
 
@@ -65,10 +65,13 @@ def text_manipulate(
         )
 
     # 文件处理
+    task_status = 'process_complete'
     # 存放每个文件对应的数据量
     data_volumes_file = []
     
     for item in file_names:
+        result = []
+
         file_name = item['name']
         file_extension = file_name.split('.')[-1].lower()
         if file_extension in ['csv']:
@@ -89,6 +92,23 @@ def text_manipulate(
                 task_id=id,
                 create_user=req_json['creator']
             )
+        
+        elif file_extension in ['docx']:
+            # 处理.docx文件
+            result = word_handle.docx_text_manipulate(
+                chunk_size=req_json.get('chunk_size'),
+                chunk_overlap=req_json.get('chunk_overlap'),
+                file_name=file_name,
+                support_type=support_type,
+                conn_pool=pool,
+                task_id=id,
+                create_user=req_json['creator']
+            )
+
+        if result.get('status') != 200:
+            # 任务失败
+            task_status = 'process_fail'
+            break
 
         data_volumes_file.append(result['data'])
 
@@ -113,8 +133,8 @@ def text_manipulate(
     # 数据库更新任务状态
     update_params = {
         'id': id,
-        'status': 'process_complete',
-        'create_user': req_json['creator']
+        'status': task_status,
+        'user': req_json['creator']
     }
     data_process_db_operate.update_status_by_id(
         update_params,
@@ -125,7 +145,7 @@ def text_manipulate(
     dataset_cr.update_dataset_k8s_cr(
         bucket_name=req_json['bucket_name'],
         version_data_set_name=req_json['version_data_set_name'],
-        reason='process_complete'
+        reason=task_status
     )
 
     return {

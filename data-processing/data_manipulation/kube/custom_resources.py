@@ -40,6 +40,8 @@ arcadia_group = GroupVersion("arcadia.kubeagi.k8s.com.cn", "v1alpha1")
 arcadia_resource_datasources = CustomResource(arcadia_group, "datasources")
 # CRD Dataset
 arcadia_resource_datasets = CustomResource(arcadia_group, "datasets")
+# CRD LLM
+arcadia_resource_models = CustomResource(arcadia_group, "llms")
 # CRD Versioneddataset
 arcadia_resource_versioneddatasets = CustomResource(
     arcadia_group, "versioneddatasets")

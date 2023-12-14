@@ -37,8 +37,8 @@ def remove_invisible_characters(text):
     “一户一表、水表出户、抄表到户”是指一个家庭用户安装一个计量水表，计量水表安装在住宅的公共部位，供水企业抄表到户，按户计量收费。
     """
     try:
-        pattern = r'[\x00-\x1F\x7F-\x9F\xAD\r\n\t\b\x0B\x1C\x1D\x1E]'
-        find_pattern = r'[^，。！？,.!?]*[\x00-\x1F\x7F-\x9F\xAD\r\n\t\b\x0B\x1C\x1D\x1E][^，。！？,.!?]*'
+        pattern = r'[\x00-\x1F\x7F-\x9F\xAD\r\t\b\x0B\x1C\x1D\x1E]'
+        find_pattern = r'[^，。！？,.!?]*[\x00-\x1F\x7F-\x9F\xAD\r\t\b\x0B\x1C\x1D\x1E][^，。！？,.!?]*'
 
         clean_text = re.sub(pattern, '', text)
 
@@ -246,11 +246,11 @@ def remove_emojis(text):
 
         clean_text = re.sub(pattern, '', text)
 
-        clean_data = _find_clean_data({
-            'text': text,
-            'pattern': pattern,
-            'find_pattern': find_pattern
-        })
+        clean_data = _find_clean_data(
+            text=text,
+            pattern=pattern,
+            find_pattern=find_pattern
+        )
         
         return {
             'status': 200,

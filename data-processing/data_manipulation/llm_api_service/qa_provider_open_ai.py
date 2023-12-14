@@ -20,9 +20,12 @@ import traceback
 
 from common import log_tag_const
 from common.config import config
-from langchain.chains import LLMChain
-from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langchain import LLMChain
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from llm_prompt_template import open_ai_prompt
 
 from .base_qa_provider import BaseQAProvider
@@ -34,21 +37,16 @@ class QAProviderOpenAI(BaseQAProvider):
     
     def __init__(
         self, 
-        api_key=None,
-        base_url=None,
-        model=None
+        api_key,
+        base_url,
+        model
     ):
-        if api_key is None:
-            api_key = config.open_ai_default_key
-        if base_url is None:
-            base_url = config.open_ai_default_base_url
-        if model is None:
-            model = config.open_ai_default_model
-        
-        self.llm = OpenAI(
+        # TODO: temperature and top_p/top_k should be configured later
+        self.llm = ChatOpenAI(
             openai_api_key=api_key, 
             base_url=base_url,
-            model=model
+            model=model,
+            temperature=0.8
         ) 
 
     def generate_qa_list(
@@ -68,40 +66,57 @@ class QAProviderOpenAI(BaseQAProvider):
         if prompt_template is None:
             prompt_template = open_ai_prompt.get_default_prompt_template()
         
-        prompt = PromptTemplate(
-                    template=prompt_template, 
-                    input_variables=["text"]
-                )
+        human_message_prompt = HumanMessagePromptTemplate.from_template(prompt_template)
+        prompt = ChatPromptTemplate.from_messages([human_message_prompt])
         llm_chain = LLMChain(
             prompt=prompt, 
             llm=self.llm
         )
 
         result = []
+        status = 200
+        message = ''
         invoke_count = 0
         while True:
             try:
-                response = llm_chain.run(text)
-                result = self.__get_qa_list_from_response(response)
-                if len(result) > 0 or invoke_count > int(config.llm_qa_retry_count):
-                    logger.debug(''.join([
-                        f"{log_tag_const.OPEN_AI} The QA list is \n",
-                        f"\n{result}\n"
+                if invoke_count >= int(config.llm_qa_retry_count):
+                    logger.error(''.join([
+                        f"{log_tag_const.OPEN_AI} Cannot access the open ai service.\n",
+                        f"The tracing error is: \n{traceback.format_exc()}\n"
                     ]))
+
+                    status = 1000
+                    message = traceback.format_exc()
+
                     break
                 else:
-                    logger.warn('failed to get QA list, wait for 2 seconds and retry')
-                    time.sleep(5) # sleep 5 seconds
-                invoke_count += 1
+                    response = llm_chain.run(text=text)
+                    result = self.__get_qa_list_from_response(response)
+                    if len(result) > 0:
+                        break
+                    elif invoke_count > int(config.llm_qa_retry_count):
+                        logger.error(''.join([
+                            f"{log_tag_const.OPEN_AI} Cannot access the open ai service.\n",
+                            f"The tracing error is: \n{traceback.format_exc()}\n"
+                        ]))
+
+                        status = 1000
+                        message = traceback.format_exc()
+
+                        break
+                    else:
+                        logger.warn('failed to get QA list, wait for 10 seconds and retry')
+                        time.sleep(10) # sleep 10 seconds
+                        invoke_count += 1
             except Exception as ex:
-                result = []
-                logger.error(''.join([
-                    f"{log_tag_const.OPEN_AI} Cannot access the open ai service.\n",
-                    f"The tracing error is: \n{traceback.format_exc()}\n"
-                ]))
-                time.sleep(5)
+                time.sleep(10)
+                invoke_count += 1
         
-        return result
+        return {
+            'status': status,
+            'message': message,
+            'data': result
+        }
 
     
     def __get_qa_list_from_response(

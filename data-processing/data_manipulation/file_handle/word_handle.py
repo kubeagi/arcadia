@@ -18,12 +18,12 @@ import traceback
 
 from common import log_tag_const
 from file_handle import common_handle
-from utils import file_utils, pdf_utils
+from utils import csv_utils, file_utils, docx_utils
 
 logger = logging.getLogger(__name__)
 
 
-def text_manipulate(
+def docx_text_manipulate(
     file_name,
     support_type,
     conn_pool,
@@ -32,7 +32,7 @@ def text_manipulate(
     chunk_size,
     chunk_overlap
 ):
-    """Manipulate the text content from a pdf file.
+    """Manipulate the text content from a word file.
     
     file_name: file name;
     support_type: support type;
@@ -42,16 +42,16 @@ def text_manipulate(
     chunk_overlap: chunk overlap;
     """
     
-    logger.debug(f"{log_tag_const.PDF_HANDLE} Start to manipulate the text in pdf")
+    logger.debug(f"{log_tag_const.WORD_HANDLE} Start to manipulate the text in word")
 
     try:
-        pdf_file_path = file_utils.get_temp_file_path()
-        file_path = pdf_file_path + 'original/' + file_name
+        word_file_path = file_utils.get_temp_file_path()
+        file_path = word_file_path + 'original/' + file_name
         
         # step 1
-        # Get the content from the pdf fild.
-        content = pdf_utils.get_content(file_path)
-        logger.debug(f"{log_tag_const.PDF_HANDLE} The pdf content is\n {content}")
+        # Get the content from the word fild.
+        content = docx_utils.get_content(file_path)
+        logger.debug(f"{log_tag_const.WORD_HANDLE} The word content is\n {content}")
 
         response = common_handle.text_manipulate(
             file_name=file_name,
@@ -67,10 +67,10 @@ def text_manipulate(
         return response
     except Exception as ex:
         logger.error(''.join([
-            f"{log_tag_const.PDF_HANDLE} There is an error when manipulate ",
-            f"the text in pdf handler. \n{traceback.format_exc()}"
+            f"{log_tag_const.WORD_HANDLE} There is an error when manipulate ",
+            f"the text in word handler. \n{traceback.format_exc()}"
         ]))
-        logger.debug(f"{log_tag_const.PDF_HANDLE} Finish manipulating the text in pdf")
+        logger.debug(f"{log_tag_const.WORD_HANDLE} Finish manipulating the text in word")
         return {
             'status': 400,
             'message': str(ex),

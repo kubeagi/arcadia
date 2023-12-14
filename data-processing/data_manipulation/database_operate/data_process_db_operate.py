@@ -183,7 +183,7 @@ def update_status_by_id(
 ):
     """Update the status with id"""
     now = date_time_utils.now_str()
-    user = req_json['create_user']
+    user = req_json['user']
     program = '修改任务状态'
 
     params = {

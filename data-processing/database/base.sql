@@ -26,8 +26,6 @@ CREATE TABLE IF NOT EXISTS public.data_process_task
     CONSTRAINT data_process_task_pkey PRIMARY KEY (id)
 )
 
-TABLESPACE pg_default;
-
 -- Table: public.data_process_task_detail
 
 -- DROP TABLE IF EXISTS public.data_process_task_detail;
