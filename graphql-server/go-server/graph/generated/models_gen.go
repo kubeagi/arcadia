@@ -217,6 +217,12 @@ type CreateWorkerInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型资源描述
 	Description *string `json:"description,omitempty"`
+	// Worker类型
+	// 支持两种类型:
+	// - "fastchat" : fastchat提供的通用的推理服务模式
+	// - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+	// 规则: 如果为空，则默认为 "fastchat"
+	Type *string `json:"type,omitempty"`
 	// worker对应的模型
 	// 规则: 必须指定模型准确的namespace
 	// 规则: 必填
@@ -1056,6 +1062,12 @@ type UpdateWorkerInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型资源描述
 	Description *string `json:"description,omitempty"`
+	// Worker类型
+	// 支持两种类型:
+	// - "fastchat" : fastchat提供的通用的推理服务模式
+	// - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+	// 规则: 如果为空，则不更新；如果type类型与当前类型相同，则不更新
+	Type *string `json:"type,omitempty"`
 	// worker运行所需的资源
 	Resources *ResourcesInput `json:"resources,omitempty"`
 }
@@ -1136,6 +1148,12 @@ type Worker struct {
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 更新时间
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// Worker类型
+	// 支持两种类型:
+	// - "fastchat" : fastchat提供的通用的推理服务模式
+	// - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
+	// 规则: 如果为空，则默认为 "fastchat"
+	Type *string `json:"type,omitempty"`
 	// worker对应的模型
 	// 规则: 相同namespace下的模型名称
 	// 规则: 必填

@@ -35,6 +35,10 @@ const (
 	LabelWorkerType = Group + "/worker-type"
 )
 
+func DefaultWorkerType() WorkerType {
+	return WorkerTypeFastchatNormal
+}
+
 func (worker Worker) Type() WorkerType {
 	if worker.Spec.Type == "" {
 		// use `fastchat` by default
