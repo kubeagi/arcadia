@@ -138,11 +138,21 @@ func (oss *OSS) Stat(ctx context.Context, info any) error {
 	return oss.statObject(ctx, ossInfo)
 }
 
-// TODO: implement `Remove` against info
 func (oss *OSS) Remove(ctx context.Context, info any) error {
 	ossInfo, err := oss.preCheck(info)
 	if err != nil {
 		return err
+	}
+	if strings.HasSuffix(ossInfo.Object, "/") {
+		var resultErr error
+		for e := range oss.Client.RemoveObjects(
+			ctx,
+			ossInfo.Bucket,
+			oss.Client.ListObjects(ctx, ossInfo.Bucket, minio.ListObjectsOptions{Prefix: ossInfo.Object, Recursive: true}),
+			minio.RemoveObjectsOptions{}) {
+			resultErr = e.Err
+		}
+		return resultErr
 	}
 
 	return oss.Client.RemoveObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.RemoveObjectOptions{ForceDelete: true})
