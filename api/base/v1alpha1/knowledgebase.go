@@ -57,6 +57,8 @@ func (f *FileDetails) UpdateErr(err error, phase FileProcessPhase) {
 	f.Phase = phase
 	if err != nil {
 		f.ErrMessage = err.Error()
+	} else {
+		f.ErrMessage = ""
 	}
 }
 

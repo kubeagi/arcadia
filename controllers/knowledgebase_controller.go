@@ -268,6 +268,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	info := &arcadiav1alpha1.OSS{Bucket: ns}
 
 	if len(kb.Status.FileGroupDetail) == 0 {
+		// brand new knowledgebase, init status.
 		kb.Status.FileGroupDetail = make([]arcadiav1alpha1.FileGroupDetail, 1)
 		kb.Status.FileGroupDetail[0].Init(group)
 	}
@@ -277,15 +278,19 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		if detail.Source != nil && detail.Source.Name == versionedDataset.Name && detail.Source.GetNamespace(kb.GetNamespace()) == versionedDataset.GetNamespace() {
 			fileGroupDetail = &kb.Status.FileGroupDetail[i]
 			for i, detail := range fileGroupDetail.FileDetails {
-				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i] // FIXME 这样对不？
+				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
 			}
 			break
 		}
 	}
 	if fileGroupDetail == nil {
+		// this group is newly added
 		fileGroupDetail = &arcadiav1alpha1.FileGroupDetail{}
 		fileGroupDetail.Init(group)
 		kb.Status.FileGroupDetail = append(kb.Status.FileGroupDetail, *fileGroupDetail)
+		for i, detail := range fileGroupDetail.FileDetails {
+			pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
+		}
 	}
 
 	errs := make([]error, 0)
@@ -298,14 +303,15 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		}
 		fileDetail, ok := pathMap[path]
 		if !ok {
-			fileDetail = &arcadiav1alpha1.FileDetails{
+			// this path is newly added
+			fileGroupDetail.FileDetails = append(fileGroupDetail.FileDetails, arcadiav1alpha1.FileDetails{
 				Path:           path,
 				Checksum:       "",
 				LastUpdateTime: metav1.Now(),
 				Phase:          arcadiav1alpha1.FileProcessPhasePending,
 				ErrMessage:     "",
-			}
-			fileGroupDetail.FileDetails = append(fileGroupDetail.FileDetails, *fileDetail)
+			})
+			fileDetail = &fileGroupDetail.FileDetails[len(fileGroupDetail.FileDetails)-1]
 		}
 		if versionedDataset.Spec.Dataset == nil {
 			err = fmt.Errorf("versionedDataset.Spec.Dataset is nil")
