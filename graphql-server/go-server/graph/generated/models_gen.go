@@ -166,6 +166,26 @@ type CreateKnowledgeBaseInput struct {
 	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
 }
 
+type CreateLLMInput struct {
+	// 模型服务资源名称（不可同名）
+	Name string `json:"name"`
+	// 模型服务创建命名空间
+	Namespace string `json:"namespace"`
+	// 模型服务资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 模型服务资源展示名称作为显示，并提供编辑
+	DisplayName *string `json:"displayName,omitempty"`
+	// 模型服务资源描述
+	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息(必填)
+	Endpointinput EndpointInput `json:"endpointinput"`
+	// 模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
+}
+
 // 创建模型的输入
 type CreateModelInput struct {
 	// 模型资源名称（不可同名）
@@ -678,6 +698,32 @@ type KnowledgeBaseMutation struct {
 type KnowledgeBaseQuery struct {
 	GetKnowledgeBase   KnowledgeBase   `json:"getKnowledgeBase"`
 	ListKnowledgeBases PaginatedResult `json:"listKnowledgeBases"`
+}
+
+type Llm struct {
+	ID          *string                `json:"id,omitempty"`
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
+	Labels      map[string]interface{} `json:"labels,omitempty"`
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	Creator     *string                `json:"creator,omitempty"`
+	DisplayName *string                `json:"displayName,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	// LLM供应商类型：
+	// 规则: 分为两类: worker 或者 3rd_party
+	Provider          *string    `json:"provider,omitempty"`
+	Type              *string    `json:"type,omitempty"`
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
+	Status            *string    `json:"status,omitempty"`
+	Message           *string    `json:"message,omitempty"`
+}
+
+func (Llm) IsPageNode() {}
+
+type LLMQuery struct {
+	GetLlm   Llm             `json:"getLLM"`
+	ListLLMs PaginatedResult `json:"listLLMs"`
 }
 
 type ListCommonInput struct {
