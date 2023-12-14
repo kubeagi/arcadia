@@ -20,14 +20,14 @@ import (
 	"io"
 )
 
-// ReadCSV function reads the data in lines from startLine and returns an error if there is an error,
-// you can determine if there is still data by determining if err is io.
-func ReadCSV(o io.Reader, startLine, lines int64) ([][]string, error) {
+// ReadCSV function reads the data in lines from startLine and returns an error if there is an error.
+func ReadCSV(o io.Reader, startLine, lines int64) ([][]string, int64, error) {
 	var (
 		line        []string
 		err         error
-		cur         = int64(0)
-		recordLines = int64(0)
+		cur         int64 = 0
+		recordLines int64 = 0
+		totalLines  int64 = 0
 		result      [][]string
 	)
 
@@ -37,19 +37,20 @@ func ReadCSV(o io.Reader, startLine, lines int64) ([][]string, error) {
 		line, err = csvReader.Read()
 		if err != nil {
 			if err != io.EOF {
-				return nil, err
+				return nil, 0, err
 			}
 			break
 		}
+		totalLines++
 		cur++
 		if cur >= startLine {
 			if recordLines >= lines {
-				break
+				continue
 			}
 			result = append(result, line)
 			recordLines++
 		}
 	}
 
-	return result, err
+	return result, totalLines, err
 }
