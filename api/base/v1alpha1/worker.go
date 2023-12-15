@@ -68,17 +68,32 @@ func (worker Worker) MakeRegistrationModelName() string {
 }
 
 func (worker Worker) PendingCondition() Condition {
+	currCon := worker.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionFalse && currCon.Reason == "Pending" {
+		return currCon
+	}
+	// keep original LastSuccessfulTime if have
+	lastSuccessfulTime := metav1.Now()
+	if currCon.LastSuccessfulTime.IsZero() {
+		lastSuccessfulTime = currCon.LastSuccessfulTime
+	}
 	return Condition{
 		Type:               TypeReady,
 		Status:             corev1.ConditionFalse,
 		Reason:             "Pending",
 		Message:            "Worker is pending",
 		LastTransitionTime: metav1.Now(),
-		LastSuccessfulTime: metav1.Now(),
+		LastSuccessfulTime: lastSuccessfulTime,
 	}
 }
 
 func (worker Worker) ReadyCondition() Condition {
+	currCon := worker.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionTrue && currCon.Reason == "Running" {
+		return currCon
+	}
 	return Condition{
 		Type:               TypeReady,
 		Status:             corev1.ConditionTrue,
@@ -90,13 +105,23 @@ func (worker Worker) ReadyCondition() Condition {
 }
 
 func (worker Worker) ErrorCondition(msg string) Condition {
+	currCon := worker.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionFalse && currCon.Reason == "Error" && currCon.Message == msg {
+		return currCon
+	}
+	// keep original LastSuccessfulTime if have
+	lastSuccessfulTime := metav1.Now()
+	if currCon.LastSuccessfulTime.IsZero() {
+		lastSuccessfulTime = currCon.LastSuccessfulTime
+	}
 	return Condition{
 		Type:               TypeReady,
 		Status:             corev1.ConditionFalse,
 		Reason:             "Error",
 		Message:            msg,
+		LastSuccessfulTime: lastSuccessfulTime,
 		LastTransitionTime: metav1.Now(),
-		LastSuccessfulTime: metav1.Now(),
 	}
 }
 
