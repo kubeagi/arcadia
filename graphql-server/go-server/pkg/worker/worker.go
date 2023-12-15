@@ -36,6 +36,7 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	gqlmodel "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/model"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -75,6 +76,15 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 
 	workerType := string(worker.Type())
 
+	gateway, err := pkgconfig.GetGateway(context.TODO(), nil, c)
+	if err != nil {
+		return nil
+	}
+	api := gateway.ExternalAPIServer
+	if api == "" {
+		api = gateway.APIServer
+	}
+
 	// wrap Worker
 	w := generated.Worker{
 		ID:                &id,
@@ -91,6 +101,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		UpdateTimestamp:   &updateTime,
 		Resources:         resources,
 		ModelTypes:        "unknown",
+		API:               &api,
 	}
 
 	// read worker's models
