@@ -18,9 +18,9 @@ package worker
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -169,6 +169,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 					"app.kubernetes.io/name": worker.SuffixedName(),
 				},
 			},
+			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 		},
 	}
 
@@ -300,8 +301,8 @@ func (worker *PodWorker) Start(ctx context.Context) error {
 	conRunner, _ := runner.(*corev1.Container)
 
 	// initialize deployment
-	deployment := worker.deployment.DeepCopy()
-	deployment.Spec.Template = corev1.PodTemplateSpec{
+	desiredDep := worker.deployment.DeepCopy()
+	desiredDep.Spec.Template = corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"app.kubernetes.io/name": worker.SuffixedName(),
@@ -314,29 +315,40 @@ func (worker *PodWorker) Start(ctx context.Context) error {
 			Volumes:        []corev1.Volume{worker.storage},
 		},
 	}
-	err = controllerutil.SetControllerReference(worker.w, deployment, worker.s)
+	err = controllerutil.SetControllerReference(worker.w, desiredDep, worker.s)
 	if err != nil {
 		return fmt.Errorf("failed to set owner reference with %w", err)
 	}
 
-	currDeployment := &appsv1.Deployment{}
-	err = worker.c.Get(ctx, types.NamespacedName{Namespace: deployment.Namespace, Name: deployment.Name}, currDeployment)
+	currDep := &appsv1.Deployment{}
+	err = worker.c.Get(ctx, types.NamespacedName{Namespace: desiredDep.Namespace, Name: desiredDep.Name}, currDep)
 	switch ActionOnError(err) {
 	case Panic:
 		return err
 	case Update:
-		err = worker.c.Update(ctx, deployment)
+		merged := MakeMergedDeployment(currDep, desiredDep)
+		// Update only when spec changed
+		err = worker.c.Patch(ctx, merged, client.MergeFrom(currDep))
 		if err != nil {
-			return fmt.Errorf("failed to create deployment with %w", err)
+			return errors.Wrap(err, "Failed to update worker")
 		}
+
 	case Create:
-		err = worker.c.Create(ctx, deployment)
+		err = worker.c.Create(ctx, desiredDep)
 		if err != nil {
 			return fmt.Errorf("failed to create deployment with %w", err)
 		}
 	}
 
 	return nil
+}
+
+func MakeMergedDeployment(target *appsv1.Deployment, desired *appsv1.Deployment) *appsv1.Deployment {
+	merged := target.DeepCopy()
+
+	// merge this deployment with desired
+	merged.Spec.Template.Spec = desired.Spec.Template.Spec
+	return merged
 }
 
 // TODO: BeforeStop
@@ -363,7 +375,10 @@ func (worker *PodWorker) State(ctx context.Context) (any, error) {
 	}
 
 	if len(podList.Items) != 1 {
-		return nil, fmt.Errorf("expected 1 but got %d worker pods", len(podList.Items))
+		return &corev1.PodStatus{
+			Phase:   corev1.PodUnknown,
+			Message: fmt.Sprintf("Expected one pod but got %d", len(podList.Items)),
+		}, nil
 	}
 
 	return &podList.Items[0].Status, nil
