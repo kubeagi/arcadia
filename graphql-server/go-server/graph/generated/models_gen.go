@@ -507,6 +507,10 @@ type Embedder struct {
 	Creator     *string                `json:"creator,omitempty"`
 	DisplayName *string                `json:"displayName,omitempty"`
 	Description *string                `json:"description,omitempty"`
+	// 服务地址
+	BaseURL string `json:"baseUrl"`
+	// 此LLM支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 	// Embedder供应商类型：
 	// 规则: 分为两类: worker 或者 3rd_party
 	Provider          *string    `json:"provider,omitempty"`
@@ -709,6 +713,10 @@ type Llm struct {
 	Creator     *string                `json:"creator,omitempty"`
 	DisplayName *string                `json:"displayName,omitempty"`
 	Description *string                `json:"description,omitempty"`
+	// 服务地址
+	BaseURL string `json:"baseUrl"`
+	// 此LLM支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 	// LLM供应商类型：
 	// 规则: 分为两类: worker 或者 3rd_party
 	Provider          *string    `json:"provider,omitempty"`

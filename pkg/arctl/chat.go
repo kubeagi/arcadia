@@ -117,7 +117,7 @@ func NewChatCmd(homePath string) *cobra.Command {
 	}
 
 	// LLM Chat params
-	cmd.PersistentFlags().StringVar(&model, "model", string(zhipuai.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
+	cmd.PersistentFlags().StringVar(&model, "model", string(llms.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
 	cmd.PersistentFlags().StringVar(&method, "method", "sse-invoke", "Invoke method used when access LLM service(invoke/sse-invoke)")
 	cmd.PersistentFlags().Float32Var(&temperature, "temperature", 0.95, "temperature for chat")
 	cmd.PersistentFlags().Float32Var(&topP, "top-p", 0.7, "top-p for chat")
@@ -175,7 +175,7 @@ func Chat(ctx context.Context, similarDocs []schema.Document) error {
 	client := zhipuai.NewZhiPuAI(apiKey)
 
 	params := zhipuai.DefaultModelParams()
-	params.Model = zhipuai.Model(model)
+	params.Model = model
 	params.Method = zhipuai.Method(method)
 	params.Temperature = temperature
 	params.TopP = topP

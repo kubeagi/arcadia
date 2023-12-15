@@ -12,6 +12,8 @@ query listLLMs($input: ListCommonInput!) {
         annotations
         displayName
         description
+        baseUrl
+        models
         provider
         type
         updateTimestamp
@@ -33,9 +35,13 @@ query getLLM($name: String!, $namespace: String!) {
         annotations
         displayName
         description
+        baseUrl
+        models
         provider
         type
         updateTimestamp
+        status
+        message
     }
   }
 }

@@ -77,3 +77,17 @@ func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client, dynamicCl
 	}
 	return datasource.NewOSS(ctx, mgrClient, dynamicClient, endpoint)
 }
+
+// GetAPIServer returns the api server url to access arcadia's worker
+// if external is true,then this func will return the external api server
+func GetAPIServer(ctx context.Context, dynamicClient dynamic.Interface, external bool) (string, error) {
+	gateway, err := config.GetGateway(ctx, nil, dynamicClient)
+	if err != nil {
+		return "", err
+	}
+	api := gateway.APIServer
+	if external {
+		api = gateway.ExternalAPIServer
+	}
+	return api, nil
+}

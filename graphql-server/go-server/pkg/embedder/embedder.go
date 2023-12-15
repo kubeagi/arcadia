@@ -31,10 +31,11 @@ import (
 	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
 	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/graphql-server/go-server/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
+func embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Embedder {
 	embedder := &v1alpha1.Embedder{}
 	if err := utils.UnstructuredToStructured(obj, embedder); err != nil {
 		return &generated.Embedder{}
@@ -51,7 +52,17 @@ func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
 	status := string(condition.Status)
 	message := string(condition.Message)
 
+	// provider type
 	provider := string(embedder.Spec.Provider.GetType())
+
+	// get embedder's api url
+	var baseURL string
+	switch embedder.Spec.Provider.GetType() {
+	case v1alpha1.ProviderTypeWorker:
+		baseURL, _ = common.GetAPIServer(ctx, c, true)
+	case v1alpha1.ProviderType3rdParty:
+		baseURL = embedder.Spec.Enpoint.URL
+	}
 
 	md := generated.Embedder{
 		ID:                &id,
@@ -64,6 +75,8 @@ func embedder2model(obj *unstructured.Unstructured) *generated.Embedder {
 		Description:       &embedder.Spec.Description,
 		Type:              &servicetype,
 		Provider:          &provider,
+		BaseURL:           baseURL,
+		Models:            embedder.GetModelList(),
 		Status:            &status,
 		Message:           &message,
 		UpdateTimestamp:   &updateTime,
@@ -103,7 +116,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 					URL: input.Endpointinput.URL,
 				},
 			},
-			Type: v1alpha1.EmbeddingType(servicetype),
+			Type: embeddings.EmbeddingType(servicetype),
 		},
 	}
 
@@ -148,7 +161,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		}
 	}
 
-	ds := embedder2model(obj)
+	ds := embedder2model(ctx, c, obj)
 	return ds, nil
 }
 
@@ -164,7 +177,7 @@ func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, d
 	if err != nil {
 		return nil, err
 	}
-	ds := embedder2model(updatedObject)
+	ds := embedder2model(ctx, c, updatedObject)
 	return ds, nil
 }
 
@@ -239,7 +252,7 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 		if index < pageStart {
 			continue
 		}
-		m := embedder2model(&u)
+		m := embedder2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
@@ -272,5 +285,5 @@ func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace stri
 	if err != nil {
 		return nil, err
 	}
-	return embedder2model(u), nil
+	return embedder2model(ctx, c, u), nil
 }

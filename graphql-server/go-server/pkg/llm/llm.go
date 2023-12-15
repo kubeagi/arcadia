@@ -32,7 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func unstructured2LLM(obj *unstructured.Unstructured) *generated.Llm {
+func unstructured2LLM(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Llm {
 	llm := &v1alpha1.LLM{}
 	if err := utils.UnstructuredToStructured(obj, llm); err != nil {
 		return &generated.Llm{}
@@ -48,8 +48,16 @@ func unstructured2LLM(obj *unstructured.Unstructured) *generated.Llm {
 	message := string(condition.Message)
 
 	llmType := string(llm.Spec.Type)
-
 	provider := string(llm.Spec.Provider.GetType())
+
+	// get llm's api url
+	var baseURL string
+	switch llm.Spec.Provider.GetType() {
+	case v1alpha1.ProviderTypeWorker:
+		baseURL, _ = common.GetAPIServer(ctx, c, true)
+	case v1alpha1.ProviderType3rdParty:
+		baseURL = llm.Spec.Enpoint.URL
+	}
 
 	md := generated.Llm{
 		ID:                &id,
@@ -64,6 +72,8 @@ func unstructured2LLM(obj *unstructured.Unstructured) *generated.Llm {
 		Status:            &status,
 		Message:           &message,
 		Provider:          &provider,
+		BaseURL:           baseURL,
+		Models:            llm.GetModelList(),
 		UpdateTimestamp:   &updateTime,
 	}
 	return &md
@@ -112,7 +122,7 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 		if index < pageStart {
 			continue
 		}
-		m := unstructured2LLM(&u)
+		m := unstructured2LLM(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
@@ -145,5 +155,5 @@ func ReadLLM(ctx context.Context, c dynamic.Interface, name, namespace string) (
 	if err != nil {
 		return nil, err
 	}
-	return unstructured2LLM(resource), nil
+	return unstructured2LLM(ctx, c, resource), nil
 }

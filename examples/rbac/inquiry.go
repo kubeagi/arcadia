@@ -91,7 +91,7 @@ func Inquiry() *cobra.Command {
 			}
 
 			params := zhipuai.DefaultModelParams()
-			params.Model = zhipuai.Model(model)
+			params.Model = model
 			params.Method = zhipuai.Method(method)
 			params.Prompt = []zhipuai.Prompt{
 				{Role: zhipuai.User, Content: output.String()},

@@ -21,6 +21,8 @@ import (
 
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 func (llm LLM) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
@@ -38,4 +40,34 @@ func (llmStatus LLMStatus) LLMReady() (string, bool) {
 		return "Bad condition", false
 	}
 	return "", true
+}
+
+// GetModelList returns a model list provided by this LLM based on different provider
+func (llm LLM) GetModelList() []string {
+	switch llm.Spec.Provider.GetType() {
+	case ProviderTypeWorker:
+		return llm.GetWorkerModels()
+	case ProviderType3rdParty:
+		return llm.Get3rdPartyModels()
+	}
+	return []string{}
+}
+
+// GetWorkerModels returns a model list which provided by this worker provider
+func (llm LLM) GetWorkerModels() []string {
+	return []string{string(llm.GetUID())}
+}
+
+// Get3rdPartyModels returns a model list which provided by the 3rd party provider
+func (llm LLM) Get3rdPartyModels() []string {
+	if llm.Spec.Provider.GetType() != ProviderType3rdParty {
+		return []string{}
+	}
+	switch llm.Spec.Type {
+	case llms.ZhiPuAI:
+		return llms.ZhiPuAIModels
+	case llms.OpenAI:
+		return llms.OpenAIModels
+	}
+	return []string{}
 }

@@ -226,6 +226,7 @@ type ComplexityRoot struct {
 
 	Embedder struct {
 		Annotations       func(childComplexity int) int
+		BaseURL           func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
@@ -233,6 +234,7 @@ type ComplexityRoot struct {
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
 		Message           func(childComplexity int) int
+		Models            func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Provider          func(childComplexity int) int
@@ -329,6 +331,7 @@ type ComplexityRoot struct {
 
 	LLM struct {
 		Annotations       func(childComplexity int) int
+		BaseURL           func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
@@ -336,6 +339,7 @@ type ComplexityRoot struct {
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
 		Message           func(childComplexity int) int
+		Models            func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Provider          func(childComplexity int) int
@@ -1423,6 +1427,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Embedder.Annotations(childComplexity), true
 
+	case "Embedder.baseUrl":
+		if e.complexity.Embedder.BaseURL == nil {
+			break
+		}
+
+		return e.complexity.Embedder.BaseURL(childComplexity), true
+
 	case "Embedder.creationTimestamp":
 		if e.complexity.Embedder.CreationTimestamp == nil {
 			break
@@ -1471,6 +1482,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Embedder.Message(childComplexity), true
+
+	case "Embedder.models":
+		if e.complexity.Embedder.Models == nil {
+			break
+		}
+
+		return e.complexity.Embedder.Models(childComplexity), true
 
 	case "Embedder.name":
 		if e.complexity.Embedder.Name == nil {
@@ -1988,6 +2006,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LLM.Annotations(childComplexity), true
 
+	case "LLM.baseUrl":
+		if e.complexity.LLM.BaseURL == nil {
+			break
+		}
+
+		return e.complexity.LLM.BaseURL(childComplexity), true
+
 	case "LLM.creationTimestamp":
 		if e.complexity.LLM.CreationTimestamp == nil {
 			break
@@ -2036,6 +2061,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LLM.Message(childComplexity), true
+
+	case "LLM.models":
+		if e.complexity.LLM.Models == nil {
+			break
+		}
+
+		return e.complexity.LLM.Models(childComplexity), true
 
 	case "LLM.name":
 		if e.complexity.LLM.Name == nil {
@@ -3695,6 +3727,17 @@ extend type Query{
     creator: String
     displayName: String
     description: String
+
+    """
+    服务地址
+    """
+    baseUrl: String!
+
+    """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
+    
     """
     Embedder供应商类型：
     规则: 分为两类: worker 或者 3rd_party
@@ -4285,6 +4328,17 @@ input UpdateKnowledgeBaseApplicationInput {
     creator: String
     displayName: String
     description: String
+
+    """
+    服务地址
+    """
+    baseUrl: String!
+
+    """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
+
     """
     LLM供应商类型：
     规则: 分为两类: worker 或者 3rd_party
@@ -10873,6 +10927,91 @@ func (ec *executionContext) fieldContext_Embedder_description(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Embedder_baseUrl(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_baseUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_baseUrl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Embedder_models(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Embedder_models(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Models, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Embedder_models(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Embedder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Embedder_provider(ctx context.Context, field graphql.CollectedField, obj *Embedder) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Embedder_provider(ctx, field)
 	if err != nil {
@@ -11174,6 +11313,10 @@ func (ec *executionContext) fieldContext_EmbedderMutation_createEmbedder(ctx con
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
+			case "baseUrl":
+				return ec.fieldContext_Embedder_baseUrl(ctx, field)
+			case "models":
+				return ec.fieldContext_Embedder_models(ctx, field)
 			case "provider":
 				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
@@ -11259,6 +11402,10 @@ func (ec *executionContext) fieldContext_EmbedderMutation_updateEmbedder(ctx con
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
+			case "baseUrl":
+				return ec.fieldContext_Embedder_baseUrl(ctx, field)
+			case "models":
+				return ec.fieldContext_Embedder_models(ctx, field)
 			case "provider":
 				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
@@ -11396,6 +11543,10 @@ func (ec *executionContext) fieldContext_EmbedderQuery_getEmbedder(ctx context.C
 				return ec.fieldContext_Embedder_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_Embedder_description(ctx, field)
+			case "baseUrl":
+				return ec.fieldContext_Embedder_baseUrl(ctx, field)
+			case "models":
+				return ec.fieldContext_Embedder_models(ctx, field)
 			case "provider":
 				return ec.fieldContext_Embedder_provider(ctx, field)
 			case "type":
@@ -14340,6 +14491,91 @@ func (ec *executionContext) fieldContext_LLM_description(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _LLM_baseUrl(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_baseUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_baseUrl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLM_models(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLM_models(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Models, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLM_models(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LLM_provider(ctx context.Context, field graphql.CollectedField, obj *Llm) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LLM_provider(ctx, field)
 	if err != nil {
@@ -14641,6 +14877,10 @@ func (ec *executionContext) fieldContext_LLMQuery_getLLM(ctx context.Context, fi
 				return ec.fieldContext_LLM_displayName(ctx, field)
 			case "description":
 				return ec.fieldContext_LLM_description(ctx, field)
+			case "baseUrl":
+				return ec.fieldContext_LLM_baseUrl(ctx, field)
+			case "models":
+				return ec.fieldContext_LLM_models(ctx, field)
 			case "provider":
 				return ec.fieldContext_LLM_provider(ctx, field)
 			case "type":
@@ -26723,6 +26963,13 @@ func (ec *executionContext) _Embedder(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Embedder_displayName(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._Embedder_description(ctx, field, obj)
+		case "baseUrl":
+			out.Values[i] = ec._Embedder_baseUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "models":
+			out.Values[i] = ec._Embedder_models(ctx, field, obj)
 		case "provider":
 			out.Values[i] = ec._Embedder_provider(ctx, field, obj)
 		case "type":
@@ -27768,6 +28015,13 @@ func (ec *executionContext) _LLM(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._LLM_displayName(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._LLM_description(ctx, field, obj)
+		case "baseUrl":
+			out.Values[i] = ec._LLM_baseUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "models":
+			out.Values[i] = ec._LLM_models(ctx, field, obj)
 		case "provider":
 			out.Values[i] = ec._LLM_provider(ctx, field, obj)
 		case "type":

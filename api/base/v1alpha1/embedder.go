@@ -21,6 +21,8 @@ import (
 
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeagi/arcadia/pkg/embeddings"
 )
 
 func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
@@ -30,9 +32,33 @@ func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.I
 	return e.Spec.Enpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
 }
 
-type EmbeddingType string
+// GetModelList returns a model list provided by this LLM based on different provider
+func (e Embedder) GetModelList() []string {
+	switch e.Spec.Provider.GetType() {
+	case ProviderTypeWorker:
+		return e.GetWorkerModels()
+	case ProviderType3rdParty:
+		return e.Get3rdPartyModels()
+	}
+	return []string{}
+}
 
-const (
-	OpenAI  EmbeddingType = "openai"
-	ZhiPuAI EmbeddingType = "zhipuai"
-)
+// GetWorkerModels returns a model list which provided by this worker provider
+func (e Embedder) GetWorkerModels() []string {
+	return []string{string(e.GetUID())}
+}
+
+// Get3rdPartyModels returns a model list which provided by the 3rd party provider
+func (e Embedder) Get3rdPartyModels() []string {
+	if e.Spec.Provider.GetType() != ProviderType3rdParty {
+		return []string{}
+	}
+	switch e.Spec.Type {
+	case embeddings.ZhiPuAI:
+		return embeddings.ZhiPuAIModels
+	case embeddings.OpenAI:
+		return embeddings.OpenAIModels
+	}
+
+	return []string{}
+}
