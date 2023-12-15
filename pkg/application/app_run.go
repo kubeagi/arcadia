@@ -21,8 +21,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
+	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
@@ -37,9 +37,9 @@ import (
 
 type Input struct {
 	Question string
-	// History  []schema.ChatMessage
 	// overrideConfig
 	NeedStream bool
+	History    langchaingoschema.ChatMessageHistory
 }
 type Output struct {
 	Answer string
@@ -53,29 +53,35 @@ type Application struct {
 	EndingNode    base.Node
 }
 
-var cache = map[string]*Application{}
+// var cache = map[string]*Application{}
 
-func cacheKey(app *arcadiav1alpha1.Application) string {
-	return app.Namespace + "/" + app.Name
-}
+// func cacheKey(app *arcadiav1alpha1.Application) string {
+//	return app.Namespace + "/" + app.Name
+//}
 
 func NewAppOrGetFromCache(ctx context.Context, app *arcadiav1alpha1.Application, cli dynamic.Interface) (*Application, error) {
 	if app == nil || app.Name == "" || app.Namespace == "" {
 		return nil, errors.New("app has no name or namespace")
 	}
-	a, ok := cache[cacheKey(app)]
-	if !ok {
-		a = &Application{
-			Spec: app.Spec,
-		}
-		cache[cacheKey(app)] = a
-		return a, a.Init(ctx, cli)
+	// TODO: disable cache for now.
+	// https://github.com/kubeagi/arcadia/issues/391
+	// a, ok := cache[cacheKey(app)]
+	// if !ok {
+	//	a = &Application{
+	//		Spec: app.Spec,
+	//	}
+	//	cache[cacheKey(app)] = a
+	//	return a, a.Init(ctx, cli)
+	// }
+	// if reflect.DeepEqual(a.Spec, app.Spec) {
+	//	return a, nil
+	// }
+	a := &Application{
+		Spec:   app.Spec,
+		Inited: false,
 	}
-	if reflect.DeepEqual(a.Spec, app.Spec) {
-		return a, nil
-	}
-	a.Spec = app.Spec
-	a.Inited = false
+	// a.Spec = app.Spec
+	// a.Inited = false
 	return a, a.Init(ctx, cli)
 }
 
@@ -100,10 +106,10 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	for _, node := range a.Spec.Nodes {
 		n, err := InitNode(ctx, node.Name, *node.Ref, cli)
 		if err != nil {
-			return err
+			return fmt.Errorf("initnode %s failed: %v", node.Name, err)
 		}
 		if err := n.Init(ctx, cli, map[string]any{}); err != nil { // TODO arg
-			return err
+			return fmt.Errorf("node %s init failed: %v", node.Name, err)
 		}
 		a.Nodes[node.Name] = n
 		if node.Name == inputNodeName {
@@ -141,8 +147,9 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 
 func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Input) (output Output, outputStream chan string, err error) {
 	out := map[string]any{
-		"question":      input.Question,
-		"answer_stream": make(chan string, 1000),
+		"question":       input.Question,
+		"_answer_stream": make(chan string, 1000),
+		"_history":       input.History,
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
@@ -152,12 +159,12 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 	for e := waitRunningNodes.Front(); e != nil; e = e.Next() {
 		e := e.Value.(base.Node)
 		if !visited[e.Name()] {
-			out["need_stream"] = false
+			out["_need_stream"] = false
 			if a.EndingNode.Name() == e.Name() && input.NeedStream {
-				out["need_stream"] = true
+				out["_need_stream"] = true
 			}
 			if out, err = e.Run(ctx, cli, out); err != nil {
-				return Output{}, nil, err
+				return Output{}, nil, fmt.Errorf("run node %s: %w", e.Name(), err)
 			}
 			visited[e.Name()] = true
 		}
@@ -165,12 +172,12 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 			waitRunningNodes.PushBack(n)
 		}
 	}
-	if a, ok := out["answer"]; ok {
+	if a, ok := out["_answer"]; ok {
 		if answer, ok := a.(string); ok && len(answer) > 0 {
 			output = Output{Answer: answer}
 		}
 	}
-	if a, ok := out["answer_stream"]; ok {
+	if a, ok := out["_answer_stream"]; ok {
 		if answer, ok := a.(chan string); ok && len(answer) > 0 {
 			outputStream = answer
 		}

@@ -49,9 +49,9 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 		switch llm.Spec.Type {
 		case llms.ZhiPuAI:
 			z := zhipuai.NewZhiPuAI(apiKey)
-			return zhipuai.ZhiPuAILLM{ZhiPuAI: *z}, nil
+			return &zhipuai.ZhiPuAILLM{ZhiPuAI: *z, RetryTimes: 3}, nil
 		case llms.OpenAI:
-			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Spec.Enpoint.URL))
+			return openai.NewChat(openai.WithToken(apiKey), openai.WithBaseURL(llm.Spec.Enpoint.URL))
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c, cli)
@@ -86,7 +86,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 			return nil, fmt.Errorf("worker.spec.model not defined")
 		}
 		modelName := worker.MakeRegistrationModelName()
-		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gateway.APIServer), openai.WithToken("fake"))
+		return openai.NewChat(openai.WithModel(modelName), openai.WithBaseURL(gateway.APIServer), openai.WithToken("fake"))
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }

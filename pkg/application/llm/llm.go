@@ -18,6 +18,7 @@ package llm
 
 import (
 	"context"
+	"fmt"
 
 	langchainllms "github.com/tmc/langchaingo/llms"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +48,7 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"}).
 		Namespace(z.Ref.GetNamespace(ns)).Get(ctx, z.Ref.Name, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("cant find the llm in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {

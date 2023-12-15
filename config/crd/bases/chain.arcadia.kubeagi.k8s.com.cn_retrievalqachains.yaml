@@ -109,13 +109,40 @@ spec:
                 - prompt
                 - retriever
                 type: object
+              maxLength:
+                description: MaxLength is the maximum length of the generated text
+                  in a llm call.
+                type: integer
+              maxTokens:
+                default: 512
+                description: MaxTokens is the maximum number of tokens to generate
+                  to use in a llm call.
+                maximum: 4096
+                minimum: 10
+                type: integer
               memory:
-                description: 记忆相关参数
+                description: for memory
                 properties:
+                  conversionWindowSize:
+                    default: 5
+                    description: ConversionWindowSize is the maximum number of conversation
+                      rounds in memory.Can only use MaxTokenLimit or ConversionWindowSize.
+                    maximum: 30
+                    minimum: 0
+                    type: integer
                   maxTokenLimit:
-                    description: 能记住的最大 token 数
+                    description: MaxTokenLimit is the maximum number of tokens to
+                      keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
                     type: integer
                 type: object
+              minLength:
+                description: MinLength is the minimum length of the generated text
+                  in a llm call.
+                type: integer
+              model:
+                description: Model is the model to use in an llm call.like `gpt-3.5-turbo`
+                  or `chatglm_turbo` Usually this value is just empty
+                type: string
               output:
                 properties:
                   apiGroup:
@@ -132,6 +159,33 @@ spec:
                     description: Name is the name of resource being referenced
                     type: string
                 type: object
+              repetitionPenalty:
+                description: RepetitionPenalty is the repetition penalty for sampling
+                  in a llm call.
+                type: number
+              seed:
+                description: Seed is a seed for deterministic sampling in a llm call.
+                type: integer
+              stopWords:
+                description: StopWords is a list of words to stop on to use in a llm
+                  call.
+                items:
+                  type: string
+                type: array
+              temperature:
+                description: Temperature is the temperature for sampling to use in
+                  a llm call, between 0 and 1.
+                maximum: 1
+                minimum: 0
+                type: number
+              topK:
+                description: TopK is the number of tokens to consider for top-k sampling
+                  in a llm call.
+                type: integer
+              topP:
+                description: TopP is the cumulative probability for top-p sampling
+                  in a llm call.
+                type: number
             required:
             - input
             - output

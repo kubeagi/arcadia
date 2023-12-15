@@ -171,6 +171,41 @@ function waitCRDStatusReady() {
 	done
 }
 
+function getRespInAppChat() {
+	appname=$1
+	namespace=$2
+	query=$3
+	conversionID=$4
+	testStream=$5
+	START_TIME=$(date +%s)
+	while true; do
+		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversionID "$conversionID" '{"query":$query,"response_mode":"blocking","conversion_id":$conversionID,"app_name":$appname, "app_namespace":$namespace}')
+		resp=$(curl -s -XPOST http://127.0.0.1:8081/chat --data "$data")
+		ai_data=$(echo $resp | jq -r '.message')
+		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
+			echo $resp
+			exit 1
+		fi
+		echo "👤: ${query}"
+		echo "🤖: ${ai_data}"
+		resp_conversion_id=$(echo $resp | jq -r '.conversion_id')
+
+		if [ $testStream == "true" ]; then
+			info "just test stream mode"
+			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversionID "$conversionID" '{"query":$query,"response_mode":"streaming","conversion_id":$conversionID,"app_name":$appname, "app_namespace":$namespace}')
+			curl -s -XPOST http://127.0.0.1:8081/chat --data "$data"
+		fi
+		break
+		CURRENT_TIME=$(date +%s)
+		ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+		if [ $ELAPSED_TIME -gt $TimeoutSeconds ]; then
+			error "Timeout reached"
+			exit 1
+		fi
+		sleep 5
+	done
+}
+
 info "1. create kind cluster"
 make kind
 
@@ -249,22 +284,43 @@ else
 	exit 1
 fi
 
-info "8 validation：simple app of llmchain can work normally"
+info "8 validate simple app can work normally"
+info "8.1 app of llmchain"
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
 kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
 portal_pid=$!
 info "port-forward portal in pid: $portal_pid"
 sleep 3
-curl -XPOST http://127.0.0.1:8081/chat --data '{"query":"hi, how are you?","response_mode":"blocking","conversion_id":"","app_name":"base-chat-english-teacher", "app_namespace":"arcadia"}' | jq -e '.message'
+getRespInAppChat "base-chat-english-teacher" "arcadia" "hi how are you?" "" "true"
 
-info "9 validation：QA app using knowledgebase can work normally"
+info "8.2 QA app using knowledgebase"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
-curl -XPOST http://127.0.0.1:8081/chat --data '{"query":"旷工最小计算单位为多少天？","response_mode":"blocking","conversion_id":"","app_name":"base-chat-with-knowledgebase", "app_namespace":"arcadia"}' | jq -e '.message'
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
 
-info "10 show apiserver logs for debug"
+info "8.3 conversion chat app"
+kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot"
+sleep 3
+getRespInAppChat "base-chat-with-bot" "arcadia" "Hi I am Jim" "" "false"
+getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversion_id} "false"
+if [[ $resp != *"Jim"* ]]; then
+	echo "Because conversionWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
+	exit 1
+fi
+# There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
+#getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversion_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversion_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "When was the model you used released?" ${resp_conversion_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversion_id} "false"
+#if [[ $resp == *"Jim"* ]]; then
+#	echo "Because conversionWindowSize is enabled to be 2, and current is the 6th conversion, llm should not record My name, but resp:"$resp "still contains Jim"
+#	exit 1
+#fi
+
+info "9. show apiserver logs for debug"
 kubectl logs --tail=100 -n arcadia -l app=arcadia-apiserver >/tmp/apiserver.log
 cat /tmp/apiserver.log
 

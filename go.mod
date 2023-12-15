@@ -161,3 +161,5 @@ require (
 )
 
 replace github.com/amikos-tech/chroma-go => github.com/bjwswang/chroma-go v0.0.0-20231011091545-0041221c9bb3
+
+replace github.com/tmc/langchaingo => github.com/Abirdcfly/langchaingo v0.0.0-20231215064216-74b306119ffa // TODO remove this replace after https://github.com/tmc/langchaingo/pull/411 is merged

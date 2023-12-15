@@ -86,7 +86,7 @@ jobs:
         run: tests/example-test.sh
       - name: Upload logs if test fail
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}-${{ matrix.no }}.logs
           path: ${{ env.LOG_DIR }}

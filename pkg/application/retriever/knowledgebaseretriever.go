@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
@@ -39,6 +40,7 @@ import (
 type KnowledgeBaseRetriever struct {
 	langchaingoschema.Retriever
 	base.BaseNode
+	DocNullReturn string
 }
 
 func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli dynamic.Interface) (*KnowledgeBaseRetriever, error) {
@@ -47,7 +49,7 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
 		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cant find the retriever in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
@@ -107,11 +109,10 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 		if err != nil {
 			return nil, err
 		}
-		// TODO: allow to configure how many relevant documents should be returned
-		// and the threshold of similiarity(0-1), use 5 and 0.3 by default for now
 		return &KnowledgeBaseRetriever{
-			vectorstores.ToRetriever(s, 5, vectorstores.WithScoreThreshold(0.3)),
+			vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold)),
 			baseNode,
+			instance.Spec.DocNullReturn,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown vectorstore type: %s", vectorStore.Spec.Type())
@@ -126,14 +127,26 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, _ dynamic.Interface, a
 // KnowledgeBaseStuffDocuments is similar to chains.StuffDocuments but with new joinDocuments method
 type KnowledgeBaseStuffDocuments struct {
 	chains.StuffDocuments
+	isDocNullReturn bool
+	DocNullReturn   string
+	callbacks.SimpleHandler
 }
 
 var _ chains.Chain = KnowledgeBaseStuffDocuments{}
+var _ callbacks.Handler = KnowledgeBaseStuffDocuments{}
 
-func (c KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Document) string {
+func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Document) string {
 	var text string
 	docLen := len(docs)
 	for k, doc := range docs {
+		klog.Infof("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %v\n", k, doc.PageContent, doc.Score)
+		for key, v := range doc.Metadata {
+			if str, ok := v.([]byte); ok {
+				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %s\n", k, key, string(str))
+			} else {
+				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v)
+			}
+		}
 		answer := doc.Metadata["a"]
 		answerBytes, _ := answer.([]byte)
 		text += doc.PageContent
@@ -144,13 +157,17 @@ func (c KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Docu
 			text += c.Separator
 		}
 	}
-	klog.Infof("get related text: %s\n", text)
+	klog.Infof("KnowledgeBaseRetriever: finally get related text: %s\n", text)
+	if len(text) == 0 {
+		c.isDocNullReturn = true
+	}
 	return text
 }
 
-func NewStuffDocuments(llmChain *chains.LLMChain) KnowledgeBaseStuffDocuments {
+func NewStuffDocuments(llmChain *chains.LLMChain, docNullReturn string) KnowledgeBaseStuffDocuments {
 	return KnowledgeBaseStuffDocuments{
 		StuffDocuments: chains.NewStuffDocuments(llmChain),
+		DocNullReturn:  docNullReturn,
 	}
 }
 
@@ -179,4 +196,12 @@ func (c KnowledgeBaseStuffDocuments) GetInputKeys() []string {
 
 func (c KnowledgeBaseStuffDocuments) GetOutputKeys() []string {
 	return c.StuffDocuments.GetOutputKeys()
+}
+
+func (c KnowledgeBaseStuffDocuments) HandleChainEnd(_ context.Context, outputValues map[string]any) {
+	if !c.isDocNullReturn {
+		return
+	}
+	klog.Infof("raw llmChain output: %s, but there is no doc return, so set output to %s\n", outputValues[c.LLMChain.OutputKey], c.DocNullReturn)
+	outputValues[c.LLMChain.OutputKey] = c.DocNullReturn
 }

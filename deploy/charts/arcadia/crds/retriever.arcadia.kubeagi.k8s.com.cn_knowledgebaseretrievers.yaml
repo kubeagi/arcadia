@@ -45,6 +45,11 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              docNullReturn:
+                default: 未找到您询问的内容，请详细描述您的问题
+                description: DocNullReturn is the return statement when the query
+                  result is empty from the retriever.
+                type: string
               input:
                 properties:
                   apiGroup:
@@ -66,6 +71,12 @@ spec:
                 - apiGroup
                 - kind
                 type: object
+              numDocuments:
+                default: 5
+                description: NumDocuments is the max number of documents to return.
+                maximum: 10
+                minimum: 1
+                type: integer
               output:
                 properties:
                   apiGroup:
@@ -82,6 +93,13 @@ spec:
                     description: Name is the name of resource being referenced
                     type: string
                 type: object
+              scoreThreshold:
+                default: 0.7
+                description: ScoreThreshold is the cosine distance float score threshold.
+                  Lower score represents more similarity.
+                maximum: 1
+                minimum: 0
+                type: number
             type: object
           status:
             description: KnowledgeBaseRetrieverStatus defines the observed state of
