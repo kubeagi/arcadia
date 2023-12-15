@@ -36,15 +36,6 @@ const (
 	RetryLimit                 = 3
 )
 
-type Model string
-
-const (
-	ZhiPuAILite      Model = "chatglm_lite"
-	ZhiPuAIStd       Model = "chatglm_std"
-	ZhiPuAIPro       Model = "chatglm_pro"
-	ZhiPuAIEmbedding Model = "text_embedding"
-)
-
 type Method string
 
 const (
@@ -56,7 +47,7 @@ const (
 	ZhiPuAIAsyncGet Method = "async-get"
 )
 
-func BuildAPIURL(model Model, method Method) string {
+func BuildAPIURL(model string, method Method) string {
 	return fmt.Sprintf("%s/%s/%s", ZhipuaiModelAPIURL, model, method)
 }
 
@@ -142,7 +133,7 @@ func (z *ZhiPuAI) SSEInvoke(params ModelParams, handler func(*sse.Event)) error 
 }
 
 func (z *ZhiPuAI) Validate() (llms.Response, error) {
-	url := BuildAPIURL(ZhiPuAILite, ZhiPuAIInvoke)
+	url := BuildAPIURL(llms.ZhiPuAILite, ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {
 		return nil, err
@@ -157,7 +148,7 @@ func (z *ZhiPuAI) Validate() (llms.Response, error) {
 
 	testParam := ModelParams{
 		Method:      ZhiPuAIAsyncInvoke,
-		Model:       ZhiPuAILite,
+		Model:       llms.ZhiPuAILite,
 		Temperature: 0.95,
 		TopP:        0.7,
 		Prompt:      testPrompt,
@@ -172,7 +163,7 @@ func (z *ZhiPuAI) Validate() (llms.Response, error) {
 }
 
 func (z *ZhiPuAI) Embedding(text EmbeddingText) (*EmbeddingResponse, error) {
-	url := BuildAPIURL(ZhiPuAIEmbedding, ZhiPuAIInvoke)
+	url := BuildAPIURL("text_embedding", ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {
 		return nil, err
@@ -189,7 +180,7 @@ func (z *ZhiPuAI) Embedding(text EmbeddingText) (*EmbeddingResponse, error) {
 // CreateEmbedding do batch embedding
 // To compatible with langchaingo/llms
 func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float32, error) {
-	url := BuildAPIURL(ZhiPuAIEmbedding, ZhiPuAIInvoke)
+	url := BuildAPIURL("text_embedding", ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {
 		return nil, err

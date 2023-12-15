@@ -31,6 +31,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/embeddings"
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -43,7 +44,7 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 	switch e.Spec.Provider.GetType() {
 	case v1alpha1.ProviderType3rdParty:
 		switch e.Spec.Type { // nolint: gocritic
-		case v1alpha1.ZhiPuAI:
+		case embeddings.ZhiPuAI:
 			apiKey, err := e.AuthAPIKey(ctx, c, cli)
 			if err != nil {
 				return nil, err

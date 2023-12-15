@@ -41,7 +41,7 @@ type ModelParams struct {
 	Method Method `json:"method,omitempty"`
 
 	// Model used for this prompt call
-	Model Model `json:"model,omitempty"`
+	Model string `json:"model,omitempty"`
 
 	// Temperature is float in zhipuai
 	Temperature float32 `json:"temperature,omitempty"`
@@ -68,7 +68,7 @@ func DefaultModelParams() ModelParams {
 	// TODO: should allow user to configure the temperature and top_p of inference
 	// use 0.8 and 0.7 for now
 	return ModelParams{
-		Model:       ZhiPuAILite,
+		Model:       llms.ZhiPuAILite,
 		Method:      ZhiPuAIInvoke,
 		Temperature: 0.8, // more accurate?
 		TopP:        0.7,

@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
@@ -138,7 +139,7 @@ func (worker Worker) BuildEmbedder() *Embedder {
 				DisplayName: worker.Spec.Model.Name,
 				Description: "Embedder created by Worker(OpenAI compatible)",
 			},
-			Type: OpenAI,
+			Type: embeddings.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
 					Kind:      "Worker",

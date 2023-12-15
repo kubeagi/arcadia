@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kubeagi/arcadia/pkg/embeddings"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -28,7 +30,7 @@ type EmbedderSpec struct {
 	CommonSpec `json:",inline"`
 
 	// ServiceType indicates the source type of embedding service
-	Type EmbeddingType `json:"type"`
+	Type embeddings.EmbeddingType `json:"type"`
 
 	// Provider defines the provider info which provide this embedder service
 	Provider `json:"provider,omitempty"`

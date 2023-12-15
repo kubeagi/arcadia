@@ -32,6 +32,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
+	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
 )
@@ -112,7 +113,7 @@ func QueryHandler(c *fiber.Ctx) error {
 
 	params := zhipuai.ModelParams{
 		Method:      zhipuai.ZhiPuAIInvoke,
-		Model:       zhipuai.ZhiPuAIPro,
+		Model:       llms.ZhiPuAIPro,
 		Temperature: 0.5,
 		TopP:        0.7,
 		Prompt:      prompt,
@@ -219,7 +220,7 @@ func StreamQueryHandler(c *fiber.Ctx) error {
 
 	params := zhipuai.ModelParams{
 		Method:      zhipuai.ZhiPuAISSEInvoke,
-		Model:       zhipuai.ZhiPuAIPro,
+		Model:       llms.ZhiPuAIPro,
 		Temperature: 0.5,
 		TopP:        0.7,
 		Prompt:      prompt,

@@ -27,6 +27,16 @@ const (
 	Unknown   LLMType = "unknown"
 )
 
+var OpenAIModels = []string{"gpt-3.5", "gpt-3.5-turbo"}
+
+var (
+	ZhiPuAILite  string = "chatglm_lite"
+	ZhiPuAIStd   string = "chatglm_std"
+	ZhiPuAIPro   string = "chatglm_pro"
+	ZhiPuAITurbo string = "chatglm_turbo"
+)
+var ZhiPuAIModels = []string{ZhiPuAILite, ZhiPuAIStd, ZhiPuAIPro, ZhiPuAITurbo}
+
 type LLM interface {
 	Type() LLMType
 	Call([]byte) (Response, error)

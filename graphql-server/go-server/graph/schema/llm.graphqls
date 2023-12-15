@@ -7,6 +7,17 @@ type LLM {
     creator: String
     displayName: String
     description: String
+
+    """
+    服务地址
+    """
+    baseUrl: String!
+
+    """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
+
     """
     LLM供应商类型：
     规则: 分为两类: worker 或者 3rd_party

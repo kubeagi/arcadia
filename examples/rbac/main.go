@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
+	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +34,7 @@ func NewCmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "apiKey to access LLM service")
-	cmd.PersistentFlags().StringVar(&model, "model", string(zhipuai.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
+	cmd.PersistentFlags().StringVar(&model, "model", string(llms.ZhiPuAILite), "which model to use: chatglm_lite/chatglm_std/chatglm_pro")
 	cmd.PersistentFlags().StringVar(&method, "method", "sse-invoke", "Invoke method used when access LLM service(invoke/sse-invoke)")
 
 	cmd.MarkPersistentFlagRequired("apiKey")
