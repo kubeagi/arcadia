@@ -268,7 +268,8 @@ type DataProcessConfigChildren struct {
 }
 
 type DataProcessConfigItem struct {
-	Type string `json:"type"`
+	Type      string         `json:"type"`
+	LlmConfig *LLMConfigItem `json:"llm_config,omitempty"`
 }
 
 type DataProcessConfigpreView struct {
@@ -728,6 +729,14 @@ type Llm struct {
 }
 
 func (Llm) IsPageNode() {}
+
+type LLMConfigItem struct {
+	Name        *string `json:"name,omitempty"`
+	Namespace   *string `json:"namespace,omitempty"`
+	Model       *string `json:"model,omitempty"`
+	Temperature *string `json:"temperature,omitempty"`
+	TopK        *string `json:"top_k,omitempty"`
+}
 
 type LLMQuery struct {
 	GetLlm   Llm             `json:"getLLM"`
