@@ -25,6 +25,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
@@ -90,4 +91,48 @@ func GetAPIServer(ctx context.Context, dynamicClient dynamic.Interface, external
 		api = gateway.ExternalAPIServer
 	}
 	return api, nil
+}
+
+// GetObjStatus is used to calculate the state of the resource, unified management,
+// in general, a resource will only record its own state,
+// then the state calculation of this resource, should be written to this function.
+// But for some special resources. For example, VersionedDataset,
+// he needs to calculate multiple states, it is not suitable for this function.
+func GetObjStatus(obj client.Object) string {
+	if obj == nil {
+		return ""
+	}
+	if obj.GetDeletionTimestamp() != nil {
+		return "Deleting"
+	}
+
+	var (
+		condition v1alpha1.Condition
+	)
+	switch obj.GetObjectKind().GroupVersionKind().Kind {
+	case "Datasource":
+		v := obj.(*v1alpha1.Datasource)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+	case "Embedder":
+		v := obj.(*v1alpha1.Embedder)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+	case "KnowledgeBase":
+		v := obj.(*v1alpha1.KnowledgeBase)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+	case "LLM":
+		v := obj.(*v1alpha1.LLM)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+	case "Model":
+		v := obj.(*v1alpha1.Model)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+	case "Worker":
+		// Worker can better represent the state of resources through Reason.
+		v := obj.(*v1alpha1.Worker)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
+		return string(condition.Reason)
+	default:
+		return ""
+	}
+
+	return string(condition.Status)
 }

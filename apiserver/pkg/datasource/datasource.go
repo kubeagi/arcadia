@@ -53,8 +53,8 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 	// conditioned status
 	condition := datasource.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-	status := string(condition.Status)
 	message := string(condition.Message)
+	status := common.GetObjStatus(datasource)
 
 	// parse endpoint
 	endpoint := generated.Endpoint{

@@ -58,7 +58,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	updateTime := condition.LastTransitionTime.Time
 
 	// Unknown,Pending ,Running ,Error
-	status := string(condition.Reason)
+	status := common.GetObjStatus(worker)
 
 	// resources
 	cpu := worker.Spec.Resources.Limits[v1.ResourceCPU]

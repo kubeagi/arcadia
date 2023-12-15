@@ -44,7 +44,7 @@ func unstructured2LLM(ctx context.Context, c dynamic.Interface, obj *unstructure
 	// conditioned status
 	condition := llm.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-	status := string(condition.Status)
+	status := common.GetObjStatus(llm)
 	message := string(condition.Message)
 
 	llmType := string(llm.Spec.Type)
