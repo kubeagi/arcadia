@@ -20,37 +20,54 @@ import (
 	"io"
 )
 
-// ReadCSV function reads the data in lines from startLine and returns an error if there is an error.
-func ReadCSV(o io.Reader, startLine, lines int64) ([][]string, int64, error) {
-	var (
-		line        []string
-		err         error
-		cur         int64 = 0
-		recordLines int64 = 0
-		totalLines  int64 = 0
-		result      [][]string
-	)
+type ReadCSVResult struct {
+	Rows  [][]string `json:"rows"`
+	Total int64      `json:"total"`
+}
 
+// ReadCSV Reads the contents of a csv file by lines according to startLine and lines,
+// if cacheLines=0 then the total number of lines in the file will be counted,
+// otherwise the total number of lines in the file will not be counted and the speedup function returns.
+func ReadCSV(o io.Reader, startLine, lines, cachedTotalLines int64) (ReadCSVResult, error) {
+	result := ReadCSVResult{}
+	var (
+		line []string
+		cur  int64 = 0
+		err  error
+	)
 	csvReader := csv.NewReader(o)
 
 	for {
 		line, err = csvReader.Read()
 		if err != nil {
 			if err != io.EOF {
-				return nil, 0, err
+				result.Rows = nil
+				result.Total = 0
 			}
 			break
 		}
-		totalLines++
+
+		result.Total++
 		cur++
-		if cur >= startLine {
-			if recordLines >= lines {
-				continue
-			}
-			result = append(result, line)
-			recordLines++
+
+		if cur < startLine {
+			continue
 		}
+
+		// If the target number of rows has already been read,
+		// determine whether to continue execution or jump out of the loop based on whether all rows have been read.
+		if cur >= startLine+lines {
+			if cachedTotalLines != 0 {
+				break
+			}
+			continue
+		}
+
+		result.Rows = append(result.Rows, line)
 	}
 
-	return result, totalLines, err
+	if cachedTotalLines != 0 {
+		result.Total = cachedTotalLines
+	}
+	return result, err
 }
