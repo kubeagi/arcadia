@@ -55,6 +55,16 @@ input FileItem {
 # 数据处理配置条目
 input DataProcessConfigItem {
   type: String!
+  llm_config: LLMConfigItem
+}
+
+# LLM for 数据处理配置条目 
+input LLMConfigItem {
+  name: String
+  namespace: String
+  model: String
+  temperature: String
+  top_k: String
 }
 
 input DeleteDataProcessInput {

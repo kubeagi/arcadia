@@ -3037,6 +3037,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFileFilter,
 		ec.unmarshalInputFileGroup,
 		ec.unmarshalInputFileItem,
+		ec.unmarshalInputLLMConfigItem,
 		ec.unmarshalInputListCommonInput,
 		ec.unmarshalInputListDatasetInput,
 		ec.unmarshalInputListKnowledgeBaseInput,
@@ -3209,6 +3210,16 @@ input FileItem {
 # 数据处理配置条目
 input DataProcessConfigItem {
   type: String!
+  llm_config: LLMConfigItem
+}
+
+# LLM for 数据处理配置条目 
+input LLMConfigItem {
+  name: String
+  namespace: String
+  model: String
+  temperature: String
+  top_k: String
 }
 
 input DeleteDataProcessInput {
@@ -23476,7 +23487,7 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"type"}
+	fieldsInOrder := [...]string{"type", "llm_config"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23492,6 +23503,15 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 				return it, err
 			}
 			it.Type = data
+		case "llm_config":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llm_config"))
+			data, err := ec.unmarshalOLLMConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLLMConfigItem(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmConfig = data
 		}
 	}
 
@@ -23832,6 +23852,71 @@ func (ec *executionContext) unmarshalInputFileItem(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLLMConfigItem(ctx context.Context, obj interface{}) (LLMConfigItem, error) {
+	var it LLMConfigItem
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "model", "temperature", "top_k"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "model":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("model"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Model = data
+		case "temperature":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("temperature"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Temperature = data
+		case "top_k":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("top_k"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopK = data
 		}
 	}
 
@@ -31527,6 +31612,14 @@ func (ec *executionContext) marshalOKnowledgeBaseQuery2ᚖgithubᚗcomᚋkubeagi
 		return graphql.Null
 	}
 	return ec._KnowledgeBaseQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOLLMConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLLMConfigItem(ctx context.Context, v interface{}) (*LLMConfigItem, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLLMConfigItem(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOLLMQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋgraphqlᚑserverᚋgoᚑserverᚋgraphᚋgeneratedᚐLLMQuery(ctx context.Context, sel ast.SelectionSet, v *LLMQuery) graphql.Marshaler {

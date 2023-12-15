@@ -13,32 +13,56 @@ import (
 
 // CreateDataProcessTask is the resolver for the createDataProcessTask field.
 func (r *dataProcessMutationResolver) CreateDataProcessTask(ctx context.Context, obj *generated.DataProcessMutation, input *generated.AddDataProcessInput) (*generated.DataProcessResponse, error) {
-	return dataprocessing.CreateDataProcessTask(ctx, obj, input)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.CreateDataProcessTask(ctx, c, obj, input)
 }
 
 // DeleteDataProcessTask is the resolver for the deleteDataProcessTask field.
 func (r *dataProcessMutationResolver) DeleteDataProcessTask(ctx context.Context, obj *generated.DataProcessMutation, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
-	return dataprocessing.DeleteDataProcessTask(ctx, obj, input)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.DeleteDataProcessTask(ctx, c, obj, input)
 }
 
 // AllDataProcessListByPage is the resolver for the allDataProcessListByPage field.
 func (r *dataProcessQueryResolver) AllDataProcessListByPage(ctx context.Context, obj *generated.DataProcessQuery, input *generated.AllDataProcessListByPageInput) (*generated.PaginatedDataProcessItem, error) {
-	return dataprocessing.ListDataprocessing(ctx, obj, input)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.ListDataprocessing(ctx, c, obj, input)
 }
 
 // AllDataProcessListByCount is the resolver for the allDataProcessListByCount field.
 func (r *dataProcessQueryResolver) AllDataProcessListByCount(ctx context.Context, obj *generated.DataProcessQuery, input *generated.AllDataProcessListByCountInput) (*generated.CountDataProcessItem, error) {
-	return dataprocessing.ListDataprocessingByCount(ctx, obj, input)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.ListDataprocessingByCount(ctx, c, obj, input)
 }
 
 // DataProcessSupportType is the resolver for the dataProcessSupportType field.
 func (r *dataProcessQueryResolver) DataProcessSupportType(ctx context.Context, obj *generated.DataProcessQuery) (*generated.DataProcessSupportType, error) {
-	return dataprocessing.DataProcessSupportType(ctx, obj)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.DataProcessSupportType(ctx, c, obj)
 }
 
 // DataProcessDetails is the resolver for the dataProcessDetails field.
 func (r *dataProcessQueryResolver) DataProcessDetails(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessDetails, error) {
-	return dataprocessing.DataProcessDetails(ctx, obj, input)
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.DataProcessDetails(ctx, c, obj, input)
 }
 
 // DataProcess is the resolver for the dataProcess field.
