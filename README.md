@@ -27,7 +27,7 @@ Furthermore,we can easily host **Arcadia** at any kubernetes cluster as producti
 
 Our design and development in Arcadia design follows operator pattern which extends kubernetes APIs.
 
-![Arch](./docs/images//kubeagi.drawio.png)
+![Arch](./docs/images/kubeagi.drawio.png)
 
 ## Quick Start
 

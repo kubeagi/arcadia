@@ -146,13 +146,6 @@ func main() {
 		panic(err)
 	}
 
-	if err = (&controllers.LaboratoryReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Laboratory")
-		os.Exit(1)
-	}
 	if err = (&controllers.LLMReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

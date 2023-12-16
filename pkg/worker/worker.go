@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -130,6 +131,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		return nil, err
 	}
 	if !m.Status.IsReady() {
+		klog.Errorf("%s/%s model is not ready", m.Namespace, m.Name)
 		return nil, ErrModelNotReady
 	}
 	worker.m = m
