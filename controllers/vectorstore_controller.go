@@ -18,10 +18,12 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -52,6 +54,7 @@ type VectorStoreReconciler struct {
 func (r *VectorStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(5).Info("Start VectorStore Reconcile")
+
 	vs := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, req.NamespacedName, vs); err != nil {
 		// There's no need to requeue if the resource no longer exists.
@@ -123,6 +126,7 @@ func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.L
 			chroma.WithDistanceFunction(vs.Spec.Chroma.DistanceFunction),
 		)
 		if err != nil {
+			klog.Errorln("failed to connect to vectorstore", err)
 			r.setCondition(vs, vs.ErrorCondition(err.Error()))
 		} else {
 			r.setCondition(vs, vs.ReadyCondition())
@@ -130,7 +134,6 @@ func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.L
 	default:
 		r.setCondition(vs, vs.ErrorCondition("unsupported vectorstore type"))
 	}
-
 	return r.patchStatus(ctx, vs)
 }
 func (r *VectorStoreReconciler) setCondition(vs *arcadiav1alpha1.VectorStore, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.VectorStore {
@@ -142,6 +145,10 @@ func (r *VectorStoreReconciler) patchStatus(ctx context.Context, vs *arcadiav1al
 	latest := &arcadiav1alpha1.VectorStore{}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(vs), latest); err != nil {
 		return err
+	}
+	// No need to patch if status is the same
+	if reflect.DeepEqual(vs.Status, latest.Status) {
+		return nil
 	}
 	patch := client.MergeFrom(latest.DeepCopy())
 	latest.Status = vs.Status

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+# TODO: NOT used for now
 def get_default_prompt_template():
     prompt_template = """
         {text}

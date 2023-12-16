@@ -45,7 +45,14 @@ func (e Embedder) GetModelList() []string {
 
 // GetWorkerModels returns a model list which provided by this worker provider
 func (e Embedder) GetWorkerModels() []string {
-	return []string{string(e.GetUID())}
+	// Get the worker's uid from owner reference as the model id
+	ownerObj := e.GetOwnerReferences()
+	if len(ownerObj) > 0 {
+		if ownerObj[0].Kind == "Worker" {
+			return []string{string(ownerObj[0].UID)}
+		}
+	}
+	return []string{}
 }
 
 // Get3rdPartyModels returns a model list which provided by the 3rd party provider

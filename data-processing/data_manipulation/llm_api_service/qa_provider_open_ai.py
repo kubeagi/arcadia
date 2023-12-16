@@ -90,7 +90,8 @@ class QAProviderOpenAI(BaseQAProvider):
                     ]))
                     break
                 else:
-                    time.sleep(2) # sleep 2 seconds
+                    logger.warn('failed to get QA list, wait for 2 seconds and retry')
+                    time.sleep(5) # sleep 5 seconds
                 invoke_count += 1
             except Exception as ex:
                 result = []
@@ -98,7 +99,7 @@ class QAProviderOpenAI(BaseQAProvider):
                     f"{log_tag_const.OPEN_AI} Cannot access the open ai service.\n",
                     f"The tracing error is: \n{traceback.format_exc()}\n"
                 ]))
-                time.sleep(2)
+                time.sleep(5)
         
         return result
 
