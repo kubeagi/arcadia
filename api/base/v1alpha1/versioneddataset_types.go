@@ -36,6 +36,7 @@ type VersionedDatasetSpec struct {
 	Dataset *TypedObjectReference `json:"dataset"`
 
 	// Version
+	// +kubebuilder:validation:Pattern=^v\d+$
 	Version string `json:"version"`
 
 	// FileGroups included in this `VersionedDataset`

@@ -120,6 +120,7 @@ spec:
                 type: integer
               version:
                 description: Version
+                pattern: ^v\d+$
                 type: string
             required:
             - dataset
