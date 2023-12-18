@@ -40,6 +40,10 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
+const (
+	readmeLower = "readme.md"
+)
+
 func obj2model(obj *unstructured.Unstructured) *generated.Model {
 	model := &v1alpha1.Model{}
 	if err := utils.UnstructuredToStructured(obj, model); err != nil {
@@ -304,6 +308,11 @@ func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace s
 	}
 	objectInfoList := anyObjectInfoList.([]miniogo.ObjectInfo)
 	sort.Slice(objectInfoList, func(i, j int) bool {
+		// make the readme file top.
+		isReadme := strings.ToLower(objectInfoList[i].Key)
+		if strings.HasSuffix(isReadme, readmeLower) {
+			return true
+		}
 		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
 	})
 
