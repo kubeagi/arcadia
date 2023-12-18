@@ -15,7 +15,7 @@ spec:
     spec:
       serviceAccountName: {{ .Release.Name }}
       containers:
-        - name: graphql-server
+        - name: apiserver
           image: {{ .Values.apiserver.image }}
           ports:
             - containerPort: {{ .Values.apiserver.port }}
@@ -33,7 +33,7 @@ spec:
             - name: DEFAULT_CONFIG
               value: {{ .Release.Name }}-config
           command:
-            - "./graphql-server"
+            - "./apiserver"
           args:
             - "--enable-playground={{ .Values.apiserver.enableplayground }}"
             - "--port={{ .Values.apiserver.port }}"

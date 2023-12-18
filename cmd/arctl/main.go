@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/client"
+	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	arctlPkg "github.com/kubeagi/arcadia/pkg/arctl"
 )
 

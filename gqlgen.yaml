@@ -1,10 +1,10 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - graphql-server/go-server/graph/schema/*.graphqls
+  - apiserver/graph/schema/*.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: graphql-server/go-server/graph/generated/generated.go
+  filename: apiserver/graph/generated/generated.go
   package: generated
 
 # Uncomment to enable federation
@@ -14,13 +14,13 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: graphql-server/go-server/graph/generated/models_gen.go
+  filename: apiserver/graph/generated/models_gen.go
   package: generated
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: graphql-server/go-server/graph/impl
+  dir: apiserver/graph/impl
   package: impl
   filename_template: "{name}.resolvers.go"
   # Optional: turn on to not generate template comments above resolvers

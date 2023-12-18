@@ -3,7 +3,7 @@ import requests
 import os
 
 with st.sidebar:
-    server_url = st.text_input("服务 graphql-server/go-server 请求地址, 默认为 http://arcadia-apiserver.kubeagi-system.svc:8081/chat", key="url")
+    server_url = st.text_input("服务 apiserver 请求地址, 默认为 http://arcadia-apiserver.kubeagi-system.svc:8081/chat", key="url")
     conversion_id = st.text_input("如果想继续的话，可以输入上次的conversion_id，留空表示新对话", key="conversion_id")
 
 st.title("💬 Chat with kubeagi")

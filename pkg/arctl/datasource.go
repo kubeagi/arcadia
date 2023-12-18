@@ -28,8 +28,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/graphql-server/go-server/graph/generated"
-	"github.com/kubeagi/arcadia/graphql-server/go-server/pkg/datasource"
+	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/arctl/printer"
 )
 
