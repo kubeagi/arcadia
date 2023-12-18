@@ -21,6 +21,18 @@ spec:
           ports:
             - containerPort: {{ .Values.dataprocess.port }}
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: DEFAULT_CONFIG
+              value: {{ .Release.Name }}-config
             - name: MINIO_ACCESSKEY
               value: "to-be-replaced"
             - name: MINIO_SECRETKEY

@@ -1,17 +1,15 @@
-{{- if .Values.apiserver.ingress.enabled }}
+{{- if .Values.fastchat.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-apiserver-ingress
+  name: {{ .Release.Name }}-fastchat-ingress
   namespace: {{ .Release.Namespace }}
   annotations:
-    description: kubeagi-apiserver-ingress
-    displayName: kubeagi-apiserver-ingress
+    description: kubeagi-fastchat-ingress
+    displayName: kubeagi-fastchat-ingress
     httpSend: /
     ingress-lb: portal-ingress
     kubernetes.io/ingress.class: portal-ingress
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^/({{ .Values.apiserver.ingress.path }})(/|$)(.*)$ /$3 break;
     nginx.ingress.kubernetes.io/enable-access-log: "false"
     nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
     nginx.ingress.kubernetes.io/load-balance: round_robin
@@ -27,10 +25,10 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: "/{{ .Values.apiserver.ingress.path }}"
+            path: "/"
             backend:
               service:
-                name: {{ .Release.Name }}-apiserver
+                name: {{ .Release.Name }}-fastchat
                 port:
-                  number: {{ .Values.apiserver.port }}
+                  number: 8000
 {{- end }}

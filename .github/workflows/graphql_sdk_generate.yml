@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'graphql-server/go-server/graph/schema/*.gql'
+      - 'apiserver/graph/schema/*.gql'
   workflow_dispatch:
 
 env:
@@ -38,4 +38,4 @@ jobs:
         run: |
           kubectl port-forward svc/arcadia-apiserver -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
           export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
-          make gql-sdk-generator
+          make bff-sdk-generator

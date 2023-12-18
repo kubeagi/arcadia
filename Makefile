@@ -252,25 +252,25 @@ unkind: ## Uninstall a kind cluster.
 arctl: fmt vet ## Build manager binary.
 	go build -o bin/arctl cmd/arctl/main.go
 
-# graphql-server go
+# apiserver go
 gql-gen:
 	@go run github.com/99designs/gqlgen@v0.17.40 generate
-build-graphql-server: gql-gen
-	@CGO_ENABLED=0 GOOS=linux go build -o bin/graphql-server graphql-server/go-server/main.go
-run-graphql-server:
-	POD_NAMESPACE=arcadia go run graphql-server/go-server/main.go --enable-playground=true &
+build-apiserver: gql-gen
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/apiserver apiserver/main.go
+run-apiserver:
+	POD_NAMESPACE=arcadia go run apiserver/main.go --enable-playground=true &
 
-# sdk for graphql-server api
+# sdk for apiserver api
 GRL_SDK_GENERATOR_IMAGE ?= yuntijs/gql-sdk-generator:latest
 GRAPH_API_ENDPOINT ?= http://0.0.0.0:8888/bff
 # TODO change this config to a more constant value: /kubeagi-apis/bff after frontend code is ready
 GRAPH_CLIENT_ENDPOINT ?= /kubeagi-apis/bff
-.PHONY: gql-sdk-generator
-gql-sdk-generator:
+.PHONY: bff-sdk-generator
+bff-sdk-generator:
 	docker run --rm --net=host --env SDK_PACKAGE_NAME=@yuntijs/arcadia-bff-sdk \
 	--env SDK_YUNTI_NAME=ArcadiaBffSDK --env GRAPH_API_ENDPOINT=${GRAPH_API_ENDPOINT} \
 	--env GRAPH_CLIENT_ENDPOINT=${GRAPH_CLIENT_ENDPOINT} \
-	-v $(shell pwd)/graphql-server/go-server/graph/schema:/schema \
+	-v $(shell pwd)/apiserver/graph/schema:/schema \
 	-v ~/.npmrc:/root/.npmrc ${GRL_SDK_GENERATOR_IMAGE}
 
 # prepare for git push
