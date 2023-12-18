@@ -52,7 +52,7 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 	// conditioned status
 	condition := model.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-	status := string(condition.Status)
+	status := common.GetObjStatus(model)
 	message := string(condition.Message)
 
 	var systemModel bool

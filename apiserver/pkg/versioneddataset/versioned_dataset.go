@@ -74,16 +74,15 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 	vds.UpdateTimestamp = &now
 
 	vds.Version = versioneddataset.Spec.Version
-
+	vds.SyncStatus = new(string)
+	vds.DataProcessStatus = new(string)
 	first := true
 	for _, cond := range versioneddataset.Status.Conditions {
 		if cond.Type == v1alpha1.TypeReady {
-			syncStatus := string(cond.Reason)
-			vds.SyncStatus = &syncStatus
+			*vds.SyncStatus = string(cond.Reason)
 		}
 		if cond.Type == v1alpha1.TypeDataProcessing {
-			dataProcessStatus := string(cond.Reason)
-			vds.DataProcessStatus = &dataProcessStatus
+			*vds.DataProcessStatus = string(cond.Reason)
 		}
 		if !cond.LastTransitionTime.IsZero() {
 			if first || vds.UpdateTimestamp.Before(cond.LastSuccessfulTime.Time) {
@@ -93,6 +92,9 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 		}
 	}
 
+	if s := common.GetObjStatus(obj); s != "" {
+		*vds.SyncStatus = s
+	}
 	vds.Released = int(versioneddataset.Spec.Released)
 	return vds, nil
 }

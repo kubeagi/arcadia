@@ -29,6 +29,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -45,7 +46,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 
 	// conditioned status
 	condition := knowledgebase.Status.GetCondition(v1alpha1.TypeReady)
-	status := string(condition.Status)
+	status := common.GetObjStatus(knowledgebase)
 	reason := string(condition.Reason)
 	message := condition.Message
 

@@ -49,7 +49,7 @@ func embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 	// conditioned status
 	condition := embedder.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
-	status := string(condition.Status)
+	status := common.GetObjStatus(embedder)
 	message := string(condition.Message)
 
 	// provider type
