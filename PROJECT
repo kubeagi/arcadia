@@ -11,14 +11,6 @@ repo: github.com/kubeagi/arcadia
 resources:
 - api:
     crdVersion: v1
-  controller: true
-  domain: kubeagi.k8s.com.cn
-  group: arcadia
-  kind: Laboratory
-  path: github.com/kubeagi/arcadia/api/base/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
     namespaced: true
   controller: true
   domain: kubeagi.k8s.com.cn

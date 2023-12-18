@@ -1,6 +1,0 @@
-apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: Laboratory
-metadata:
-  name: laboratory-sample
-spec:
-  # TODO(user): Add fields here
