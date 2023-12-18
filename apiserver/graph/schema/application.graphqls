@@ -1,0 +1,313 @@
+type ApplicationQuery {
+    getApplication(name: String!, namespace: String!): Application!
+    listApplicationMetadata(input: ListCommonInput!): PaginatedResult!
+}
+
+type ApplicationMutation {
+    createApplication(input: CreateApplicationMetadataInput!): ApplicationMetadata!
+    updateApplication(input: UpdateApplicationMetadataInput!): ApplicationMetadata!
+    deleteApplication(input: DeleteCommonInput!): Void
+    updateApplicationConfig(input: UpdateApplicationConfigInput!): Application!
+}
+extend type Mutation {
+    Application: ApplicationMutation
+}
+extend type Query{
+    Application: ApplicationQuery
+}
+
+"""
+Application
+应用完整信息
+"""
+type Application {
+
+    metadata: ApplicationMetadata
+
+    """
+    对话开场白
+    """
+    prologue: String
+
+    """
+    model 指具体使用的模型名称，比如 gpt-3.5-turbo 或者 chatglm_turbo
+    """
+    model: String
+
+    """
+    llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM 的 CR 的名称
+    """
+    llm: String!
+
+    """
+    temperature 温度
+    """
+    temperature: Float
+
+    """
+    maxLength 最大响应长度
+    """
+    maxLength: Int
+
+    """
+    conversionWindowSize 对话轮次
+    """
+    conversionWindowSize: Int
+
+    """
+    knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
+    """
+    knowledgebase: String
+
+    """
+    scoreThreshold 最低相似度
+    """
+    scoreThreshold: Float
+
+    """
+    numDocuments  引用上限
+    """
+    numDocuments: Int
+
+    """
+    docNullReturn 空搜索回复
+    """
+    docNullReturn: String
+    """
+    userPrompt 用户级别的 Prompt
+    """
+    userPrompt: String
+
+    """
+    showNextGuide 下一步引导，是否显示下一步引导
+    """
+    showNextGuid: Boolean
+}
+
+"""
+Application
+应用 Metadata
+"""
+type ApplicationMetadata {
+    """
+    应用名称
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    应用所在的 namespace
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    应用id，为CR资源中的metadata.uid
+    """
+    id: String
+    """
+    一些用于标记，选择的的标签
+    """
+    labels: Map
+
+    """
+    添加一些辅助性记录信息
+    """
+    annotations: Map
+
+    """
+    展示名，别名
+    """
+    displayName: String
+
+    """
+    描述信息
+    """
+    description: String
+
+    """
+    Icon，应用头像， base64格式的图片
+    """
+    icon: String
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
+    creator: String
+
+    """创建时间"""
+    creationTimestamp: Time
+
+    """更新时间"""
+    updateTimestamp: Time
+
+    """IsPublic, 是否发布，即是否公开提供服务"""
+    isPublic: Boolean
+
+    """
+    应用状态
+    """
+    status: String
+}
+
+input CreateApplicationMetadataInput {
+    """
+    应用名称
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    应用所在的namespace
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    一些用于标记，选择的的标签
+    """
+    labels: Map
+
+    """
+    添加一些辅助性记录信息
+    """
+    annotations: Map
+
+    """
+    展示名，别名
+    """
+    displayName: String!
+
+    """
+    描述信息
+    """
+    description: String
+
+    """
+    Icon，应用头像， base64格式的图片
+    """
+    icon: String!
+
+    """
+    IsPublic, 是否发布，即是否公开提供服务
+    """
+    isPublic: Boolean
+}
+
+input UpdateApplicationMetadataInput {
+    """
+    应用名称, 用于确定要更新哪个应用
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    应用所在的 namespace, 用于确定要更新哪个应用
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    一些用于标记，选择的的标签，如果要更新，请传递完整内容
+    """
+    labels: Map
+
+    """
+    添加一些辅助性记录信息，如果要更新，请传递完整内容
+    """
+    annotations: Map
+
+    """
+    展示名，别名
+    """
+    displayName: String!
+
+    """
+    描述信息
+    """
+    description: String
+
+    """
+    Icon，应用头像， base64格式的图片
+    """
+    icon: String!
+
+    """
+    IsPublic, 是否发布，即是否公开提供服务
+    """
+    isPublic: Boolean
+}
+
+input UpdateApplicationConfigInput {
+    """
+    应用名称, 用于确定要更新哪个应用
+    规则: 遵循 k8s 命名
+    """
+    name: String!
+
+    """
+    应用所在的 namespace, 用于确定要更新哪个应用
+    规则: 非空
+    """
+    namespace: String!
+
+    """
+    对话开场白
+    """
+    prologue: String
+
+    """
+    model 指具体使用的模型名称，比如 gpt-3.5-turbo 或者 chatglm_turbo
+    """
+    model: String
+
+    """
+    llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM 的 CR 的名称
+    """
+    llm: String!
+
+    """
+    temperature 温度
+    """
+    temperature: Float
+
+    """
+    maxLength 最大响应长度
+    """
+    maxLength: Int
+
+    """
+    conversionWindowSize 对话轮次
+    """
+    conversionWindowSize: Int
+
+    """
+    knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
+    """
+    knowledgebase: String
+
+    """
+    scoreThreshold 最低相似度
+    """
+    scoreThreshold: Float
+
+    """
+    numDocuments  引用上限
+    """
+    numDocuments: Int
+
+    """
+    docNullReturn 空搜索回复
+    """
+    docNullReturn: String
+    """
+    userPrompt 用户级别的 Prompt
+    """
+    userPrompt: String
+
+    """
+    showNextGuide 下一步引导，是否显示下一步引导
+    """
+    showNextGuid: Boolean
+}

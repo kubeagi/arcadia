@@ -74,7 +74,7 @@ func getChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	if config.RepetitionPenalty > 0 {
 		options = append(options, chains.WithRepetitionPenalty(config.RepetitionPenalty))
 	}
-	if config.Model != "" {
+	if len(config.Model) != 0 {
 		options = append(options, chains.WithModel(config.Model))
 	}
 	return options
