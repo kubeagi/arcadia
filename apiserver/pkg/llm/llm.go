@@ -23,16 +23,19 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func unstructured2LLM(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Llm {
+func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Llm {
 	llm := &v1alpha1.LLM{}
 	if err := utils.UnstructuredToStructured(obj, llm); err != nil {
 		return &generated.Llm{}
@@ -122,7 +125,7 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 		if index < pageStart {
 			continue
 		}
-		m := unstructured2LLM(ctx, c, &u)
+		m := LLM2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
@@ -155,5 +158,133 @@ func ReadLLM(ctx context.Context, c dynamic.Interface, name, namespace string) (
 	if err != nil {
 		return nil, err
 	}
-	return unstructured2LLM(ctx, c, resource), nil
+	return LLM2model(ctx, c, resource), nil
+}
+
+func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateLLMInput) (*generated.Llm, error) {
+	displayName, description, APIType := "", "", ""
+	if input.DisplayName != nil {
+		displayName = *input.DisplayName
+	}
+	if input.Description != nil {
+		description = *input.Description
+	}
+	if input.Type != nil {
+		APIType = *input.Type
+	}
+
+	llm := v1alpha1.LLM{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      input.Name,
+			Namespace: input.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "LLM",
+			APIVersion: v1alpha1.GroupVersion.String(),
+		},
+		Spec: v1alpha1.LLMSpec{
+			CommonSpec: v1alpha1.CommonSpec{
+				DisplayName: displayName,
+				Description: description,
+			},
+			Provider: v1alpha1.Provider{
+				Enpoint: &v1alpha1.Endpoint{
+					URL: input.Endpointinput.URL,
+				},
+			},
+			Type: llms.LLMType(APIType),
+		},
+	}
+
+	// create auth secret
+	if input.Endpointinput.Auth != nil {
+		secret := common.MakeAuthSecretName(llm.Name, "llm")
+		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}, *input.Endpointinput.Auth, nil)
+		if err != nil {
+			return nil, err
+		}
+		llm.Spec.Enpoint.AuthSecret = &v1alpha1.TypedObjectReference{
+			Kind:      "Secret",
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}
+	}
+
+	unstructuredLLM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&llm)
+	if err != nil {
+		return nil, err
+	}
+
+	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLM"}).
+		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredLLM}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// update auth secret owner reference
+	if input.Endpointinput.Auth != nil {
+		// user obj as the owner
+		secret := common.MakeAuthSecretName(llm.Name, "LLM")
+		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Name:      secret,
+			Namespace: &input.Namespace,
+		}, *input.Endpointinput.Auth, obj)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// create *generated.Llm
+	genLLM := LLM2model(ctx, c, obj)
+	return genLLM, nil
+}
+
+func UpdateLLM(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*generated.Llm, error) {
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLMs"})
+	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
+	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	ds := LLM2model(ctx, c, updatedObject)
+	return ds, nil
+}
+
+func DeleteLLMs(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
+	name := ""
+	labelSelector, fieldSelector := "", ""
+	if input.Name != nil {
+		name = *input.Name
+	}
+	if input.FieldSelector != nil {
+		fieldSelector = *input.FieldSelector
+	}
+	if input.LabelSelector != nil {
+		labelSelector = *input.LabelSelector
+	}
+
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLMs"})
+	if name != "" {
+		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+			FieldSelector: fieldSelector,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
 }

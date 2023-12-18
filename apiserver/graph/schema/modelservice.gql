@@ -1,0 +1,43 @@
+mutation createModelService($input: CreateModelServiceInput!) {
+    ModelService {
+        createModelService(input: $input) {
+            id
+            name
+            namespace
+            labels
+            annotations
+            creator
+            displayName
+            description
+            types
+            apiType
+            creationTimestamp
+            updateTimestamp
+        }
+    }
+}
+
+mutation updateModelService($input: UpdateModelServiceInput) {
+    ModelService {
+        updateModelService(input: $input){
+            id
+            name
+            namespace
+            labels
+            annotations
+            creator
+            displayName
+            description
+            types
+            apiType
+            creationTimestamp
+            updateTimestamp
+        }
+    }
+}
+
+mutation deleteModelServices($input: DeleteCommonInput) {
+    ModelService {
+        deleteModelService(input: $input)
+    }
+}

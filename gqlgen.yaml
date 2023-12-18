@@ -238,3 +238,12 @@ models:
         resolver: true
       listLLMs:
         resolver: true
+  ModelServiceMutation:
+    fields:
+      createModelService:
+        resolver: true
+      updateModelService:
+        resolver: true
+      deleteModelService:
+        resolver: true
+

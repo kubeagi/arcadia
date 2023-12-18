@@ -1,0 +1,138 @@
+type ModelService {
+    id: String
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String
+    description: String
+    """
+    模型服务能力类型，支持 llm 和 embedding 两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String
+
+    creationTimestamp: Time
+    updateTimestamp: Time
+
+    """
+    模型服务 API 类型
+    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    """
+    apiType: String
+
+    """
+    模型对应的 LLM 及 embedder CR 资源
+    """
+    llmResource: LLM
+    embedderResource: Embedder
+}
+input CreateModelServiceInput {
+    """模型服务资源名称（不可同名）"""
+    name: String!
+    """模型服务创建命名空间"""
+    namespace: String!
+
+    """模型资源标签"""
+    labels: Map
+    """模型资源注释"""
+    annotations: Map
+    """模型资源展示名称作为显示，并提供编辑"""
+    displayName: String
+    """模型资源描述"""
+    description: String
+
+    """
+    模型服务能力类型，支持 llm 和 embedding 两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String
+
+    """
+    模型服务 API 类型
+    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    """
+    apiType: String
+
+    """
+    模型服务终端输入
+    """
+    endpoint: EndpointInput!
+}
+
+input UpdateModelServiceInput {
+    """模型资源名称（不可同名）"""
+    name: String!
+    """模型创建命名空间"""
+    namespace: String!
+
+    """模型资标签"""
+    labels: Map
+    """模型资源注释"""
+    annotations: Map
+    """模型资源展示名称作为显示，并提供编辑"""
+    displayName: String
+    """模型资源描述"""
+    description: String
+
+    """
+    模型服务能力类型，支持 llm 和 embedding 两种模型类型
+    规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+    """
+    types: String
+
+    """
+    模型服务 API 类型
+    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    """
+    apiType: String
+
+    """
+    模型服务终端输入
+    """
+    endpoint: EndpointInput!
+}
+
+input ListModelService {
+    """
+    关键词搜索
+    """
+    keyword: String
+    namespace: String!
+    page: Int
+
+    """
+    all, llm, embedding
+    """
+    modelType: String!
+
+    """
+    worker, 3rd
+    """
+    providerType: String!
+
+    """
+    openai, zhipuai
+    """
+    apiType: String!
+}
+
+type ModelServiceMutation {
+    createModelService(input: CreateModelServiceInput!): ModelService!
+    updateModelService(input: UpdateModelServiceInput): ModelService!
+    deleteModelService(input: DeleteCommonInput): Void
+}
+
+extend type Mutation {
+    ModelService: ModelServiceMutation
+}
+
+type ModelServiceQuery {
+    getModelService(name: String!, apiType: String!): ModelService
+    listModelServices(input: ListModelService): [ModelService]
+}
+
+extend type Query {
+    ModelService: ModelServiceQuery
+}
