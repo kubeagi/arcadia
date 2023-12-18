@@ -122,17 +122,21 @@ dataprocess:
   enabled: true
   image: kubeagi/data-processing:v0.1.0
   port: 28888
-  env:
-    minio:
-      secure: "False"
-      apiURL: arcadia-minio:9000
-    knowledge:
-      chunkSize: 500
-      chunkOverlap: 50
-    postgres:
-      # update to the actual values
-      host: postgresql
-      port: 5432
-      user: admin
-      password: Passw0rd!
-      database: arcadia
+  config:
+    llm:
+      qa_retry_count: '2'
+
+# @section postgresql is used to configure postgreslq service
+# Posgresql service will be used in two parts:
+# - dataprocessing
+# - llm application
+# - used as vector store with pgvector enabled
+# TODO: install postgresql within this chart
+postgresql:
+  database: arcadia
+  auth:
+    user: admin
+    password: Passw0rd!
+  endpoint:
+    host: postgresql
+    port: 5432
