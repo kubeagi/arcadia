@@ -15,6 +15,7 @@ spec:
       labels:
         control-plane: {{ .Release.Name }}-dataprocess
     spec:
+      serviceAccountName: {{ .Release.Name }}
       containers:
         - name: data-process
           image: {{ .Values.dataprocess.image }}
@@ -33,30 +34,6 @@ spec:
                   fieldPath: metadata.namespace
             - name: DEFAULT_CONFIG
               value: {{ .Release.Name }}-config
-            - name: MINIO_ACCESSKEY
-              value: "to-be-replaced"
-            - name: MINIO_SECRETKEY
-              value: "to-be-replaced"
-            - name: MINIO_API_URL
-              value: {{ .Values.dataprocess.env.minio.apiURL }}
-            - name: MINIO_SECURE
-              value: "{{ .Values.dataprocess.env.minio.secure }}"
-            - name: ZHIPUAI_API_KEY
-              value: "to-be-replaced"
-            - name: KNOWLEDGE_CHUNK_SIZE
-              value: "{{ .Values.dataprocess.env.knowledge.chunkSize }}"
-            - name: KNOWLEDGE_CHUNK_OVERLAP
-              value: "{{ .Values.dataprocess.env.knowledge.chunkOverlap }}"
-            - name: PG_HOST
-              value: {{ .Values.dataprocess.env.postgres.host }}
-            - name: PG_PORT
-              value: "{{ .Values.dataprocess.env.postgres.port }}"
-            - name: PG_USER
-              value: {{ .Values.dataprocess.env.postgres.user }}
-            - name: PG_PASSWORD
-              value: {{ .Values.dataprocess.env.postgres.password }}
-            - name: PG_DATABASE
-              value: {{ .Values.dataprocess.env.postgres.database }}
           command:
             - "/bin/sh"
             - "-c"

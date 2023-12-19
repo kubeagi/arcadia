@@ -21,7 +21,7 @@ metadata:
     nginx.ingress.kubernetes.io/upstream-vhost: $host
 spec:
   rules:
-    - host: {{ .Values.apiserver.ingress.host }}
+    - host: {{ .Values.fastchat.ingress.host }}
       http:
         paths:
           - pathType: Prefix

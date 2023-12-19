@@ -1,4 +1,7 @@
 dependencies:
+- name: postgresql
+  repository: ""
+  version: 13.2.14
 - name: minio
   repository: ""
   version: 5.0.13
@@ -8,5 +11,5 @@ dependencies:
 - name: chromadb
   repository: ""
   version: 0.1.19
-digest: sha256:f4ea00e67f6d08ebcccfdda9ec7450d21ed53601786b52ba024c3551c47b519e
-generated: "2023-12-08T16:57:58.738317+08:00"
+digest: sha256:3290cfc76517017aa614ea50a56c20d890d6d01a05d5dda687961d1638a8ac3d
+generated: "2023-12-19T08:14:19.740542276Z"

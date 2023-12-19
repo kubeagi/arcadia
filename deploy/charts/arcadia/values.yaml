@@ -7,7 +7,7 @@ global:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 controller:
-  image: kubeagi/arcadia:v0.1.0-20231208-89982be
+  image: kubeagi/arcadia:v0.1.0-20231219-874e2b1
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -20,10 +20,8 @@ controller:
 # @section graphql and bff server
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
-  image: kubeagi/arcadia:v0.1.0-20231208-89982be
+  image: kubeagi/arcadia:v0.1.0-20231219-874e2b1
   enableplayground: false
-  # update the namespace if we use different one
-  dataProcessURL: http://arcadia-dataprocess:28888
   port: 8081
   ingress:
     enabled: true
@@ -102,7 +100,6 @@ minio:
 
 # @section vectorstore configures the default vectorstore utilzied by knowledgebase
 vectorstore:
-  url: http://arcadia-chromadb:8000
   chroma:
     distanceFunction: cosine
 
@@ -120,7 +117,7 @@ chromadb:
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
   enabled: true
-  image: kubeagi/data-processing:v0.1.0
+  image: kubeagi/data-processing:v0.1.0-20231219-874e2b1
   port: 28888
   config:
     llm:
@@ -131,12 +128,19 @@ dataprocess:
 # - dataprocessing
 # - llm application
 # - used as vector store with pgvector enabled
-# TODO: install postgresql within this chart
 postgresql:
-  database: arcadia
-  auth:
-    user: admin
-    password: Passw0rd!
-  endpoint:
-    host: postgresql
-    port: 5432
+  global:
+    storageClass: "openebs-hostpath"
+    postgresql:
+      auth:
+        # default username and password
+        username: "admin"
+        password: "Passw0rd!"
+        # default database
+        database: "arcadia"
+  # image configurations
+  image:
+    registry: docker.io
+    repository: kubeagi/postgresql
+    tag: 16.1.0-debian-11-r15
+    pullPolicy: IfNotPresent

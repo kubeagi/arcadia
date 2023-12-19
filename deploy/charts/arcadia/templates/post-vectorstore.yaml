@@ -10,7 +10,7 @@ spec:
   displayName: "向量数据库"
   description: "默认系统向量数据库"
   endpoint:
-    url: {{ .Values.vectorstore.url}}
+    url: '{{ .Release.Name }}-chromadb.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.chromadb.serverHttpPort }}'
   chroma:
     distanceFunction: {{ .Values.vectorstore.chroma.distanceFunction}}
 
