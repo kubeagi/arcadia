@@ -34,6 +34,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
+	"github.com/kubeagi/arcadia/pkg/cache"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
@@ -41,6 +42,7 @@ type (
 	minioAPI struct {
 		conf   gqlconfig.ServerConfig
 		client dynamic.Interface
+		lru    cache.Cache
 	}
 
 	Chunk struct {
@@ -95,17 +97,13 @@ type (
 		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
 	}
-
-	ReadCSVResp struct {
-		Rows  [][]string `json:"rows"`
-		Total int64      `json:"total"`
-	}
 )
 
 const (
 	bucketQuery     = "bucket"
 	bucketPathQuery = "bucketPath"
 	md5Query        = "md5"
+	cachePrefix     = "totallines"
 
 	maxCSVLines = 100
 )
@@ -548,8 +546,9 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 
 func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	var (
-		page  int64
-		lines int64
+		page       int64
+		lines      int64
+		totalLines int64
 
 		bucket, bucketPath string
 		fileName           string
@@ -583,6 +582,23 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		})
 		return
 	}
+	anyStatInfo, err := source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{Bucket: bucket, Object: objectName})
+	if err != nil {
+		klog.Errorf("faield to stat filed %s/%s error %s", bucket, objectName, err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+	}
+	statInfo := anyStatInfo.(minio.ObjectInfo)
+
+	// checks if the total number of lines in the file has been cached
+	key := [4]string{cachePrefix, bucket, bucketPath, statInfo.ETag}
+	if a, ok := m.lru.Get(key); ok {
+		if v, ok1 := a.(int64); ok1 {
+			klog.V(5).Infof("nice, key: %v match, the file has not changed, and the total number of lines in the file is %d", key, v)
+			totalLines = v
+		}
+	}
 
 	object, err := source.Client.GetObject(context.TODO(), bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
@@ -595,7 +611,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	defer object.Close()
 
 	startLine := (page-1)*lines + 1
-	result, totalLines, err := common.ReadCSV(object, startLine, lines)
+	result, err := common.ReadCSV(object, startLine, lines, totalLines)
 	if err != nil && err != io.EOF {
 		klog.Errorf("there is an error reading the csv file, the error is %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -603,11 +619,10 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		})
 		return
 	}
-	resp := ReadCSVResp{
-		Rows:  result,
-		Total: totalLines,
-	}
-	ctx.JSON(http.StatusOK, resp)
+	// cache the total number of lines in the file
+	_ = m.lru.Set(key, result.Total)
+	klog.V(5).Infof("set the total number of lines in the file to %d, key %v", result.Total, key)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
@@ -616,7 +631,8 @@ func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		panic(err)
 	}
 
-	api := minioAPI{conf: conf, client: c}
+	lru, _ := cache.NewLRU(20)
+	api := minioAPI{conf: conf, client: c, lru: lru}
 
 	{
 		// model apis
