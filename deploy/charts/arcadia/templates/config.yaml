@@ -22,6 +22,15 @@ data:
     #  ingressClassName: portal-ingress
     #  host: portal.172.22.96.136.nip.io
     #  contextPath: /arcadia
+  dataprocess: |
+    llm:
+      qa_retry_count: {{ .Values.dataprocess.config.llm.qa_retry_count }}
+    postgresql:
+      host: {{ .Values.postgresql.endpoint.host }}
+      port: {{ .Values.postgresql.endpoint.port }}
+      user: {{ .Values.postgresql.auth.user }}
+      password: {{ .Values.postgresql.auth.password }}
+      database: {{ .Values.postgresql.auth.database }}
 kind: ConfigMap
 metadata:
   labels:
