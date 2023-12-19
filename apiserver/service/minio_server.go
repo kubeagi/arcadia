@@ -34,7 +34,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
-	"github.com/kubeagi/arcadia/pkg/cache"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
@@ -42,7 +41,6 @@ type (
 	minioAPI struct {
 		conf   gqlconfig.ServerConfig
 		client dynamic.Interface
-		store  cache.Cache
 	}
 
 	Chunk struct {
@@ -65,8 +63,8 @@ type (
 		MD5 string `json:"md5"`
 
 		// The file is eventually stored in bucketPath/filtName in the bucket.
-		FileName   string `json:"fileName"`
 		Bucket     string `json:"bucket"`
+		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
 	}
 
@@ -76,6 +74,7 @@ type (
 		MD5        string `json:"md5"`
 		UploadID   string `json:"uploadID"`
 		Bucket     string `json:"bucket"`
+		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
 	}
 	GenChunkURLResult struct {
@@ -91,10 +90,10 @@ type (
 
 	CompleteBody struct {
 		MD5        string `json:"md5"`
-		BucketPath string `json:"bucketPath"`
+		UploadID   string `json:"uploadID"`
 		Bucket     string `json:"bucket"`
 		FileName   string `json:"fileName"`
-		UploadID   string `json:"uploadID"`
+		BucketPath string `json:"bucketPath"`
 	}
 
 	ReadCSVResp struct {
@@ -180,30 +179,19 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	}
 
 	// If the file does not exist, you can check if there are any relevant upload records locally.
-	key := [3]string{bucketName, bucketPath, fildMD5}
-	fc, ok := m.store.Get(key)
-	if !ok {
-		// If the file exists in MinIO but there is no corresponding record locally (for example, if the user directly uploaded the file),
-		// then the user will need to re-upload the file.
-		klog.Infof("not found file chunkc %s/%s/%s, ", bucketName, bucketPath, fildMD5)
-		ctx.JSON(http.StatusOK, r)
-		return
-	}
-
-	fileChunk := fc.(*common.FileChunk)
-
-	// If uploadid is empty, you need to re-upload.
-	if fileChunk.UploadID == "" {
+	uploadID, _ := source.IncompleteUpload(ctx.Request.Context(), datasource.WithBucket(bucketName),
+		datasource.WithBucketPath(bucketPath), datasource.WithFileName(fileName))
+	if uploadID == "" {
 		ctx.JSON(http.StatusOK, r)
 		return
 	}
 
 	// Checking already uploaded chunks
-	r.UploadID = fileChunk.UploadID
+	r.UploadID = uploadID
 	r.Chunks = make([]Chunk, 0)
 	result, err := source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(bucketName),
-		datasource.WithBucketPath(bucketPath), datasource.WithFileName(fileChunk.FileName),
-		datasource.WithUploadID(fileChunk.UploadID))
+		datasource.WithBucketPath(bucketPath), datasource.WithFileName(fileName),
+		datasource.WithUploadID(uploadID))
 	if err != nil {
 		klog.Errorf("ListObjectParts failed: %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -284,19 +272,6 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	if err := m.store.Set([3]string{body.Bucket, body.BucketPath, body.MD5}, &common.FileChunk{
-		UploadID:   uploadID,
-		Md5:        body.MD5,
-		FileName:   body.FileName,
-		Bucket:     body.Bucket,
-		BucketPath: body.BucketPath,
-	}); err != nil {
-		klog.Errorf("failed to insert new file chunk error %s", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to store new file chunk",
-		})
-		return
-	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"uploadID": uploadID,
@@ -343,16 +318,13 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		})
 		return
 	}
-
-	fc, ok := m.store.Get([3]string{body.Bucket, body.BucketPath, body.MD5})
-	if !ok {
-		klog.Errorf("failed to get file chunk by md5 %s", body.MD5)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to get file chunk by md5",
+	if body.FileName == "" {
+		klog.Errorf("fileName is empty")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"mesage": "fileName is required",
 		})
 		return
 	}
-	fileChunk := fc.(*common.FileChunk)
 
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
 	if err != nil {
@@ -363,7 +335,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		return
 	}
 	result, err := source.CompletedChunks(ctx.Request.Context(), datasource.WithBucket(body.Bucket),
-		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(fileChunk.FileName),
+		datasource.WithBucketPath(body.BucketPath), datasource.WithFileName(body.FileName),
 		datasource.WithUploadID(body.UploadID))
 	if err != nil {
 		klog.Errorf("ListObjectParts failed: %s", err)
@@ -387,7 +359,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		datasource.WithBucketPath(body.BucketPath),
 		datasource.WithUploadID(body.UploadID),
 		datasource.WithPartNumber(fmt.Sprintf("%d", body.PartNumber)),
-		datasource.WithFileName(fileChunk.FileName))
+		datasource.WithFileName(body.FileName))
 	if err != nil {
 		klog.Errorf("genMultiPartSignedURL failed: %s", err)
 		klog.Errorf("failed to get multipart signed url error %s, md5 %s", err, body.MD5)
@@ -433,7 +405,6 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		return
 	}
 
-	_ = m.store.Delete([3]string{body.Bucket, body.BucketPath, body.MD5})
 	ctx.JSON(http.StatusOK, "success")
 }
 
@@ -645,7 +616,7 @@ func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		panic(err)
 	}
 
-	api := minioAPI{conf: conf, store: cache.NewMemCache(), client: c}
+	api := minioAPI{conf: conf, client: c}
 
 	{
 		// model apis

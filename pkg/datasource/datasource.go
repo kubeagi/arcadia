@@ -115,6 +115,11 @@ type ChunkUploader interface {
 
 	// To stop the upload, the user needs to destroy the chunked data.
 	Abort(context.Context, ...ChunkUploaderOption) error
+
+	// IncompleteUpload returns the number of times an object does not have a complete upload. Ideally,
+	// it is guaranteed that there is only one uploadid per object.
+	// If there is more than one uploadid, return the latest one.
+	IncompleteUpload(context.Context, ...ChunkUploaderOption) (string, error)
 }
 
 type Datasource interface {
