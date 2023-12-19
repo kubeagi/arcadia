@@ -46,7 +46,7 @@ spec:
             - "--issuer-url={{ .Values.apiserver.oidc.issuerURL }}"
           {{- end }}
           {{- if .Values.dataprocess.enabled }}
-            - "--data-processing-url={{ .Values.apiserver.dataProcessURL }}"
+            - "--data-processing-url=http://{{ .Release.Name }}-dataprocess.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.dataprocess.port }}"
           {{- end }}
 ---
 apiVersion: v1

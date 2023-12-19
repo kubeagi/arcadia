@@ -26,11 +26,11 @@ data:
     llm:
       qa_retry_count: {{ .Values.dataprocess.config.llm.qa_retry_count }}
     postgresql:
-      host: {{ .Values.postgresql.endpoint.host }}
-      port: {{ .Values.postgresql.endpoint.port }}
-      user: {{ .Values.postgresql.auth.user }}
-      password: {{ .Values.postgresql.auth.password }}
-      database: {{ .Values.postgresql.auth.database }}
+      host: {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local
+      port: {{ .Values.postgresql.containerPorts.postgresql }}
+      user: {{ .Values.postgresql.global.postgresql.auth.username }}
+      password: {{ .Values.postgresql.global.postgresql.auth.password }}
+      database: {{ .Values.postgresql.global.postgresql.auth.database }}
 kind: ConfigMap
 metadata:
   labels:
