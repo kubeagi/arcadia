@@ -19,11 +19,12 @@ import traceback
 
 from common import log_tag_const
 from kubernetes import client, config
-from kubernetes.client import CustomObjectsApi
+from kubernetes.client import CustomObjectsApi, CoreV1Api
 
 from .custom_resources import (arcadia_resource_datasets,
                                arcadia_resource_datasources,
-                               arcadia_resource_versioneddatasets)
+                               arcadia_resource_versioneddatasets,
+                               arcadia_resource_models)
 
 logger = logging.getLogger(__name__)
 
@@ -118,4 +119,37 @@ class KubeEnv:
             arcadia_resource_versioneddatasets.get_name(),
             name,
             status
+        )
+
+    def get_versionedmodels_status(self, namespace: str, name: str):
+        return CustomObjectsApi().get_namespaced_custom_object_status(
+            arcadia_resource_models.get_group(),
+            arcadia_resource_models.get_version(),
+            namespace, 
+            arcadia_resource_models.get_name(),
+            name
+        )
+
+    def read_namespaced_config_map(self, namespace: str, name: str):
+        return CoreV1Api().read_namespaced_config_map(
+            namespace=namespace,
+            name=name
+        )
+
+    def get_secret_info(self, namespace: str, name: str):
+        """Get the secret info."""
+        data = CoreV1Api().read_namespaced_secret(
+            namespace=namespace,
+            name=name 
+        )
+        return data.data
+
+    def get_datasource_object(self, namespace: str, name: str):
+        """Get the Datasource object."""
+        return CustomObjectsApi().get_namespaced_custom_object(
+            group=arcadia_resource_models.get_group(),
+            version=arcadia_resource_models.get_version(),
+            namespace=namespace,
+            plural= arcadia_resource_datasources.get_name(),
+            name=name
         )

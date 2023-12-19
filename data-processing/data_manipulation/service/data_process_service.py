@@ -294,8 +294,10 @@ def _set_basic_info_for_config_map_for_result(
     # data clean
     if process_cofig_map.get('remove_invisible_characters') or \
        process_cofig_map.get('space_standardization') or \
+       process_cofig_map.get('remove_garbled_text') or \
        process_cofig_map.get('traditional_to_simplified') or \
-       process_cofig_map.get('space_standremove_html_tagardization'):
+       process_cofig_map.get('remove_html_tag') or \
+       process_cofig_map.get('remove_emojis'):
         if from_result.get('clean') is None:
             from_result['clean'] = {
                     'name': 'clean',
@@ -305,14 +307,16 @@ def _set_basic_info_for_config_map_for_result(
                 }
             
     # remove privacy
-    if process_cofig_map.get('remove_email'):
+    if process_cofig_map.get('remove_email') or \
+       process_cofig_map.get('remove_ip_address') or \
+       process_cofig_map.get('remove_number'):
         if from_result.get('privacy') is None:
             from_result['privacy'] = {
                 'name': 'privacy',
                 'description': '数据隐私处理',
                 'status': 'succeed',
                 'children': []
-            }    
+            }
 
 
 def _set_children_info_for_config_map_for_result(
@@ -369,6 +373,62 @@ def _set_children_info_for_config_map_for_result(
             )
         })   
 
+    # remove garbled text
+    if process_cofig_map.get('remove_garbled_text'):
+        from_result['clean']['children'].append({
+            'name': 'remove_garbled_text',
+            'enable': 'true',
+            'zh_name': '去除乱码',
+            'description': '去除乱码和无意义的unicode',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='remove_garbled_text',
+                conn_pool=conn_pool
+            )
+        })
+    
+    # traditional to simplified
+    if process_cofig_map.get('traditional_to_simplified'):
+        from_result['clean']['children'].append({
+            'name': 'traditional_to_simplified',
+            'enable': 'true',
+            'zh_name': '繁转简',
+            'description': '繁体转简体，如“不經意，妳的笑容”清洗成“不经意，你的笑容”',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='traditional_to_simplified',
+                conn_pool=conn_pool
+            )
+        })
+
+    # remove html tag
+    if process_cofig_map.get('remove_html_tag'):
+        from_result['clean']['children'].append({
+            'name': 'remove_html_tag',
+            'enable': 'true',
+            'zh_name': '去除网页标识符',
+            'description': '移除文档中的html标签, 如<html>,<dev>,<p>等',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='remove_html_tag',
+                conn_pool=conn_pool
+            )
+        })
+
+    # remove emojis
+    if process_cofig_map.get('remove_emojis'):
+        from_result['clean']['children'].append({
+            'name': 'remove_emojis',
+            'enable': 'true',
+            'zh_name': '去除表情',
+            'description': '去除文档中的表情，如‘🐰’, ‘🧑🏼’等',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='remove_emojis',
+                conn_pool=conn_pool
+            )
+        })
+
     # remove email
     if process_cofig_map.get('remove_email'):
         from_result['privacy']['children'].append({
@@ -383,6 +443,33 @@ def _set_children_info_for_config_map_for_result(
             )
         })
 
+    # remove ip address
+    if process_cofig_map.get('remove_ip_address'):
+        from_result['privacy']['children'].append({
+            'name': 'remove_ip_address',
+            'enable': 'true',
+            'zh_name': '去除IP地址',
+            'description': '去除IPv4 或者 IPv6 地址',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='remove_ip_address',
+                conn_pool=conn_pool
+            )
+        })
+
+    # remove number
+    if process_cofig_map.get('remove_number'):
+        from_result['privacy']['children'].append({
+            'name': 'remove_number',
+            'enable': 'true',
+            'zh_name': '去除数字',
+            'description': '去除数字和字母数字标识符，如电话号码、信用卡号、十六进制散列等，同时跳过年份和简单数字的实例',
+            'preview': _get_transform_preview_list(
+                task_id=task_id,
+                transform_type='remove_number',
+                conn_pool=conn_pool
+            )
+        })
 
 
 def _get_transform_preview_list(

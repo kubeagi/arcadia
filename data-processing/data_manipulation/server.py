@@ -74,40 +74,6 @@ async def shutdown_web_server(app, loop):
 app.blueprint(data_process_controller.data_process)
 
 
-
-@app.route('test-config', methods=['POST'])
-async def test_config(request):
-    from common.config import config
-
-    data = {
-        'minio_access_key': config.minio_access_key,
-        'minio_secret_key': config.minio_secret_key,
-        'minio_api_url': config.minio_api_url,
-        'minio_secure': config.minio_secure,
-        'minio_dataset_prefix': config.minio_dataset_prefix,
-        'zhipuai_api_key': config.zhipuai_api_key,
-        'llm_use_type': config.llm_use_type,
-        'open_ai_default_key': config.open_ai_default_key,
-        'open_ai_default_base_url': config.open_ai_default_base_url,
-        'open_ai_default_model': config.open_ai_default_model,
-        'knowledge_chunk_size': config.knowledge_chunk_size,
-        'knowledge_chunk_overlap': config.knowledge_chunk_overlap,
-        'pg_host': config.pg_host,
-        'pg_port': config.pg_port,
-        'pg_user': config.pg_user,
-        'pg_password': config.pg_password,
-        'pg_database': config.pg_database
-
-    }
-   
-    return json({
-        'status': 200,
-        'message': '',
-        'data': data
-    })
-
-
-
 def _create_database_connection():
     """Create a database connection."""
     return psycopg2.connect(
