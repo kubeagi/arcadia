@@ -42,13 +42,45 @@ type Output struct {
 }
 
 type CommonChainConfig struct {
-	// 记忆相关参数
+	// for memory
 	Memory Memory `json:"memory,omitempty"`
+
+	// Model is the model to use in an llm call.like `gpt-3.5-turbo` or `chatglm_turbo`
+	// Usually this value is just empty
+	Model string `json:"model,omitempty"`
+	// MaxTokens is the maximum number of tokens to generate to use in a llm call.
+	// +kubebuilder:validation:Minimum=10
+	// +kubebuilder:validation:Maximum=4096
+	// +kubebuilder:default=512
+	MaxTokens int `json:"maxTokens,omitempty"`
+	// Temperature is the temperature for sampling to use in a llm call, between 0 and 1.
+	//+kubebuilder:validation:Minimum=0
+	//+kubebuilder:validation:Maximum=1
+	Temperature float64 `json:"temperature,omitempty"`
+	// StopWords is a list of words to stop on to use in a llm call.
+	StopWords []string `json:"stopWords,omitempty"`
+	// TopK is the number of tokens to consider for top-k sampling in a llm call.
+	TopK int `json:"topK,omitempty"`
+	// TopP is the cumulative probability for top-p sampling in a llm call.
+	TopP float64 `json:"topP,omitempty"`
+	// Seed is a seed for deterministic sampling in a llm call.
+	Seed int `json:"seed,omitempty"`
+	// MinLength is the minimum length of the generated text in a llm call.
+	MinLength int `json:"minLength,omitempty"`
+	// MaxLength is the maximum length of the generated text in a llm call.
+	MaxLength int `json:"maxLength,omitempty"`
+	// RepetitionPenalty is the repetition penalty for sampling in a llm call.
+	RepetitionPenalty float64 `json:"repetitionPenalty,omitempty"`
 }
 
 type Memory struct {
-	// 能记住的最大 token 数
+	// MaxTokenLimit is the maximum number of tokens to keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
 	MaxTokenLimit int `json:"maxTokenLimit,omitempty"`
+	// ConversionWindowSize is the maximum number of conversation rounds in memory.Can only use MaxTokenLimit or ConversionWindowSize.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=30
+	// +kubebuilder:default=5
+	ConversionWindowSize int `json:"conversionWindowSize,omitempty"`
 }
 
 // LLMChainStatus defines the observed state of LLMChain

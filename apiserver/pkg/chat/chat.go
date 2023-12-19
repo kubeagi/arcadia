@@ -22,6 +22,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/tmc/langchaingo/memory"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -73,6 +74,7 @@ func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespB
 			StartedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 			Messages:    make([]Message, 0),
+			History:     memory.NewChatMessageHistory(),
 		}
 	}
 	conversion.Messages = append(conversion.Messages, Message{
@@ -85,7 +87,7 @@ func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespB
 	if err != nil {
 		return nil, nil, err
 	}
-	out, outStream, err := appRun.Run(ctx, c, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming})
+	out, outStream, err := appRun.Run(ctx, c, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversion.History})
 	if err != nil {
 		return nil, nil, err
 	}

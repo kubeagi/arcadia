@@ -19,12 +19,18 @@ package chain
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/prompts"
+	langchaingoschema "github.com/tmc/langchaingo/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
 )
 
@@ -40,7 +46,7 @@ func NewLLMChain(baseNode base.BaseNode) *LLMChain {
 	}
 }
 
-func (l *LLMChain) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -57,18 +63,44 @@ func (l *LLMChain) Run(ctx context.Context, _ dynamic.Interface, args map[string
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
+	v3, ok := args["_history"]
+	if !ok {
+		return args, errors.New("no history")
+	}
+	history, ok := v3.(langchaingoschema.ChatMessageHistory)
+	if !ok {
+		return args, errors.New("history not memory.ChatMessageHistory")
+	}
+
+	ns := base.GetAppNamespace(ctx)
+	instance := &v1alpha1.LLMChain{}
+	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llmchains"}).
+		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
+	if err != nil {
+		return args, fmt.Errorf("cant find the chain in cluster: %w", err)
+	}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
+	if err != nil {
+		return args, err
+	}
+	options := getChainOptions(instance.Spec.CommonChainConfig)
+
 	chain := chains.NewLLMChain(llm, prompt)
+	chain.Memory = getMemory(llm, instance.Spec.Memory, history)
 	l.LLMChain = *chain
 	var out string
-	var err error
-	if needStream, ok := args["need_stream"].(bool); ok && needStream {
-		option := chains.WithStreamingFunc(stream(args))
-		out, err = chains.Predict(ctx, l.LLMChain, args, option)
+	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+		options = append(options, chains.WithStreamingFunc(stream(args)))
+		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
 	} else {
-		out, err = chains.Predict(ctx, l.LLMChain, args)
+		if len(options) > 0 {
+			out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+		} else {
+			out, err = chains.Predict(ctx, l.LLMChain, args)
+		}
 	}
 	if err == nil {
-		args["answer"] = out
+		args["_answer"] = out
 	}
 	return args, err
 }

@@ -19,31 +19,36 @@ package chain
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/prompts"
-	"github.com/tmc/langchaingo/schema"
+	langchainschema "github.com/tmc/langchaingo/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
+	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
 	appretriever "github.com/kubeagi/arcadia/pkg/application/retriever"
 )
 
 type RetrievalQAChain struct {
-	chains.RetrievalQA
+	chains.ConversationalRetrievalQA
 	base.BaseNode
 }
 
 func NewRetrievalQAChain(baseNode base.BaseNode) *RetrievalQAChain {
 	return &RetrievalQAChain{
-		chains.RetrievalQA{},
+		chains.ConversationalRetrievalQA{},
 		baseNode,
 	}
 }
 
-func (l *RetrievalQAChain) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -64,32 +69,56 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ dynamic.Interface, args ma
 	if !ok {
 		return args, errors.New("no retriever")
 	}
-	retriever, ok := v3.(schema.Retriever)
+	retriever, ok := v3.(langchainschema.Retriever)
 	if !ok {
 		return args, errors.New("retriever not schema.Retriever")
 	}
+	v4, ok := args["_history"]
+	if !ok {
+		return args, errors.New("no history")
+	}
+	history, ok := v4.(langchainschema.ChatMessageHistory)
+	if !ok {
+		return args, errors.New("prompt not prompts.FormatPrompter")
+	}
+
+	ns := base.GetAppNamespace(ctx)
+	instance := &v1alpha1.RetrievalQAChain{}
+	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "retrievalqachains"}).
+		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
+	if err != nil {
+		return args, fmt.Errorf("cant find the chain in cluster: %w", err)
+	}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
+	if err != nil {
+		return args, err
+	}
+	options := getChainOptions(instance.Spec.CommonChainConfig)
 
 	llmChain := chains.NewLLMChain(llm, prompt)
 	var baseChain chains.Chain
-	if _, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
-		baseChain = appretriever.NewStuffDocuments(llmChain)
+	if knowledgeBaseRetriever, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
+		baseChain = appretriever.NewStuffDocuments(llmChain, knowledgeBaseRetriever.DocNullReturn)
 	} else {
 		baseChain = chains.NewStuffDocuments(llmChain)
 	}
-	chain := chains.NewRetrievalQA(baseChain, retriever)
-	l.RetrievalQA = chain
+	chain := chains.NewConversationalRetrievalQA(baseChain, chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history))
+	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
-	var err error
-	if needStream, ok := args["need_stream"].(bool); ok && needStream {
-		option := chains.WithStreamingFunc(stream(args))
-		out, err = chains.Predict(ctx, l.RetrievalQA, args, option)
+	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+		options = append(options, chains.WithStreamingFunc(stream(args)))
+		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
 	} else {
-		out, err = chains.Predict(ctx, l.RetrievalQA, args)
+		if len(options) > 0 {
+			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
+		} else {
+			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
+		}
 	}
 	klog.Infof("out:%v, err:%s", out, err)
 	if err == nil {
-		args["answer"] = out
+		args["_answer"] = out
 	}
 	return args, err
 }

@@ -16,7 +16,11 @@ limitations under the License.
 
 package chat
 
-import "time"
+import (
+	"time"
+
+	"github.com/tmc/langchaingo/memory"
+)
 
 type ResponseMode string
 
@@ -48,6 +52,7 @@ type Conversion struct {
 	StartedAt   time.Time `json:"started_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Messages    []Message `json:"messages"`
+	History     *memory.ChatMessageHistory
 }
 
 type Message struct {

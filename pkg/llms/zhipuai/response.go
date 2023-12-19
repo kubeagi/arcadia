@@ -107,3 +107,9 @@ type Choice struct {
 	Content string `json:"content"`
 	Role    string `json:"role"`
 }
+
+const (
+	CodeConcurrencyHigh = 1302 // 您当前使用该 API 的并发数过高，请降低并发，或联系客服增加限额
+	CodefrequencyHigh   = 1303 // 您当前使用该 API 的频率过高，请降低频率，或联系客服增加限额
+	CodeTimesHigh       = 1305 // 当前 API 请求过多，请稍后重试
+)
