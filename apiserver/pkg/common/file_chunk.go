@@ -40,10 +40,3 @@ const (
 	// putObject behaves internally as multipart.
 	MinPartSize = 1024 * 1024 * 64
 )
-
-type FileChunk struct {
-	Md5                string
-	UploadID           string
-	FileName           string
-	Bucket, BucketPath string
-}

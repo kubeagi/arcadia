@@ -73,8 +73,8 @@ type (
 		MD5 string `json:"md5"`
 
 		// The file is eventually stored in bucketPath/filtName in the bucket.
-		FileName   string `json:"fileName"`
 		Bucket     string `json:"bucket"`
+		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
 	}
 
@@ -84,6 +84,7 @@ type (
 		MD5        string `json:"md5"`
 		UploadID   string `json:"uploadID"`
 		Bucket     string `json:"bucket"`
+		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
 	}
 	GenChunkURLResult struct {
@@ -91,12 +92,23 @@ type (
 		URL       string `json:"url"`
 	}
 
+	DelteFileBody struct {
+		Files      []string `json:"files"`
+		Bucket     string   `json:"bucket"`
+		BucketPath string   `json:"bucketPath"`
+	}
+
 	CompleteBody struct {
 		MD5        string `json:"md5"`
-		BucketPath string `json:"bucketPath"`
+		UploadID   string `json:"uploadID"`
 		Bucket     string `json:"bucket"`
 		FileName   string `json:"fileName"`
-		UploadID   string `json:"uploadID"`
+		BucketPath string `json:"bucketPath"`
+	}
+
+	ReadCSVResp struct {
+		Rows  [][]string `json:"rows"`
+		Total int64      `json:"total"`
 	}
 )
 
@@ -188,7 +200,7 @@ func newMultipart(
 
 func genURL(
 	md5, bucket, bucketPath, uploadID string,
-	partNumer int,
+	partNumer int, fileName string,
 	transport http.RoundTripper) (GenChunkURLResult, error) {
 
 	klog.Infof("[DEBUG] request upload url by uploadid: %s...", uploadID)
@@ -199,6 +211,7 @@ func genURL(
 		BucketPath: bucketPath,
 		UploadID:   uploadID,
 		Size:       bufSize,
+		FileName:   fileName,
 	}
 
 	bodyBytes, _ := json.Marshal(body)
@@ -295,7 +308,7 @@ func do(
 	md5, uploadID, bucket, bucketPath, fileName string,
 	transport http.RoundTripper) error {
 	defer wg.Done()
-	urlResult, err := genURL(md5, bucket, bucketPath, uploadID, partNumber, transport)
+	urlResult, err := genURL(md5, bucket, bucketPath, uploadID, partNumber, fileName, transport)
 	if err != nil {
 		klog.Error("[do Error] failed to gen url error %s", err)
 		return err

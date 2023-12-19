@@ -320,3 +320,25 @@ func (oss *OSS) preCheck(info any) (*v1alpha1.OSS, error) {
 	}
 	return ossInfo, nil
 }
+
+func (oss *OSS) IncompleteUpload(ctx context.Context, options ...ChunkUploaderOption) (string, error) {
+	s := ChunkUploaderConf{}
+	for _, opt := range options {
+		opt(&s)
+	}
+
+	objectName := fmt.Sprintf("%s/%s", s.relativeDir, s.fileName)
+	var (
+		uploadID string
+		cur      time.Time
+	)
+	first := true
+	for id := range oss.Client.ListIncompleteUploads(ctx, s.bucket, objectName, true) {
+		if first || id.Initiated.After(cur) {
+			uploadID = id.UploadID
+			cur = id.Initiated
+			first = false
+		}
+	}
+	return uploadID, nil
+}
