@@ -79,6 +79,14 @@ query dataProcessDetails($input: DataProcessDetailsInput){
                 post
               }
             }
+            file_progress {
+              id,
+              file_name,
+              status,
+              start_time,
+              end_time,
+              progress
+            }
           }
         }
       }

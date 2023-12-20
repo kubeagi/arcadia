@@ -82,11 +82,21 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessConfigChildren struct {
-		Description func(childComplexity int) int
-		Enable      func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Preview     func(childComplexity int) int
-		ZhName      func(childComplexity int) int
+		Description  func(childComplexity int) int
+		Enable       func(childComplexity int) int
+		FileProgress func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Preview      func(childComplexity int) int
+		ZhName       func(childComplexity int) int
+	}
+
+	DataProcessConfigpreFileProgress struct {
+		EndTime   func(childComplexity int) int
+		FileName  func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Progress  func(childComplexity int) int
+		StartTime func(childComplexity int) int
+		Status    func(childComplexity int) int
 	}
 
 	DataProcessConfigpreView struct {
@@ -726,6 +736,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DataProcessConfigChildren.Enable(childComplexity), true
 
+	case "DataProcessConfigChildren.file_progress":
+		if e.complexity.DataProcessConfigChildren.FileProgress == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.FileProgress(childComplexity), true
+
 	case "DataProcessConfigChildren.name":
 		if e.complexity.DataProcessConfigChildren.Name == nil {
 			break
@@ -746,6 +763,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessConfigChildren.ZhName(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.end_time":
+		if e.complexity.DataProcessConfigpreFileProgress.EndTime == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.EndTime(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.file_name":
+		if e.complexity.DataProcessConfigpreFileProgress.FileName == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.FileName(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.id":
+		if e.complexity.DataProcessConfigpreFileProgress.ID == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.ID(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.progress":
+		if e.complexity.DataProcessConfigpreFileProgress.Progress == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.Progress(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.start_time":
+		if e.complexity.DataProcessConfigpreFileProgress.StartTime == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.StartTime(childComplexity), true
+
+	case "DataProcessConfigpreFileProgress.status":
+		if e.complexity.DataProcessConfigpreFileProgress.Status == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigpreFileProgress.Status(childComplexity), true
 
 	case "DataProcessConfigpreView.content":
 		if e.complexity.DataProcessConfigpreView.Content == nil {
@@ -3219,7 +3278,9 @@ input LLMConfigItem {
   namespace: String
   model: String
   temperature: String
-  top_k: String
+  top_p: String
+  max_tokens: String
+  prompt_template: String
 }
 
 input DeleteDataProcessInput {
@@ -3334,12 +3395,23 @@ type DataProcessConfigChildren {
   zh_name: String
   description: String
   preview: [DataProcessConfigpreView]
+  file_progress: [DataProcessConfigpreFileProgress]
 }
 
 # 数据处理配置项预览
 type DataProcessConfigpreView {
   file_name: String
   content: [DataProcessConfigpreViewContent]
+}
+
+# 数据处理配置项预览
+type DataProcessConfigpreFileProgress {
+  id: String
+  file_name: String
+  status: String
+  start_time: String
+  end_time: String
+  progress: String
 }
 
 # 数据处理配置项预览内容
@@ -6253,6 +6325,8 @@ func (ec *executionContext) fieldContext_DataProcessConfig_children(ctx context.
 				return ec.fieldContext_DataProcessConfigChildren_description(ctx, field)
 			case "preview":
 				return ec.fieldContext_DataProcessConfigChildren_preview(ctx, field)
+			case "file_progress":
+				return ec.fieldContext_DataProcessConfigChildren_file_progress(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigChildren", field.Name)
 		},
@@ -6466,6 +6540,307 @@ func (ec *executionContext) fieldContext_DataProcessConfigChildren_preview(ctx c
 				return ec.fieldContext_DataProcessConfigpreView_content(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigpreView", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_file_progress(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_file_progress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileProgress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfigpreFileProgress)
+	fc.Result = res
+	return ec.marshalODataProcessConfigpreFileProgress2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigpreFileProgress(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_file_progress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_id(ctx, field)
+			case "file_name":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_file_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_status(ctx, field)
+			case "start_time":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_end_time(ctx, field)
+			case "progress":
+				return ec.fieldContext_DataProcessConfigpreFileProgress_progress(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigpreFileProgress", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_id(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_file_name(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_file_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_file_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_status(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_start_time(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_start_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_start_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_end_time(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_end_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_end_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress_progress(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_progress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Progress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigpreFileProgress_progress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigpreFileProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23865,7 +24240,7 @@ func (ec *executionContext) unmarshalInputLLMConfigItem(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "model", "temperature", "top_k"}
+	fieldsInOrder := [...]string{"name", "namespace", "model", "temperature", "top_p", "max_tokens", "prompt_template"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23908,15 +24283,33 @@ func (ec *executionContext) unmarshalInputLLMConfigItem(ctx context.Context, obj
 				return it, err
 			}
 			it.Temperature = data
-		case "top_k":
+		case "top_p":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("top_k"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("top_p"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TopK = data
+			it.TopP = data
+		case "max_tokens":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max_tokens"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxTokens = data
+		case "prompt_template":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prompt_template"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PromptTemplate = data
 		}
 	}
 
@@ -25544,6 +25937,54 @@ func (ec *executionContext) _DataProcessConfigChildren(ctx context.Context, sel 
 			out.Values[i] = ec._DataProcessConfigChildren_description(ctx, field, obj)
 		case "preview":
 			out.Values[i] = ec._DataProcessConfigChildren_preview(ctx, field, obj)
+		case "file_progress":
+			out.Values[i] = ec._DataProcessConfigChildren_file_progress(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataProcessConfigpreFileProgressImplementors = []string{"DataProcessConfigpreFileProgress"}
+
+func (ec *executionContext) _DataProcessConfigpreFileProgress(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigpreFileProgress) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigpreFileProgressImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfigpreFileProgress")
+		case "id":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_id(ctx, field, obj)
+		case "file_name":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_file_name(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_status(ctx, field, obj)
+		case "start_time":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_start_time(ctx, field, obj)
+		case "end_time":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_end_time(ctx, field, obj)
+		case "progress":
+			out.Values[i] = ec._DataProcessConfigpreFileProgress_progress(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -31139,6 +31580,54 @@ func (ec *executionContext) unmarshalODataProcessConfigItem2ᚕᚖgithubᚗcom�
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreFileProgress2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigpreFileProgress(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigpreFileProgress) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODataProcessConfigpreFileProgress2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigpreFileProgress(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODataProcessConfigpreFileProgress2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigpreFileProgress(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfigpreFileProgress) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataProcessConfigpreFileProgress(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODataProcessConfigpreView2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigpreView(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigpreView) graphql.Marshaler {

@@ -64,7 +64,9 @@ input LLMConfigItem {
   namespace: String
   model: String
   temperature: String
-  top_k: String
+  top_p: String
+  max_tokens: String
+  prompt_template: String
 }
 
 input DeleteDataProcessInput {
@@ -179,12 +181,23 @@ type DataProcessConfigChildren {
   zh_name: String
   description: String
   preview: [DataProcessConfigpreView]
+  file_progress: [DataProcessConfigpreFileProgress]
 }
 
 # 数据处理配置项预览
 type DataProcessConfigpreView {
   file_name: String
   content: [DataProcessConfigpreViewContent]
+}
+
+# 数据处理配置项预览
+type DataProcessConfigpreFileProgress {
+  id: String
+  file_name: String
+  status: String
+  start_time: String
+  end_time: String
+  progress: String
 }
 
 # 数据处理配置项预览内容

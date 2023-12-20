@@ -260,16 +260,26 @@ type DataProcessConfig struct {
 }
 
 type DataProcessConfigChildren struct {
-	Name        *string                     `json:"name,omitempty"`
-	Enable      *string                     `json:"enable,omitempty"`
-	ZhName      *string                     `json:"zh_name,omitempty"`
-	Description *string                     `json:"description,omitempty"`
-	Preview     []*DataProcessConfigpreView `json:"preview,omitempty"`
+	Name         *string                             `json:"name,omitempty"`
+	Enable       *string                             `json:"enable,omitempty"`
+	ZhName       *string                             `json:"zh_name,omitempty"`
+	Description  *string                             `json:"description,omitempty"`
+	Preview      []*DataProcessConfigpreView         `json:"preview,omitempty"`
+	FileProgress []*DataProcessConfigpreFileProgress `json:"file_progress,omitempty"`
 }
 
 type DataProcessConfigItem struct {
 	Type      string         `json:"type"`
 	LlmConfig *LLMConfigItem `json:"llm_config,omitempty"`
+}
+
+type DataProcessConfigpreFileProgress struct {
+	ID        *string `json:"id,omitempty"`
+	FileName  *string `json:"file_name,omitempty"`
+	Status    *string `json:"status,omitempty"`
+	StartTime *string `json:"start_time,omitempty"`
+	EndTime   *string `json:"end_time,omitempty"`
+	Progress  *string `json:"progress,omitempty"`
 }
 
 type DataProcessConfigpreView struct {
@@ -731,11 +741,13 @@ type Llm struct {
 func (Llm) IsPageNode() {}
 
 type LLMConfigItem struct {
-	Name        *string `json:"name,omitempty"`
-	Namespace   *string `json:"namespace,omitempty"`
-	Model       *string `json:"model,omitempty"`
-	Temperature *string `json:"temperature,omitempty"`
-	TopK        *string `json:"top_k,omitempty"`
+	Name           *string `json:"name,omitempty"`
+	Namespace      *string `json:"namespace,omitempty"`
+	Model          *string `json:"model,omitempty"`
+	Temperature    *string `json:"temperature,omitempty"`
+	TopP           *string `json:"top_p,omitempty"`
+	MaxTokens      *string `json:"max_tokens,omitempty"`
+	PromptTemplate *string `json:"prompt_template,omitempty"`
 }
 
 type LLMQuery struct {
