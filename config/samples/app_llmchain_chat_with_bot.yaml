@@ -29,7 +29,7 @@ spec:
       ref:
         apiGroup: arcadia.kubeagi.k8s.com.cn
         kind: LLM
-        name: base-chat-with-bot
+        name: app-shared-llm-service
       nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "llm chain"
@@ -84,7 +84,7 @@ spec:
     llm:
       apiGroup: arcadia.kubeagi.k8s.com.cn
       kind: LLM
-      name: base-chat-with-bot
+      name: app-shared-llm-service
     prompt:
       apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
       kind: Prompt
@@ -93,26 +93,3 @@ spec:
     apiGroup: "arcadia.kubeagi.k8s.com.cn"
     kind: "Output"
     name: "output-node"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: base-chat-with-bot
-  namespace: arcadia
-type: Opaque
-data:
-  apiKey: "MTZlZDcxYzcwMDE0NGFiMjIyMmI5YmEwZDFhMTBhZTUuUTljWVZtWWxmdjlnZGtDeQ==" # replace this with your API key
----
-apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: LLM
-metadata:
-  name: base-chat-with-bot
-  namespace: arcadia
-spec:
-  type: "zhipuai"
-  provider:
-    endpoint:
-      url: "https://open.bigmodel.cn/api/paas/v3/model-api" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
-      authSecret:
-        kind: secret
-        name: base-chat-with-bot

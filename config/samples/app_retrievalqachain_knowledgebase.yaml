@@ -29,7 +29,7 @@ spec:
       ref:
         apiGroup: arcadia.kubeagi.k8s.com.cn
         kind: LLM
-        name: base-chat-with-knowledgebase
+        name: app-shared-llm-service
       nextNodeName: ["chain-node"]
     - name: retriever-node
       displayName: "从知识库提取信息的retriever"
@@ -76,7 +76,7 @@ spec:
   output:
     apiGroup: chain.arcadia.kubeagi.k8s.com.cn
     kind: RetrievalQAChain
-    name: base-chat-english-teacher
+    name: base-chat-with-knowledgebase
 ---
 apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: RetrievalQAChain
@@ -92,7 +92,7 @@ spec:
     llm:
       apiGroup: arcadia.kubeagi.k8s.com.cn
       kind: LLM
-      name: base-chat-with-knowledgebase
+      name: app-shared-llm-service
     prompt:
       apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
       kind: Prompt

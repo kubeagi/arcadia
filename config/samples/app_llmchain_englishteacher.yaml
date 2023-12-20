@@ -29,7 +29,7 @@ spec:
       ref:
         apiGroup: arcadia.kubeagi.k8s.com.cn
         kind: LLM
-        name: base-chat-english-teacher
+        name: app-shared-llm-service
       nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "llm chain"
@@ -84,7 +84,7 @@ spec:
     llm:
       apiGroup: arcadia.kubeagi.k8s.com.cn
       kind: LLM
-      name: base-chat-english-teacher
+      name: app-shared-llm-service
     prompt:
       apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
       kind: Prompt
