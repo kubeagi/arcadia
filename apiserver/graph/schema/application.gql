@@ -1,0 +1,127 @@
+mutation createApplication($input:CreateApplicationMetadataInput!){
+    Application{
+        createApplication(input: $input) {
+            name
+            namespace
+            id
+            labels
+            annotations
+            displayName
+            description
+            icon
+        }
+    }
+}
+
+mutation updateApplication($input: UpdateApplicationMetadataInput!){
+    Application{
+        updateApplication(input: $input) {
+            name
+            namespace
+            id
+            labels
+            annotations
+            displayName
+            description
+            icon
+            isPublic
+        }
+    }
+}
+
+mutation deleteApplication($input: DeleteCommonInput!){
+    Application{
+        deleteApplication(input: $input)
+    }
+}
+mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
+    Application{
+        updateApplicationConfig(input: $input) {
+            metadata {
+                name
+                namespace
+                id
+                labels
+                annotations
+                displayName
+                description
+                icon
+                creator
+                creationTimestamp
+                updateTimestamp
+                isPublic
+                status
+            }
+            prologue
+            model
+            llm
+            temperature
+            maxLength
+            conversionWindowSize
+            knowledgebase
+            scoreThreshold
+            numDocuments
+            docNullReturn
+            userPrompt
+            showNextGuid
+        }
+    }
+}
+
+query getApplication($name: String!, $namespace: String!){
+    Application{
+        getApplication(name: $name, namespace: $namespace) {
+            metadata {
+                name
+                namespace
+                id
+                labels
+                annotations
+                displayName
+                description
+                icon
+                creator
+                creationTimestamp
+                updateTimestamp
+                isPublic
+                status
+            }
+            prologue
+            model
+            llm
+            temperature
+            maxLength
+            conversionWindowSize
+            knowledgebase
+            scoreThreshold
+            numDocuments
+            docNullReturn
+            userPrompt
+            showNextGuid
+        }
+    }
+}
+
+query listApplications($input: ListCommonInput!) {
+    Application{
+        listApplicationMetadata(input: $input) {
+            page
+            pageSize
+            totalCount
+            hasNextPage
+            nodes {
+                ... on ApplicationMetadata {
+                    name
+                    namespace
+                    id
+                    labels
+                    annotations
+                    displayName
+                    description
+                    icon
+                    isPublic
+                }
+            }
+        }
+    }
+}

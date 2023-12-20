@@ -77,15 +77,20 @@ var (
 			Version:  apiprompt.GroupVersion.Version,
 			Resource: "prompts",
 		},
-		"chain": {
+		"llmchain": {
 			Group:    apichain.GroupVersion.Group,
 			Version:  apichain.GroupVersion.Version,
-			Resource: "chains",
+			Resource: "llmchains",
 		},
-		"retriever": {
+		"retrievalqachain": {
+			Group:    apichain.GroupVersion.Group,
+			Version:  apichain.GroupVersion.Version,
+			Resource: "retrievalqachains",
+		},
+		"knowledgebaseretriever": {
 			Group:    apiretriever.GroupVersion.Group,
 			Version:  apiretriever.GroupVersion.Version,
-			Resource: "retrievers",
+			Resource: "knowledgebaseretrievers",
 		},
 		"llm": {
 			Group:    v1alpha1.GroupVersion.Group,

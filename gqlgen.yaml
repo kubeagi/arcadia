@@ -216,19 +216,21 @@ models:
         resolver: true
       deleteWorkers:
         resolver: true
-  KnowledgeBaseApplicationMutation:
+  ApplicationMutation:
     fields:
-      createKnowledgeBaseApplication:
+      createApplication:
         resolver: true
-      updateKnowledgeBaseApplication:
+      updateApplication:
         resolver: true
-      deleteKnowledgeBaseApplication:
+      deleteApplication:
         resolver: true
-  KnowledgeBaseApplicationQuery:
+      updateApplicationConfig:
+        resolver: true
+  ApplicationQuery:
     fields:
-      getKnowledgeBaseApplication:
+      getApplication:
         resolver: true
-      listKnowledgeBaseApplications:
+      listApplicationMetadata:
         resolver: true
   LLMQuery:
     fields:

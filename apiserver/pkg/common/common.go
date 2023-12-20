@@ -130,6 +130,9 @@ func GetObjStatus(obj client.Object) string {
 		v := obj.(*v1alpha1.Worker)
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
 		return string(condition.Reason)
+	case "Application":
+		v := obj.(*v1alpha1.Application)
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
 	default:
 		return ""
 	}

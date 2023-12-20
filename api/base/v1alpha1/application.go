@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 const (
-	InputNode                    = "Input"
-	OutputNode                   = "Output"
-	ApplicationTypeLabel         = Group + "/application-type"
-	KnowledgeBaseApplicationType = "KnowledgeBase"
+	InputNode  = "Input"
+	OutputNode = "Output"
 )

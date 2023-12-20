@@ -37,6 +37,84 @@ type AllDataProcessListByPageInput struct {
 	Namespace string `json:"namespace"`
 }
 
+// Application
+// 应用完整信息
+type Application struct {
+	Metadata *ApplicationMetadata `json:"metadata,omitempty"`
+	// 对话开场白
+	Prologue *string `json:"prologue,omitempty"`
+	// model 指具体使用的模型名称，比如 gpt-3.5-turbo 或者 chatglm_turbo
+	Model *string `json:"model,omitempty"`
+	// llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM 的 CR 的名称
+	Llm string `json:"llm"`
+	// temperature 温度
+	Temperature *float64 `json:"temperature,omitempty"`
+	// maxLength 最大响应长度
+	MaxLength *int `json:"maxLength,omitempty"`
+	// conversionWindowSize 对话轮次
+	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
+	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
+	Knowledgebase *string `json:"knowledgebase,omitempty"`
+	// scoreThreshold 最低相似度
+	ScoreThreshold *float64 `json:"scoreThreshold,omitempty"`
+	// numDocuments  引用上限
+	NumDocuments *int `json:"numDocuments,omitempty"`
+	// docNullReturn 空搜索回复
+	DocNullReturn *string `json:"docNullReturn,omitempty"`
+	// userPrompt 用户级别的 Prompt
+	UserPrompt *string `json:"userPrompt,omitempty"`
+	// showNextGuide 下一步引导，是否显示下一步引导
+	ShowNextGUID *bool `json:"showNextGuid,omitempty"`
+}
+
+// Application
+// 应用 Metadata
+type ApplicationMetadata struct {
+	// 应用名称
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 应用所在的 namespace
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 应用id，为CR资源中的metadata.uid
+	ID *string `json:"id,omitempty"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名，别名
+	DisplayName *string `json:"displayName,omitempty"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// Icon，应用头像， base64格式的图片
+	Icon *string `json:"icon,omitempty"`
+	// 创建者，为当前用户的用户名
+	// 规则: webhook启用后自动添加，默认为空
+	Creator *string `json:"creator,omitempty"`
+	// 创建时间
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	// 更新时间
+	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
+	// 应用状态
+	Status *string `json:"status,omitempty"`
+}
+
+func (ApplicationMetadata) IsPageNode() {}
+
+type ApplicationMutation struct {
+	CreateApplication       ApplicationMetadata `json:"createApplication"`
+	UpdateApplication       ApplicationMetadata `json:"updateApplication"`
+	DeleteApplication       *string             `json:"deleteApplication,omitempty"`
+	UpdateApplicationConfig Application         `json:"updateApplicationConfig"`
+}
+
+type ApplicationQuery struct {
+	GetApplication          Application     `json:"getApplication"`
+	ListApplicationMetadata PaginatedResult `json:"listApplicationMetadata"`
+}
+
 type AuthInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -46,6 +124,27 @@ type CountDataProcessItem struct {
 	Status  int    `json:"status"`
 	Data    int    `json:"data"`
 	Message string `json:"message"`
+}
+
+type CreateApplicationMetadataInput struct {
+	// 应用名称
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 应用所在的namespace
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名，别名
+	DisplayName string `json:"displayName"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// Icon，应用头像， base64格式的图片
+	Icon string `json:"icon"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
 }
 
 // 数据集创建的输入
@@ -113,35 +212,6 @@ type CreateEmbedderInput struct {
 	// 向量化模型服务接口类型
 	// 规则:  目前支持 zhipuai,openai两种接口类型
 	Type *string `json:"type,omitempty"`
-}
-
-type CreateKnowledgeBaseApplicationInput struct {
-	// 知识库应用名称
-	// 规则: 遵循 k8s 命名
-	Name string `json:"name"`
-	// 知识库应用所在的namespace
-	// 规则: 非空
-	Namespace string `json:"namespace"`
-	// 一些用于标记，选择的的标签
-	Labels map[string]interface{} `json:"labels,omitempty"`
-	// 添加一些辅助性记录信息
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	// 展示名
-	DisplayName *string `json:"displayName,omitempty"`
-	// 描述信息
-	Description *string `json:"description,omitempty"`
-	// Icon, base64格式的图片
-	Icon *string `json:"icon,omitempty"`
-	// IsPublic, 是否发布，即是否公开提供服务
-	IsPublic *bool `json:"isPublic,omitempty"`
-	// knowledgebase 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
-	KnowledgebaseName string `json:"knowledgebaseName"`
-	// llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM
-	LlmName string `json:"llmName"`
-	// systemMessage 系统 Prompt
-	SystemMessage *string `json:"systemMessage,omitempty"`
-	// userMessage 用户 Prompt
-	UserMessage *string `json:"userMessage,omitempty"`
 }
 
 // 创建知识库的输入
@@ -651,59 +721,6 @@ type KnowledgeBase struct {
 
 func (KnowledgeBase) IsPageNode() {}
 
-// KnowledgeBaseApplication
-// 知识库应用
-type KnowledgeBaseApplication struct {
-	// 知识库应用名称
-	// 规则: 遵循 k8s 命名
-	Name string `json:"name"`
-	// 知识库应用所在的namespace
-	// 规则: 非空
-	Namespace string `json:"namespace"`
-	// 一些用于标记，选择的的标签
-	Labels map[string]interface{} `json:"labels,omitempty"`
-	// 添加一些辅助性记录信息
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	// 创建者，为当前用户的用户名
-	// 规则: webhook启用后自动添加，默认为空
-	Creator *string `json:"creator,omitempty"`
-	// 展示名
-	DisplayName *string `json:"displayName,omitempty"`
-	// 描述信息
-	Description *string `json:"description,omitempty"`
-	// 创建时间
-	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
-	// 更新时间
-	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
-	// Icon, base64格式的图片
-	Icon *string `json:"icon,omitempty"`
-	// IsPublic, 是否发布，即是否公开提供服务
-	IsPublic *bool `json:"isPublic,omitempty"`
-	// knowledgebaseName 指当前知识库应用使用的knowledgebase知识库
-	KnowledgebaseName string `json:"knowledgebaseName"`
-	// llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
-	LlmName string `json:"llmName"`
-	// systemMessage 系统 Prompt
-	SystemMessage *string `json:"systemMessage,omitempty"`
-	// userMessage 用户 Prompt
-	UserMessage *string `json:"userMessage,omitempty"`
-	// 知识库应用状态
-	Status *string `json:"status,omitempty"`
-}
-
-func (KnowledgeBaseApplication) IsPageNode() {}
-
-type KnowledgeBaseApplicationMutation struct {
-	CreateKnowledgeBaseApplication KnowledgeBaseApplication `json:"createKnowledgeBaseApplication"`
-	UpdateKnowledgeBaseApplication KnowledgeBaseApplication `json:"updateKnowledgeBaseApplication"`
-	DeleteKnowledgeBaseApplication *string                  `json:"deleteKnowledgeBaseApplication,omitempty"`
-}
-
-type KnowledgeBaseApplicationQuery struct {
-	GetKnowledgeBaseApplication   KnowledgeBaseApplication `json:"getKnowledgeBaseApplication"`
-	ListKnowledgeBaseApplications PaginatedResult          `json:"listKnowledgeBaseApplications"`
-}
-
 type KnowledgeBaseMutation struct {
 	CreateKnowledgeBase KnowledgeBase `json:"createKnowledgeBase"`
 	UpdateKnowledgeBase KnowledgeBase `json:"updateKnowledgeBase"`
@@ -983,6 +1000,60 @@ type TypedObjectReferenceInput struct {
 	Namespace *string `json:"namespace,omitempty"`
 }
 
+type UpdateApplicationConfigInput struct {
+	// 应用名称, 用于确定要更新哪个应用
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 应用所在的 namespace, 用于确定要更新哪个应用
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 对话开场白
+	Prologue *string `json:"prologue,omitempty"`
+	// model 指具体使用的模型名称，比如 gpt-3.5-turbo 或者 chatglm_turbo
+	Model *string `json:"model,omitempty"`
+	// llm 指当前知识库应用使用的模型服务，即 Kind 为 LLM 的 CR 的名称
+	Llm string `json:"llm"`
+	// temperature 温度
+	Temperature *float64 `json:"temperature,omitempty"`
+	// maxLength 最大响应长度
+	MaxLength *int `json:"maxLength,omitempty"`
+	// conversionWindowSize 对话轮次
+	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
+	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
+	Knowledgebase *string `json:"knowledgebase,omitempty"`
+	// scoreThreshold 最低相似度
+	ScoreThreshold *float64 `json:"scoreThreshold,omitempty"`
+	// numDocuments  引用上限
+	NumDocuments *int `json:"numDocuments,omitempty"`
+	// docNullReturn 空搜索回复
+	DocNullReturn *string `json:"docNullReturn,omitempty"`
+	// userPrompt 用户级别的 Prompt
+	UserPrompt *string `json:"userPrompt,omitempty"`
+	// showNextGuide 下一步引导，是否显示下一步引导
+	ShowNextGUID *bool `json:"showNextGuid,omitempty"`
+}
+
+type UpdateApplicationMetadataInput struct {
+	// 应用名称, 用于确定要更新哪个应用
+	// 规则: 遵循 k8s 命名
+	Name string `json:"name"`
+	// 应用所在的 namespace, 用于确定要更新哪个应用
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签，如果要更新，请传递完整内容
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息，如果要更新，请传递完整内容
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 展示名，别名
+	DisplayName string `json:"displayName"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// Icon，应用头像， base64格式的图片
+	Icon string `json:"icon"`
+	// IsPublic, 是否发布，即是否公开提供服务
+	IsPublic *bool `json:"isPublic,omitempty"`
+}
+
 // 数据集更新的输入
 type UpdateDatasetInput struct {
 	// name, namespace用来确定资源
@@ -1036,33 +1107,6 @@ type UpdateEmbedderInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型服务资源描述
 	Description *string `json:"description,omitempty"`
-}
-
-type UpdateKnowledgeBaseApplicationInput struct {
-	// 这个名字就是metadat.name, 根据name和namespace确定资源
-	// name，namespac是不可以更新的。
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	// 更新的的标签信息，这里涉及到增加或者删除标签，
-	// 所以，如果标签有任何改动，传递完整的label。
-	// 例如之前的标齐是: abc:def 新增一个标签aa:bb, 那么传递 abc:def, aa:bb
-	Labels map[string]interface{} `json:"labels,omitempty"`
-	// 传递方式同label
-	Annotations map[string]interface{} `json:"annotations,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Description *string                `json:"description,omitempty"`
-	// Icon, base64格式的图片
-	Icon *string `json:"icon,omitempty"`
-	// IsPublic, 是否发布，即是否公开提供服务
-	IsPublic *bool `json:"isPublic,omitempty"`
-	// knowledgebaseName 指当前知识库应用使用的knowledgebase知识库，即 Kind 为 Knowledgebase
-	KnowledgebaseName string `json:"knowledgebaseName"`
-	// llmName 指当前知识库应用使用的模型服务，即 Kind 为 LLM
-	LlmName string `json:"llmName"`
-	// systemMessage 系统 Prompt
-	SystemMessage *string `json:"systemMessage,omitempty"`
-	// userMessage 用户 Prompt
-	UserMessage *string `json:"userMessage,omitempty"`
 }
 
 // 知识库更新的输入
