@@ -21,6 +21,7 @@ maintainers:
 dependencies:
   - name: postgresql
     version: 13.2.14
+    condition: postgresql.enabled
   - name: minio
     version: 5.0.13
   - name: fastchat
