@@ -51,7 +51,7 @@ func (vs *VectorStore) InitCondition() Condition {
 		LastTransitionTime: metav1.Now(),
 		LastSuccessfulTime: metav1.Now(),
 		Reason:             "Init",
-		Message:            "Reconciliation in progress",
+		Message:            "VectorStore - embedding in progress",
 	}
 }
 

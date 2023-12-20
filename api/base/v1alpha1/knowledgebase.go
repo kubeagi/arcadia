@@ -14,7 +14,7 @@ func (kb *KnowledgeBase) InitCondition() Condition {
 		Type:               TypeReady,
 		Status:             corev1.ConditionUnknown,
 		Reason:             "Init",
-		Message:            "Reconciliation in progress",
+		Message:            "KnowledgeBase - embedding in progress",
 		LastTransitionTime: metav1.Now(),
 		LastSuccessfulTime: metav1.Now(),
 	}

@@ -84,7 +84,7 @@ To enhace the AI capability in Golang, we developed some packages.Here are the e
 
 ## Contribute to Arcadia
 
-If you want to contribute to Arcadia, refer to [contribute guide](CONTRIBUTING.md).
+If you want to contribute to Arcadia, refer to [contribute guide](http://kubeagi.k8s.com.cn/docs/Contribute/prepare-and-start).
 
 ## Support
 
