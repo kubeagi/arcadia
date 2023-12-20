@@ -219,10 +219,11 @@ spec:
     uid: ""
   pathname: /kubeagi-portal/model-app
   project: true
-  rankingInColumn: 100
+  disabled: true
+  rankingInColumn: 200
   tenant: true
-  text: 模型应用
-  textEn: 模型应用
+  text: AI 智能体
+  textEn: AI 智能体
 status: {}
 
 ---
@@ -255,10 +256,10 @@ spec:
     uid: ""
   pathname: /kubeagi-portal/chat
   project: true
-  rankingInColumn: 200
+  rankingInColumn: 100
   tenant: true
-  text: 对话管理
-  textEn: 对话管理
+  text: 模型应用
+  textEn: 模型应用
 status: {}
 
 ---

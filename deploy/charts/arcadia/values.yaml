@@ -83,7 +83,6 @@ minio:
       dnsNames:
       - minio-api.<replaced-ingress-nginx-ip>.nip.io
       - minio-console.<replaced-ingress-nginx-ip>.nip.io
-
   buckets:
     # Name of the bucket
     - name: *default-oss-bucket
@@ -120,12 +119,13 @@ dataprocess:
     llm:
       qa_retry_count: '2'
 
-# @section postgresql is used to configure postgreslq service
+# @section postgresql is used to configure postgresql service
 # Posgresql service will be used in two parts:
 # - dataprocessing
 # - llm application
 # - used as vector store with pgvector enabled
 postgresql:
+  enabled: true
   global:
     storageClass: "openebs-hostpath"
     postgresql:
@@ -141,3 +141,6 @@ postgresql:
     repository: kubeagi/postgresql
     tag: 16.1.0-debian-11-r15
     pullPolicy: IfNotPresent
+  primary:
+    initdb:
+      scriptsConfigMap: pg-init-data

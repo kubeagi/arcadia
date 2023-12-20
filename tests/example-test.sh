@@ -287,6 +287,9 @@ else
 fi
 
 info "8 validate simple app can work normally"
+info "Prepare dependent LLM service"
+kubectl apply -f config/samples/app_shared_llm_service.yaml
+
 info "8.1 app of llmchain"
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
