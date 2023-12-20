@@ -94,7 +94,7 @@ spec:
                     type: string
                 type: object
               scoreThreshold:
-                default: 0.7
+                default: 0.3
                 description: ScoreThreshold is the cosine distance float score threshold.
                   Lower score represents more similarity.
                 maximum: 1
