@@ -215,6 +215,11 @@ func (s *ConditionedStatus) IsReady() bool {
 	return s.GetCondition(TypeReady).Status == corev1.ConditionTrue
 }
 
+func (s *ConditionedStatus) IsOffline() bool {
+	readyCond := s.GetCondition(TypeReady)
+	return readyCond.Status == corev1.ConditionFalse && readyCond.Reason == "Offline"
+}
+
 func (s *ConditionedStatus) WaitingCompleteCondition() []Condition {
 	return []Condition{{
 		Type:               TypeReady,

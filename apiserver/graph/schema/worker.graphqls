@@ -87,6 +87,13 @@ type Worker {
     modelTypes: String!
 
     """
+    worker运行的Pod副本数量
+    规则: 默认为1，最大值为1
+    规则: 为0时，即下线
+    """
+    replicas: String
+
+    """
     worker运行所需的资源
     规则: 必填
     """
@@ -169,6 +176,8 @@ input UpdateWorkerInput {
     规则: 如果为空，则不更新；如果type类型与当前类型相同，则不更新
     """
     type: String
+
+    replicas: String
 
     """
     worker运行所需的资源

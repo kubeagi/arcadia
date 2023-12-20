@@ -1186,7 +1186,8 @@ type UpdateWorkerInput struct {
 	// - "fastchat" : fastchat提供的通用的推理服务模式
 	// - "fastchat-vllm" : fastchat提供的采用VLLM推理加速的推理服务模式
 	// 规则: 如果为空，则不更新；如果type类型与当前类型相同，则不更新
-	Type *string `json:"type,omitempty"`
+	Type     *string `json:"type,omitempty"`
+	Replicas *string `json:"replicas,omitempty"`
 	// worker运行所需的资源
 	Resources *ResourcesInput `json:"resources,omitempty"`
 }
@@ -1279,6 +1280,10 @@ type Worker struct {
 	Model TypedObjectReference `json:"model"`
 	// worker对应的模型类型
 	ModelTypes string `json:"modelTypes"`
+	// worker运行的Pod副本数量
+	// 规则: 默认为1，最大值为1
+	// 规则: 为0时，即下线
+	Replicas *string `json:"replicas,omitempty"`
 	// worker运行所需的资源
 	// 规则: 必填
 	Resources Resources `json:"resources"`

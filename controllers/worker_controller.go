@@ -22,9 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -110,7 +109,7 @@ func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	// initialize labels
-	requeue, err := r.Initialize(ctx, log, worker)
+	requeue, err := r.initialize(ctx, log, worker)
 	if err != nil {
 		log.V(1).Info("Failed to update labels")
 		return ctrl.Result{}, err
@@ -119,13 +118,16 @@ func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	err = r.reconcile(ctx, log, worker)
+	// core rereconcile for worker
+	reconciledWorker, err := r.reconcile(ctx, log, worker)
 	if err != nil {
 		log.Error(err, "Failed to reconcile worker")
 		r.setCondition(worker, worker.ErrorCondition(err.Error()))
 	}
 
-	if updateStatusErr := r.patchStatus(ctx, worker); updateStatusErr != nil {
+	// update status
+	updateStatusErr := r.patchStatus(ctx, reconciledWorker)
+	if updateStatusErr != nil {
 		log.Error(updateStatusErr, "Failed to patch worker status")
 		return ctrl.Result{Requeue: true}, updateStatusErr
 	}
@@ -133,7 +135,7 @@ func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	return ctrl.Result{}, nil
 }
 
-func (r *WorkerReconciler) Initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Worker) (bool, error) {
+func (r *WorkerReconciler) initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Worker) (bool, error) {
 	instanceDeepCopy := instance.DeepCopy()
 
 	var update bool
@@ -157,104 +159,36 @@ func (r *WorkerReconciler) Initialize(ctx context.Context, logger logr.Logger, i
 	return false, nil
 }
 
-func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker) error {
-	// reconcile worker instance
-	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
+func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker) (*arcadiav1alpha1.Worker, error) {
+	logger.V(5).Info("GetSystemDatasource which hosts the worker's model files")
+	datasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
 	if err != nil {
-		return errors.Wrap(err, "Failed to get system datasource")
+		return worker, errors.Wrap(err, "Failed to get system datasource")
 	}
-	w, err := arcadiaworker.NewPodWorker(ctx, r.Client, r.Scheme, worker, system)
+
+	// Only PodWorker(hosts this worker via a single pod) supported now
+	w, err := arcadiaworker.NewPodWorker(ctx, r.Client, r.Scheme, worker, datasource)
 	if err != nil {
-		return errors.Wrap(err, "Failed to new a pod worker")
+		return worker, errors.Wrap(err, "Failed to new a pod worker")
 	}
 
 	logger.V(5).Info("BeforeStart worker")
 	if err := w.BeforeStart(ctx); err != nil {
-		return errors.Wrap(err, "Failed to do BeforeStart")
+		return w.Worker(), errors.Wrap(err, "Failed to do BeforeStart")
 	}
+
 	logger.V(5).Info("Start worker")
 	if err := w.Start(ctx); err != nil {
-		return errors.Wrap(err, "Failed to do Start")
+		return w.Worker(), errors.Wrap(err, "Failed to do Start")
 	}
-	logger.V(5).Info("State worker")
-	status, err := w.State(ctx)
+
+	logger.V(5).Info("AfterStart worker")
+	err = w.AfterStart(ctx)
 	if err != nil {
-		return errors.Wrap(err, "Failed to do State")
+		return w.Worker(), errors.Wrap(err, "Failed to do AfterStart")
 	}
 
-	// check & patch state
-	podStatus := status.(*corev1.PodStatus)
-	switch podStatus.Phase {
-	case corev1.PodRunning, corev1.PodSucceeded:
-		r.setCondition(worker, worker.ReadyCondition())
-	case corev1.PodPending, corev1.PodUnknown:
-		r.setCondition(worker, worker.PendingCondition())
-	case corev1.PodFailed:
-		r.setCondition(worker, worker.ErrorCondition("Pod failed"))
-	}
-
-	worker.Status.PodStatus = *podStatus
-
-	// further reconcile when worker is ready
-	if worker.Status.IsReady() {
-		if err := r.reconcileWhenWorkerReady(ctx, logger, worker, w.Model()); err != nil {
-			return errors.Wrap(err, "Failed to do further reconcile when worker is ready")
-		}
-	}
-
-	return nil
-}
-
-func (r *WorkerReconciler) reconcileWhenWorkerReady(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker, model *arcadiav1alpha1.Model) error {
-	// reconcile worker's Embedder when its model is a embedding model
-	if model.IsEmbeddingModel() {
-		embedder := &arcadiav1alpha1.Embedder{}
-		err := r.Client.Get(ctx, types.NamespacedName{Namespace: worker.Namespace, Name: worker.Name + "-worker"}, embedder)
-		switch arcadiaworker.ActionOnError(err) {
-		case arcadiaworker.Create:
-			// Create when not found
-			embedder = worker.BuildEmbedder()
-			if err = controllerutil.SetControllerReference(worker, embedder, r.Scheme); err != nil {
-				return err
-			}
-			if err = r.Client.Create(ctx, embedder); err != nil {
-				// Ignore error when already exists
-				if !k8serrors.IsAlreadyExists(err) {
-					return err
-				}
-			}
-		case arcadiaworker.Update:
-			// Skip update when found
-		case arcadiaworker.Panic:
-			return err
-		}
-	}
-
-	// reconcile worker's LLM when its model is a LLM model
-	if model.IsLLMModel() {
-		llm := &arcadiav1alpha1.LLM{}
-		err := r.Client.Get(ctx, types.NamespacedName{Namespace: worker.Namespace, Name: worker.Name + "-worker"}, llm)
-		switch arcadiaworker.ActionOnError(err) {
-		case arcadiaworker.Create:
-			// Create when not found
-			llm = worker.BuildLLM()
-			if err = controllerutil.SetControllerReference(worker, llm, r.Scheme); err != nil {
-				return err
-			}
-			if err = r.Client.Create(ctx, llm); err != nil {
-				// Ignore error when already exists
-				if !k8serrors.IsAlreadyExists(err) {
-					return err
-				}
-			}
-		case arcadiaworker.Update:
-			// Skip update when found
-		case arcadiaworker.Panic:
-			return err
-		}
-	}
-
-	return nil
+	return w.Worker(), nil
 }
 
 func (r *WorkerReconciler) setCondition(worker *arcadiav1alpha1.Worker, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.Worker {
@@ -287,17 +221,19 @@ func (r *WorkerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return !reflect.DeepEqual(oldWorker.Spec, newWorker.Spec) || newWorker.DeletionTimestamp != nil
 			},
 		})).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &arcadiav1alpha1.Worker{},
-		}, builder.WithPredicates(
-			predicate.Funcs{
-				UpdateFunc: func(ue event.UpdateEvent) bool {
-					oldDep := ue.ObjectOld.(*appsv1.Deployment)
-					newDep := ue.ObjectNew.(*appsv1.Deployment)
-					return !reflect.DeepEqual(oldDep.Status, newDep.Status)
-				},
-			},
-		)).
+		Watches(&source.Kind{Type: &corev1.Pod{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			pod := o.(*corev1.Pod)
+			if pod.Labels != nil && pod.Labels[arcadiav1alpha1.WorkerPodLabel] != "" {
+				return []ctrl.Request{
+					reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Namespace: pod.Namespace,
+							Name:      pod.Labels[arcadiav1alpha1.WorkerPodLabel],
+						},
+					},
+				}
+			}
+			return []ctrl.Request{}
+		})).
 		Complete(r)
 }

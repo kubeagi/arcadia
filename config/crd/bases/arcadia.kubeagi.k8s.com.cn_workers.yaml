@@ -73,6 +73,12 @@ spec:
                 - kind
                 - name
                 type: object
+              replicas:
+                default: 1
+                description: Replicas of this worker instance(1 by default)
+                format: int32
+                maximum: 1
+                type: integer
               resources:
                 description: Resource request&limits including - CPU or GPU - Memory
                 properties:

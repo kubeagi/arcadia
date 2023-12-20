@@ -18,7 +18,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -60,6 +62,12 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	// Unknown,Pending ,Running ,Error
 	status := common.GetObjStatus(worker)
 
+	// replicas
+	var replicas string
+	if worker.Spec.Replicas != nil {
+		replicas = fmt.Sprint(worker.Spec.Replicas)
+	}
+
 	// resources
 	cpu := worker.Spec.Resources.Limits[v1.ResourceCPU]
 	cpuStr := cpu.String()
@@ -91,6 +99,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		Status:            &status,
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
+		Replicas:          &replicas,
 		Resources:         resources,
 		ModelTypes:        "unknown",
 		API:               &api,
@@ -214,6 +223,16 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		if worker.Type() != v1alpha1.WorkerType(*input.Type) {
 			worker.Spec.Type = v1alpha1.WorkerType(*input.Type)
 		}
+	}
+
+	// replicas
+	if input.Replicas != nil {
+		replicas, err := strconv.ParseInt(*input.Replicas, 10, 32)
+		if err != nil {
+			return nil, errors.Wrap(err, "Invalid replicas")
+		}
+		replicasInt32 := int32(replicas)
+		worker.Spec.Replicas = &replicasInt32
 	}
 
 	// resources

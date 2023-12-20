@@ -18,6 +18,7 @@ spec:
   model:
     kind: "Models"
     name: "baichuan2-7b-chat"
+  replicas: 1
   resources:
     limits:
       nvidia.com/gpu: "1" # request 1 GPU

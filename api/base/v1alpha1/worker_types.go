@@ -34,6 +34,11 @@ type WorkerSpec struct {
 	// Model this worker wants to use
 	Model *TypedObjectReference `json:"model"`
 
+	// Replicas of this worker instance(1 by default)
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Maximum=1
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Resource request&limits including
 	// - CPU or GPU
 	// - Memory

@@ -43,6 +43,10 @@ const (
 var (
 	ErrNotImplementedYet = errors.New("not implemented yet")
 	ErrModelNotReady     = errors.New("worker's model is not ready")
+
+	// Default replicas for a worker
+	// Only support 1 for now
+	DefaultWorkerReplicas int32 = 1
 )
 
 type Action string
@@ -64,13 +68,17 @@ func ActionOnError(err error) Action {
 
 // Worker implement the lifecycle management of a LLM worker
 type Worker interface {
+	// Worker that this is for
+	Worker() *arcadiav1alpha1.Worker
 	// Model that this worker is running for
 	Model() *arcadiav1alpha1.Model
 
 	// Actions to do before start this worker
 	BeforeStart(ctx context.Context) error
-	// Actiosn to do when Start this worker
+	// Actions to do when Start this worker
 	Start(ctx context.Context) error
+	// Actions to do after start this worker
+	AfterStart(ctx context.Context) error
 
 	// Actions to do before stop this worker
 	BeforeStop(ctx context.Context) error
@@ -83,6 +91,7 @@ type Worker interface {
 
 var _ Worker = (*PodWorker)(nil)
 
+// PodWorker hosts this worker in a single pod but with different loader and runner based on Worker's confiugration
 type PodWorker struct {
 	c client.Client
 	s *runtime.Scheme
@@ -105,8 +114,8 @@ type PodWorker struct {
 	storage    corev1.Volume
 }
 
-func (worker *PodWorker) SuffixedName() string {
-	return worker.Name + WokerCommonSuffix
+func (podWorker *PodWorker) SuffixedName() string {
+	return podWorker.Name + WokerCommonSuffix
 }
 
 func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *arcadiav1alpha1.Worker, d *arcadiav1alpha1.Datasource) (*PodWorker, error) {
@@ -115,7 +124,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		model.Namespace = &w.Namespace
 	}
 
-	worker := &PodWorker{
+	podWorker := &PodWorker{
 		c: c,
 		s: s,
 		w: w.DeepCopy(),
@@ -134,7 +143,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		klog.Errorf("%s/%s model is not ready", m.Namespace, m.Name)
 		return nil, ErrModelNotReady
 	}
-	worker.m = m
+	podWorker.m = m
 
 	// default fields in a worker
 	storage := corev1.Volume{
@@ -146,13 +155,13 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      worker.SuffixedName(),
-			Namespace: worker.Namespace,
+			Name:      podWorker.SuffixedName(),
+			Namespace: podWorker.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 			Selector: map[string]string{
-				"app.kubernetes.io/name": worker.SuffixedName(),
+				arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
 			},
 			Ports: []corev1.ServicePort{
 				{Name: "http", Port: 21002, TargetPort: intstr.Parse("http"), Protocol: corev1.ProtocolTCP},
@@ -162,22 +171,28 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 
 	deployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      worker.SuffixedName(),
+			Name:      podWorker.SuffixedName(),
 			Namespace: w.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": worker.SuffixedName(),
+					arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
+			Replicas: &DefaultWorkerReplicas,
 		},
 	}
 
-	worker.storage = storage
-	worker.service = service
-	worker.deployment = deployment
+	// set the worker replicas
+	if w.Spec.Replicas != nil {
+		deployment.Spec.Replicas = w.Spec.Replicas
+	}
+
+	podWorker.storage = storage
+	podWorker.service = service
+	podWorker.deployment = deployment
 
 	// init loader(Only oss supported yet)
 	endpoint := d.Spec.Enpoint.DeepCopy()
@@ -190,7 +205,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		if err != nil {
 			return nil, fmt.Errorf("failed to new a loader with %w", err)
 		}
-		worker.l = l
+		podWorker.l = l
 	default:
 		return nil, fmt.Errorf("datasource %s with type %s not supported in worker", d.Name, d.Spec.Type())
 	}
@@ -202,82 +217,136 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		if err != nil {
 			return nil, fmt.Errorf("failed to new a runner with %w", err)
 		}
-		worker.r = r
+		podWorker.r = r
 	case arcadiav1alpha1.WorkerTypeFastchatNormal:
 		r, err := NewRunnerFastchat(c, w.DeepCopy())
 		if err != nil {
 			return nil, fmt.Errorf("failed to new a runner with %w", err)
 		}
-		worker.r = r
+		podWorker.r = r
 	default:
 		return nil, fmt.Errorf("worker %s with type %s not supported in worker", w.Name, w.Type())
 	}
 
-	return worker, nil
+	return podWorker, nil
+}
+
+func (podWorker *PodWorker) Worker() *arcadiav1alpha1.Worker {
+	return podWorker.w
 }
 
 // Model that this worker is running for
-func (worker *PodWorker) Model() *arcadiav1alpha1.Model {
-	return worker.m.DeepCopy()
+func (podWorker *PodWorker) Model() *arcadiav1alpha1.Model {
+	return podWorker.m.DeepCopy()
 }
 
-func (worker *PodWorker) BeforeStart(ctx context.Context) error {
+// BeforeStart will create resources which are related to this Worker
+// Now we have a pvc(if configured),service,LLM(if a llm model),Embedder(if a embedding model)
+func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 	var err error
 
 	// prepare pvc
-	if worker.w.Spec.Storage != nil {
+	if podWorker.Worker().Spec.Storage != nil {
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: worker.Namespace,
-				Name:      worker.SuffixedName(),
+				Namespace: podWorker.Namespace,
+				Name:      podWorker.SuffixedName(),
 			},
-			Spec: *worker.w.Spec.Storage.DeepCopy(),
+			Spec: *podWorker.Worker().Spec.Storage.DeepCopy(),
 		}
-		err = controllerutil.SetControllerReference(worker.w, pvc, worker.s)
+		err = controllerutil.SetControllerReference(podWorker.Worker(), pvc, podWorker.s)
 		if err != nil {
 			return fmt.Errorf("failed to set owner reference with %w", err)
 		}
 
-		err = worker.c.Get(ctx, types.NamespacedName{Namespace: pvc.Namespace, Name: pvc.Name}, &corev1.PersistentVolumeClaim{})
+		err = podWorker.c.Get(ctx, types.NamespacedName{Namespace: pvc.Namespace, Name: pvc.Name}, &corev1.PersistentVolumeClaim{})
 		switch ActionOnError(err) {
 		case Panic:
 			return err
 		case Update:
-			if err = worker.c.Update(ctx, pvc); err != nil {
+			if err = podWorker.c.Update(ctx, pvc); err != nil {
 				return err
 			}
 		case Create:
-			err = worker.c.Create(ctx, pvc)
+			err = podWorker.c.Create(ctx, pvc)
 			if err != nil {
 				return err
 			}
 		}
-		worker.storage = corev1.Volume{
+		podWorker.storage = corev1.Volume{
 			Name: "models",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: worker.SuffixedName(),
+					ClaimName: podWorker.SuffixedName(),
 				},
 			},
 		}
 	}
 
 	// prepare svc
-	svc := worker.service.DeepCopy()
-	err = controllerutil.SetControllerReference(worker.w, svc, worker.s)
+	svc := podWorker.service.DeepCopy()
+	err = controllerutil.SetControllerReference(podWorker.Worker(), svc, podWorker.s)
 	if err != nil {
 		return err
 	}
-	err = worker.c.Get(ctx, types.NamespacedName{Namespace: svc.Namespace, Name: svc.Name}, &corev1.Service{})
+	err = podWorker.c.Get(ctx, types.NamespacedName{Namespace: svc.Namespace, Name: svc.Name}, &corev1.Service{})
 	switch ActionOnError(err) {
 	case Panic:
 		return err
 	case Update:
-		if err := worker.c.Update(ctx, svc); err != nil {
+		if err := podWorker.c.Update(ctx, svc); err != nil {
 			return err
 		}
 	case Create:
-		if err := worker.c.Create(ctx, svc); err != nil {
+		if err := podWorker.c.Create(ctx, svc); err != nil {
+			return err
+		}
+	}
+
+	// prepare LLM/Embedder
+	model := podWorker.Model()
+	if model.IsEmbeddingModel() {
+		embedder := &arcadiav1alpha1.Embedder{}
+		err := podWorker.c.Get(ctx, types.NamespacedName{Namespace: podWorker.Namespace, Name: podWorker.Name}, embedder)
+		switch ActionOnError(err) {
+		case Create:
+			// Create when not found
+			embedder = podWorker.Worker().BuildEmbedder()
+			if err = controllerutil.SetControllerReference(podWorker.Worker(), embedder, podWorker.c.Scheme()); err != nil {
+				return err
+			}
+			if err = podWorker.c.Create(ctx, embedder); err != nil {
+				// Ignore error when already exists
+				if !k8serrors.IsAlreadyExists(err) {
+					return err
+				}
+			}
+		case Update:
+			// Skip update when found
+		case Panic:
+			return err
+		}
+	}
+
+	if model.IsLLMModel() {
+		llm := &arcadiav1alpha1.LLM{}
+		err := podWorker.c.Get(ctx, types.NamespacedName{Namespace: podWorker.Namespace, Name: podWorker.Name}, llm)
+		switch ActionOnError(err) {
+		case Create:
+			// Create when not found
+			llm = podWorker.Worker().BuildLLM()
+			if err = controllerutil.SetControllerReference(podWorker.Worker(), llm, podWorker.c.Scheme()); err != nil {
+				return err
+			}
+			if err = podWorker.c.Create(ctx, llm); err != nil {
+				// Ignore error when already exists
+				if !k8serrors.IsAlreadyExists(err) {
+					return err
+				}
+			}
+		case Update:
+			// Skip update when found
+		case Panic:
 			return err
 		}
 	}
@@ -285,58 +354,62 @@ func (worker *PodWorker) BeforeStart(ctx context.Context) error {
 	return nil
 }
 
-func (worker *PodWorker) Start(ctx context.Context) error {
+// Start will build and create worker pod which will host model service
+func (podWorker *PodWorker) Start(ctx context.Context) error {
 	var err error
 
 	// define the way to load model
-	loader, err := worker.l.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &worker.m.Namespace, Name: worker.m.Name})
+	loader, err := podWorker.l.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &podWorker.m.Namespace, Name: podWorker.m.Name})
 	if err != nil {
 		return fmt.Errorf("failed to build loader with %w", err)
 	}
 	conLoader, _ := loader.(*corev1.Container)
 
 	// define the way to run model
-	runner, err := worker.r.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &worker.m.Namespace, Name: worker.m.Name})
+	runner, err := podWorker.r.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &podWorker.m.Namespace, Name: podWorker.m.Name})
 	if err != nil {
 		return fmt.Errorf("failed to build runner with %w", err)
 	}
 	conRunner, _ := runner.(*corev1.Container)
 
 	// initialize deployment
-	desiredDep := worker.deployment.DeepCopy()
-	desiredDep.Spec.Template = corev1.PodTemplateSpec{
+	desiredDep := podWorker.deployment.DeepCopy()
+	// configure pod template
+	podSpecTempalte := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": worker.SuffixedName(),
+				arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
+				arcadiav1alpha1.WorkerPodLabel:         podWorker.Worker().Name,
 			},
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy:  corev1.RestartPolicyAlways,
 			InitContainers: []corev1.Container{*conLoader},
 			Containers:     []corev1.Container{*conRunner},
-			Volumes:        []corev1.Volume{worker.storage},
+			Volumes:        []corev1.Volume{podWorker.storage},
 		},
 	}
-	err = controllerutil.SetControllerReference(worker.w, desiredDep, worker.s)
+	desiredDep.Spec.Template = podSpecTempalte
+	err = controllerutil.SetControllerReference(podWorker.Worker(), desiredDep, podWorker.s)
 	if err != nil {
 		return fmt.Errorf("failed to set owner reference with %w", err)
 	}
 
 	currDep := &appsv1.Deployment{}
-	err = worker.c.Get(ctx, types.NamespacedName{Namespace: desiredDep.Namespace, Name: desiredDep.Name}, currDep)
+	err = podWorker.c.Get(ctx, types.NamespacedName{Namespace: desiredDep.Namespace, Name: desiredDep.Name}, currDep)
 	switch ActionOnError(err) {
 	case Panic:
 		return err
 	case Update:
 		merged := MakeMergedDeployment(currDep, desiredDep)
 		// Update only when spec changed
-		err = worker.c.Patch(ctx, merged, client.MergeFrom(currDep))
+		err = podWorker.c.Patch(ctx, merged, client.MergeFrom(currDep))
 		if err != nil {
 			return errors.Wrap(err, "Failed to update worker")
 		}
 
 	case Create:
-		err = worker.c.Create(ctx, desiredDep)
+		err = podWorker.c.Create(ctx, desiredDep)
 		if err != nil {
 			return fmt.Errorf("failed to create deployment with %w", err)
 		}
@@ -349,26 +422,59 @@ func MakeMergedDeployment(target *appsv1.Deployment, desired *appsv1.Deployment)
 	merged := target.DeepCopy()
 
 	// merge this deployment with desired
-	merged.Spec.Template.Spec = desired.Spec.Template.Spec
+	merged.Spec = desired.Spec
+
 	return merged
 }
 
+// Actions to do after start this worker
+func (podWorker *PodWorker) AfterStart(ctx context.Context) error {
+	// get worker's latest state
+	status, err := podWorker.State(ctx)
+	if err != nil {
+		return errors.Wrap(err, "Failed to do State")
+	}
+
+	// check & patch state
+	podStatus := status.(*corev1.PodStatus)
+	switch podStatus.Phase {
+	case corev1.PodRunning, corev1.PodSucceeded:
+		podWorker.Worker().Status.SetConditions(podWorker.Worker().ReadyCondition())
+	case corev1.PodPending:
+		podWorker.Worker().Status.SetConditions(podWorker.Worker().PendingCondition())
+	case corev1.PodUnknown:
+		// If pod is unknown and replicas is zero,then this must be offline
+		if *podWorker.w.Spec.Replicas == 0 {
+			podWorker.Worker().Status.SetConditions(podWorker.Worker().OfflineCondition())
+		} else {
+			podWorker.Worker().Status.SetConditions(podWorker.Worker().PendingCondition())
+		}
+
+	case corev1.PodFailed:
+		podWorker.Worker().Status.SetConditions(podWorker.Worker().ErrorCondition("Pod failed"))
+	}
+
+	podWorker.Worker().Status.PodStatus = *podStatus
+
+	return nil
+}
+
 // TODO: BeforeStop
-func (worker *PodWorker) BeforeStop(ctx context.Context) error {
+func (podWorker *PodWorker) BeforeStop(ctx context.Context) error {
 	return nil
 }
 
 // TODO: Stop
-func (worker *PodWorker) Stop(ctx context.Context) error {
+func (podWorker *PodWorker) Stop(ctx context.Context) error {
 	return nil
 }
 
 // State of this worker
-func (worker *PodWorker) State(ctx context.Context) (any, error) {
+func (podWorker *PodWorker) State(ctx context.Context) (any, error) {
 	podList := &corev1.PodList{}
-	err := worker.c.List(ctx, podList, &client.ListOptions{
+	err := podWorker.c.List(ctx, podList, &client.ListOptions{
 		LabelSelector: labels.Set{
-			"app.kubernetes.io/name": worker.SuffixedName(),
+			arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
 		}.AsSelector(),
 	})
 

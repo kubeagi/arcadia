@@ -15,6 +15,7 @@ metadata:
   namespace: arcadia
 spec:
   type: "fastchat"
+  replicas: 1
   model:
     kind: "Models"
     name: "bge-large-zh-v1.5"
