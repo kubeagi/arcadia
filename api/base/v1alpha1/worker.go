@@ -34,6 +34,10 @@ const (
 
 const (
 	LabelWorkerType = Group + "/worker-type"
+
+	// Labels for worker's Pod
+	WorkerPodSelectorLabel = "app.kubernetes.io/name"
+	WorkerPodLabel         = Group + "/worker"
 )
 
 func DefaultWorkerType() WorkerType {
@@ -102,6 +106,27 @@ func (worker Worker) ReadyCondition() Condition {
 		Message:            "Work has been actively running",
 		LastTransitionTime: metav1.Now(),
 		LastSuccessfulTime: metav1.Now(),
+	}
+}
+
+func (worker Worker) OfflineCondition() Condition {
+	currCon := worker.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionTrue && currCon.Reason == "Offline" {
+		return currCon
+	}
+	// keep original LastSuccessfulTime if have
+	lastSuccessfulTime := metav1.Now()
+	if currCon.LastSuccessfulTime.IsZero() {
+		lastSuccessfulTime = currCon.LastSuccessfulTime
+	}
+	return Condition{
+		Type:               TypeReady,
+		Status:             corev1.ConditionFalse,
+		Reason:             "Offline",
+		Message:            "Work is offline",
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: lastSuccessfulTime,
 	}
 }
 

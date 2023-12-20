@@ -32,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
@@ -133,6 +136,26 @@ func (r *EmbedderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return true
 			},
 		})).
+		Watches(&source.Kind{Type: &arcadiav1alpha1.Worker{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				worker := o.(*arcadiav1alpha1.Worker)
+				model := worker.Spec.Model.DeepCopy()
+				if model.Namespace == nil {
+					model.Namespace = &worker.Namespace
+				}
+				m := &arcadiav1alpha1.Model{}
+				if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, m); err != nil {
+					return []ctrl.Request{}
+				}
+				if m.IsEmbeddingModel() {
+					return []ctrl.Request{
+						reconcile.Request{
+							NamespacedName: client.ObjectKeyFromObject(o),
+						},
+					}
+				}
+				return []ctrl.Request{}
+			})).
 		Complete(r)
 }
 
@@ -196,6 +219,9 @@ func (r *EmbedderReconciler) checkWorkerEmbedder(ctx context.Context, logger log
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 	if !worker.Status.IsReady() {
+		if worker.Status.IsOffline() {
+			return r.UpdateStatus(ctx, instance, nil, errors.New("worker is offline"))
+		}
 		return r.UpdateStatus(ctx, instance, nil, errors.New("worker is not ready"))
 	}
 

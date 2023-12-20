@@ -509,6 +509,7 @@ type ComplexityRoot struct {
 		ModelTypes        func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
+		Replicas          func(childComplexity int) int
 		Resources         func(childComplexity int) int
 		Status            func(childComplexity int) int
 		Type              func(childComplexity int) int
@@ -3005,6 +3006,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Worker.Namespace(childComplexity), true
 
+	case "Worker.replicas":
+		if e.complexity.Worker.Replicas == nil {
+			break
+		}
+
+		return e.complexity.Worker.Replicas(childComplexity), true
+
 	case "Worker.resources":
 		if e.complexity.Worker.Resources == nil {
 			break
@@ -5176,6 +5184,13 @@ type Worker {
     modelTypes: String!
 
     """
+    worker运行的Pod副本数量
+    规则: 默认为1，最大值为1
+    规则: 为0时，即下线
+    """
+    replicas: String
+
+    """
     worker运行所需的资源
     规则: 必填
     """
@@ -5258,6 +5273,8 @@ input UpdateWorkerInput {
     规则: 如果为空，则不更新；如果type类型与当前类型相同，则不更新
     """
     type: String
+
+    replicas: String
 
     """
     worker运行所需的资源
@@ -20684,6 +20701,47 @@ func (ec *executionContext) fieldContext_Worker_modelTypes(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Worker_replicas(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_replicas(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Replicas, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_replicas(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Worker_resources(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Worker_resources(ctx, field)
 	if err != nil {
@@ -20924,6 +20982,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_createWorker(ctx context
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
 				return ec.fieldContext_Worker_modelTypes(ctx, field)
+			case "replicas":
+				return ec.fieldContext_Worker_replicas(ctx, field)
 			case "resources":
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
@@ -21015,6 +21075,8 @@ func (ec *executionContext) fieldContext_WorkerMutation_updateWorker(ctx context
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
 				return ec.fieldContext_Worker_modelTypes(ctx, field)
+			case "replicas":
+				return ec.fieldContext_Worker_replicas(ctx, field)
 			case "resources":
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
@@ -21158,6 +21220,8 @@ func (ec *executionContext) fieldContext_WorkerQuery_getWorker(ctx context.Conte
 				return ec.fieldContext_Worker_model(ctx, field)
 			case "modelTypes":
 				return ec.fieldContext_Worker_modelTypes(ctx, field)
+			case "replicas":
+				return ec.fieldContext_Worker_replicas(ctx, field)
 			case "resources":
 				return ec.fieldContext_Worker_resources(ctx, field)
 			case "status":
@@ -26432,7 +26496,7 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "type", "resources"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "type", "replicas", "resources"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26502,6 +26566,15 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.Type = data
+		case "replicas":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("replicas"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Replicas = data
 		case "resources":
 			var err error
 
@@ -30935,6 +31008,8 @@ func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "replicas":
+			out.Values[i] = ec._Worker_replicas(ctx, field, obj)
 		case "resources":
 			out.Values[i] = ec._Worker_resources(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

@@ -1,0 +1,14 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Worker
+metadata:
+  name: qwen-7b-chat
+  namespace: kubeagi-system
+spec:
+  type: "fastchat"
+  model:
+    kind: "Models"
+    name: "qwen-7b-chat"
+  replicas: 1
+  resources:
+    limits:
+      nvidia.com/gpu: "1" # request 1 GPU

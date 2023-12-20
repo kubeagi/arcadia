@@ -1368,6 +1368,11 @@ func (in *WorkerSpec) DeepCopyInto(out *WorkerSpec) {
 		*out = new(TypedObjectReference)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.Storage != nil {
 		in, out := &in.Storage, &out.Storage

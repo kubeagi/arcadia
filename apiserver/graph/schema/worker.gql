@@ -28,6 +28,7 @@ query listWorkers($input: ListWorkerInput!){
           }
           api
           modelTypes
+          replicas
           resources {
             cpu
             memory
@@ -64,6 +65,7 @@ query getWorker($name: String!, $namespace: String!) {
           }
           api
           modelTypes
+          replicas
           resources {
             cpu
             memory
@@ -98,6 +100,7 @@ mutation createWorker($input: CreateWorkerInput!) {
           }
           api
           modelTypes
+          replicas
           resources {
             cpu
             memory
@@ -124,6 +127,7 @@ mutation updateWorker($input: UpdateWorkerInput) {
           status
           message
           updateTimestamp
+          replicas
           resources {
             cpu
             memory
