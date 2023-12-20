@@ -120,29 +120,4 @@ spec:
 
     北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
   types: "embedding"
----
-apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: Model
-metadata:
-  name: m3e-base
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    "helm.sh/hook": post-install
-    "helm.sh/hook-weight": "1"
-spec:
-  displayName: "m3e-base"
-  description: |
-    M3E(Moka Massive Mixed Embedding) 是文本嵌入模型，可以将自然语言转换成稠密的向量，由 MokaAI 训练并开源。
 
-    亮点：
-    - 训练脚本使用 uniem,通过千万级 (2200w+) 的中文句对数据集进行训练。
-    - 支持中英双语的同质文本相似度计算，异质文本检索等功能，未来还会支持代码检索。
-
-    优势：
-    - 体积较小，相对性能良好
-
-    官网: https://mokahr.com/
-    HuggingFace: https://huggingface.co/moka-ai/m3e-base
-
-    Moka(北京希瑞亚斯科技有限公司)成立于2015年,以“全员体验更好”为产品设计的核心理念,为大中型企业提供“AI原生”的人力资源管理全模块解决方案。
-  types: "embedding"
