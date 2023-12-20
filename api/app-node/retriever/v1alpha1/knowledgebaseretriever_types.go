@@ -43,7 +43,7 @@ type CommonRetrieverConfig struct {
 	// ScoreThreshold is the cosine distance float score threshold. Lower score represents more similarity.
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=1
-	// +kubebuilder:default=0.7
+	// +kubebuilder:default=0.3
 	ScoreThreshold float32 `json:"scoreThreshold,omitempty"`
 	// NumDocuments is the max number of documents to return.
 	// +kubebuilder:default=5
