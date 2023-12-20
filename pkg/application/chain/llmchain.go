@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
@@ -99,6 +100,7 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 			out, err = chains.Predict(ctx, l.LLMChain, args)
 		}
 	}
+	klog.V(5).Infof("blocking out: %s", out)
 	if err == nil {
 		args["_answer"] = out
 	}

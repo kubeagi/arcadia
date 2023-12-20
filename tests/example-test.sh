@@ -182,12 +182,14 @@ function getRespInAppChat() {
 		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversionID "$conversionID" '{"query":$query,"response_mode":"blocking","conversion_id":$conversionID,"app_name":$appname, "app_namespace":$namespace}')
 		resp=$(curl -s -XPOST http://127.0.0.1:8081/chat --data "$data")
 		ai_data=$(echo $resp | jq -r '.message')
+		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
 			echo $resp
 			exit 1
 		fi
 		echo "👤: ${query}"
 		echo "🤖: ${ai_data}"
+		echo "🔗: ${references}"
 		resp_conversion_id=$(echo $resp | jq -r '.conversion_id')
 
 		if [ $testStream == "true" ]; then
@@ -216,7 +218,7 @@ kind load docker-image controller:example-e2e --name=$KindName
 info "3. install arcadia"
 kubectl create namespace arcadia
 helm install -narcadia arcadia deploy/charts/arcadia -f tests/deploy-values.yaml \
-	--set controller.image=controller:example-e2e --set apiserver.image=controller:example-e2e  \
+	--set controller.image=controller:example-e2e --set apiserver.image=controller:example-e2e \
 	--wait --timeout $HelmTimeout
 
 info "4. check system datasource arcadia-minio(system datasource)"
@@ -231,18 +233,8 @@ if [[ $datasourceType != "oss" ]]; then
 	exit 1
 fi
 
-info "6. create and verify vectorstore"
-info "6.1. helm install chroma"
-helm repo add chroma https://amikos-tech.github.io/chromadb-chart/
-helm repo update chroma
-if [[ $GITHUB_ACTIONS == "true" ]]; then
-	helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout
-else
-	helm install -narcadia chroma chroma/chromadb --set service.type=ClusterIP --set chromadb.auth.enabled=false --wait --timeout $HelmTimeout --set image.repository=docker.io/abirdcfly/chroma
-fi
-info "6.2. verify chroma vectorstore status"
-kubectl apply -f config/samples/arcadia_v1alpha1_vectorstore.yaml
-waitCRDStatusReady "VectorStore" "arcadia" "chroma-sample"
+info "6. verify default vectorstore"
+waitCRDStatusReady "VectorStore" "arcadia" "arcadia-vectorstore"
 
 info "7. create and verify knowledgebase"
 
@@ -273,7 +265,7 @@ kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase.yaml
 waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample"
 
 info "7.5 check this vectorstore has data"
-kubectl port-forward -n arcadia svc/chroma-chromadb 8000:8000 >/dev/null 2>&1 &
+kubectl port-forward -n arcadia svc/arcadia-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
 info "port-forward chroma in pid: $chroma_pid"
 sleep 3
@@ -315,6 +307,11 @@ if [[ $resp != *"Jim"* ]]; then
 	echo "Because conversionWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 	exit 1
 fi
+
+info "8.4 check conversion list and message history"
+curl -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}'
+data=$(jq -n --arg conversionID "$resp_conversion_id" '{"conversion_id":$conversionID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+curl -XPOST http://127.0.0.1:8081/chat/messages --data "$data"
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversion_id} "false"
 #getRespInAppChat "base-chat-with-bot" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversion_id} "false"

@@ -97,8 +97,10 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 
 	llmChain := chains.NewLLMChain(llm, prompt)
 	var baseChain chains.Chain
+	var stuffDocuments *appretriever.KnowledgeBaseStuffDocuments
 	if knowledgeBaseRetriever, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
-		baseChain = appretriever.NewStuffDocuments(llmChain, knowledgeBaseRetriever.DocNullReturn)
+		stuffDocuments = appretriever.NewStuffDocuments(llmChain, knowledgeBaseRetriever.DocNullReturn)
+		baseChain = stuffDocuments
 	} else {
 		baseChain = chains.NewStuffDocuments(llmChain)
 	}
@@ -116,7 +118,10 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
 		}
 	}
-	klog.Infof("out:%v, err:%s", out, err)
+	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
+		args["_references"] = stuffDocuments.References
+	}
+	klog.V(5).Infof("blocking out: %s", out)
 	if err == nil {
 		args["_answer"] = out
 	}
