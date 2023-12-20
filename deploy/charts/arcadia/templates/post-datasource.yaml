@@ -18,4 +18,4 @@ spec:
     insecure: {{ .Values.minio.ingress.api.insecure }}
   oss:
     # pre-defined buckets for arcadia
-    bucket: {{ .Values.global.oss.bucket }}
+    bucket: {{ .Release.Namespace }}

@@ -1,7 +1,3 @@
-global:
-  oss:
-    bucket: &default-oss-bucket "arcadia"
-
 # @section controller is used as the core controller for arcadia
 # @param image Image to be used
 # @param imagePullPolcy ImagePullPolicy
@@ -83,34 +79,17 @@ minio:
       - minio-api.test.nip.io
       - minio-console.test.nip.io
 
-  buckets:
-    # Name of the bucket
-    - name: *default-oss-bucket
-      # Policy to be set on the
-      # bucket [none|download|upload|public|custom]
-      # if set to custom, customPolicy must be set.
-      policy: "none"
-      # set versioning for
-      # bucket [true|false]
-      versioning: false
-      # set objectlocking for
-      # bucket [true|false] NOTE: versioning is enabled by default if you use locking
-      objectlocking: false
-
-# @section vectorstore configures the default vectorstore utilzied by knowledgebase
-vectorstore:
-  chroma:
-    distanceFunction: cosine
-
 # @section chromadb is used to deploy a chromadb instance
 chromadb:
   image:
     repository: kubeagi/chromadb
   chromadb:
+    apiVersion: "0.4.18"
     auth:
       enabled: false
+    serverHttpPort: 8000
     dataVolumeStorageClass: "standard"
-    apiVersion: "0.4.18"
+    dataVolumeSize: "1Gi"
 
 # @section dataprocess is used to configure data processing service
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing

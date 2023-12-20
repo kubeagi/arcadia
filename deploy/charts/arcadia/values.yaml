@@ -98,20 +98,17 @@ minio:
       # bucket [true|false] NOTE: versioning is enabled by default if you use locking
       objectlocking: false
 
-# @section vectorstore configures the default vectorstore utilzied by knowledgebase
-vectorstore:
-  chroma:
-    distanceFunction: cosine
-
 # @section chromadb is used to deploy a chromadb instance
 chromadb:
   image:
     repository: kubeagi/chromadb
   chromadb:
+    apiVersion: "0.4.18"
     auth:
       enabled: false
+    serverHttpPort: 8000
     dataVolumeStorageClass: "openebs-hostpath"
-    apiVersion: "0.4.18"
+    dataVolumeSize: "1Gi"
 
 # @section dataprocess is used to configure data processing service
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing

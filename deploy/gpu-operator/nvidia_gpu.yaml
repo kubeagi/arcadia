@@ -1,31 +1,37 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gpu-operator
----
 apiVersion: core.kubebb.k8s.com.cn/v1alpha1
 kind: Repository
 metadata:
   name: nvidia
-  namespace: gpu-operator
+  namespace: default
 spec:
   url: https://helm.ngc.nvidia.com/nvidia
   pullStategy:
     intervalSeconds: 120
     retry: 5
+  imageOverride:
+  - registry: nvcr.io
+    newRegistry: docker.io
+    pathOverride:
+      path: nvidia/gpu-operator
+      newPath: kubeagi/gpu-operator
+  - registry: nvcr.io
+    newRegistry: docker.io
+    pathOverride:
+      path: nvidia-node-feature-discovery
+      newPath: kubeagi/nvidia-node-feature-discovery
 ---
 apiVersion: core.kubebb.k8s.com.cn/v1alpha1
 kind: ComponentPlan
 metadata:
   name: gpu-operator
-  namespace: gpu-operator
+  namespace: default
 spec:
   approved: true
   name: gpu-operator
   version: "v23.9.0"
   component:
     name: nvidia.gpu-operator
-    namespace: gpu-operator
+    namespace: default
   override:
     set:
       - driver.enabled=false
