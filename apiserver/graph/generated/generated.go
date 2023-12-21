@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 		Description  func(childComplexity int) int
 		Enable       func(childComplexity int) int
 		FileProgress func(childComplexity int) int
+		LlmConfig    func(childComplexity int) int
 		Name         func(childComplexity int) int
 		Preview      func(childComplexity int) int
 		ZhName       func(childComplexity int) int
@@ -371,6 +372,17 @@ type ComplexityRoot struct {
 		Status            func(childComplexity int) int
 		Type              func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
+	}
+
+	LLMConfig struct {
+		MaxTokens      func(childComplexity int) int
+		Model          func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Namespace      func(childComplexity int) int
+		PromptTemplate func(childComplexity int) int
+		Provider       func(childComplexity int) int
+		Temperature    func(childComplexity int) int
+		TopP           func(childComplexity int) int
 	}
 
 	LLMQuery struct {
@@ -1050,6 +1062,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessConfigChildren.FileProgress(childComplexity), true
+
+	case "DataProcessConfigChildren.llm_config":
+		if e.complexity.DataProcessConfigChildren.LlmConfig == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.LlmConfig(childComplexity), true
 
 	case "DataProcessConfigChildren.name":
 		if e.complexity.DataProcessConfigChildren.Name == nil {
@@ -2305,6 +2324,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LLM.UpdateTimestamp(childComplexity), true
+
+	case "LLMConfig.max_tokens":
+		if e.complexity.LLMConfig.MaxTokens == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.MaxTokens(childComplexity), true
+
+	case "LLMConfig.model":
+		if e.complexity.LLMConfig.Model == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Model(childComplexity), true
+
+	case "LLMConfig.name":
+		if e.complexity.LLMConfig.Name == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Name(childComplexity), true
+
+	case "LLMConfig.namespace":
+		if e.complexity.LLMConfig.Namespace == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Namespace(childComplexity), true
+
+	case "LLMConfig.prompt_template":
+		if e.complexity.LLMConfig.PromptTemplate == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.PromptTemplate(childComplexity), true
+
+	case "LLMConfig.provider":
+		if e.complexity.LLMConfig.Provider == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Provider(childComplexity), true
+
+	case "LLMConfig.temperature":
+		if e.complexity.LLMConfig.Temperature == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Temperature(childComplexity), true
+
+	case "LLMConfig.top_p":
+		if e.complexity.LLMConfig.TopP == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.TopP(childComplexity), true
 
 	case "LLMQuery.getLLM":
 		if e.complexity.LLMQuery.GetLlm == nil {
@@ -4027,8 +4102,20 @@ type DataProcessConfigChildren {
   enable: String
   zh_name: String
   description: String
+  llm_config: LLMConfig
   preview: [DataProcessConfigpreView]
   file_progress: [DataProcessConfigpreFileProgress]
+}
+
+type LLMConfig {
+  name: String
+  namespace: String
+  model: String
+  temperature: String
+  top_p: String
+  max_tokens: String
+  prompt_template: String
+  provider: String
 }
 
 # 数据处理配置项预览
@@ -8579,6 +8666,8 @@ func (ec *executionContext) fieldContext_DataProcessConfig_children(ctx context.
 				return ec.fieldContext_DataProcessConfigChildren_zh_name(ctx, field)
 			case "description":
 				return ec.fieldContext_DataProcessConfigChildren_description(ctx, field)
+			case "llm_config":
+				return ec.fieldContext_DataProcessConfigChildren_llm_config(ctx, field)
 			case "preview":
 				return ec.fieldContext_DataProcessConfigChildren_preview(ctx, field)
 			case "file_progress":
@@ -8749,6 +8838,65 @@ func (ec *executionContext) fieldContext_DataProcessConfigChildren_description(c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_llm_config(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_llm_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LlmConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LLMConfig)
+	fc.Result = res
+	return ec.marshalOLLMConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐLLMConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_llm_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_LLMConfig_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_LLMConfig_namespace(ctx, field)
+			case "model":
+				return ec.fieldContext_LLMConfig_model(ctx, field)
+			case "temperature":
+				return ec.fieldContext_LLMConfig_temperature(ctx, field)
+			case "top_p":
+				return ec.fieldContext_LLMConfig_top_p(ctx, field)
+			case "max_tokens":
+				return ec.fieldContext_LLMConfig_max_tokens(ctx, field)
+			case "prompt_template":
+				return ec.fieldContext_LLMConfig_prompt_template(ctx, field)
+			case "provider":
+				return ec.fieldContext_LLMConfig_provider(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -16400,6 +16548,334 @@ func (ec *executionContext) _LLM_message(ctx context.Context, field graphql.Coll
 func (ec *executionContext) fieldContext_LLM_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LLM",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_name(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_namespace(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_model(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_model(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Model, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_model(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_temperature(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_temperature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Temperature, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_temperature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_top_p(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_top_p(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopP, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_top_p(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_max_tokens(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_max_tokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_max_tokens(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_prompt_template(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_prompt_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PromptTemplate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_prompt_template(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_provider(ctx context.Context, field graphql.CollectedField, obj *LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_provider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_provider(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -29092,6 +29568,8 @@ func (ec *executionContext) _DataProcessConfigChildren(ctx context.Context, sel 
 			out.Values[i] = ec._DataProcessConfigChildren_zh_name(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._DataProcessConfigChildren_description(ctx, field, obj)
+		case "llm_config":
+			out.Values[i] = ec._DataProcessConfigChildren_llm_config(ctx, field, obj)
 		case "preview":
 			out.Values[i] = ec._DataProcessConfigChildren_preview(ctx, field, obj)
 		case "file_progress":
@@ -31394,6 +31872,56 @@ func (ec *executionContext) _LLM(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._LLM_status(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._LLM_message(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lLMConfigImplementors = []string{"LLMConfig"}
+
+func (ec *executionContext) _LLMConfig(ctx context.Context, sel ast.SelectionSet, obj *LLMConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLMConfig")
+		case "name":
+			out.Values[i] = ec._LLMConfig_name(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._LLMConfig_namespace(ctx, field, obj)
+		case "model":
+			out.Values[i] = ec._LLMConfig_model(ctx, field, obj)
+		case "temperature":
+			out.Values[i] = ec._LLMConfig_temperature(ctx, field, obj)
+		case "top_p":
+			out.Values[i] = ec._LLMConfig_top_p(ctx, field, obj)
+		case "max_tokens":
+			out.Values[i] = ec._LLMConfig_max_tokens(ctx, field, obj)
+		case "prompt_template":
+			out.Values[i] = ec._LLMConfig_prompt_template(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._LLMConfig_provider(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35280,6 +35808,13 @@ func (ec *executionContext) marshalOLLM2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋap
 		return graphql.Null
 	}
 	return ec._LLM(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLLMConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐLLMConfig(ctx context.Context, sel ast.SelectionSet, v *LLMConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LLMConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOLLMConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐLLMConfigItem(ctx context.Context, v interface{}) (*LLMConfigItem, error) {

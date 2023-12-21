@@ -357,6 +357,7 @@ type DataProcessConfigChildren struct {
 	Enable       *string                             `json:"enable,omitempty"`
 	ZhName       *string                             `json:"zh_name,omitempty"`
 	Description  *string                             `json:"description,omitempty"`
+	LlmConfig    *LLMConfig                          `json:"llm_config,omitempty"`
 	Preview      []*DataProcessConfigpreView         `json:"preview,omitempty"`
 	FileProgress []*DataProcessConfigpreFileProgress `json:"file_progress,omitempty"`
 }
@@ -779,6 +780,17 @@ type Llm struct {
 }
 
 func (Llm) IsPageNode() {}
+
+type LLMConfig struct {
+	Name           *string `json:"name,omitempty"`
+	Namespace      *string `json:"namespace,omitempty"`
+	Model          *string `json:"model,omitempty"`
+	Temperature    *string `json:"temperature,omitempty"`
+	TopP           *string `json:"top_p,omitempty"`
+	MaxTokens      *string `json:"max_tokens,omitempty"`
+	PromptTemplate *string `json:"prompt_template,omitempty"`
+	Provider       *string `json:"provider,omitempty"`
+}
 
 type LLMConfigItem struct {
 	Name           *string `json:"name,omitempty"`

@@ -180,8 +180,20 @@ type DataProcessConfigChildren {
   enable: String
   zh_name: String
   description: String
+  llm_config: LLMConfig
   preview: [DataProcessConfigpreView]
   file_progress: [DataProcessConfigpreFileProgress]
+}
+
+type LLMConfig {
+  name: String
+  namespace: String
+  model: String
+  temperature: String
+  top_p: String
+  max_tokens: String
+  prompt_template: String
+  provider: String
 }
 
 # 数据处理配置项预览

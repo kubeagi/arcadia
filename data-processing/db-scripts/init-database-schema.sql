@@ -96,3 +96,39 @@
     COMMENT ON COLUMN public.data_process_task_question_answer.update_user IS '更新用户';
     COMMENT ON COLUMN public.data_process_task_question_answer.update_program IS '更新程序';
 
+    CREATE TABLE IF NOT EXISTS public.data_process_task_document
+    (
+        id character varying(64) COLLATE pg_catalog."default" NOT NULL,
+        file_name character varying(512) COLLATE pg_catalog."default",
+        status character varying(64) COLLATE pg_catalog."default",
+        process_info text COLLATE pg_catalog."default",
+        start_time character varying(32) COLLATE pg_catalog."default",
+        end_time character varying(32) COLLATE pg_catalog."default",
+        progress character varying(32) COLLATE pg_catalog."default",
+        chunk_size character varying(64) COLLATE pg_catalog."default",
+        task_id character varying(32) COLLATE pg_catalog."default",
+        create_datetime character varying(32) COLLATE pg_catalog."default",
+        create_user character varying(32) COLLATE pg_catalog."default",
+        create_program character varying(64) COLLATE pg_catalog."default",
+        update_datetime character varying(32) COLLATE pg_catalog."default",
+        update_user character varying(32) COLLATE pg_catalog."default",
+        update_program character varying(32) COLLATE pg_catalog."default",
+        CONSTRAINT data_process_task_document_pkey PRIMARY KEY (id)
+    )
+
+    COMMENT ON TABLE public.data_process_task_document IS '数据处理任务文档';
+    COMMENT ON COLUMN public.data_process_task_document.id IS '主键';
+    COMMENT ON COLUMN public.data_process_task_document.file_name IS '文件名称';
+    COMMENT ON COLUMN public.data_process_task_document.status IS '状态 如not_start, doing, success, fail';
+    COMMENT ON COLUMN public.data_process_task_document.process_info IS '处理信息';
+    COMMENT ON COLUMN public.data_process_task_document.start_time IS '开始时间';
+    COMMENT ON COLUMN public.data_process_task_document.end_time IS '结束时间';
+    COMMENT ON COLUMN public.data_process_task_document.progress IS '进度';
+    COMMENT ON COLUMN public.data_process_task_document.chunk_size IS '文本拆分数量';
+    COMMENT ON COLUMN public.data_process_task_document.task_id IS '任务id';
+    COMMENT ON COLUMN public.data_process_task_document.create_datetime IS '创建时间';
+    COMMENT ON COLUMN public.data_process_task_document.create_user IS '创建用户';
+    COMMENT ON COLUMN public.data_process_task_document.create_program IS '创建程序';
+    COMMENT ON COLUMN public.data_process_task_document.update_datetime IS '更新时间';
+    COMMENT ON COLUMN public.data_process_task_document.update_user IS '更新用户';
+    COMMENT ON COLUMN public.data_process_task_document.update_program IS '更新程序';

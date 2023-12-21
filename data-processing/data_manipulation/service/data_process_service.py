@@ -21,10 +21,12 @@ import ulid
 from common import log_tag_const
 from data_store_process import minio_store_process
 from database_operate import (data_process_db_operate,
-                              data_process_detail_db_operate)
+                              data_process_detail_db_operate,
+                              data_process_document_db_operate)
 from kube import dataset_cr
 from parallel import thread_parallel
 from utils import date_time_utils
+from kube import model_cr
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +158,12 @@ def info_by_id(
     process_cofig_map = _convert_config_info_to_map(data.get('data_process_config_info'))
 
     config_map_for_result = {}
-    _set_basic_info_for_config_map_for_result(config_map_for_result, process_cofig_map)
+    _set_basic_info_for_config_map_for_result(
+        config_map_for_result,
+        process_cofig_map,
+        task_id=id,
+        conn_pool=pool
+    )
 
     _set_children_info_for_config_map_for_result(
         config_map_for_result, 
@@ -267,14 +274,16 @@ def _convert_config_info_to_map(config_info_list):
     """
     result = {}
     for item in config_info_list:
-        result[item['type']] = 1
+        result[item['type']] = item
 
     return result
 
 
 def _set_basic_info_for_config_map_for_result(
     from_result,
-    process_cofig_map
+    process_cofig_map,
+    task_id,
+    conn_pool
 ):
     """Set basic info for the config map for result.
     
@@ -287,7 +296,10 @@ def _set_basic_info_for_config_map_for_result(
             from_result['chunk_processing'] = {
                 'name': 'chunk_processing',
                 'description': '拆分处理',
-                'status': 'succeed',
+                'status': _get_qa_split_status(
+                    task_id=task_id,
+                    conn_pool=conn_pool
+                ),
                 'children': []
             }
 
@@ -302,7 +314,7 @@ def _set_basic_info_for_config_map_for_result(
             from_result['clean'] = {
                     'name': 'clean',
                     'description': '异常清洗配置',
-                    'status': 'succeed',
+                    'status': 'success',
                     'children': []
                 }
             
@@ -314,7 +326,7 @@ def _set_basic_info_for_config_map_for_result(
             from_result['privacy'] = {
                 'name': 'privacy',
                 'description': '数据隐私处理',
-                'status': 'succeed',
+                'status': 'success',
                 'children': []
             }
 
@@ -338,8 +350,15 @@ def _set_children_info_for_config_map_for_result(
             'name': 'qa_split',
             'enable': 'true',
             'zh_name': 'QA拆分',
-            'description': '根据文件中的文章与图表标题，自动将文件做 QA 拆分处理。',
+            'description': '根据文件中的文档内容，自动将文件做 QA 拆分处理。',
+            'llm_config': _get_llm_config(
+                qa_split_config = process_cofig_map.get('qa_split')
+            ),
             'preview': _get_qa_list_preview(
+                task_id=task_id,
+                conn_pool=conn_pool
+            ),
+            'file_progress': _get_file_progress(
                 task_id=task_id,
                 conn_pool=conn_pool
             )
@@ -568,5 +587,81 @@ def _get_qa_list_preview(
         
     return qa_list_preview
 
+def _get_file_progress(
+    task_id,
+    conn_pool
+):
+    """Get file progress.
+    
+    task_id: task id;
+    conn_pool: database connection pool
+    """
+    # Get the detail info from the database.
+    detail_info_params = {
+        'task_id': task_id
+    }
+    list_file = data_process_document_db_operate.list_file_by_task_id(
+        detail_info_params,
+        pool=conn_pool
+    )
 
+    return list_file.get('data')
 
+def _get_qa_split_status(
+    task_id,
+    conn_pool
+):
+    """Get file progress.
+    
+    task_id: task id;
+    conn_pool: database connection pool
+    """
+    # Get the detail info from the database.
+    status = 'doing'
+    detail_info_params = {
+        'task_id': task_id
+    }
+    list_file = data_process_document_db_operate.list_file_by_task_id(
+        detail_info_params,
+        pool=conn_pool
+    )
+
+    if list_file.get('status') != 200 or len(list_file.get('data')) == 0:
+        return 'fail'
+    
+    file_dict = list_file.get('data')
+
+    # 当所有文件状态都为success，则status为success
+    all_success = all(item['status'] == 'success' for item in file_dict)
+    if all_success:
+        return 'success'
+
+    # 当所有文件状态都为not_start，则status为not_start
+    all_success = all(item['status'] == 'not_start' for item in file_dict)
+    if all_success:
+        return 'not_start'
+
+    # 只要有一个文件状态为fail，则status为fail
+    status_fail = any(item['status'] == 'fail' for item in file_dict)
+    if status_fail:
+        return 'fail'
+
+    return status
+
+def _get_llm_config(
+    qa_split_config
+):
+    llm_config = qa_split_config.get('llm_config')
+
+    # llms cr 中模型相关信息
+    llm_spec_info = model_cr.get_spec_for_llms_k8s_cr(
+        name=llm_config.get('name'),
+        namespace=llm_config.get('namespace')
+    )
+
+    if llm_spec_info.get('data').get('provider').get('worker'):
+        llm_config['provider'] = 'worker'
+    else:
+        llm_config['provider'] = '3rd_party'
+
+    return llm_config
