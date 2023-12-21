@@ -35,7 +35,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Embedder {
+func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Embedder {
 	embedder := &v1alpha1.Embedder{}
 	if err := utils.UnstructuredToStructured(obj, embedder); err != nil {
 		return &generated.Embedder{}
@@ -161,7 +161,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		}
 	}
 
-	ds := embedder2model(ctx, c, obj)
+	ds := Embedder2model(ctx, c, obj)
 	return ds, nil
 }
 
@@ -177,7 +177,7 @@ func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, d
 	if err != nil {
 		return nil, err
 	}
-	ds := embedder2model(ctx, c, updatedObject)
+	ds := Embedder2model(ctx, c, updatedObject)
 	return ds, nil
 }
 
@@ -252,7 +252,7 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 		if index < pageStart {
 			continue
 		}
-		m := embedder2model(ctx, c, &u)
+		m := Embedder2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
@@ -285,5 +285,5 @@ func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace stri
 	if err != nil {
 		return nil, err
 	}
-	return embedder2model(ctx, c, u), nil
+	return Embedder2model(ctx, c, u), nil
 }
