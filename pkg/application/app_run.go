@@ -145,10 +145,10 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	return nil
 }
 
-func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Input) (output Output, outputStream chan string, err error) {
+func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream chan string, input Input) (output Output, err error) {
 	out := map[string]any{
 		"question":       input.Question,
-		"_answer_stream": make(chan string, 1000),
+		"_answer_stream": respStream,
 		"_history":       input.History,
 	}
 	visited := make(map[string]bool)
@@ -164,7 +164,7 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 				out["_need_stream"] = true
 			}
 			if out, err = e.Run(ctx, cli, out); err != nil {
-				return Output{}, nil, fmt.Errorf("run node %s: %w", e.Name(), err)
+				return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
 			}
 			visited[e.Name()] = true
 		}
@@ -177,15 +177,10 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, input Inpu
 			output = Output{Answer: answer}
 		}
 	}
-	if a, ok := out["_answer_stream"]; ok {
-		if answer, ok := a.(chan string); ok && len(answer) > 0 {
-			outputStream = answer
-		}
+	if output.Answer == "" && respStream == nil {
+		return Output{}, errors.New("no answer")
 	}
-	if output.Answer == "" && outputStream == nil {
-		return Output{}, nil, errors.New("no answer")
-	}
-	return output, outputStream, nil
+	return output, nil
 }
 
 func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (base.Node, error) {

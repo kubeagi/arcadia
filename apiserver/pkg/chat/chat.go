@@ -17,7 +17,6 @@ limitations under the License.
 package chat
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"time"
@@ -27,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
@@ -37,34 +37,34 @@ import (
 
 var Conversions = map[string]Conversion{}
 
-func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespBody, error) {
+func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*ChatRespBody, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "applications"}).
 		Namespace(req.AppNamespace).Get(ctx, req.APPName, metav1.GetOptions{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	app := &v1alpha1.Application{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if !app.Status.IsReady() {
-		return nil, nil, errors.New("application is not ready")
+		return nil, errors.New("application is not ready")
 	}
 	var conversion Conversion
 	if req.ConversionID != "" {
 		var ok bool
 		conversion, ok = Conversions[req.ConversionID]
 		if !ok {
-			return nil, nil, errors.New("conversion is not found")
+			return nil, errors.New("conversion is not found")
 		}
 		if conversion.AppName != req.APPName || conversion.AppNamespce != req.AppNamespace {
-			return nil, nil, errors.New("conversion id not match with app info")
+			return nil, errors.New("conversion id not match with app info")
 		}
 	} else {
 		conversion = Conversion{
@@ -85,35 +85,14 @@ func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespB
 	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
 	appRun, err := application.NewAppOrGetFromCache(ctx, app, c)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	out, outStream, err := appRun.Run(ctx, c, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversion.History})
+	klog.Infoln("begin to run application", obj.GetName())
+	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversion.History})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	respStream := make(chan ChatRespBody, 1000)
-	go func() {
-		defer close(respStream)
-		var res bytes.Buffer
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case m := <-outStream:
-				res.WriteString(m)
-				respStream <- ChatRespBody{
-					ConversionID: conversion.ID,
-					Message:      m,
-					CreatedAt:    time.Now(),
-				}
-				if res.String() == out.Answer {
-					return
-				}
-			case <-time.After(3 * time.Second):
-				return
-			}
-		}
-	}()
+
 	conversion.UpdatedAt = time.Now()
 	conversion.Messages[len(conversion.Messages)-1].Answer = out.Answer
 	Conversions[conversion.ID] = conversion
@@ -121,7 +100,7 @@ func AppRun(ctx context.Context, req ChatReqBody) (*ChatRespBody, chan ChatRespB
 		ConversionID: conversion.ID,
 		Message:      out.Answer,
 		CreatedAt:    time.Now(),
-	}, respStream, nil
+	}, nil
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question

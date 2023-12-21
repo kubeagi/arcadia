@@ -18,6 +18,7 @@ package service
 import (
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"k8s.io/klog/v2"
@@ -34,29 +35,77 @@ func chatHandler() gin.HandlerFunc {
 			return
 		}
 		stream := req.ResponseMode == chat.Streaming
-		resp, respStreamChain, err := chat.AppRun(c, req)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			klog.Infof("error resp: %v", err)
-			return
-		}
-		if !stream {
-			c.JSON(http.StatusOK, resp)
-			return
-		}
-		c.Writer.Header().Set("Content-Type", "text/event-stream")
-		c.Writer.Header().Set("Cache-Control", "no-cache")
-		c.Writer.Header().Set("Connection", "keep-alive")
-		c.Writer.Header().Set("Transfer-Encoding", "chunked")
-		c.Stream(func(w io.Writer) bool {
-			if msg, ok := <-respStreamChain; ok {
-				c.SSEvent("", msg)
-				return true
+		var response *chat.ChatRespBody
+		var err error
+
+		if stream {
+			// handle chat streaming mode
+			respStream := make(chan string, 1)
+			go func() {
+				defer func() {
+					if err := recover(); err != nil {
+						klog.Errorln("An error occurred when run chat.AppRun: %s", err)
+					}
+				}()
+				response, err = chat.AppRun(c, req, respStream)
+			}()
+
+			// Use a ticker to check if there is no data arrived and close the stream
+			// TODO: check if any better solution for this?
+			hasData := true
+			ticker := time.NewTicker(5 * time.Second)
+			quit := make(chan struct{})
+			defer close(quit)
+			go func() {
+				for {
+					select {
+					case <-ticker.C:
+						// If there is no generated data within 5 seconds, just close it
+						if !hasData {
+							close(respStream)
+						}
+						hasData = false
+					case <-quit:
+						ticker.Stop()
+						return
+					}
+				}
+			}()
+			c.Writer.Header().Set("Content-Type", "text/event-stream")
+			c.Writer.Header().Set("Cache-Control", "no-cache")
+			c.Writer.Header().Set("Connection", "keep-alive")
+			c.Writer.Header().Set("Transfer-Encoding", "chunked")
+			klog.Infoln("start to receive message")
+			clientDisconnected := c.Stream(func(w io.Writer) bool {
+				if msg, ok := <-respStream; ok {
+					c.SSEvent("", chat.ChatRespBody{
+						ConversionID: req.ConversionID,
+						Message:      msg,
+						CreatedAt:    time.Now(),
+					})
+					hasData = true
+					return true
+				}
+				return false
+			})
+			if clientDisconnected {
+				klog.Infoln("chatHandler: client is disconnected")
 			}
-			return false
-		})
+			klog.Infoln("end to receive message")
+		} else {
+			// handle chat blocking mode
+			response, err = chat.AppRun(c, req, nil)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				klog.Infof("error resp: %v", err)
+				return
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
 	}
 }
-func RegisteryChat(g *gin.Engine, conf config.ServerConfig) {
+
+func RegisterChat(g *gin.Engine, conf config.ServerConfig) {
 	g.POST("/chat", chatHandler())
 }
