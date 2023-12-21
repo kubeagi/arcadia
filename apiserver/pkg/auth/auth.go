@@ -36,7 +36,12 @@ import (
 	client1 "github.com/kubeagi/arcadia/apiserver/pkg/client"
 )
 
-type idtokenKey struct{}
+type contextKey string
+
+const (
+	idTokenContextKey  contextKey = "idToken"
+	UserNameContextKey contextKey = "userName"
+)
 
 type User struct {
 	Name        string            `json:"name"`
@@ -61,11 +66,11 @@ func isBearerToken(token string) (bool, string) {
 	return head == "bearer" && len(payload) > 0, payload
 }
 
-func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespace string) (bool, error) {
+func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespace string) (bool, string, error) {
 	u := &User{}
 	if err := oidcToken.Claims(u); err != nil {
 		klog.Errorf("parse user info from idToken, error %v", err)
-		return false, fmt.Errorf("can't parse user info")
+		return false, "", fmt.Errorf("can't parse user info")
 	}
 
 	av := av1.SubjectAccessReview{
@@ -87,15 +92,15 @@ func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespac
 	if err != nil {
 		err = fmt.Errorf("auth can-i failed, error %w", err)
 		klog.Error(err)
-		return false, err
+		return false, "", err
 	}
 
 	ok, found, err := unstructured.NestedBool(u1.Object, "status", "allowed")
 	if err != nil || !found {
 		klog.Warning("not found allowed filed or some errors occurred.")
-		return false, err
+		return false, "", err
 	}
-	return ok, nil
+	return ok, u.Name, nil
 }
 
 func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, resources string) gin.HandlerFunc {
@@ -133,7 +138,7 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 			return
 		}
 		if verb != "" {
-			allowed, err := cani(client, oidcIDtoken, resources, verb, namespace)
+			allowed, userName, err := cani(client, oidcIDtoken, resources, verb, namespace)
 			if err != nil {
 				klog.Errorf("auth error: failed to checkout permission. error %s", err)
 				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
@@ -148,17 +153,17 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 				})
 				return
 			}
+			ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), UserNameContextKey, userName))
 		}
 
 		// for graphql query
-		ctx1 := context.WithValue(ctx.Request.Context(), idtokenKey{}, rawToken)
-		ctx.Request = ctx.Request.WithContext(ctx1)
+		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), idTokenContextKey, rawToken))
 		ctx.Next()
 	}
 }
 
 func ForOIDCToken(ctx context.Context) *string {
-	v, _ := ctx.Value(idtokenKey{}).(string)
+	v, _ := ctx.Value(idTokenContextKey).(string)
 	if v == "" {
 		return nil
 	}

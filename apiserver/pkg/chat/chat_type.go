@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/tmc/langchaingo/memory"
+
+	"github.com/kubeagi/arcadia/pkg/application/retriever"
 )
 
 type ResponseMode string
@@ -30,33 +32,51 @@ const (
 	// todo isFlowValidForStream only some node(llm chain) support streaming
 )
 
+type APPMetadata struct {
+	APPName      string `json:"app_name" binding:"required"`
+	AppNamespace string `json:"app_namespace" binding:"required"`
+}
+
+type ConversionReqBody struct {
+	APPMetadata  `json:",inline"`
+	ConversionID string `json:"conversion_id"`
+}
+
+type MessageReqBody struct {
+	ConversionReqBody `json:",inline"`
+	MessageID         string `json:"message_id"`
+}
+
 type ChatReqBody struct {
-	Query        string       `json:"query" binding:"required"`
-	ResponseMode ResponseMode `json:"response_mode" binding:"required"`
-	ConversionID string       `json:"conversion_id"`
-	APPName      string       `json:"app_name" binding:"required"`
-	AppNamespace string       `json:"app_namespace" binding:"required"`
+	Query             string       `json:"query" binding:"required"`
+	ResponseMode      ResponseMode `json:"response_mode" binding:"required"`
+	ConversionReqBody `json:",inline"`
+	Debug             bool `json:"-"`
 }
 
 type ChatRespBody struct {
-	ConversionID string    `json:"conversion_id"`
-	MessageID    string    `json:"message_id"`
-	Message      string    `json:"message"`
-	CreatedAt    time.Time `json:"created_at"`
+	ConversionID string                `json:"conversion_id"`
+	MessageID    string                `json:"message_id"`
+	Message      string                `json:"message"`
+	CreatedAt    time.Time             `json:"created_at"`
+	References   []retriever.Reference `json:"references,omitempty"`
 }
 
 type Conversion struct {
-	ID          string    `json:"id"`
-	AppName     string    `json:"app_name"`
-	AppNamespce string    `json:"app_namespace"`
-	StartedAt   time.Time `json:"started_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Messages    []Message `json:"messages"`
-	History     *memory.ChatMessageHistory
+	ID          string                     `json:"id"`
+	AppName     string                     `json:"app_name"`
+	AppNamespce string                     `json:"app_namespace"`
+	StartedAt   time.Time                  `json:"started_at"`
+	UpdatedAt   time.Time                  `json:"updated_at"`
+	Messages    []Message                  `json:"messages"`
+	History     *memory.ChatMessageHistory `json:"-"`
+	User        string                     `json:"-"`
+	Debug       bool                       `json:"-"`
 }
 
 type Message struct {
-	ID     string `json:"id"`
-	Query  string `json:"query"`
-	Answer string `json:"answer"`
+	ID         string                `json:"id"`
+	Query      string                `json:"query"`
+	Answer     string                `json:"answer"`
+	References []retriever.Reference `json:"references,omitempty"`
 }

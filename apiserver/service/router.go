@@ -51,9 +51,10 @@ func NewServerAndRun(conf config.ServerConfig) {
 	}
 
 	bffGroup := r.Group("/bff")
+	chatGroup := r.Group("/chat")
 	RegisterMinIOAPI(bffGroup, conf)
 	RegisterGraphQL(r, bffGroup, conf)
-	RegisterChat(r, conf)
+	RegisterChat(chatGroup, conf)
 
 	_ = r.Run(fmt.Sprintf("%s:%d", conf.Host, conf.Port))
 }

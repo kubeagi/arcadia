@@ -19,6 +19,7 @@ package chat
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/tmc/langchaingo/memory"
@@ -33,9 +34,13 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/pkg/application"
 	"github.com/kubeagi/arcadia/pkg/application/base"
+	"github.com/kubeagi/arcadia/pkg/application/retriever"
 )
 
-var Conversions = map[string]Conversion{}
+var (
+	mu          sync.Mutex
+	Conversions = map[string]Conversion{}
+)
 
 func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*ChatRespBody, error) {
 	token := auth.ForOIDCToken(ctx)
@@ -57,14 +62,21 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 		return nil, errors.New("application is not ready")
 	}
 	var conversion Conversion
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	if req.ConversionID != "" {
 		var ok bool
 		conversion, ok = Conversions[req.ConversionID]
 		if !ok {
 			return nil, errors.New("conversion is not found")
 		}
+		if currentUser != "" && currentUser != conversion.User {
+			return nil, errors.New("conversion id not match with user")
+		}
 		if conversion.AppName != req.APPName || conversion.AppNamespce != req.AppNamespace {
 			return nil, errors.New("conversion id not match with app info")
+		}
+		if conversion.Debug != req.Debug {
+			return nil, errors.New("conversion id not match with debug")
 		}
 	} else {
 		conversion = Conversion{
@@ -75,10 +87,13 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 			UpdatedAt:   time.Now(),
 			Messages:    make([]Message, 0),
 			History:     memory.NewChatMessageHistory(),
+			User:        currentUser,
+			Debug:       req.Debug,
 		}
 	}
+	messageID := string(uuid.NewUUID())
 	conversion.Messages = append(conversion.Messages, Message{
-		ID:     string(uuid.NewUUID()),
+		ID:     messageID,
 		Query:  req.Query,
 		Answer: "",
 	})
@@ -95,12 +110,71 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 
 	conversion.UpdatedAt = time.Now()
 	conversion.Messages[len(conversion.Messages)-1].Answer = out.Answer
+	conversion.Messages[len(conversion.Messages)-1].References = out.References
+	mu.Lock()
 	Conversions[conversion.ID] = conversion
+	mu.Unlock()
 	return &ChatRespBody{
 		ConversionID: conversion.ID,
+		MessageID:    messageID,
 		Message:      out.Answer,
 		CreatedAt:    time.Now(),
+		References:   out.References,
 	}, nil
+}
+
+func ListConversations(ctx context.Context, req APPMetadata) ([]Conversion, error) {
+	conversations := make([]Conversion, 0)
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	mu.Lock()
+	for _, c := range Conversions {
+		if !c.Debug && c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && (currentUser == "" || currentUser == c.User) {
+			conversations = append(conversations, c)
+		}
+	}
+	mu.Unlock()
+	return conversations, nil
+}
+
+func DeleteConversation(ctx context.Context, conversionID string) error {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	mu.Lock()
+	defer mu.Unlock()
+	c, ok := Conversions[conversionID]
+	if ok && (currentUser == "" || currentUser == c.User) {
+		delete(Conversions, c.ID)
+		return nil
+	} else {
+		return errors.New("conversion is not found")
+	}
+}
+
+func ListMessages(ctx context.Context, req ConversionReqBody) (Conversion, error) {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	mu.Lock()
+	defer mu.Unlock()
+	for _, c := range Conversions {
+		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && req.ConversionID == c.ID && (currentUser == "" || currentUser == c.User) {
+			return c, nil
+		}
+	}
+	return Conversion{}, errors.New("conversion is not found")
+}
+
+func GetMessageReferences(ctx context.Context, req MessageReqBody) ([]retriever.Reference, error) {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	mu.Lock()
+	defer mu.Unlock()
+	for _, c := range Conversions {
+		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && c.ID == req.ConversionID && (currentUser == "" || currentUser == c.User) {
+			for _, m := range c.Messages {
+				if m.ID == req.MessageID {
+					return m.References, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("conversion or message is not found")
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question

@@ -19,6 +19,8 @@ package retriever
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/chains"
@@ -36,6 +38,14 @@ import (
 	"github.com/kubeagi/arcadia/pkg/application/base"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 )
+
+type Reference struct {
+	Question   string  `json:"question"`
+	Answer     string  `json:"answer"`
+	Score      float32 `json:"score"`
+	FilePath   string  `json:"file_path"`
+	LineNumber int     `json:"line_number"`
+}
 
 type KnowledgeBaseRetriever struct {
 	langchaingoschema.Retriever
@@ -130,16 +140,17 @@ type KnowledgeBaseStuffDocuments struct {
 	isDocNullReturn bool
 	DocNullReturn   string
 	callbacks.SimpleHandler
+	References []Reference
 }
 
-var _ chains.Chain = KnowledgeBaseStuffDocuments{}
-var _ callbacks.Handler = KnowledgeBaseStuffDocuments{}
+var _ chains.Chain = &KnowledgeBaseStuffDocuments{}
+var _ callbacks.Handler = &KnowledgeBaseStuffDocuments{}
 
 func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Document) string {
 	var text string
 	docLen := len(docs)
 	for k, doc := range docs {
-		klog.Infof("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %v\n", k, doc.PageContent, doc.Score)
+		klog.Infof("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %f\n", k, doc.PageContent, doc.Score)
 		for key, v := range doc.Metadata {
 			if str, ok := v.([]byte); ok {
 				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %s\n", k, key, string(str))
@@ -147,15 +158,24 @@ func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Doc
 				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v)
 			}
 		}
-		answer := doc.Metadata["a"]
-		answerBytes, _ := answer.([]byte)
+		answer, _ := doc.Metadata["a"].([]byte)
 		text += doc.PageContent
-		if len(answerBytes) != 0 {
-			text = text + "\na: " + string(answerBytes)
+		if len(answer) != 0 {
+			text = text + "\na: " + strings.TrimPrefix(strings.TrimSuffix(string(answer), "\""), "\"")
 		}
 		if k != docLen-1 {
 			text += c.Separator
 		}
+		filepath, _ := doc.Metadata["fileName"].([]byte)
+		lineNumber, _ := doc.Metadata["lineNumber"].([]byte)
+		line, _ := strconv.Atoi(string(lineNumber))
+		c.References = append(c.References, Reference{
+			Question:   doc.PageContent,
+			Answer:     strings.TrimPrefix(strings.TrimSuffix(string(answer), "\""), "\""),
+			Score:      doc.Score,
+			FilePath:   strings.TrimPrefix(strings.TrimSuffix(string(filepath), "\""), "\""),
+			LineNumber: line,
+		})
 	}
 	klog.Infof("KnowledgeBaseRetriever: finally get related text: %s\n", text)
 	if len(text) == 0 {
@@ -164,14 +184,15 @@ func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Doc
 	return text
 }
 
-func NewStuffDocuments(llmChain *chains.LLMChain, docNullReturn string) KnowledgeBaseStuffDocuments {
-	return KnowledgeBaseStuffDocuments{
+func NewStuffDocuments(llmChain *chains.LLMChain, docNullReturn string) *KnowledgeBaseStuffDocuments {
+	return &KnowledgeBaseStuffDocuments{
 		StuffDocuments: chains.NewStuffDocuments(llmChain),
 		DocNullReturn:  docNullReturn,
+		References:     make([]Reference, 0, 5),
 	}
 }
 
-func (c KnowledgeBaseStuffDocuments) Call(ctx context.Context, values map[string]any, options ...chains.ChainCallOption) (map[string]any, error) {
+func (c *KnowledgeBaseStuffDocuments) Call(ctx context.Context, values map[string]any, options ...chains.ChainCallOption) (map[string]any, error) {
 	docs, ok := values[c.InputKey].([]langchaingoschema.Document)
 	if !ok {
 		return nil, fmt.Errorf("%w: %w", chains.ErrInvalidInputValues, chains.ErrInputValuesWrongType)

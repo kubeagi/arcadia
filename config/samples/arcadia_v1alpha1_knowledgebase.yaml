@@ -12,7 +12,7 @@ spec:
     namespace: arcadia
   vectorStore:
     kind: VectorStores
-    name: chroma-sample
+    name: arcadia-vectorstore
     namespace: arcadia
   fileGroups:
   - source:

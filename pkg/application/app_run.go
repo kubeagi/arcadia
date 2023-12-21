@@ -42,7 +42,8 @@ type Input struct {
 	History    langchaingoschema.ChatMessageHistory
 }
 type Output struct {
-	Answer string
+	Answer     string
+	References []retriever.Reference
 }
 
 type Application struct {
@@ -175,6 +176,11 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 	if a, ok := out["_answer"]; ok {
 		if answer, ok := a.(string); ok && len(answer) > 0 {
 			output = Output{Answer: answer}
+		}
+	}
+	if a, ok := out["_references"]; ok {
+		if references, ok := a.([]retriever.Reference); ok && len(references) > 0 {
+			output.References = references
 		}
 	}
 	if output.Answer == "" && respStream == nil {

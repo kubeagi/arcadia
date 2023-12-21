@@ -211,6 +211,11 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 	if err != nil {
 		return nil, err
 	}
+	app := &v1alpha1.Application{}
+	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), namespace, name, app); err != nil {
+		return nil, err
+	}
+
 	prompt := &apiprompt.Prompt{}
 	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), namespace, name, prompt); err != nil {
 		return nil, err
@@ -218,30 +223,37 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 	var (
 		chainConfig   *apichain.CommonChainConfig
 		llmChainInput *apichain.LLMChainInput
+		retriever     *apiretriever.KnowledgeBaseRetriever
 	)
-	qachain := &apichain.RetrievalQAChain{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "RetrievalQAChain"), namespace, name, qachain); err != nil {
-		return nil, err
+	hasKnowledgeBaseRetriever := false
+	for _, node := range app.Spec.Nodes {
+		if node.Ref != nil && node.Ref.APIGroup != nil && *node.Ref.APIGroup == apiretriever.Group {
+			hasKnowledgeBaseRetriever = true
+			break
+		}
 	}
-	if qachain.UID != "" {
-		chainConfig = &qachain.Spec.CommonChainConfig
-		llmChainInput = &qachain.Spec.Input.LLMChainInput
-	}
-	llmchain := &apichain.LLMChain{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "LLMChain"), namespace, name, llmchain); err != nil {
-		return nil, err
-	}
-	if llmchain.UID != "" {
-		chainConfig = &llmchain.Spec.CommonChainConfig
-		llmChainInput = &llmchain.Spec.Input
-	}
-	retriever := &apiretriever.KnowledgeBaseRetriever{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever"), namespace, name, retriever); err != nil {
-		return nil, err
-	}
-	app := &v1alpha1.Application{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), namespace, name, app); err != nil {
-		return nil, err
+	if hasKnowledgeBaseRetriever {
+		qachain := &apichain.RetrievalQAChain{}
+		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "RetrievalQAChain"), namespace, name, qachain); err != nil {
+			return nil, err
+		}
+		if qachain.UID != "" {
+			chainConfig = &qachain.Spec.CommonChainConfig
+			llmChainInput = &qachain.Spec.Input.LLMChainInput
+		}
+		retriever = &apiretriever.KnowledgeBaseRetriever{}
+		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever"), namespace, name, retriever); err != nil {
+			return nil, err
+		}
+	} else {
+		llmchain := &apichain.LLMChain{}
+		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "LLMChain"), namespace, name, llmchain); err != nil {
+			return nil, err
+		}
+		if llmchain.UID != "" {
+			chainConfig = &llmchain.Spec.CommonChainConfig
+			llmChainInput = &llmchain.Spec.Input
+		}
 	}
 
 	return cr2app(prompt, chainConfig, llmChainInput, retriever, app)
@@ -264,8 +276,6 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 		return res.Items[i].GetCreationTimestamp().After(res.Items[j].GetCreationTimestamp().Time)
 	})
 
-	totalCount := len(res.Items)
-
 	filterd := make([]generated.PageNode, 0)
 	for _, u := range res.Items {
 		if keyword != "" {
@@ -280,6 +290,8 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 		}
 		filterd = append(filterd, m)
 	}
+	totalCount := len(filterd)
+
 	end := page * pageSize
 	if end > totalCount {
 		end = totalCount
@@ -517,6 +529,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			retriever.Spec.ScoreThreshold = float32(pointer.Float64Deref(input.ScoreThreshold, float64(retriever.Spec.ScoreThreshold)))
 			retriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, retriever.Spec.NumDocuments)
 			retriever.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, retriever.Spec.DocNullReturn)
+			retriever.Spec.Input.KnowledgeBaseRef.Name = *input.Knowledgebase
 		}, retriever); err != nil {
 			return nil, err
 		}
