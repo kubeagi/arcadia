@@ -211,6 +211,7 @@ func DeleteEmbedders(ctx context.Context, c dynamic.Interface, input *generated.
 	}
 	return nil, nil
 }
+
 func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	keyword, labelSelector, fieldSelector := "", "", ""
 	page, pageSize := 1, 10

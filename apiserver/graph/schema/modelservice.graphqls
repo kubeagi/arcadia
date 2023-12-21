@@ -27,6 +27,11 @@ type ModelService {
     """
     llmResource: LLM
     embedderResource: Embedder
+
+    """
+    第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
+    """
+    resource: Resources
 }
 input CreateModelServiceInput {
     """模型服务资源名称（不可同名）"""
@@ -101,6 +106,7 @@ input ListModelService {
     keyword: String
     namespace: String!
     page: Int
+    pageSize: Int
 
     """
     all, llm, embedding
@@ -110,12 +116,12 @@ input ListModelService {
     """
     worker, 3rd
     """
-    providerType: String!
+    providerType: String
 
     """
     openai, zhipuai
     """
-    apiType: String!
+    apiType: String
 }
 
 type ModelServiceMutation {
@@ -129,8 +135,8 @@ extend type Mutation {
 }
 
 type ModelServiceQuery {
-    getModelService(name: String!, apiType: String!): ModelService
-    listModelServices(input: ListModelService): [ModelService]
+    getModelService(name: String!, namespace: String!, apiType: String!): ModelService
+    listModelServices(input: ListModelService): PaginatedResult!
 }
 
 extend type Query {
