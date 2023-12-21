@@ -22,9 +22,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"k8s.io/client-go/util/retry"
@@ -228,11 +231,11 @@ func genURL(
 		klog.Errorf("[Error] send genMultipartURL request error %s", err)
 		return GenChunkURLResult{}, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		klog.Infof("[Error] status code is %s, debug resp information %+v\n", resp.StatusCode, *resp)
 		return GenChunkURLResult{}, fmt.Errorf("response code is %d", resp.StatusCode)
 	}
-	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		klog.Errorf("[Error] failed to read response body error %s", err)
@@ -324,7 +327,7 @@ func do(
 		klog.Errorf("[do Error] failed to upload file error ", err)
 		return err
 	}
-	if resp.StatusCode/200 != 1 {
+	if resp.StatusCode/100 != 2 {
 		klog.Errorf("[do Error] expect 200 get %d", resp.StatusCode)
 		return fmt.Errorf("not 200")
 	}
@@ -333,6 +336,7 @@ func do(
 
 func uploadFile(filePath, bucket, bucketPath string, tp http.RoundTripper) {
 	f, err := os.Open(filePath)
+	defer f.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -347,11 +351,15 @@ func uploadFile(filePath, bucket, bucketPath string, tp http.RoundTripper) {
 		klog.Errorf("[Error] can't stat file size...")
 		return
 	}
+	fileName := filePath
+	if filepath.IsAbs(fileName) {
+		fileName = strings.TrimPrefix(fileName, "/")
+	}
 	step := 1
 
 	klog.Infof("[Step %d] check the number of chunks the file has completed.", step)
 	step++
-	completedChunks, err := successChunks(md5, bucket, bucketPath, filePath, etag, tp)
+	completedChunks, err := successChunks(md5, bucket, bucketPath, fileName, etag, tp)
 	if err != nil {
 		klog.Errorf("[!!!Error] failed to check completed chunks. error %s", err)
 		return
@@ -369,7 +377,7 @@ func uploadFile(filePath, bucket, bucketPath string, tp http.RoundTripper) {
 		klog.Infof("[Step %d] get new uploadid", step)
 		step++
 
-		uploadID, err := newMultipart(md5, bucket, bucketPath, filePath, bufSize, int(chunkCount), tp)
+		uploadID, err := newMultipart(md5, bucket, bucketPath, fileName, bufSize, int(chunkCount), tp)
 		if err != nil {
 			klog.Errorf("[!!!Error] failed to get new uplaodid. error %s", err)
 			return
@@ -397,7 +405,7 @@ func uploadFile(filePath, bucket, bucketPath string, tp http.RoundTripper) {
 
 		reader := io.NewSectionReader(f, int64(pn-1)*bufSize, bufSize)
 		go func(partNumber int, reader io.Reader) {
-			if err := do(&wg, reader, partNumber, bufSize, md5, completedChunks.UploadID, bucket, bucketPath, filePath, tp); err != nil {
+			if err := do(&wg, reader, partNumber, bufSize, md5, completedChunks.UploadID, bucket, bucketPath, fileName, tp); err != nil {
 				klog.Errorf("!!![Error] Uploading the %d(st,ne,rd,th) chunk of the file, an error occurs, but the operation will not affect the other chunks at this time, so only the error will be logged here.", partNumber)
 				lock <- struct{}{}
 				doComplete = false
@@ -414,7 +422,7 @@ func uploadFile(filePath, bucket, bucketPath string, tp http.RoundTripper) {
 		if err := retry.OnError(retry.DefaultRetry, func(err error) bool {
 			return true
 		}, func() error {
-			if err := complete(md5, bucket, bucketPath, completedChunks.UploadID, filePath, tp); err != nil {
+			if err := complete(md5, bucket, bucketPath, completedChunks.UploadID, fileName, tp); err != nil {
 				klog.Errorf("[!!!RetryError] retry %d, error %v", retryTimes, err)
 				retryTimes++
 			}
@@ -537,7 +545,16 @@ func main() {
 	tp := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 
 	if *action == upload {
-		uploadFile(*fileName, *bucket, *bucketPath, tp)
+		filepath.WalkDir(*fileName, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				klog.Errorf("[Error] failed access a path %s: %s", path, err)
+				return err
+			}
+			if !d.IsDir() {
+				uploadFile(path, *bucket, *bucketPath, tp)
+			}
+			return nil
+		})
 	} else {
 		downloadFile(*bucket, *bucketPath, *fileName, tp)
 	}
