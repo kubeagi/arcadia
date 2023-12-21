@@ -24,7 +24,7 @@ const (
 	GB = MB * 1024
 )
 
-// BytesToSize converts size(byte as the uit) to string with appropriate unit ending
+// BytesToSize converts size(byte as the unit) to string with appropriate unit ending
 func BytesToSizedStr(bytes int64) string {
 	precision := 2
 

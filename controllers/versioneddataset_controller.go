@@ -228,7 +228,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 		return false, nil, err
 	}
 
-	update, deleteFileStatus := versioneddataset.CopyedFileGroup2Status(oss, instance)
+	update, deleteFileStatus := versioneddataset.CopiedFileGroup2Status(oss, instance)
 	return update, deleteFileStatus, nil
 }
 

@@ -29,7 +29,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
-func generateInheriedFileStatus(oss *datasource.OSS, instance *v1alpha1.VersionedDataset) []v1alpha1.FileStatus {
+func generateInheritedFileStatus(oss *datasource.OSS, instance *v1alpha1.VersionedDataset) []v1alpha1.FileStatus {
 	srcBucket := instance.Spec.Dataset.Namespace
 	prefix := fmt.Sprintf("dataset/%s/%s/", instance.Spec.Dataset.Name, instance.Spec.InheritedFrom)
 	name := v1alpha1.InheritedFromVersionName + instance.Spec.InheritedFrom
@@ -112,8 +112,8 @@ func generateDatasourceFileStatus(instance *v1alpha1.VersionedDataset) []v1alpha
 	return targetDatasourceFileStatus
 }
 
-// CopyedFileGroup2Status the function will eventually return, whether there are new files added. and a list of files that were deleted.
-func CopyedFileGroup2Status(oss *datasource.OSS, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus) {
+// CopiedFileGroup2Status the function will eventually return, whether there are new files added. and a list of files that were deleted.
+func CopiedFileGroup2Status(oss *datasource.OSS, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus) {
 	if instance.DeletionTimestamp != nil {
 		source := instance.Status.Files
 		instance.Status.Files = nil
@@ -133,7 +133,7 @@ func CopyedFileGroup2Status(oss *datasource.OSS, instance *v1alpha1.VersionedDat
 	}
 
 	targetDatasourceFileStatus := generateDatasourceFileStatus(instance)
-	targetDatasourceFileStatus = append(targetDatasourceFileStatus, generateInheriedFileStatus(oss, instance)...)
+	targetDatasourceFileStatus = append(targetDatasourceFileStatus, generateInheritedFileStatus(oss, instance)...)
 
 	// 4. If a file from a data source is found to exist in oldDatasourceFiles,
 	// replace it with the book inside oldDatasourceFiles.
