@@ -32,6 +32,7 @@ import (
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	return func(ctx context.Context, chunk []byte) error {
 		if _, ok := res["_answer_stream"]; !ok {
+			klog.Errorln("no _answer_stream found, create a new one")
 			res["_answer_stream"] = make(chan string)
 		}
 		streamChan, ok := res["_answer_stream"].(chan string)
