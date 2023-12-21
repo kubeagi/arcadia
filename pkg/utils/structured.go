@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UnstructuredToStructured convert unstructed object to a structured targe(must be a pointer)
+// UnstructuredToStructured convert unstructured object to a structured target(must be a pointer)
 func UnstructuredToStructured(unstructuredObj *unstructured.Unstructured, target any) error {
 	// Check if the target is a pointer
 	if reflect.TypeOf(target).Kind() != reflect.Ptr {

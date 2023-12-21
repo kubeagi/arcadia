@@ -25,16 +25,16 @@ func AddString(finalizers []string, f string) []string {
 	return append(finalizers, f)
 }
 
-func RemoveString(finalziers []string, f string) []string {
+func RemoveString(finalizers []string, f string) []string {
 	index := 0
-	for idx := 0; idx < len(finalziers); idx++ {
-		if finalziers[idx] == f {
+	for idx := 0; idx < len(finalizers); idx++ {
+		if finalizers[idx] == f {
 			continue
 		}
-		finalziers[index] = finalziers[idx]
+		finalizers[index] = finalizers[idx]
 		index++
 	}
-	return finalziers[:index]
+	return finalizers[:index]
 }
 
 func ContainString(finalizers []string, f string) bool {

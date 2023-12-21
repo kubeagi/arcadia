@@ -20,9 +20,9 @@ import "time"
 
 // RFC3339Time  parses a time string to a Time with RFC3339 format
 func RFC3339Time(timeStr string) (time.Time, error) {
-	new, err := time.Parse(time.RFC3339, timeStr)
+	_new, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return new, nil
+	return _new, nil
 }
