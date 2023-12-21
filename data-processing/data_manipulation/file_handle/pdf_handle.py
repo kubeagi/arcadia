@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 def text_manipulate(
     file_name,
+    document_id,
     support_type,
     conn_pool,
     task_id,
@@ -55,6 +56,7 @@ def text_manipulate(
 
         response = common_handle.text_manipulate(
             file_name=file_name,
+            document_id=document_id,
             content=content,
             support_type=support_type,
             conn_pool=conn_pool,

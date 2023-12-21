@@ -73,6 +73,24 @@ async def shutdown_web_server(app, loop):
 
 app.blueprint(data_process_controller.data_process)
 
+@app.route('test_langchain', methods=['POST'])
+async def test_langchain(request):
+    from langchain.chat_models import ChatOpenAI
+
+    llm = ChatOpenAI(
+        openai_api_key='xx', 
+        base_url='xx',
+        model='xx',
+        temperature=0.8,
+        top_k=0.1,
+        top_p=0.1
+    )
+
+    return json({
+        'status': 200,
+        'message': '',
+        'data': ''
+    })
 
 def _create_database_connection():
     """Create a database connection."""

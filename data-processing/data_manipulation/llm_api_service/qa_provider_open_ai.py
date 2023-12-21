@@ -26,7 +26,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from llm_prompt_template import open_ai_prompt
+from llm_prompt_template import llm_prompt
 
 from .base_qa_provider import BaseQAProvider
 
@@ -39,14 +39,21 @@ class QAProviderOpenAI(BaseQAProvider):
         self, 
         api_key,
         base_url,
-        model
+        model,
+        temperature=None,
+        max_tokens=None
     ):
-        # TODO: temperature and top_p/top_k should be configured later
+        if temperature is None:
+            temperature = 0.8
+        if max_tokens is None:
+            max_tokens = 512
+
         self.llm = ChatOpenAI(
             openai_api_key=api_key, 
             base_url=base_url,
             model=model,
-            temperature=0.8
+            temperature=temperature,
+            max_tokens=max_tokens
         ) 
 
     def generate_qa_list(
@@ -64,7 +71,7 @@ class QAProviderOpenAI(BaseQAProvider):
             the prompt template
         """
         if prompt_template is None:
-            prompt_template = open_ai_prompt.get_default_prompt_template()
+            prompt_template = llm_prompt.get_default_prompt_template()
         
         human_message_prompt = HumanMessagePromptTemplate.from_template(prompt_template)
         prompt = ChatPromptTemplate.from_messages([human_message_prompt])

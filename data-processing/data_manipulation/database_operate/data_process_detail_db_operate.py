@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-import ulid
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 

@@ -22,12 +22,12 @@ import pandas as pd
 import ulid
 from common import log_tag_const
 from common.config import config
-from database_operate import data_process_detail_db_operate
+from database_operate import data_process_detail_db_operate, data_process_document_db_operate
 from langchain.text_splitter import SpacyTextSplitter
 from llm_api_service.qa_provider_open_ai import QAProviderOpenAI
 from llm_api_service.qa_provider_zhi_pu_ai_online import QAProviderZhiPuAIOnline
 from transform.text import clean_transform, privacy_transform
-from utils import csv_utils, file_utils, docx_utils
+from utils import csv_utils, file_utils, docx_utils, date_time_utils
 from kube import model_cr
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 def text_manipulate(
     file_name,
+    document_id,
     content,
     support_type,
     conn_pool,
@@ -97,9 +98,9 @@ def text_manipulate(
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 data=content,
-                name=llm_config.get('name'),
-                namespace=llm_config.get('namespace'),
-                model=llm_config.get('model')
+                document_id=document_id,
+                conn_pool=conn_pool,
+                llm_config=llm_config
             )
 
             if qa_response.get('status') != 200:
@@ -530,9 +531,9 @@ def _generate_qa_list(
     chunk_size,
     chunk_overlap,
     data,
-    name,
-    namespace,
-    model
+    document_id,
+    conn_pool,
+    llm_config
 ):
     """Generate the Question and Answer list.
     
@@ -543,6 +544,14 @@ def _generate_qa_list(
     namespace: llms cr namespace;
     model: model id or model version;
     """
+    name=llm_config.get('name')
+    namespace=llm_config.get('namespace')
+    model=llm_config.get('model')
+    temperature=llm_config.get('temperature')
+    prompt_template=llm_config.get('prompt_template')
+    top_p=llm_config.get('top_p')
+    max_tokens=llm_config.get('max_tokens')
+
     # Split the text.
     if chunk_size is None:
         chunk_size = config.knowledge_chunk_size
@@ -563,6 +572,13 @@ def _generate_qa_list(
         f"splitted text is: \n{texts}\n"
     ]))
 
+    # 更新文件状态为开始
+    _update_document_status_and_start_time(
+        id=document_id,
+        texts=texts,
+        conn_pool=conn_pool
+    )
+
     # llms cr 中模型相关信息
     llm_spec_info = model_cr.get_spec_for_llms_k8s_cr(
         name=name,
@@ -578,7 +594,7 @@ def _generate_qa_list(
             namespace=config.k8s_pod_namespace
         )
         logger.debug(''.join([
-            f"Generate the QA list \n",
+            f"worker llm \n",
             f"name: {name}\n",
             f"namespace: {namespace}\n",
             f"model: {model}\n",
@@ -589,16 +605,47 @@ def _generate_qa_list(
         qa_provider = QAProviderOpenAI(
             api_key='fake',
             base_url=base_url,
-            model=model
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens
         )
+        # text process success number
+        text_process_success_num=0
+
         for item in texts:
             text = item.replace("\n", "")
-            data = qa_provider.generate_qa_list(text)
+            data = qa_provider.generate_qa_list(
+                text=text,
+                prompt_template=prompt_template
+            )
 
             if data.get('status') != 200:
+                # 文件处理失败，更新data_process_task_document中的文件状态
+                _updata_document_status_and_end_time(
+                    id=document_id,
+                    status='fail',
+                    conn_pool=conn_pool
+                )
+
                 return data
 
             qa_list.extend(data.get('data'))
+
+            # 更新文件处理进度
+            text_process_success_num += 1
+            progress = int(text_process_success_num / len(texts) * 100)
+            _updata_document_progress(
+                id=document_id,
+                progress=progress,
+                conn_pool=conn_pool
+            )
+        
+        # 文件处理成功，更新data_process_task_document中的文件状态
+        _updata_document_status_and_end_time(
+            id=document_id,
+            status='success',
+            conn_pool=conn_pool
+        )
     else:
         endpoint = llm_spec_info.get('data').get('provider').get('endpoint')
         base_url = endpoint.get('url')
@@ -612,19 +659,58 @@ def _generate_qa_list(
         api_key = secret_info.get('apiKey')
 
         llm_type = llm_spec_info.get('data').get('type')
-        if llm_type == 'zhipuai':
 
+        logger.debug(''.join([
+            f"3rd_party llm \n",
+            f"name: {name}\n",
+            f"namespace: {namespace}\n",
+            f"model: {model}\n",
+            f"llm_type: {llm_type}\n"
+        ]))
+
+        if llm_type == 'zhipuai':
             zhipuai_api_key = base64.b64decode(api_key).decode('utf-8')
             qa_provider = QAProviderZhiPuAIOnline(api_key=zhipuai_api_key)
-            
+            # text process success number
+            text_process_success_num=0
+
             # generate QA list
             for item in texts:
                 text = item.replace("\n", "")
-                data = qa_provider.generate_qa_list(text)
+                data = qa_provider.generate_qa_list(
+                    text=text,
+                    model=model,
+                    prompt_template=prompt_template,
+                    top_p=top_p,
+                    temperature=temperature
+                )
                 if data.get('status') != 200:
+                    # 文件处理失败，更新data_process_task_document中的文件状态
+                    _updata_document_status_and_end_time(
+                        id=document_id,
+                        status='fail',
+                        conn_pool=conn_pool
+                    )
+
                     return data
 
                 qa_list.extend(data.get('data'))
+
+                # 更新文件处理进度
+                text_process_success_num += 1
+                progress = int(text_process_success_num / len(texts) * 100)
+                _updata_document_progress(
+                    id=document_id,
+                    progress=progress,
+                    conn_pool=conn_pool
+                )
+
+            # 文件处理成功，更新data_process_task_document中的文件状态
+            _updata_document_status_and_end_time(
+                id=document_id,
+                status='success',
+                conn_pool=conn_pool
+            )
         else:
             return {
                 'status': 1000,
@@ -664,3 +750,103 @@ def _convert_support_type_to_map(supprt_type):
         result[item['type']] = item
 
     return result
+
+def _update_document_status_and_start_time(
+    id,
+    texts,
+    conn_pool
+):
+    try:
+        now = date_time_utils.now_str()
+        document_update_item = {
+            'id': id,
+            'status': 'doing',
+            'start_time': now,
+            'chunk_size': len(texts)
+        }
+        data_process_document_db_operate.update_document_status_and_start_time(
+            document_update_item,
+            pool=conn_pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.COMMON_HANDLE} update document status ",
+            f"\n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 1000,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+def _updata_document_status_and_end_time(
+    id,
+    status,
+    conn_pool
+):
+    try:
+        now = date_time_utils.now_str()
+        document_update_item = {
+            'id': id,
+            'status': status,
+            'end_time': now
+        }
+        data_process_document_db_operate.update_document_status_and_end_time(
+            document_update_item,
+            pool=conn_pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.COMMON_HANDLE} update document status ",
+            f"\n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 1000,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+def _updata_document_progress(
+    id,
+    progress,
+    conn_pool
+):
+    try:
+        now = date_time_utils.now_str()
+        document_update_item = {
+            'id': id,
+            'progress': progress
+        }
+        data_process_document_db_operate.update_document_progress(
+            document_update_item,
+            pool=conn_pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.COMMON_HANDLE} update document progress ",
+            f"\n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 1000,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+

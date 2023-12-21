@@ -17,6 +17,9 @@ RUN wget https://github.com/explosion/spacy-models/releases/download/zh_core_web
     && pip3 install /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl -i https://pypi.org/simple \
     && rm /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl
 
+ENV DEFAULT_CONFIG=arcadia-config
+ENV POD_NAMESPACE=arcadia
+
 EXPOSE 28888
 
 ADD . /arcadia_app/

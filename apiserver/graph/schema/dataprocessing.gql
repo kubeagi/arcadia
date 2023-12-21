@@ -72,6 +72,16 @@ query dataProcessDetails($input: DataProcessDetailsInput){
             enable
             zh_name
             description
+            llm_config {
+              name
+              namespace
+              model
+              temperature
+              top_p
+              max_tokens
+              prompt_template
+              provider
+            }
             preview {
               file_name
               content {

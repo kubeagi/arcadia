@@ -21,7 +21,7 @@ import time
 import zhipuai
 from common import log_tag_const
 from common.config import config
-from llm_prompt_template import zhi_pu_ai_prompt
+from llm_prompt_template import llm_prompt
 
 from .base_qa_provider import BaseQAProvider
 
@@ -32,15 +32,16 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
     """The QA provider is used by zhi pu ai online."""
 
     def __init__(self, api_key=None):
-        if api_key is None:
-            api_key = config.zhipuai_api_key
         zhipuai.api_key = api_key
 
 
     def generate_qa_list(
         self, 
         text,
-        prompt_template=None
+        model,
+        prompt_template=None,
+        top_p=None,
+        temperature=None
     ):
         """Generate the QA list.
         
@@ -52,7 +53,11 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
             the prompt template
         """
         if prompt_template is None:
-            prompt_template = zhi_pu_ai_prompt.get_default_prompt_template()
+            prompt_template = llm_prompt.get_default_prompt_template()
+        if top_p is None:
+            top_p = 0.7
+        if temperature is None:
+            temperature = 0.8
 
         content = prompt_template.format(
             text=text
@@ -79,12 +84,11 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
 
                     break
                 else:
-                    # TODO: temperature and top_p/top_k should be configured later
                     response = zhipuai.model_api.invoke(
                         model="chatglm_6b",
                         prompt=[{"role": "user", "content": content}],
-                        top_p=0.7,
-                        temperature=0.9,
+                        top_p=top_p,
+                        temperature=temperature,
                     )
                     if response['success']:
                         result = self.__format_response_to_qa_list(response)

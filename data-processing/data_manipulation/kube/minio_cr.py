@@ -53,8 +53,10 @@ def get_minio_config_in_k8s_configmap(
         minio_api_url = minio_cr_object['spec']['endpoint']['url']
 
         minio_secure = True
-        insecure_str = str(minio_cr_object['spec']['endpoint']['insecure'])
-        if insecure_str == 'true':
+        insecure = minio_cr_object['spec']['endpoint'].get('insecure')
+        if insecure is None:
+            minio_secure = True
+        elif str(insecure).lower() == 'true':
             minio_secure = False
 
         

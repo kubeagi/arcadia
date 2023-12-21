@@ -25,7 +25,7 @@ def get_default_support_types():
                     'name': 'qa_split',
                     'enable': 'true',
                     'zh_name': 'QA拆分',
-                    'description': '根据文件中的文章与图表标题，自动将文件做 QA 拆分处理。'
+                    'description': '根据文件中的文档内容，自动将文件做 QA 拆分处理。'
                 },
                 {
                     'name': 'document_chunk',

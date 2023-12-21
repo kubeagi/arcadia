@@ -16,12 +16,13 @@
 import io
 import logging
 import os
+import ulid
 
 import pandas as pd
 from common import log_tag_const
 from common.config import config
 from data_store_clients import minio_store_client
-from database_operate import data_process_db_operate
+from database_operate import data_process_db_operate, data_process_document_db_operate
 from file_handle import csv_handle, pdf_handle, word_handle
 from kube import dataset_cr
 from utils import file_utils
@@ -64,13 +65,31 @@ def text_manipulate(
             file_name=file_name['name']
         )
 
+    # 将文件信息存入data_process_task_document表中
+    for file_name in file_names:
+        # 新增文档处理进度信息
+        document_id = ulid.ulid()
+        document_insert_item = {
+            'id': document_id,
+            'task_id': id,
+            'file_name': file_name['name'],
+            'status': 'not_start',
+            'progress': '0',
+            'creator': req_json['creator']
+        }
+        data_process_document_db_operate.add(
+            document_insert_item,
+            pool=pool
+        )
+        file_name['document_id']=document_id
+
     # 文件处理
     task_status = 'process_complete'
     # 存放每个文件对应的数据量
     data_volumes_file = []
     
     for item in file_names:
-        result = []
+        result = None
 
         file_name = item['name']
         file_extension = file_name.split('.')[-1].lower()
@@ -87,6 +106,7 @@ def text_manipulate(
                 chunk_size=req_json.get('chunk_size'),
                 chunk_overlap=req_json.get('chunk_overlap'),
                 file_name=file_name,
+                document_id=document_id,
                 support_type=support_type,
                 conn_pool=pool,
                 task_id=id,
@@ -99,13 +119,14 @@ def text_manipulate(
                 chunk_size=req_json.get('chunk_size'),
                 chunk_overlap=req_json.get('chunk_overlap'),
                 file_name=file_name,
+                document_id=document_id,
                 support_type=support_type,
                 conn_pool=pool,
                 task_id=id,
                 create_user=req_json['creator']
             )
 
-        if result.get('status') != 200:
+        if result is None or result.get('status') != 200:
             # 任务失败
             task_status = 'process_fail'
             break
