@@ -63,7 +63,7 @@ func MakeEndpoint(ctx context.Context, c dynamic.Interface, owner generated.Type
 			Kind:      "Secret",
 			Name:      secret,
 			Namespace: owner.Namespace,
-		}, *input.Auth, ownerObject)
+		}, input.Auth, ownerObject)
 		if err != nil {
 			return endpoint, err
 		}
@@ -84,7 +84,13 @@ func MakeAuthSecretName(base string, ownerKind string) string {
 
 // MakeAuthSecret will create or update a secret based on auth input
 // When owner is not nil, owner reference will be set
-func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.TypedObjectReferenceInput, input generated.AuthInput, owner metav1.Object) error {
+func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.TypedObjectReferenceInput, input map[string]interface{}, owner metav1.Object) error {
+	// copy input map into data
+	data := map[string][]byte{}
+	for k, v := range input {
+		data[k] = []byte(fmt.Sprintf(v.(string)))
+	}
+
 	// initialize a auth secret
 	authSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -95,10 +101,7 @@ func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.T
 			Name:      secret.Name,
 			Namespace: *secret.Namespace,
 		},
-		Data: map[string][]byte{
-			"rootUser":     []byte(input.Username),
-			"rootPassword": []byte(input.Password),
-		},
+		Data: data,
 	}
 
 	// set owner reference

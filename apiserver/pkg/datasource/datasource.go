@@ -161,7 +161,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 			Kind:      "Secret",
 			Name:      common.MakeAuthSecretName(datasource.Name, "datasource"),
 			Namespace: &input.Namespace,
-		}, *input.Endpointinput.Auth, obj)
+		}, input.Endpointinput.Auth, obj)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func CheckDatasource(ctx context.Context, c dynamic.Interface, input generated.C
 			insecure = !*input.Endpointinput.Insecure
 		}
 		mc, err := minio.New(input.Endpointinput.URL, &minio.Options{
-			Creds:  credentials.NewStaticV4(input.Endpointinput.Auth.Username, input.Endpointinput.Auth.Password, ""),
+			Creds:  credentials.NewStaticV4(input.Endpointinput.Auth["rootUser"].(string), input.Endpointinput.Auth["rootPassword"].(string), ""),
 			Secure: insecure,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{

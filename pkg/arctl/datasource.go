@@ -90,9 +90,9 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 
 			// create auth secret for datasource
 			if endpointAuthUser != "" && endpointAuthPwd != "" {
-				input.Endpointinput.Auth = &generated.AuthInput{
-					Username: endpointAuthUser,
-					Password: endpointAuthPwd,
+				input.Endpointinput.Auth = map[string]interface{}{
+					"rootUser":     endpointAuthUser,
+					"rootPassword": endpointAuthPwd,
 				}
 			}
 
