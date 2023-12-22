@@ -44,16 +44,16 @@ class QAProviderOpenAI(BaseQAProvider):
         max_tokens=None
     ):
         if temperature is None:
-            temperature = 0.8
+            temperature = "0.8"
         if max_tokens is None:
-            max_tokens = 512
+            max_tokens = "512"
 
         self.llm = ChatOpenAI(
             openai_api_key=api_key, 
             base_url=base_url,
             model=model,
-            temperature=temperature,
-            max_tokens=max_tokens
+            temperature=float(temperature),
+            max_tokens=int(max_tokens)
         ) 
 
     def generate_qa_list(

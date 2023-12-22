@@ -115,6 +115,11 @@ type ApplicationQuery struct {
 	ListApplicationMetadata PaginatedResult `json:"listApplicationMetadata"`
 }
 
+type CheckDataProcessTaskNameInput struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
 type CountDataProcessItem struct {
 	Status  int    `json:"status"`
 	Data    int    `json:"data"`
@@ -343,6 +348,7 @@ type CreateWorkerInput struct {
 type DataProcessConfig struct {
 	Name        string                       `json:"name"`
 	Description string                       `json:"description"`
+	FileNum     int                          `json:"file_num"`
 	Status      string                       `json:"status"`
 	Children    []*DataProcessConfigChildren `json:"children,omitempty"`
 }
@@ -428,6 +434,7 @@ type DataProcessQuery struct {
 	AllDataProcessListByCount *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
 	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
 	DataProcessDetails        *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
+	CheckDataProcessTaskName  *DataProcessResponse      `json:"checkDataProcessTaskName,omitempty"`
 }
 
 type DataProcessResponse struct {

@@ -121,3 +121,19 @@ async def test(request):
         'message': '',
         'data': res
     })    
+
+@data_process.route('check-task-name', methods=['POST'])
+async def check_task_name(request):
+    """check task name by name and namespace.
+    
+    example for request.json
+    {
+        "name": "test",
+        "namespace": "arcadia"
+    }
+    """
+    res = data_process_service.check_task_name(
+        request.json,
+        pool=request.app.config['conn_pool']
+    )
+    return json(res) 
