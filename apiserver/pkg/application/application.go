@@ -426,6 +426,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			qachain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, qachain.Spec.MaxLength)
 			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
 			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
+			qachain.Spec.Input.LLM.Name = input.Llm
 		}, qachain); err != nil {
 			return nil, err
 		}
@@ -481,6 +482,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			llmchain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, llmchain.Spec.MaxLength)
 			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
 			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
+			llmchain.Spec.Input.LLM.Name = input.Llm
 		}, llmchain); err != nil {
 			return nil, err
 		}
