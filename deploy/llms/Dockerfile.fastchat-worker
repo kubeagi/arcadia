@@ -18,5 +18,12 @@ RUN python3.9 -m pip install wavedrom -i https://pypi.mirrors.ustc.edu.cn/simple
 RUN python3.9 -m pip install fschat -i https://pypi.mirrors.ustc.edu.cn/simple/
 RUN python3.9 -m pip install fschat[model_worker,webui] pydantic==1.10.13 -i https://pypi.mirrors.ustc.edu.cn/simple/
 
+# required by vllm
+# RUN python3.9 -m pip install vllm -i https://pypi.mirrors.ustc.edu.cn/simple/
 
+# required by qwen
+# might also install flash-attention to improve performance
+# RUN python3.9 -m pip install transformers==4.32.0 accelerate tiktoken einops scipy transformers_stream_generator==0.0.4 -i https://pypi.mirrors.ustc.edu.cn/simple/
 
+# required by qwen quantize
+# RUN python3.9 -m pip install auto-gptq optimum -i https://pypi.mirrors.ustc.edu.cn/simple/qwn

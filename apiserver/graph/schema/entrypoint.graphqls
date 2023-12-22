@@ -10,14 +10,9 @@ input EndpointInput {
     """地址(必填)"""
     url: String!
     """secret验证密码"""
-    auth: AuthInput
+    auth: Map
     """默认true"""
     insecure: Boolean
-}
-
-input AuthInput {
-    username: String!
-    password: String!
 }
 
 input ListCommonInput {

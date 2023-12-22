@@ -127,7 +127,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
 			Name:      secret,
 			Namespace: &input.Namespace,
-		}, *input.Endpointinput.Auth, nil)
+		}, input.Endpointinput.Auth, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +155,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
 			Name:      secret,
 			Namespace: &input.Namespace,
-		}, *input.Endpointinput.Auth, obj)
+		}, input.Endpointinput.Auth, obj)
 		if err != nil {
 			return nil, err
 		}

@@ -115,11 +115,6 @@ type ApplicationQuery struct {
 	ListApplicationMetadata PaginatedResult `json:"listApplicationMetadata"`
 }
 
-type AuthInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type CountDataProcessItem struct {
 	Status  int    `json:"status"`
 	Data    int    `json:"data"`
@@ -654,7 +649,7 @@ type EndpointInput struct {
 	// 地址(必填)
 	URL string `json:"url"`
 	// secret验证密码
-	Auth *AuthInput `json:"auth,omitempty"`
+	Auth map[string]interface{} `json:"auth,omitempty"`
 	// 默认true
 	Insecure *bool `json:"insecure,omitempty"`
 }

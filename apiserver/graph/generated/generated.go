@@ -3480,7 +3480,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAddDataProcessInput,
 		ec.unmarshalInputAllDataProcessListByCountInput,
 		ec.unmarshalInputAllDataProcessListByPageInput,
-		ec.unmarshalInputAuthInput,
 		ec.unmarshalInputCreateApplicationMetadataInput,
 		ec.unmarshalInputCreateDatasetInput,
 		ec.unmarshalInputCreateDatasourceInput,
@@ -4640,14 +4639,9 @@ input EndpointInput {
     """地址(必填)"""
     url: String!
     """secret验证密码"""
-    auth: AuthInput
+    auth: Map
     """默认true"""
     insecure: Boolean
-}
-
-input AuthInput {
-    username: String!
-    password: String!
 }
 
 input ListCommonInput {
@@ -25879,44 +25873,6 @@ func (ec *executionContext) unmarshalInputAllDataProcessListByPageInput(ctx cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj interface{}) (AuthInput, error) {
-	var it AuthInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"username", "password"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Username = data
-		case "password":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Password = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputCreateApplicationMetadataInput(ctx context.Context, obj interface{}) (CreateApplicationMetadataInput, error) {
 	var it CreateApplicationMetadataInput
 	asMap := map[string]interface{}{}
@@ -27081,7 +27037,7 @@ func (ec *executionContext) unmarshalInputEndpointInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("auth"))
-			data, err := ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐAuthInput(ctx, v)
+			data, err := ec.unmarshalOMap2map(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35252,14 +35208,6 @@ func (ec *executionContext) marshalOApplicationQuery2ᚖgithubᚗcomᚋkubeagi�
 		return graphql.Null
 	}
 	return ec._ApplicationQuery(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOAuthInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐAuthInput(ctx context.Context, v interface{}) (*AuthInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputAuthInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

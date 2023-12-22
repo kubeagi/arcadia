@@ -202,7 +202,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
 			Name:      secret,
 			Namespace: &input.Namespace,
-		}, *input.Endpointinput.Auth, nil)
+		}, input.Endpointinput.Auth, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -231,7 +231,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
 			Name:      secret,
 			Namespace: &input.Namespace,
-		}, *input.Endpointinput.Auth, obj)
+		}, input.Endpointinput.Auth, obj)
 		if err != nil {
 			return nil, err
 		}
