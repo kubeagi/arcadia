@@ -41,3 +41,118 @@ mutation deleteModelServices($input: DeleteCommonInput) {
         deleteModelService(input: $input)
     }
 }
+
+query getModelService($name: String!, $namespace: String!, $apiType: String!) {
+    ModelService {
+        getModelService(name: $name, namespace: $namespace, apiType: $apiType) {
+            id
+            name
+            namespace
+            labels
+            annotations
+            creator
+            displayName
+            description
+            types
+            apiType
+            creationTimestamp
+            updateTimestamp 
+            llmResource {
+                name
+                namespace
+                labels
+                annotations
+                displayName
+                description
+                baseUrl
+                models
+                provider
+                type
+                updateTimestamp
+                status
+                message
+            }
+            embedderResource{
+                name
+                namespace
+                labels
+                annotations
+                displayName
+                description
+                baseUrl
+                models
+                provider
+                type
+                updateTimestamp
+                status
+                message
+            }
+            resource {
+                cpu
+                memory
+                nvidiaGPU
+            }
+        }
+    }
+}
+
+query listModelServices($input: ListModelService) {
+    ModelService {
+        listModelServices(input: $input) {
+            totalCount
+            hasNextPage
+            nodes {
+                __typename
+                ... on ModelService {
+                    id
+                    name
+                    namespace
+                    labels
+                    annotations
+                    creator
+                    displayName
+                    description
+                    types
+                    apiType
+                    creationTimestamp
+                    updateTimestamp 
+                    llmResource {
+                        name
+                        namespace
+                        labels
+                        annotations
+                        displayName
+                        description
+                        baseUrl
+                        models
+                        provider
+                        type
+                        updateTimestamp
+                        status
+                        message
+                    }
+                    embedderResource{
+                        name
+                        namespace
+                        labels
+                        annotations
+                        displayName
+                        description
+                        baseUrl
+                        models
+                        provider
+                        type
+                        updateTimestamp
+                        status
+                        message
+                    }
+                    resource {
+                        cpu
+                        memory
+                        nvidiaGPU
+                    }
+                }
+            }
+        }
+    }
+}

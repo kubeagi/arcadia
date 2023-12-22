@@ -892,12 +892,13 @@ type ListModelService struct {
 	Keyword   *string `json:"keyword,omitempty"`
 	Namespace string  `json:"namespace"`
 	Page      *int    `json:"page,omitempty"`
+	PageSize  *int    `json:"pageSize,omitempty"`
 	// all, llm, embedding
 	ModelType string `json:"modelType"`
 	// worker, 3rd
-	ProviderType string `json:"providerType"`
+	ProviderType *string `json:"providerType,omitempty"`
 	// openai, zhipuai
-	APIType string `json:"apiType"`
+	APIType *string `json:"apiType,omitempty"`
 }
 
 type ListVersionedDatasetInput struct {
@@ -1007,6 +1008,8 @@ type ModelService struct {
 	// 模型对应的 LLM 及 embedder CR 资源
 	LlmResource      *Llm      `json:"llmResource,omitempty"`
 	EmbedderResource *Embedder `json:"embedderResource,omitempty"`
+	// 第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
+	Resource *Resources `json:"resource,omitempty"`
 }
 
 func (ModelService) IsPageNode() {}
@@ -1019,7 +1022,7 @@ type ModelServiceMutation struct {
 
 type ModelServiceQuery struct {
 	GetModelService   *ModelService   `json:"getModelService,omitempty"`
-	ListModelServices []*ModelService `json:"listModelServices,omitempty"`
+	ListModelServices PaginatedResult `json:"listModelServices"`
 }
 
 // 对象存储的使用信息

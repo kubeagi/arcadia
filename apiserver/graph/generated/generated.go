@@ -56,6 +56,7 @@ type ResolverRoot interface {
 	ModelMutation() ModelMutationResolver
 	ModelQuery() ModelQueryResolver
 	ModelServiceMutation() ModelServiceMutationResolver
+	ModelServiceQuery() ModelServiceQueryResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	VersionedDataset() VersionedDatasetResolver
@@ -432,6 +433,7 @@ type ComplexityRoot struct {
 		LlmResource       func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
+		Resource          func(childComplexity int) int
 		Types             func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
 	}
@@ -443,7 +445,7 @@ type ComplexityRoot struct {
 	}
 
 	ModelServiceQuery struct {
-		GetModelService   func(childComplexity int, name string, apiType string) int
+		GetModelService   func(childComplexity int, name string, namespace string, apiType string) int
 		ListModelServices func(childComplexity int, input *ListModelService) int
 	}
 
@@ -670,6 +672,10 @@ type ModelServiceMutationResolver interface {
 	CreateModelService(ctx context.Context, obj *ModelServiceMutation, input CreateModelServiceInput) (*ModelService, error)
 	UpdateModelService(ctx context.Context, obj *ModelServiceMutation, input *UpdateModelServiceInput) (*ModelService, error)
 	DeleteModelService(ctx context.Context, obj *ModelServiceMutation, input *DeleteCommonInput) (*string, error)
+}
+type ModelServiceQueryResolver interface {
+	GetModelService(ctx context.Context, obj *ModelServiceQuery, name string, namespace string, apiType string) (*ModelService, error)
+	ListModelServices(ctx context.Context, obj *ModelServiceQuery, input *ListModelService) (*PaginatedResult, error)
 }
 type MutationResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
@@ -2659,6 +2665,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ModelService.Namespace(childComplexity), true
 
+	case "ModelService.resource":
+		if e.complexity.ModelService.Resource == nil {
+			break
+		}
+
+		return e.complexity.ModelService.Resource(childComplexity), true
+
 	case "ModelService.types":
 		if e.complexity.ModelService.Types == nil {
 			break
@@ -2719,7 +2732,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.ModelServiceQuery.GetModelService(childComplexity, args["name"].(string), args["apiType"].(string)), true
+		return e.complexity.ModelServiceQuery.GetModelService(childComplexity, args["name"].(string), args["namespace"].(string), args["apiType"].(string)), true
 
 	case "ModelServiceQuery.listModelServices":
 		if e.complexity.ModelServiceQuery.ListModelServices == nil {
@@ -5209,6 +5222,11 @@ extend type Query {
     """
     llmResource: LLM
     embedderResource: Embedder
+
+    """
+    第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
+    """
+    resource: Resources
 }
 input CreateModelServiceInput {
     """模型服务资源名称（不可同名）"""
@@ -5283,6 +5301,7 @@ input ListModelService {
     keyword: String
     namespace: String!
     page: Int
+    pageSize: Int
 
     """
     all, llm, embedding
@@ -5292,12 +5311,12 @@ input ListModelService {
     """
     worker, 3rd
     """
-    providerType: String!
+    providerType: String
 
     """
     openai, zhipuai
     """
-    apiType: String!
+    apiType: String
 }
 
 type ModelServiceMutation {
@@ -5311,13 +5330,14 @@ extend type Mutation {
 }
 
 type ModelServiceQuery {
-    getModelService(name: String!, apiType: String!): ModelService
-    listModelServices(input: ListModelService): [ModelService]
+    getModelService(name: String!, namespace: String!, apiType: String!): ModelService
+    listModelServices(input: ListModelService): PaginatedResult!
 }
 
 extend type Query {
     ModelService: ModelServiceQuery
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 	{Name: "../schema/versioned_dataset.graphqls", Input: `scalar Int64
 """
 VersionedDataset
@@ -6497,14 +6517,23 @@ func (ec *executionContext) field_ModelServiceQuery_getModelService_args(ctx con
 	}
 	args["name"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["apiType"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiType"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["apiType"] = arg1
+	args["namespace"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["apiType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiType"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["apiType"] = arg2
 	return args, nil
 }
 
@@ -18720,6 +18749,55 @@ func (ec *executionContext) fieldContext_ModelService_embedderResource(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelService_resource(ctx context.Context, field graphql.CollectedField, obj *ModelService) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ModelService_resource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Resource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Resources)
+	fc.Result = res
+	return ec.marshalOResources2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResources(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ModelService_resource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelService",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cpu":
+				return ec.fieldContext_Resources_cpu(ctx, field)
+			case "memory":
+				return ec.fieldContext_Resources_memory(ctx, field)
+			case "nvidiaGPU":
+				return ec.fieldContext_Resources_nvidiaGPU(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Resources", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelServiceMutation_createModelService(ctx context.Context, field graphql.CollectedField, obj *ModelServiceMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ModelServiceMutation_createModelService(ctx, field)
 	if err != nil {
@@ -18787,6 +18865,8 @@ func (ec *executionContext) fieldContext_ModelServiceMutation_createModelService
 				return ec.fieldContext_ModelService_llmResource(ctx, field)
 			case "embedderResource":
 				return ec.fieldContext_ModelService_embedderResource(ctx, field)
+			case "resource":
+				return ec.fieldContext_ModelService_resource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelService", field.Name)
 		},
@@ -18872,6 +18952,8 @@ func (ec *executionContext) fieldContext_ModelServiceMutation_updateModelService
 				return ec.fieldContext_ModelService_llmResource(ctx, field)
 			case "embedderResource":
 				return ec.fieldContext_ModelService_embedderResource(ctx, field)
+			case "resource":
+				return ec.fieldContext_ModelService_resource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelService", field.Name)
 		},
@@ -18956,7 +19038,7 @@ func (ec *executionContext) _ModelServiceQuery_getModelService(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.GetModelService, nil
+		return ec.resolvers.ModelServiceQuery().GetModelService(rctx, obj, fc.Args["name"].(string), fc.Args["namespace"].(string), fc.Args["apiType"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18974,8 +19056,8 @@ func (ec *executionContext) fieldContext_ModelServiceQuery_getModelService(ctx c
 	fc = &graphql.FieldContext{
 		Object:     "ModelServiceQuery",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -19006,6 +19088,8 @@ func (ec *executionContext) fieldContext_ModelServiceQuery_getModelService(ctx c
 				return ec.fieldContext_ModelService_llmResource(ctx, field)
 			case "embedderResource":
 				return ec.fieldContext_ModelService_embedderResource(ctx, field)
+			case "resource":
+				return ec.fieldContext_ModelService_resource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelService", field.Name)
 		},
@@ -19038,58 +19122,43 @@ func (ec *executionContext) _ModelServiceQuery_listModelServices(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ListModelServices, nil
+		return ec.resolvers.ModelServiceQuery().ListModelServices(rctx, obj, fc.Args["input"].(*ListModelService))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ModelService)
+	res := resTmp.(*PaginatedResult)
 	fc.Result = res
-	return ec.marshalOModelService2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐModelService(ctx, field.Selections, res)
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ModelServiceQuery_listModelServices(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ModelServiceQuery",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ModelService_id(ctx, field)
-			case "name":
-				return ec.fieldContext_ModelService_name(ctx, field)
-			case "namespace":
-				return ec.fieldContext_ModelService_namespace(ctx, field)
-			case "labels":
-				return ec.fieldContext_ModelService_labels(ctx, field)
-			case "annotations":
-				return ec.fieldContext_ModelService_annotations(ctx, field)
-			case "creator":
-				return ec.fieldContext_ModelService_creator(ctx, field)
-			case "displayName":
-				return ec.fieldContext_ModelService_displayName(ctx, field)
-			case "description":
-				return ec.fieldContext_ModelService_description(ctx, field)
-			case "types":
-				return ec.fieldContext_ModelService_types(ctx, field)
-			case "creationTimestamp":
-				return ec.fieldContext_ModelService_creationTimestamp(ctx, field)
-			case "updateTimestamp":
-				return ec.fieldContext_ModelService_updateTimestamp(ctx, field)
-			case "apiType":
-				return ec.fieldContext_ModelService_apiType(ctx, field)
-			case "llmResource":
-				return ec.fieldContext_ModelService_llmResource(ctx, field)
-			case "embedderResource":
-				return ec.fieldContext_ModelService_embedderResource(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ModelService", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
 		},
 	}
 	defer func() {
@@ -27586,7 +27655,7 @@ func (ec *executionContext) unmarshalInputListModelService(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"keyword", "namespace", "page", "modelType", "providerType", "apiType"}
+	fieldsInOrder := [...]string{"keyword", "namespace", "page", "pageSize", "modelType", "providerType", "apiType"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27620,6 +27689,15 @@ func (ec *executionContext) unmarshalInputListModelService(ctx context.Context, 
 				return it, err
 			}
 			it.Page = data
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
 		case "modelType":
 			var err error
 
@@ -27633,7 +27711,7 @@ func (ec *executionContext) unmarshalInputListModelService(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("providerType"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27642,7 +27720,7 @@ func (ec *executionContext) unmarshalInputListModelService(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiType"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -32448,6 +32526,8 @@ func (ec *executionContext) _ModelService(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ModelService_llmResource(ctx, field, obj)
 		case "embedderResource":
 			out.Values[i] = ec._ModelService_embedderResource(ctx, field, obj)
+		case "resource":
+			out.Values[i] = ec._ModelService_resource(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -32622,9 +32702,74 @@ func (ec *executionContext) _ModelServiceQuery(ctx context.Context, sel ast.Sele
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ModelServiceQuery")
 		case "getModelService":
-			out.Values[i] = ec._ModelServiceQuery_getModelService(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelServiceQuery_getModelService(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "listModelServices":
-			out.Values[i] = ec._ModelServiceQuery_listModelServices(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelServiceQuery_listModelServices(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35878,47 +36023,6 @@ func (ec *executionContext) marshalOModelQuery2ᚖgithubᚗcomᚋkubeagiᚋarcad
 	return ec._ModelQuery(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOModelService2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐModelService(ctx context.Context, sel ast.SelectionSet, v []*ModelService) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOModelService2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐModelService(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalOModelService2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐModelService(ctx context.Context, sel ast.SelectionSet, v *ModelService) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -36007,6 +36111,13 @@ func (ec *executionContext) marshalOPaginatedDataProcessItem2ᚖgithubᚗcomᚋk
 		return graphql.Null
 	}
 	return ec._PaginatedDataProcessItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOResources2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResources(ctx context.Context, sel ast.SelectionSet, v *Resources) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Resources(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOResourcesInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResourcesInput(ctx context.Context, v interface{}) (*ResourcesInput, error) {

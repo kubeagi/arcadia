@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/modelservice"
@@ -39,6 +38,24 @@ func (r *modelServiceMutationResolver) DeleteModelService(ctx context.Context, o
 	return modelservice.DeleteModelService(ctx, c, input)
 }
 
+// GetModelService is the resolver for the getModelService field.
+func (r *modelServiceQueryResolver) GetModelService(ctx context.Context, obj *generated.ModelServiceQuery, name string, namespace string, apiType string) (*generated.ModelService, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return modelservice.GetModelService(ctx, c, name, namespace, apiType)
+}
+
+// ListModelServices is the resolver for the listModelServices field.
+func (r *modelServiceQueryResolver) ListModelServices(ctx context.Context, obj *generated.ModelServiceQuery, input *generated.ListModelService) (*generated.PaginatedResult, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return modelservice.ListModelServices(ctx, c, input)
+}
+
 // ModelService is the resolver for the ModelService field.
 func (r *mutationResolver) ModelService(ctx context.Context) (*generated.ModelServiceMutation, error) {
 	return &generated.ModelServiceMutation{}, nil
@@ -46,7 +63,7 @@ func (r *mutationResolver) ModelService(ctx context.Context) (*generated.ModelSe
 
 // ModelService is the resolver for the ModelService field.
 func (r *queryResolver) ModelService(ctx context.Context) (*generated.ModelServiceQuery, error) {
-	panic(fmt.Errorf("not implemented: ModelService - ModelService"))
+	return &generated.ModelServiceQuery{}, nil
 }
 
 // ModelServiceMutation returns generated.ModelServiceMutationResolver implementation.
@@ -54,4 +71,10 @@ func (r *Resolver) ModelServiceMutation() generated.ModelServiceMutationResolver
 	return &modelServiceMutationResolver{r}
 }
 
+// ModelServiceQuery returns generated.ModelServiceQueryResolver implementation.
+func (r *Resolver) ModelServiceQuery() generated.ModelServiceQueryResolver {
+	return &modelServiceQueryResolver{r}
+}
+
 type modelServiceMutationResolver struct{ *Resolver }
+type modelServiceQueryResolver struct{ *Resolver }
