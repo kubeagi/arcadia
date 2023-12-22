@@ -37,6 +37,7 @@ type CommonPromptConfig struct {
 	// system prompts, support template
 	SystemMessage string `json:"systemMessage,omitempty"`
 	// user prompts，support template
+	// +kubebuilder:default="{{.question}}"
 	UserMessage string `json:"userMessage,omitempty"`
 }
 
