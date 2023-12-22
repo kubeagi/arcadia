@@ -25,6 +25,9 @@ import (
 	_ "github.com/kubeagi/arcadia/apiserver/pkg/oidc"
 )
 
+// Permissions required for this apiserver
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+
 func main() {
 	conf := config.NewServerFlags()
 
