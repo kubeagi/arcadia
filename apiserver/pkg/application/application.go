@@ -354,8 +354,14 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		},
 	}
 	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), input.Namespace, input.Name, func() {
+		var userMessage string
+		if input.UserPrompt == nil || len(strings.TrimSpace(*input.UserPrompt)) == 0 {
+			userMessage = apiprompt.DefaultUserPrompt
+		} else {
+			userMessage = *input.UserPrompt
+		}
 		prompt.Spec.CommonPromptConfig = apiprompt.CommonPromptConfig{
-			UserMessage: pointer.StringDeref(input.UserPrompt, "just say something."),
+			UserMessage: userMessage,
 		}
 	}, prompt); err != nil {
 		return nil, err

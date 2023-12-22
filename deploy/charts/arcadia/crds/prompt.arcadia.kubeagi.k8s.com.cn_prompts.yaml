@@ -80,6 +80,7 @@ spec:
                 description: system prompts, support template
                 type: string
               userMessage:
+                default: '{{.question}}'
                 description: user prompts，support template
                 type: string
             type: object
