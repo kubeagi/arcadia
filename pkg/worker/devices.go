@@ -14,23 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package worker
 
-import (
-	"k8s.io/klog/v2"
+type Device string
 
-	"github.com/kubeagi/arcadia/apiserver/config"
-	"github.com/kubeagi/arcadia/apiserver/service"
-
-	_ "github.com/kubeagi/arcadia/apiserver/pkg/oidc"
+const (
+	CPU Device = "cpu"
+	GPU Device = "gpu"
+	// Not supported yet
+	XPU Device = "xpu"
+	// Not supported yet
+	//
+	NPU Device = "npu"
 )
 
-// Permissions required for this apiserver
-//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
-
-func main() {
-	conf := config.NewServerFlags()
-
-	klog.Infof("listening server on port: %d", conf.Port)
-	service.NewServerAndRun(conf)
-}
+const (
+	ResourceNvidiaGPU = "nvidia.com/gpu"
+)
