@@ -17,6 +17,8 @@ limitations under the License.
 package utils
 
 import (
+	"strings"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -31,4 +33,8 @@ func MapStr2Any(input map[string]string) map[string]any {
 		output[k] = v
 	}
 	return output
+}
+
+func HasValue(s *string) bool {
+	return s != nil && strings.TrimSpace(*s) != ""
 }
