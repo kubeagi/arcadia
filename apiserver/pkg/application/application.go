@@ -319,7 +319,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		return nil, err
 	}
 	chainKind := "LLMChain"
-	if input.Knowledgebase != nil {
+	if utils.HasValue(input.Knowledgebase) {
 		chainKind = "RetrievalQAChain"
 	}
 
@@ -355,7 +355,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 	}
 	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), input.Namespace, input.Name, func() {
 		var userMessage string
-		if input.UserPrompt == nil || len(strings.TrimSpace(*input.UserPrompt)) == 0 {
+		if !utils.HasValue(input.UserPrompt) {
 			userMessage = apiprompt.DefaultUserPrompt
 		} else {
 			userMessage = *input.UserPrompt
@@ -373,7 +373,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		llmchainInput *apichain.LLMChainInput
 		retriever     *apiretriever.KnowledgeBaseRetriever
 	)
-	if input.Knowledgebase != nil {
+	if utils.HasValue(input.Knowledgebase) {
 		qachain := &apichain.RetrievalQAChain{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "RetrievalQAChain",
@@ -497,7 +497,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 	}
 
 	// 4. create or update retriever
-	if input.Knowledgebase != nil {
+	if utils.HasValue(input.Knowledgebase) {
 		retriever = &apiretriever.KnowledgeBaseRetriever{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "KnowledgeBaseRetriever",
