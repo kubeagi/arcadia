@@ -129,7 +129,14 @@ func GetObjStatus(obj client.Object) string {
 		// Worker can better represent the state of resources through Reason.
 		v := obj.(*v1alpha1.Worker)
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-		return string(condition.Reason)
+		status := string(condition.Reason)
+		// When replicas is zero but status is not `Offline`, it must be in `OfflineInProgress`
+		if v.Spec.Replicas == nil || *v.Spec.Replicas == 0 {
+			if status != "Offline" {
+				status = "OfflineInProgress"
+			}
+		}
+		return status
 	case "Application":
 		v := obj.(*v1alpha1.Application)
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
