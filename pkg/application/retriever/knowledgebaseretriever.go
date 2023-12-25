@@ -64,7 +64,7 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
 		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("cant find the retriever in cluster: %w", err)
+		return nil, fmt.Errorf("can't find the retriever in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
@@ -116,7 +116,7 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	switch vectorStore.Spec.Type() { // nolint: gocritic
 	case v1alpha1.VectorStoreTypeChroma:
 		s, err := chroma.New(
-			chroma.WithChromaURL(vectorStore.Spec.Enpoint.URL),
+			chroma.WithChromaURL(vectorStore.Spec.Endpoint.URL),
 			chroma.WithDistanceFunction(vectorStore.Spec.Chroma.DistanceFunction),
 			chroma.WithNameSpace(knowledgebase.VectorStoreCollectionName()),
 			chroma.WithEmbedder(em),

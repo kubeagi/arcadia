@@ -28,7 +28,7 @@ type ModelSpec struct {
 	CommonSpec `json:",inline"`
 
 	// Type defines what kind of model this is
-	// Comma separated field which can be wrapped by {llm,embdding}
+	// Comma separated field which can be wrapped by {llm,embedding}
 	Types string `json:"types,omitempty"`
 
 	// TODO: extend model to utilize third party storage sources

@@ -27,8 +27,8 @@ import (
 type DatasourceSpec struct {
 	CommonSpec `json:",inline"`
 
-	// Enpoint defines connection info
-	Enpoint Endpoint `json:"endpoint"`
+	// Endpoint defines connection info
+	Endpoint Endpoint `json:"endpoint"`
 
 	// OSS defines info for object storage service
 	OSS *OSS `json:"oss,omitempty"`

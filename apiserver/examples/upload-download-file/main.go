@@ -490,7 +490,7 @@ func downloadFile(bucket, bucketPath, fileName string, transport http.RoundTripp
 	first := true
 	lock := make(chan struct{}, 1)
 	done := true
-	klog.Infof("[Step 3] start to donwload...")
+	klog.Infof("[Step 3] start to download...")
 	var wg sync.WaitGroup
 	for i := 0; i < int(parts); i++ {
 		if !first {

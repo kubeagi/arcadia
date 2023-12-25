@@ -13,15 +13,15 @@
 
 ## What is Arcadia?
 
-**Arcadia** comes from [Greek mythology](https://www.greekmythology.com/Myths/Places/Arcadia/arcadia.html)(a tranquil and idyllic region, representing harmony, serenity, and natural beauty).We aim to help everyone find a more perfect integration between humans and AI.
+**Arcadia** comes from [Greek mythology](https://www.greekmythology.com/Myths/Places/Arcadia/arcadia.html)(a tranquil and idyllic region, representing harmony, serenity, and natural beauty). We aim to help everyone find a more perfect integration between humans and AI.
 
-To archieve this goal, we provides this one-stop LLMOps solution:
+To achieve this goal, we provide this one-stop LLMOps solution:
 
 - Dataset Management: storage/real-time data,multimodal,pre-processing,vectorization
 - Models Management: local/online LLMs(development,training,deployment),inference acceleration
 - Application Management: development,optimization,deployment with visual editor
 
-Furthermore,we can easily host **Arcadia** at any kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(A kubernetes building blocks),
+Furthermore, we can easily host **Arcadia** at any kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(A kubernetes building blocks).
 
 ## Architecture
 
@@ -37,7 +37,7 @@ Our design and development in Arcadia design follows operator pattern which exte
 
 2. [Kubernetes](https://kubernetes.io/)
 
-If you don't have a kubernetes cluster, you can schedule a [kind cluster](https://kind.sigs.k8s.io/). Depends on your choice on CPU or GPU when running LLM worker,you can choose to:
+If you don't have a kubernetes cluster, you can schedule a [kind cluster](https://kind.sigs.k8s.io/). Depends on your choice on CPU or GPU when running LLM worker, you can choose to:
 
 - [Create a kind cluster with/without GPU enabled](http://kubeagi.k8s.com.cn/docs/Quick%20Start/create-cluster-using-kind)
 
@@ -54,7 +54,7 @@ We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./
 
 ## Pure Go Toolchains
 
-To enhace the AI capability in Golang, we developed some packages.Here are the examples of how to use them.
+To enhance the AI capability in Golang, we developed some packages.Here are the examples of how to use them.
 
 - [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you to chat with your document
 - [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service

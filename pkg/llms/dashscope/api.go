@@ -162,7 +162,7 @@ func (z *DashScope) GetTaskDetail(ctx context.Context, taskID string) (outURL st
 	}
 	data := respData.Output.EmbeddingOutputASync
 	if data == nil {
-		return "", fmt.Errorf("cant find data in resp:%+v", respData)
+		return "", fmt.Errorf("can't find data in resp:%+v", respData)
 	}
 	if data.TaskStatus != TaskStatusSucceeded {
 		return "", fmt.Errorf("taskStatus:%s, message:%s", data.TaskStatus, data.Message)

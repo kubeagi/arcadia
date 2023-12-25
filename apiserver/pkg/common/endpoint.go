@@ -118,7 +118,7 @@ func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.T
 
 	_, err = ResouceGet(ctx, c, secret, metav1.GetOptions{})
 	if err != nil {
-		// Create is not fount
+		// Create is not found
 		if apierrors.IsNotFound(err) {
 			_, err = c.Resource(schema.GroupVersionResource{Group: corev1.SchemeGroupVersion.Group, Version: corev1.SchemeGroupVersion.Version, Resource: "secrets"}).
 				Namespace(*secret.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})

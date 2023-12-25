@@ -26,10 +26,10 @@ import (
 )
 
 func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
-	if e.Spec.Enpoint == nil {
+	if e.Spec.Endpoint == nil {
 		return "", nil
 	}
-	return e.Spec.Enpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
+	return e.Spec.Endpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
 }
 
 // GetModelList returns a model list provided by this LLM based on different provider

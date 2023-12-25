@@ -171,7 +171,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 		// When checking the existence of a file in MinIO, besides the "file not found" error, there can be other errors as well.
 		klog.Errorf("failed to check for the existence of a resource %s/%s. error %s", bucketName, objectName, err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"messge": err.Error(),
+			"message": err.Error(),
 		})
 		return
 	}
@@ -266,7 +266,7 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 	if err != nil {
 		klog.Errorf("failed to generate uploadid error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "fialed to generate uploadid",
+			"message": "failed to generate uploadid",
 		})
 		return
 	}
@@ -319,7 +319,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	if body.FileName == "" {
 		klog.Errorf("fileName is empty")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"mesage": "fileName is required",
+			"message": "fileName is required",
 		})
 		return
 	}
@@ -396,7 +396,7 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		datasource.WithUploadID(body.UploadID),
 		datasource.WithFileName(body.FileName))
 	if err != nil {
-		klog.Errorf("complte multipart error %s", err)
+		klog.Errorf("complete multipart error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})
@@ -428,7 +428,7 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 	for _, f := range body.Files {
 		go func(fn string) {
 			if err := source.Remove(context.TODO(), &v1alpha1.OSS{Bucket: body.Bucket, Object: fmt.Sprintf("%s/%s", bucketPath, fn)}); err != nil {
-				klog.Errorf("faile to delete file %s/%s from bucket %s, error %s", bucketPath, fn, body.Bucket, err)
+				klog.Errorf("failed to delete file %s/%s from bucket %s, error %s", bucketPath, fn, body.Bucket, err)
 			}
 		}(f)
 	}
@@ -535,7 +535,7 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	}
 	info, err := source.Client.GetObject(ctx.Request.Context(), bucket, objectName, opt)
 	if err != nil {
-		klog.Errorf("failed to get object %s/%s range %d-%d errro %s", bucket, objectName, from, end, err)
+		klog.Errorf("failed to get object %s/%s range %d-%d error %s", bucket, objectName, from, end, err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})
@@ -584,7 +584,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	}
 	anyStatInfo, err := source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{Bucket: bucket, Object: objectName})
 	if err != nil {
-		klog.Errorf("faield to stat filed %s/%s error %s", bucket, objectName, err)
+		klog.Errorf("failed to stat filed %s/%s error %s", bucket, objectName, err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})

@@ -172,7 +172,7 @@ def info_by_id(
         conn_pool=pool
     )
 
-    # convert the conig resule from map to list
+    # convert the config resule from map to list
     config_list_for_result = []
     for value in config_map_for_result.values():
         config_list_for_result.append(value)

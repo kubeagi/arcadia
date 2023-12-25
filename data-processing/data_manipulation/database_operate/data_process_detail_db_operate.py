@@ -136,7 +136,7 @@ def list_file_name_for_transform(
     req_json,
     pool
 ):
-    """List file name for tansform in the task detail.
+    """List file name for transform in the task detail.
   
       req_json is a dictionary object. for example:
       {
@@ -169,7 +169,7 @@ def top_n_list_transform_for_preview(
     pool
 ):
     """List transform info with task id, file name and 
-    tansform type for preview.
+    transform type for preview.
     
     req_json is a dictionary object. for example:
     {

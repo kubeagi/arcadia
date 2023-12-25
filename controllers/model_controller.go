@@ -157,7 +157,7 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 	if instanceDeepCopy.Annotations == nil {
 		instanceDeepCopy.Annotations = make(map[string]string)
 	}
-	// For model's full storeage path
+	// For model's full storage path
 	currentFullPath := instanceDeepCopy.FullPath()
 	if v := instanceDeepCopy.Annotations[arcadiav1alpha1.LabelModelFullPath]; v != currentFullPath {
 		instanceDeepCopy.Annotations[arcadiav1alpha1.LabelModelFullPath] = currentFullPath
@@ -183,7 +183,7 @@ func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, in
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}
-	endpoint := system.Spec.Enpoint.DeepCopy()
+	endpoint := system.Spec.Endpoint.DeepCopy()
 	if endpoint != nil && endpoint.AuthSecret != nil {
 		endpoint.AuthSecret.WithNameSpace(system.Namespace)
 	}
@@ -217,7 +217,7 @@ func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, i
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}
-	endpoint := system.Spec.Enpoint.DeepCopy()
+	endpoint := system.Spec.Endpoint.DeepCopy()
 	if endpoint != nil && endpoint.AuthSecret != nil {
 		endpoint.AuthSecret.WithNameSpace(system.Namespace)
 	}
@@ -238,7 +238,7 @@ func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, i
 	return ds.Remove(ctx, info)
 }
 
-// UpdateStatus uppon error
+// UpdateStatus upon error
 func (r *ModelReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Model, err error) error {
 	instanceCopy := instance.DeepCopy()
 	var newCondition arcadiav1alpha1.Condition

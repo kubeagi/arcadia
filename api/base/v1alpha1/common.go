@@ -53,18 +53,18 @@ const (
 
 // Provider defines how to prvoide the service
 type Provider struct {
-	// Enpoint defines connection info
-	Enpoint *Endpoint `json:"endpoint,omitempty"`
+	// Endpoint defines connection info
+	Endpoint *Endpoint `json:"endpoint,omitempty"`
 
 	// Worker defines the worker info
 	// Means this LLM is provided by a arcadia worker
 	Worker *TypedObjectReference `json:"worker,omitempty"`
 }
 
-// GetType returnes the type of this provider
+// GetType returns the type of this provider
 func (p Provider) GetType() ProviderType {
 	// if endpoint provided, then 3rd_party
-	if p.Enpoint != nil {
+	if p.Endpoint != nil {
 		return ProviderType3rdParty
 	}
 	// if worker provided, then worker

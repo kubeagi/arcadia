@@ -218,7 +218,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 		logger.Error(err, "Failed to get system datasource")
 		return false, nil, err
 	}
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
@@ -238,7 +238,7 @@ func (r *VersionedDatasetReconciler) removeBucketFiles(ctx context.Context, logg
 		logger.Error(err, "Failed to get system datasource")
 		return err
 	}
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}

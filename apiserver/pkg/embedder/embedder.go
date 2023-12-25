@@ -61,7 +61,7 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 	case v1alpha1.ProviderTypeWorker:
 		baseURL, _ = common.GetAPIServer(ctx, c, true)
 	case v1alpha1.ProviderType3rdParty:
-		baseURL = embedder.Spec.Enpoint.URL
+		baseURL = embedder.Spec.Endpoint.URL
 	}
 
 	md := generated.Embedder{
@@ -112,7 +112,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 				Description: description,
 			},
 			Provider: v1alpha1.Provider{
-				Enpoint: &v1alpha1.Endpoint{
+				Endpoint: &v1alpha1.Endpoint{
 					URL: input.Endpointinput.URL,
 				},
 			},
@@ -131,7 +131,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		if err != nil {
 			return nil, err
 		}
-		embedder.Spec.Enpoint.AuthSecret = &v1alpha1.TypedObjectReference{
+		embedder.Spec.Endpoint.AuthSecret = &v1alpha1.TypedObjectReference{
 			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,

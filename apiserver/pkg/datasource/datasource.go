@@ -58,14 +58,14 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 
 	// parse endpoint
 	endpoint := generated.Endpoint{
-		URL:      &datasource.Spec.Enpoint.URL,
-		Insecure: &datasource.Spec.Enpoint.Insecure,
+		URL:      &datasource.Spec.Endpoint.URL,
+		Insecure: &datasource.Spec.Endpoint.Insecure,
 	}
-	if datasource.Spec.Enpoint.AuthSecret != nil {
+	if datasource.Spec.Endpoint.AuthSecret != nil {
 		endpoint.AuthSecret = &generated.TypedObjectReference{
 			Kind:      "Secret",
-			Name:      datasource.Spec.Enpoint.AuthSecret.Name,
-			Namespace: datasource.Spec.Enpoint.AuthSecret.Namespace,
+			Name:      datasource.Spec.Endpoint.AuthSecret.Name,
+			Namespace: datasource.Spec.Endpoint.AuthSecret.Namespace,
 		}
 	}
 
@@ -132,7 +132,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 	if err != nil {
 		return nil, err
 	}
-	datasource.Spec.Enpoint = endpoint
+	datasource.Spec.Endpoint = endpoint
 
 	if input.Ossinput != nil {
 		datasource.Spec.OSS = &v1alpha1.OSS{
@@ -206,7 +206,7 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 		if err != nil {
 			return nil, err
 		}
-		datasource.Spec.Enpoint = endpoint
+		datasource.Spec.Endpoint = endpoint
 	}
 
 	// Update ossinput

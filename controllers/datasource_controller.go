@@ -159,7 +159,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	var info any
 	switch instance.Spec.Type() {
 	case arcadiav1alpha1.DatasourceTypeOSS:
-		endpoint := instance.Spec.Enpoint.DeepCopy()
+		endpoint := instance.Spec.Endpoint.DeepCopy()
 		// set auth secret's namespace to the datasource's namespace
 		if endpoint.AuthSecret != nil {
 			endpoint.AuthSecret.WithNameSpace(instance.Namespace)
@@ -185,7 +185,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	return r.UpdateStatus(ctx, instance, nil)
 }
 
-// UpdateStatus uppon error
+// UpdateStatus upon error
 func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.Datasource, err error) error {
 	instanceCopy := instance.DeepCopy()
 	var newCondition arcadiav1alpha1.Condition

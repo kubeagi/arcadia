@@ -116,7 +116,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 	return &md
 }
 
-func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, discription, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
+func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, description, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
 	knowledgebase := v1alpha1.KnowledgeBase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -129,7 +129,7 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 		Spec: v1alpha1.KnowledgeBaseSpec{
 			CommonSpec: v1alpha1.CommonSpec{
 				DisplayName: displayname,
-				Description: discription,
+				Description: description,
 			},
 			Embedder: &v1alpha1.TypedObjectReference{
 				Kind:      "Embedder",

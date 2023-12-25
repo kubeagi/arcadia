@@ -63,7 +63,7 @@ func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
 		if endpoint.AuthSecret.Namespace == nil {
-			return nil, errors.New("no namepsace found for endpoint.authsecret")
+			return nil, errors.New("no namespace found for endpoint.authsecret")
 		}
 		if err := utils.ValidateClient(c, dc); err != nil {
 			return nil, err
@@ -125,7 +125,7 @@ func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint
 	return &OSS{Client: mc, Core: core}, nil
 }
 
-// Check oss agains info()
+// Check oss against info()
 func (oss *OSS) Stat(ctx context.Context, info any) error {
 	if info == nil {
 		return nil
@@ -177,7 +177,7 @@ func (oss *OSS) statObject(ctx context.Context, ossInfo *v1alpha1.OSS) error {
 
 	// check whether object exists
 	if ossInfo.Object != "" {
-		// The object by `ListObjects` will trim "/" automatically,so we also need to trim "/" to make sure name comparision successful
+		// The object by `ListObjects` will trim "/" automatically,so we also need to trim "/" to make sure name comparison successful
 		ossInfo.Object = strings.TrimPrefix(ossInfo.Object, "/")
 		// When object contains "/" which means it is a directory,'ListObjects' will show all objects under that directory without object itself
 		// After we remove "/", the objects by `ListObjects` will have object itself included.

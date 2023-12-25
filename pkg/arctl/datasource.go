@@ -207,7 +207,7 @@ func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				Namespace: namespace,
 			})
 			if err != nil {
-				return fmt.Errorf("faield to delete datasource: %w", err)
+				return fmt.Errorf("failed to delete datasource: %w", err)
 			}
 			klog.Infof("Successfully deleted datasource %s\n", name)
 			return err
