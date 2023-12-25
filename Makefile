@@ -290,6 +290,9 @@ prepare-push: manifests generate fmt vet gql-gen
 	@sed -i '' '$(chart_rule_line_num),$$d' deploy/charts/arcadia/templates/rbac.yaml
 	@cat tmp_role.yaml >> deploy/charts/arcadia/templates/rbac.yaml
 	@rm -f tmp_role.yaml
+	@echo "install swag"
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@swag init -o apiserver/docs .
 
 # Commands for Data-Processing
 DATA_PROCESSING_IMAGE ?= kubebb/dp-base

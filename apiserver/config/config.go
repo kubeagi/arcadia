@@ -32,6 +32,7 @@ type ServerConfig struct {
 	Host             string
 	Port             int
 	EnablePlayground bool
+	EnableSwagger    bool
 	EnableOIDC       bool
 
 	PlaygroundEndpointPrefix                     string
@@ -45,6 +46,7 @@ func NewServerFlags() ServerConfig {
 	flag.StringVar(&s.Host, "host", "", "bind to the host, default is 0.0.0.0")
 	flag.IntVar(&s.Port, "port", 8081, "service listening port")
 	flag.BoolVar(&s.EnablePlayground, "enable-playground", false, "enable the graphql playground")
+	flag.BoolVar(&s.EnableSwagger, "enable-swagger", true, "enable the swagger doc")
 	flag.BoolVar(&s.EnableOIDC, "enable-oidc", false, "enable oidc authorization")
 	flag.StringVar(&s.PlaygroundEndpointPrefix, "playground-endpoint-prefix", "", "this parameter should also be configured when the service is forwarded via ingress and a path prefix is configured to avoid not finding the service, such as /apis")
 	flag.StringVar(&s.IssuerURL, "issuer-url", "", "oidc issuer url(required when enable odic)")

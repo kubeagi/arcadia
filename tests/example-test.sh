@@ -175,11 +175,11 @@ function getRespInAppChat() {
 	appname=$1
 	namespace=$2
 	query=$3
-	conversionID=$4
+	conversationID=$4
 	testStream=$5
 	START_TIME=$(date +%s)
 	while true; do
-		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversionID "$conversionID" '{"query":$query,"response_mode":"blocking","conversion_id":$conversionID,"app_name":$appname, "app_namespace":$namespace}')
+		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
 		resp=$(curl -s -XPOST http://127.0.0.1:8081/chat --data "$data")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
@@ -190,11 +190,11 @@ function getRespInAppChat() {
 		echo "👤: ${query}"
 		echo "🤖: ${ai_data}"
 		echo "🔗: ${references}"
-		resp_conversion_id=$(echo $resp | jq -r '.conversion_id')
+		resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
 
 		if [ $testStream == "true" ]; then
 			info "just test stream mode"
-			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversionID "$conversionID" '{"query":$query,"response_mode":"streaming","conversion_id":$conversionID,"app_name":$appname, "app_namespace":$namespace}')
+			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
 			curl -s -XPOST http://127.0.0.1:8081/chat --data "$data"
 		fi
 		break
@@ -297,28 +297,28 @@ waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
 
-info "8.3 conversion chat app"
+info "8.3 conversation chat app"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot"
 sleep 3
 getRespInAppChat "base-chat-with-bot" "arcadia" "Hi I am Jim" "" "false"
-getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversion_id} "false"
+getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversation_id} "false"
 if [[ $resp != *"Jim"* ]]; then
-	echo "Because conversionWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
+	echo "Because conversationWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 	exit 1
 fi
 
-info "8.4 check conversion list and message history"
+info "8.4 check conversation list and message history"
 curl -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}'
-data=$(jq -n --arg conversionID "$resp_conversion_id" '{"conversion_id":$conversionID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+data=$(jq -n --arg conversationID "$resp_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 curl -XPOST http://127.0.0.1:8081/chat/messages --data "$data"
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
-#getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversion_id} "false"
-#getRespInAppChat "base-chat-with-bot" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversion_id} "false"
-#getRespInAppChat "base-chat-with-bot" "arcadia" "When was the model you used released?" ${resp_conversion_id} "false"
-#getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversion_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversation_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "When was the model you used released?" ${resp_conversation_id} "false"
+#getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversation_id} "false"
 #if [[ $resp == *"Jim"* ]]; then
-#	echo "Because conversionWindowSize is enabled to be 2, and current is the 6th conversion, llm should not record My name, but resp:"$resp "still contains Jim"
+#	echo "Because conversationWindowSize is enabled to be 2, and current is the 6th conversation, llm should not record My name, but resp:"$resp "still contains Jim"
 #	exit 1
 #fi
 

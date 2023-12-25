@@ -38,8 +38,8 @@ import (
 )
 
 var (
-	mu          sync.Mutex
-	Conversions = map[string]Conversion{}
+	mu            sync.Mutex
+	Conversations = map[string]Conversation{}
 )
 
 func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*ChatRespBody, error) {
@@ -61,25 +61,25 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 	if !app.Status.IsReady() {
 		return nil, errors.New("application is not ready")
 	}
-	var conversion Conversion
+	var conversation Conversation
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
-	if req.ConversionID != "" {
+	if req.ConversationID != "" {
 		var ok bool
-		conversion, ok = Conversions[req.ConversionID]
+		conversation, ok = Conversations[req.ConversationID]
 		if !ok {
-			return nil, errors.New("conversion is not found")
+			return nil, errors.New("conversation is not found")
 		}
-		if currentUser != "" && currentUser != conversion.User {
-			return nil, errors.New("conversion id not match with user")
+		if currentUser != "" && currentUser != conversation.User {
+			return nil, errors.New("conversation id not match with user")
 		}
-		if conversion.AppName != req.APPName || conversion.AppNamespce != req.AppNamespace {
-			return nil, errors.New("conversion id not match with app info")
+		if conversation.AppName != req.APPName || conversation.AppNamespce != req.AppNamespace {
+			return nil, errors.New("conversation id not match with app info")
 		}
-		if conversion.Debug != req.Debug {
-			return nil, errors.New("conversion id not match with debug")
+		if conversation.Debug != req.Debug {
+			return nil, errors.New("conversation id not match with debug")
 		}
 	} else {
-		conversion = Conversion{
+		conversation = Conversation{
 			ID:          string(uuid.NewUUID()),
 			AppName:     req.APPName,
 			AppNamespce: req.AppNamespace,
@@ -92,7 +92,7 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 		}
 	}
 	messageID := string(uuid.NewUUID())
-	conversion.Messages = append(conversion.Messages, Message{
+	conversation.Messages = append(conversation.Messages, Message{
 		ID:     messageID,
 		Query:  req.Query,
 		Answer: "",
@@ -103,31 +103,31 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 		return nil, err
 	}
 	klog.Infoln("begin to run application", obj.GetName())
-	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversion.History})
+	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversation.History})
 	if err != nil {
 		return nil, err
 	}
 
-	conversion.UpdatedAt = time.Now()
-	conversion.Messages[len(conversion.Messages)-1].Answer = out.Answer
-	conversion.Messages[len(conversion.Messages)-1].References = out.References
+	conversation.UpdatedAt = time.Now()
+	conversation.Messages[len(conversation.Messages)-1].Answer = out.Answer
+	conversation.Messages[len(conversation.Messages)-1].References = out.References
 	mu.Lock()
-	Conversions[conversion.ID] = conversion
+	Conversations[conversation.ID] = conversation
 	mu.Unlock()
 	return &ChatRespBody{
-		ConversionID: conversion.ID,
-		MessageID:    messageID,
-		Message:      out.Answer,
-		CreatedAt:    time.Now(),
-		References:   out.References,
+		ConversationID: conversation.ID,
+		MessageID:      messageID,
+		Message:        out.Answer,
+		CreatedAt:      time.Now(),
+		References:     out.References,
 	}, nil
 }
 
-func ListConversations(ctx context.Context, req APPMetadata) ([]Conversion, error) {
-	conversations := make([]Conversion, 0)
+func ListConversations(ctx context.Context, req APPMetadata) ([]Conversation, error) {
+	conversations := make([]Conversation, 0)
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	mu.Lock()
-	for _, c := range Conversions {
+	for _, c := range Conversations {
 		if !c.Debug && c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && (currentUser == "" || currentUser == c.User) {
 			conversations = append(conversations, c)
 		}
@@ -136,37 +136,37 @@ func ListConversations(ctx context.Context, req APPMetadata) ([]Conversion, erro
 	return conversations, nil
 }
 
-func DeleteConversation(ctx context.Context, conversionID string) error {
+func DeleteConversation(ctx context.Context, conversationID string) error {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	mu.Lock()
 	defer mu.Unlock()
-	c, ok := Conversions[conversionID]
+	c, ok := Conversations[conversationID]
 	if ok && (currentUser == "" || currentUser == c.User) {
-		delete(Conversions, c.ID)
+		delete(Conversations, c.ID)
 		return nil
 	} else {
-		return errors.New("conversion is not found")
+		return errors.New("conversation is not found")
 	}
 }
 
-func ListMessages(ctx context.Context, req ConversionReqBody) (Conversion, error) {
+func ListMessages(ctx context.Context, req ConversationReqBody) (Conversation, error) {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	mu.Lock()
 	defer mu.Unlock()
-	for _, c := range Conversions {
-		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && req.ConversionID == c.ID && (currentUser == "" || currentUser == c.User) {
+	for _, c := range Conversations {
+		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && req.ConversationID == c.ID && (currentUser == "" || currentUser == c.User) {
 			return c, nil
 		}
 	}
-	return Conversion{}, errors.New("conversion is not found")
+	return Conversation{}, errors.New("conversation is not found")
 }
 
 func GetMessageReferences(ctx context.Context, req MessageReqBody) ([]retriever.Reference, error) {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	mu.Lock()
 	defer mu.Unlock()
-	for _, c := range Conversions {
-		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && c.ID == req.ConversionID && (currentUser == "" || currentUser == c.User) {
+	for _, c := range Conversations {
+		if c.AppName == req.APPName && c.AppNamespce == req.AppNamespace && c.ID == req.ConversationID && (currentUser == "" || currentUser == c.User) {
 			for _, m := range c.Messages {
 				if m.ID == req.MessageID {
 					return m.References, nil
@@ -174,7 +174,7 @@ func GetMessageReferences(ctx context.Context, req MessageReqBody) ([]retriever.
 			}
 		}
 	}
-	return nil, errors.New("conversion or message is not found")
+	return nil, errors.New("conversation or message is not found")
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question
