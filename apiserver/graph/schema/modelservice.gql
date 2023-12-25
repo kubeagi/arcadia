@@ -43,6 +43,11 @@ mutation createModelService($input: CreateModelServiceInput!) {
                 status
                 message
             }
+            resource {
+                cpu
+                nvidiaGPU
+                memory
+            }
         }
     }
 }
@@ -91,6 +96,11 @@ mutation updateModelService($input: UpdateModelServiceInput) {
                 updateTimestamp
                 status
                 message
+            }
+            resource {
+                cpu
+                nvidiaGPU
+                memory
             }
         }
     }
@@ -213,6 +223,17 @@ query listModelServices($input: ListModelService) {
                     }
                 }
             }
+        }
+    }
+}
+
+query checkModelService($input: CreateModelServiceInput!) {
+    ModelService {
+        checkModelService(input: $input) {
+            name
+            namespace
+            apiType
+            description
         }
     }
 }

@@ -1018,6 +1018,7 @@ type ModelServiceMutation struct {
 type ModelServiceQuery struct {
 	GetModelService   *ModelService   `json:"getModelService,omitempty"`
 	ListModelServices PaginatedResult `json:"listModelServices"`
+	CheckModelService ModelService    `json:"checkModelService"`
 }
 
 // 对象存储的使用信息

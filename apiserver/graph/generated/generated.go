@@ -445,6 +445,7 @@ type ComplexityRoot struct {
 	}
 
 	ModelServiceQuery struct {
+		CheckModelService func(childComplexity int, input CreateModelServiceInput) int
 		GetModelService   func(childComplexity int, name string, namespace string, apiType string) int
 		ListModelServices func(childComplexity int, input *ListModelService) int
 	}
@@ -676,6 +677,7 @@ type ModelServiceMutationResolver interface {
 type ModelServiceQueryResolver interface {
 	GetModelService(ctx context.Context, obj *ModelServiceQuery, name string, namespace string, apiType string) (*ModelService, error)
 	ListModelServices(ctx context.Context, obj *ModelServiceQuery, input *ListModelService) (*PaginatedResult, error)
+	CheckModelService(ctx context.Context, obj *ModelServiceQuery, input CreateModelServiceInput) (*ModelService, error)
 }
 type MutationResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
@@ -2721,6 +2723,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ModelServiceMutation.UpdateModelService(childComplexity, args["input"].(*UpdateModelServiceInput)), true
+
+	case "ModelServiceQuery.checkModelService":
+		if e.complexity.ModelServiceQuery.CheckModelService == nil {
+			break
+		}
+
+		args, err := ec.field_ModelServiceQuery_checkModelService_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ModelServiceQuery.CheckModelService(childComplexity, args["input"].(CreateModelServiceInput)), true
 
 	case "ModelServiceQuery.getModelService":
 		if e.complexity.ModelServiceQuery.GetModelService == nil {
@@ -5326,6 +5340,7 @@ extend type Mutation {
 type ModelServiceQuery {
     getModelService(name: String!, namespace: String!, apiType: String!): ModelService
     listModelServices(input: ListModelService): PaginatedResult!
+    checkModelService(input: CreateModelServiceInput!): ModelService!
 }
 
 extend type Query {
@@ -6490,6 +6505,21 @@ func (ec *executionContext) field_ModelServiceMutation_updateModelService_args(c
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUpdateModelServiceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateModelServiceInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_ModelServiceQuery_checkModelService_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateModelServiceInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNCreateModelServiceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐCreateModelServiceInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -19169,6 +19199,93 @@ func (ec *executionContext) fieldContext_ModelServiceQuery_listModelServices(ctx
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelServiceQuery_checkModelService(ctx context.Context, field graphql.CollectedField, obj *ModelServiceQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ModelServiceQuery_checkModelService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ModelServiceQuery().CheckModelService(rctx, obj, fc.Args["input"].(CreateModelServiceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ModelService)
+	fc.Result = res
+	return ec.marshalNModelService2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐModelService(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ModelServiceQuery_checkModelService(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelServiceQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ModelService_id(ctx, field)
+			case "name":
+				return ec.fieldContext_ModelService_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_ModelService_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_ModelService_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_ModelService_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_ModelService_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_ModelService_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_ModelService_description(ctx, field)
+			case "types":
+				return ec.fieldContext_ModelService_types(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_ModelService_creationTimestamp(ctx, field)
+			case "updateTimestamp":
+				return ec.fieldContext_ModelService_updateTimestamp(ctx, field)
+			case "apiType":
+				return ec.fieldContext_ModelService_apiType(ctx, field)
+			case "llmResource":
+				return ec.fieldContext_ModelService_llmResource(ctx, field)
+			case "embedderResource":
+				return ec.fieldContext_ModelService_embedderResource(ctx, field)
+			case "resource":
+				return ec.fieldContext_ModelService_resource(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ModelService", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ModelServiceQuery_checkModelService_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_hello(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_hello(ctx, field)
 	if err != nil {
@@ -20631,6 +20748,8 @@ func (ec *executionContext) fieldContext_Query_ModelService(ctx context.Context,
 				return ec.fieldContext_ModelServiceQuery_getModelService(ctx, field)
 			case "listModelServices":
 				return ec.fieldContext_ModelServiceQuery_listModelServices(ctx, field)
+			case "checkModelService":
+				return ec.fieldContext_ModelServiceQuery_checkModelService(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelServiceQuery", field.Name)
 		},
@@ -32700,6 +32819,42 @@ func (ec *executionContext) _ModelServiceQuery(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._ModelServiceQuery_listModelServices(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "checkModelService":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ModelServiceQuery_checkModelService(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

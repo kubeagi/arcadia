@@ -256,5 +256,13 @@ func (llm LLMPredicates) Update(ue event.UpdateEvent) bool {
 	oldLLM := ue.ObjectOld.(*arcadiav1alpha1.LLM)
 	newLLM := ue.ObjectNew.(*arcadiav1alpha1.LLM)
 
-	return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec)
+	return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec) || newLLM.DeletionTimestamp != nil
+}
+
+func (llm LLMPredicates) Delete(de event.DeleteEvent) bool {
+	return true
+}
+
+func (llm LLMPredicates) Generic(ge event.GenericEvent) bool {
+	return true
 }
