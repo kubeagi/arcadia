@@ -16,18 +16,45 @@ limitations under the License.
 
 package worker
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
+// Device defines different types like cpu,gpu,xpu,npu which runs the model
 type Device string
 
 const (
-	CPU Device = "cpu"
-	GPU Device = "gpu"
+	CPU  Device = "cpu"
+	CUDA Device = "cuda"
 	// Not supported yet
 	XPU Device = "xpu"
 	// Not supported yet
-	//
 	NPU Device = "npu"
 )
 
+func (device Device) String() string {
+	return string(device)
+}
+
 const (
-	ResourceNvidiaGPU = "nvidia.com/gpu"
+	// Resource
+	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
+
+// DeviceBasedOnResource returns the devide type based on the resource list
+func DeviceBasedOnResource(resource corev1.ResourceList) Device {
+	_, ok := resource[ResourceNvidiaGPU]
+	if ok {
+		return CUDA
+	}
+	return CPU
+}
+
+// NumberOfGPUs from ResourceList
+func NumberOfGPUs(resource corev1.ResourceList) string {
+	gpu, ok := resource[ResourceNvidiaGPU]
+	if !ok {
+		return "0"
+	}
+	return gpu.String()
+}

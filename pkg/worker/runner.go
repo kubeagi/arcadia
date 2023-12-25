@@ -28,20 +28,18 @@ import (
 	"github.com/kubeagi/arcadia/pkg/config"
 )
 
+// ModelRunner run a model service
 type ModelRunner interface {
+	// Device used when running model
+	Device() Device
+	// Build a model runner instance
 	Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error)
 }
 
 var _ ModelRunner = (*RunnerFastchat)(nil)
 
-var _ ModelRunner = (*RunnerFastchatVLLM)(nil)
-
+// RunnerFastchat use fastchat to run a model
 type RunnerFastchat struct {
-	c client.Client
-	w *arcadiav1alpha1.Worker
-}
-
-type RunnerFastchatVLLM struct {
 	c client.Client
 	w *arcadiav1alpha1.Worker
 }
@@ -53,13 +51,16 @@ func NewRunnerFastchat(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner,
 	}, nil
 }
 
-func NewRunnerFastchatVLLM(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
-	return &RunnerFastchatVLLM{
-		c: c,
-		w: w,
-	}, nil
+func (runner *RunnerFastchat) Device() Device {
+	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
 }
 
+// NumberOfGPUs utlized by this runner
+func (runner *RunnerFastchat) NumberOfGPUs() string {
+	return NumberOfGPUs(runner.w.Spec.Resources.Limits)
+}
+
+// Build a runner instance
 func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error) {
 	if model == nil {
 		return nil, errors.New("nil model")
@@ -81,6 +82,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
 --model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
 --controller-address $FASTCHAT_CONTROLLER_ADDRESS \
+--device $DEVICE --num-gpus $NUMBER_GPUS  \
 --host 0.0.0.0 --port 21002`},
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
@@ -88,6 +90,8 @@ python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_REGISTRATION_MO
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
+			{Name: "DEVICE", Value: runner.Device().String()},
+			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},
@@ -101,6 +105,32 @@ python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_REGISTRATION_MO
 	return container, nil
 }
 
+var _ ModelRunner = (*RunnerFastchatVLLM)(nil)
+
+// RunnerFastchatVLLM use fastchat with vllm to run a model
+type RunnerFastchatVLLM struct {
+	c client.Client
+	w *arcadiav1alpha1.Worker
+}
+
+func NewRunnerFastchatVLLM(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
+	return &RunnerFastchatVLLM{
+		c: c,
+		w: w,
+	}, nil
+}
+
+// Devicde used by this runner
+func (runner *RunnerFastchatVLLM) Device() Device {
+	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
+}
+
+// NumberOfGPUs utlized by this runner
+func (runner *RunnerFastchatVLLM) NumberOfGPUs() string {
+	return NumberOfGPUs(runner.w.Spec.Resources.Limits)
+}
+
+// Build a runner instance
 func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error) {
 	if model == nil {
 		return nil, errors.New("nil model")
@@ -122,6 +152,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			python3.9 -m fastchat.serve.vllm_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
 			--model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
 			--controller-address $FASTCHAT_CONTROLLER_ADDRESS \
+			--device $DEVICE --num-gpus $NUMBER_GPUS \
 			--host 0.0.0.0 --port 21002 --trust-remote-code`},
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
@@ -129,6 +160,8 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
+			{Name: "DEVICE", Value: runner.Device().String()},
+			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},
