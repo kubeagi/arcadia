@@ -40,11 +40,16 @@ import (
 )
 
 type Reference struct {
-	Question   string  `json:"question"`
-	Answer     string  `json:"answer"`
-	Score      float32 `json:"score"`
-	FilePath   string  `json:"file_path"`
-	LineNumber int     `json:"line_number"`
+	// Question row
+	Question string `json:"question" example:"q: 旷工最小计算单位为多少天？"`
+	// Answer row
+	Answer string `json:"answer" example:"旷工最小计算单位为 0.5 天。"`
+	// vector search score
+	Score float32 `json:"score" example:"0.34"`
+	// file fullpath
+	FilePath string `json:"file_path" example:"dataset/dataset-playground/v1/qa.csv"`
+	// line number in the file
+	LineNumber int `json:"line_number" example:"7"`
 }
 
 type KnowledgeBaseRetriever struct {

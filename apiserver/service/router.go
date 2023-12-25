@@ -20,8 +20,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/kubeagi/arcadia/apiserver/config"
+	"github.com/kubeagi/arcadia/apiserver/docs"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
 )
 
@@ -49,12 +52,15 @@ func NewServerAndRun(conf config.ServerConfig) {
 	if conf.EnableOIDC {
 		oidc.InitOIDCArgs(conf.IssuerURL, conf.MasterURL, conf.ClientSecret, conf.ClientID)
 	}
-
 	bffGroup := r.Group("/bff")
 	chatGroup := r.Group("/chat")
 	RegisterMinIOAPI(bffGroup, conf)
 	RegisterGraphQL(r, bffGroup, conf)
-	RegisterChat(chatGroup, conf)
+	registerChat(chatGroup, conf)
+	if conf.EnableSwagger {
+		docs.SwaggerInfo.BasePath = "/"
+		r.GET("swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	}
 
 	_ = r.Run(fmt.Sprintf("%s:%d", conf.Host, conf.Port))
 }

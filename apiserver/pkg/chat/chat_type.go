@@ -27,47 +27,60 @@ import (
 type ResponseMode string
 
 const (
-	Blocking  ResponseMode = "blocking"
+	// Blocking means the response is returned in a blocking manner
+	Blocking ResponseMode = "blocking"
+	// Streaming means the response will use Server-Sent Events
 	Streaming ResponseMode = "streaming"
 	// todo isFlowValidForStream only some node(llm chain) support streaming
 )
 
 type APPMetadata struct {
-	APPName      string `json:"app_name" binding:"required"`
-	AppNamespace string `json:"app_namespace" binding:"required"`
+	// AppName, the name of the application
+	APPName string `json:"app_name" binding:"required" example:"chat-with-llm"`
+	// AppNamespace, the namespace of the application
+	AppNamespace string `json:"app_namespace" binding:"required" example:"arcadia"`
 }
 
-type ConversionReqBody struct {
-	APPMetadata  `json:",inline"`
-	ConversionID string `json:"conversion_id"`
+type ConversationReqBody struct {
+	APPMetadata `json:",inline"`
+	// ConversationID, if it is empty, a new conversation will be created
+	ConversationID string `json:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
 }
 
 type MessageReqBody struct {
-	ConversionReqBody `json:",inline"`
-	MessageID         string `json:"message_id"`
+	ConversationReqBody `json:",inline"`
+	// MessageID, single message id
+	MessageID string `json:"message_id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
 }
 
 type ChatReqBody struct {
-	Query             string       `json:"query" binding:"required"`
-	ResponseMode      ResponseMode `json:"response_mode" binding:"required"`
-	ConversionReqBody `json:",inline"`
-	Debug             bool `json:"-"`
+	// Query user query string
+	Query string `json:"query" binding:"required" example:"旷工最小计算单位为多少天？"`
+	// ResponseMode:
+	// * Blocking - means the response is returned in a blocking manner
+	// * Streaming - means the response will use Server-Sent Events
+	ResponseMode        ResponseMode `json:"response_mode" binding:"required" example:"blocking"`
+	ConversationReqBody `json:",inline"`
+	Debug               bool `json:"-"`
 }
 
 type ChatRespBody struct {
-	ConversionID string                `json:"conversion_id"`
-	MessageID    string                `json:"message_id"`
-	Message      string                `json:"message"`
-	CreatedAt    time.Time             `json:"created_at"`
-	References   []retriever.Reference `json:"references,omitempty"`
+	ConversationID string `json:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+	MessageID      string `json:"message_id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
+	// Message is what AI say
+	Message string `json:"message" example:"旷工最小计算单位为0.5天。"`
+	// CreatedAt is the time when the message is created
+	CreatedAt time.Time `json:"created_at" example:"2023-12-21T10:21:06.389359092+08:00"`
+	// References is the list of references
+	References []retriever.Reference `json:"references,omitempty"`
 }
 
-type Conversion struct {
-	ID          string                     `json:"id"`
-	AppName     string                     `json:"app_name"`
-	AppNamespce string                     `json:"app_namespace"`
-	StartedAt   time.Time                  `json:"started_at"`
-	UpdatedAt   time.Time                  `json:"updated_at"`
+type Conversation struct {
+	ID          string                     `json:"id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+	AppName     string                     `json:"app_name" example:"chat-with-llm"`
+	AppNamespce string                     `json:"app_namespace" example:"arcadia"`
+	StartedAt   time.Time                  `json:"started_at" example:"2023-12-21T10:21:06.389359092+08:00"`
+	UpdatedAt   time.Time                  `json:"updated_at" example:"2023-12-22T10:21:06.389359092+08:00"`
 	Messages    []Message                  `json:"messages"`
 	History     *memory.ChatMessageHistory `json:"-"`
 	User        string                     `json:"-"`
@@ -75,8 +88,16 @@ type Conversion struct {
 }
 
 type Message struct {
-	ID         string                `json:"id"`
-	Query      string                `json:"query"`
-	Answer     string                `json:"answer"`
+	ID         string                `json:"id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
+	Query      string                `json:"query" example:"旷工最小计算单位为多少天？"`
+	Answer     string                `json:"answer" example:"旷工最小计算单位为0.5天。"`
 	References []retriever.Reference `json:"references,omitempty"`
+}
+
+type ErrorResp struct {
+	Err string `json:"error" example:"conversation is not found"`
+}
+
+type SimpleResp struct {
+	Message string `json:"message" example:"ok"`
 }
