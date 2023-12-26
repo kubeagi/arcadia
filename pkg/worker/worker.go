@@ -91,7 +91,7 @@ type Worker interface {
 
 var _ Worker = (*PodWorker)(nil)
 
-// PodWorker hosts this worker in a single pod but with different loader and runner based on Worker's confiugration
+// PodWorker hosts this worker in a single pod but with different loader and runner based on Worker's configuration
 type PodWorker struct {
 	c client.Client
 	s *runtime.Scheme
@@ -195,7 +195,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	podWorker.deployment = deployment
 
 	// init loader(Only oss supported yet)
-	endpoint := d.Spec.Enpoint.DeepCopy()
+	endpoint := d.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(d.Namespace)
 	}

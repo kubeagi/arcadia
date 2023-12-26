@@ -25,8 +25,8 @@ import (
 type VectorStoreSpec struct {
 	CommonSpec `json:",inline"`
 
-	// Enpoint defines connection info
-	Enpoint *Endpoint `json:"endpoint,omitempty"`
+	// Endpoint defines connection info
+	Endpoint *Endpoint `json:"endpoint,omitempty"`
 
 	Chroma *Chroma `json:"chroma,omitempty"`
 }

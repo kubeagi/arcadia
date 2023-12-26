@@ -363,7 +363,7 @@ type File struct {
 	Size int64  `json:"size"`
 
 	// embedding status
-	// Chunks is the number of splitted chunks
+	// Chunks is the number of split chunks
 	Chunks int `json:"chunks"`
 	// ChunksLoaded is the number of chunks loaded
 	ChunksLoaded int `json:"chunks_loaded"`
@@ -473,7 +473,7 @@ func (cachedDS *Dataset) loadDocument(ctx context.Context, document string) erro
 		return errors.New("unsupported document language")
 	}
 
-	// initliaze text splitter
+	// initialize text splitter
 	var split textsplitter.TextSplitter
 	switch cachedDS.TextSplitter {
 	case "token":

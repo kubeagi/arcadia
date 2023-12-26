@@ -59,7 +59,7 @@ spec:
                   llm service
                 properties:
                   endpoint:
-                    description: Enpoint defines connection info
+                    description: Endpoint defines connection info
                     properties:
                       authSecret:
                         description: AuthSecret if the chart repository requires auth

@@ -125,7 +125,7 @@ func (r *EmbedderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				newEmbedder := ue.ObjectNew.(*arcadiav1alpha1.Embedder)
 				return !reflect.DeepEqual(oldEmbedder.Spec, newEmbedder.Spec) || newEmbedder.DeletionTimestamp != nil
 			},
-			// for other event handler, we must add the function explictly.
+			// for other event handler, we must add the function explicitly.
 			CreateFunc: func(event.CreateEvent) bool {
 				return true
 			},
@@ -193,7 +193,7 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 		}
 		msg = res.String()
 	case embeddings.OpenAI:
-		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Enpoint.URL)
+		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Endpoint.URL)
 		res, err := embedClient.Validate()
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)

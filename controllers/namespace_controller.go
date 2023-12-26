@@ -128,7 +128,7 @@ func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, e
 		klog.Errorf("get system datasource error %s", err)
 		return nil, err
 	}
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}

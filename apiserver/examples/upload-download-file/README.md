@@ -117,7 +117,7 @@ I1220 14:44:59.444794   12365 main.go:424] [Step 5], Congratulations, the file w
 I1211 15:16:42.701067 2904044 main.go:410] [Step 1] get file size
 I1211 15:16:42.703150 2904044 main.go:436] [DEBUG] file size is 51392595
 I1211 15:16:42.703168 2904044 main.go:440] [Step 2] create local file tmp.gz
-I1211 15:16:42.703225 2904044 main.go:461] [Step 3] start to donwload...
+I1211 15:16:42.703225 2904044 main.go:461] [Step 3] start to download...
 I1211 15:16:42.703303 2904044 main.go:482] [Chunk 41943040-51392595] send request to http://localhost:8099/bff/versioneddataset/files/download?bucket=abc&bucketPath=def&end=51392595&fileName=tmp.tar.gz&from=41943040
 I1211 15:16:42.703391 2904044 main.go:482] [Chunk 10485760-20971520] send request to http://localhost:8099/bff/versioneddataset/files/download?bucket=abc&bucketPath=def&end=20971520&fileName=tmp.tar.gz&from=10485760
 I1211 15:16:42.703452 2904044 main.go:482] [Chunk 20971520-31457280] send request to http://localhost:8099/bff/versioneddataset/files/download?bucket=abc&bucketPath=def&end=31457280&fileName=tmp.tar.gz&from=20971520

@@ -26,10 +26,10 @@ import (
 )
 
 func (llm LLM) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
-	if llm.Spec.Enpoint == nil {
+	if llm.Spec.Endpoint == nil {
 		return "", nil
 	}
-	return llm.Spec.Enpoint.AuthAPIKey(ctx, llm.GetNamespace(), c, cli)
+	return llm.Spec.Endpoint.AuthAPIKey(ctx, llm.GetNamespace(), c, cli)
 }
 
 func (llmStatus LLMStatus) LLMReady() (string, bool) {

@@ -286,7 +286,7 @@ func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace s
 		return nil, err
 	}
 
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}

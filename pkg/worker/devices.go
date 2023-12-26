@@ -41,7 +41,7 @@ const (
 	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
-// DeviceBasedOnResource returns the devide type based on the resource list
+// DeviceBasedOnResource returns the device type based on the resource list
 func DeviceBasedOnResource(resource corev1.ResourceList) Device {
 	_, ok := resource[ResourceNvidiaGPU]
 	if ok {

@@ -276,7 +276,7 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 		return res.Items[i].GetCreationTimestamp().After(res.Items[j].GetCreationTimestamp().Time)
 	})
 
-	filterd := make([]generated.PageNode, 0)
+	filtered := make([]generated.PageNode, 0)
 	for _, u := range res.Items {
 		if keyword != "" {
 			displayName, _, _ := unstructured.NestedString(u.Object, "spec", "displayName")
@@ -288,9 +288,9 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 		if err != nil {
 			return nil, err
 		}
-		filterd = append(filterd, m)
+		filtered = append(filtered, m)
 	}
-	totalCount := len(filterd)
+	totalCount := len(filtered)
 
 	end := page * pageSize
 	if end > totalCount {
@@ -298,15 +298,15 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 	}
 	start := (page - 1) * pageSize
 	if start < totalCount {
-		filterd = filterd[start:end]
+		filtered = filtered[start:end]
 	} else {
-		filterd = []generated.PageNode{}
+		filtered = []generated.PageNode{}
 	}
 
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
-		Nodes:       filterd,
+		Nodes:       filtered,
 		Page:        &page,
 		PageSize:    &pageSize,
 	}, nil

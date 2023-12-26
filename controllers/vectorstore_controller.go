@@ -122,7 +122,7 @@ func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.L
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		_, err := chroma.New(
 			chroma.WithOpenAiAPIKey("fake_key_just_for_chroma_heartbeat"),
-			chroma.WithChromaURL(vs.Spec.Enpoint.URL),
+			chroma.WithChromaURL(vs.Spec.Endpoint.URL),
 			chroma.WithDistanceFunction(vs.Spec.Chroma.DistanceFunction),
 		)
 		if err != nil {

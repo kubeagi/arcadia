@@ -59,7 +59,7 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 	case v1alpha1.ProviderTypeWorker:
 		baseURL, _ = common.GetAPIServer(ctx, c, true)
 	case v1alpha1.ProviderType3rdParty:
-		baseURL = llm.Spec.Enpoint.URL
+		baseURL = llm.Spec.Endpoint.URL
 	}
 
 	md := generated.Llm{
@@ -188,7 +188,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 				Description: description,
 			},
 			Provider: v1alpha1.Provider{
-				Enpoint: &v1alpha1.Endpoint{
+				Endpoint: &v1alpha1.Endpoint{
 					URL: input.Endpointinput.URL,
 				},
 			},
@@ -206,7 +206,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		if err != nil {
 			return nil, err
 		}
-		llm.Spec.Enpoint.AuthSecret = &v1alpha1.TypedObjectReference{
+		llm.Spec.Endpoint.AuthSecret = &v1alpha1.TypedObjectReference{
 			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,

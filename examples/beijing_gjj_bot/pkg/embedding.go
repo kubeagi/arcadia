@@ -49,10 +49,10 @@ func NewDashScope(apiKey string, chromaURL, namespace string) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
-	dashs := dashscope.NewDashScope(apiKey, false)
+	dashes := dashscope.NewDashScope(apiKey, false)
 	return &Bot{
 		DB:   chromadb,
-		AI:   dashs,
+		AI:   dashes,
 		Tree: NewTree(""),
 	}, nil
 }

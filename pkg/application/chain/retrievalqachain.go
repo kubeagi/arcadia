@@ -87,7 +87,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "retrievalqachains"}).
 		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
 	if err != nil {
-		return args, fmt.Errorf("cant find the chain in cluster: %w", err)
+		return args, fmt.Errorf("can't find the chain in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {

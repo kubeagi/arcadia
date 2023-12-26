@@ -256,7 +256,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	if err != nil {
 		return err
 	}
-	endpoint := system.Spec.Enpoint.DeepCopy()
+	endpoint := system.Spec.Endpoint.DeepCopy()
 	if endpoint != nil && endpoint.AuthSecret != nil {
 		endpoint.AuthSecret.WithNameSpace(system.Namespace)
 	}
@@ -428,7 +428,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		loader = documentloaders.NewText(dataReader)
 	}
 
-	// initliaze text splitter
+	// initialize text splitter
 	// var split textsplitter.TextSplitter
 	split := textsplitter.NewRecursiveCharacter(
 		textsplitter.WithChunkSize(300),
@@ -464,7 +464,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	switch store.Spec.Type() { // nolint: gocritic
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		s, err := chroma.New(
-			chroma.WithChromaURL(store.Spec.Enpoint.URL),
+			chroma.WithChromaURL(store.Spec.Endpoint.URL),
 			chroma.WithDistanceFunction(store.Spec.Chroma.DistanceFunction),
 			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
 			chroma.WithEmbedder(em),
@@ -496,7 +496,7 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 	switch vectorStore.Spec.Type() { // nolint: gocritic
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		s, err := chroma.New(
-			chroma.WithChromaURL(vectorStore.Spec.Enpoint.URL),
+			chroma.WithChromaURL(vectorStore.Spec.Endpoint.URL),
 			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
 			// workaround to fix 'invalid options: missing embedder or openai api key'
 			chroma.WithOpenAiAPIKey("fake-api-key"),

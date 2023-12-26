@@ -300,3 +300,9 @@ DATA_PROCESSING_IMAGE ?= kubebb/dp-base
 .PHONY: docker-build-dp-base
 docker-build-dp-base:
 	docker build -f ./data-process/Dockerfile.base -t $(DATA_PROCESSING_IMAGE):$(VERSION) ./data-process/
+
+.PHONY: codespell
+codespell:
+	echo "you need: pip install codespell"
+	# please update .github/workflows/codespell.yaml as well
+	codespell -w --ignore-words ".github/.codespellignore" --check-filenames --skip "go.*,**/*.drawio,./deploy/charts/*,./config/crd/*"

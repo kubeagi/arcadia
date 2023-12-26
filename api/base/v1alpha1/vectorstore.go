@@ -33,7 +33,7 @@ const (
 )
 
 func (vs VectorStoreSpec) Type() VectorStoreType {
-	if vs.Enpoint == nil {
+	if vs.Endpoint == nil {
 		return VectorStoreTypeUnknown
 	}
 

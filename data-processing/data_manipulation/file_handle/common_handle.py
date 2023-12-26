@@ -537,7 +537,7 @@ def _generate_qa_list(
 ):
     """Generate the Question and Answer list.
     
-    chunk_size: chunck size;
+    chunk_size: chunk size;
     chunk_overlap: chunk overlap;
     data: the text used to generate QA;
     name: llms cr name;
@@ -569,7 +569,7 @@ def _generate_qa_list(
     
     logger.debug(''.join([
         f"original text is: \n{data}\n",
-        f"splitted text is: \n{texts}\n"
+        f"split text is: \n{texts}\n"
     ]))
 
     # 更新文件状态为开始

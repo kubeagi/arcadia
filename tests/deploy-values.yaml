@@ -101,8 +101,8 @@ dataprocess:
     llm:
       qa_retry_count: '2'
 
-# @section postgresql is used to configure postgreslq service
-# Posgresql service will be used in two parts:
+# @section postgresql is used to configure postgresql service
+# Postgresql service will be used in two parts:
 # - dataprocessing
 # - llm application
 # - used as vector store with pgvector enabled

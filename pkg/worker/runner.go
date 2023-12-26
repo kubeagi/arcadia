@@ -55,7 +55,7 @@ func (runner *RunnerFastchat) Device() Device {
 	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
 }
 
-// NumberOfGPUs utlized by this runner
+// NumberOfGPUs utilized by this runner
 func (runner *RunnerFastchat) NumberOfGPUs() string {
 	return NumberOfGPUs(runner.w.Spec.Resources.Limits)
 }
@@ -120,12 +120,12 @@ func NewRunnerFastchatVLLM(c client.Client, w *arcadiav1alpha1.Worker) (ModelRun
 	}, nil
 }
 
-// Devicde used by this runner
+// Device used by this runner
 func (runner *RunnerFastchatVLLM) Device() Device {
 	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
 }
 
-// NumberOfGPUs utlized by this runner
+// NumberOfGPUs utilized by this runner
 func (runner *RunnerFastchatVLLM) NumberOfGPUs() string {
 	return NumberOfGPUs(runner.w.Spec.Resources.Limits)
 }

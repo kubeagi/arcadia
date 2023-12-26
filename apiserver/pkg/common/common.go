@@ -72,7 +72,7 @@ func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client, dynamicCl
 	if err != nil {
 		return nil, err
 	}
-	endpoint := systemDatasource.Spec.Enpoint.DeepCopy()
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}

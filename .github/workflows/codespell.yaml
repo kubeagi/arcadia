@@ -1,0 +1,19 @@
+name: Common misspellings
+
+on: pull_request
+
+jobs:
+  misspellings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up misspell
+        uses: codespell-project/actions-codespell@v2
+        # plese update Makefile as well
+        with:
+          ignore_words_file: .github/.codespellignore
+          check_filenames: true
+          skip: go.*,**/*.drawio,./deploy/charts/*,./config/crd/*
+

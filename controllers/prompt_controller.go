@@ -130,7 +130,7 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 		llmClient = llmszhipuai.NewZhiPuAI(apiKey)
 		callData = prompt.Spec.ZhiPuAIParams.Marshal()
 	case llms.OpenAI:
-		llmClient = openai.NewOpenAI(apiKey, llm.Spec.Enpoint.URL)
+		llmClient = openai.NewOpenAI(apiKey, llm.Spec.Endpoint.URL)
 	default:
 		llmClient = llms.NewUnknowLLM()
 	}

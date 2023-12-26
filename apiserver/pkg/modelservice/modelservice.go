@@ -364,7 +364,7 @@ func ListModelServices(ctx context.Context, c dynamic.Interface, input *generate
 					klog.V(5).Infof("match check llm: embedder %s has no matching llm's, add modelservice", v.Name)
 				}
 				if ok && (*llm.APIType != *v.Type || *llm.LlmResource.Provider != *v.Provider) {
-					klog.V(5).Infof("match check llm: embedder %s type: %s, llm apiType: %s, llm provider: %s, embedder proviers: %s. add modelservice",
+					klog.V(5).Infof("match check llm: embedder %s type: %s, llm apiType: %s, llm provider: %s, embedder provider: %s. add modelservice",
 						v.Name, *v.Type, *llm.APIType, *llm.LlmResource.Provider, *v.Provider)
 				}
 
@@ -423,7 +423,7 @@ func ListModelServices(ctx context.Context, c dynamic.Interface, input *generate
 					klog.V(5).Infof("match check embedder: llm %s has no matching embedder's, add modelservice", v.Name)
 				}
 				if ok && (*embedder.APIType != *v.Type || *embedder.EmbedderResource.Provider != *v.Provider) {
-					klog.V(5).Infof("match check embedder: llm %s type: %s, embedder apiType: %s, embedder provider: %s, llm proviers: %s. add modelservice",
+					klog.V(5).Infof("match check embedder: llm %s type: %s, embedder apiType: %s, embedder provider: %s, llm provider: %s. add modelservice",
 						v.Name, *v.Type, *embedder.APIType, *embedder.EmbedderResource.Provider, *v.Provider)
 				}
 

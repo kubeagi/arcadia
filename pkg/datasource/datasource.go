@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	ErrUnknowDatasourceType = errors.New("unknow datasource type")
+	ErrUnknowDatasourceType = errors.New("unknown datasource type")
 	ErrBucketNotProvided    = errors.New("no bucket provided")
 	ErrOSSNoSuchBucket      = errors.New("no such bucket")
 	ErrOSSNoSuchObject      = errors.New("no such object in bucket")
