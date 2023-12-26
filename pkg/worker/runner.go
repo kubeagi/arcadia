@@ -152,7 +152,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			python3.9 -m fastchat.serve.vllm_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
 			--model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
 			--controller-address $FASTCHAT_CONTROLLER_ADDRESS \
-			--device $DEVICE --num-gpus $NUMBER_GPUS \
+			--num-gpus $NUMBER_GPUS \
 			--host 0.0.0.0 --port 21002 --trust-remote-code`},
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
@@ -160,7 +160,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
-			{Name: "DEVICE", Value: runner.Device().String()},
+			// Ray will be used when NumberOfGPUs is more than 1
 			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
 		},
 		Ports: []corev1.ContainerPort{

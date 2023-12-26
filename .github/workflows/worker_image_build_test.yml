@@ -1,0 +1,42 @@
+name: Build KubeAGI worker images
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'deploy/llms/Dockerfile.fastchat-worker'
+  workflow_dispatch:
+env:
+  PYTHON_INDEX_URL: https://pypi.org/simple 
+
+jobs:
+  test_image_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64
+      - name: Build and push Fastchat Worker
+        id: push-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/llms/Dockerfile.fastchat-worker
+          platforms: linux/amd64,linux/arm64
+          push: false
+          build-args: |
+            PYTHON_INDEX_URL=${{ env.PYTHON_INDEX_URL }}

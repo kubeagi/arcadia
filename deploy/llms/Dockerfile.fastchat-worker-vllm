@@ -1,0 +1,8 @@
+ARG BASE_IMAGE_VERSION="v0.1.0"
+FROM kubeagi/arcadia-fastchat-worker:${BASE_IMAGE_VERSION}
+
+# Official: https://pypi.org/simple 
+ARG PYTHON_INDEX_URL="https://pypi.mirrors.ustc.edu.cn/simple/"
+# Install requirements for vllm worker
+RUN python3.9 -m pip install vllm -i ${PYTHON_INDEX_URL}
+

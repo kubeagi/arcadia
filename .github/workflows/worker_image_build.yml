@@ -1,0 +1,76 @@
+name: Build KubeAGI worker images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/llms/Dockerfile.fastchat-worker'
+  workflow_dispatch:
+env:
+  PYTHON_INDEX_URL: https://pypi.org/simple 
+
+jobs:
+  image:
+    if: github.repository == 'kubeagi/arcadia'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set Variable
+        id: set-env
+        run: |
+          TAG=$(git describe --tags --abbrev=0 --match 'v*' 2> /dev/null) || true
+          if [ -z "$TAG" ]; then
+            echo "No tag found, use v0.1.0 as default"
+            TAG=v0.1.0
+          fi
+          echo "TAG=${TAG}" >> $GITHUB_OUTPUT
+          echo "DATE=$(TZ=Asia/Shanghai date +'%Y%m%d')" >> $GITHUB_OUTPUT
+      - name: Show Variable
+        run: echo "varibables ${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Login to the dockerhub Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - uses: benjlevesque/short-sha@v2.2
+        name: Get short commit sha
+        id: short-sha
+      - name: Build and push Fastchat Worker
+        id: push-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/llms/Dockerfile.fastchat-worker
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            kubeagi/arcadia-fastchat-worker:latest
+            kubeagi/arcadia-fastchat-worker:${{ steps.set-env.outputs.TAG }}
+            kubeagi/arcadia-fastchat-worker:${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
+          push: true
+          build-args: |
+            PYTHON_INDEX_URL=${{ env.PYTHON_INDEX_URL }}
+      - name: Build and push Fastchat Worker
+        id: push-vllm-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/llms/Dockerfile.fastchat-worker
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            kubeagi/arcadia-fastchat-worker:vllm-${{ steps.set-env.outputs.TAG }}
+            kubeagi/arcadia-fastchat-worker:vllm-${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
+          push: true
+          build-args: |
+            BASE_IMAGE_VERSION=${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
+            PYTHON_INDEX_URL=${{ env.PYTHON_INDEX_URL }}

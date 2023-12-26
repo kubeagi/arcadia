@@ -1,14 +1,19 @@
 FROM python:3.9-slim
 
-ENV TZ=Asia/Shanghai
-
+# Define a build argument with a default value
+ARG PACKAGE_REGISTRY="mirrors.tuna.tsinghua.edu.cn"
 RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources
 
+ENV TZ=Asia/Shanghai
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
     && apt-get install -y tzdata \
     && ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && dpkg-reconfigure --frontend noninteractive tzdata
 
-RUN apt-get update -y && apt-get install -y python3.9-distutils curl python3-pip
-RUN pip3 install fschat -i https://pypi.mirrors.ustc.edu.cn/simple/
+RUN apt-get update -y && apt-get install -y python3.9-distutils curl python3-pip python3-dev
+
+# Official: https://pypi.org/simple 
+ARG PYTHON_INDEX_URL=https://pypi.mirrors.ustc.edu.cn/simple/
+
+RUN python3.9 -m pip install fschat -i ${PYTHON_INDEX_URL}
