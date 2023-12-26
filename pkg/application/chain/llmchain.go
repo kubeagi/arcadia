@@ -82,7 +82,7 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
-		return args, err
+		return args, fmt.Errorf("can't convert obj to LLMChain: %w", err)
 	}
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
@@ -100,9 +100,10 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 			out, err = chains.Predict(ctx, l.LLMChain, args)
 		}
 	}
-	klog.V(5).Infof("blocking out: %s", out)
+	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out
+		return args, nil
 	}
-	return args, err
+	return args, fmt.Errorf("llmchain run error: %w", err)
 }

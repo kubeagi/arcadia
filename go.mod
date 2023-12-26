@@ -7,6 +7,7 @@ require (
 	github.com/KawashiroNitori/butcher/v2 v2.0.1
 	github.com/amikos-tech/chroma-go v0.0.0-20230901221218-d0087270239e
 	github.com/coreos/go-oidc/v3 v3.7.0
+	github.com/gin-contrib/requestid v0.0.6
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.2.0
 	github.com/gofiber/fiber/v2 v2.49.1

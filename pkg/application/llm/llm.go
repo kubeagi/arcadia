@@ -52,11 +52,11 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't convert the llm in cluster: %w", err)
 	}
 	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, nil, cli)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}
 	z.LanguageModel = llm
 	return nil

@@ -19,6 +19,7 @@ package chat
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -46,24 +47,24 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get a dynamic client: %w", err)
 	}
 	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "applications"}).
 		Namespace(req.AppNamespace).Get(ctx, req.APPName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
 	app := &v1alpha1.Application{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert application: %w", err)
 	}
 	if !app.Status.IsReady() {
 		return nil, errors.New("application is not ready")
 	}
 	var conversation Conversation
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
-	if req.ConversationID != "" {
+	if !req.NewChat {
 		var ok bool
 		conversation, ok = Conversations[req.ConversationID]
 		if !ok {
@@ -80,7 +81,7 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 		}
 	} else {
 		conversation = Conversation{
-			ID:          string(uuid.NewUUID()),
+			ID:          req.ConversationID,
 			AppName:     req.APPName,
 			AppNamespce: req.AppNamespace,
 			StartedAt:   time.Now(),
@@ -102,8 +103,8 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 	if err != nil {
 		return nil, err
 	}
-	klog.Infoln("begin to run application", obj.GetName())
-	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode == Streaming, History: conversation.History})
+	klog.FromContext(ctx).Info("begin to run application", "appName", req.APPName, "appNamespace", req.AppNamespace)
+	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode.IsStreaming(), History: conversation.History})
 	if err != nil {
 		return nil, err
 	}

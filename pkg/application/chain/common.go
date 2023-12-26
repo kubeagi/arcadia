@@ -18,7 +18,7 @@ package chain
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
@@ -31,16 +31,18 @@ import (
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	return func(ctx context.Context, chunk []byte) error {
+		logger := klog.FromContext(ctx)
 		if _, ok := res["_answer_stream"]; !ok {
-			klog.Errorln("no _answer_stream found, create a new one")
+			logger.Info("no _answer_stream found, create a new one")
 			res["_answer_stream"] = make(chan string)
 		}
 		streamChan, ok := res["_answer_stream"].(chan string)
 		if !ok {
-			klog.Errorln("answer_stream is not chan string")
-			return errors.New("answer_stream is not chan string")
+			err := fmt.Errorf("answer_stream is not chan string, but %T", res["_answer_stream"])
+			logger.Error(err, "answer_stream is not chan string")
+			return err
 		}
-		klog.V(5).Infoln("stream out:", string(chunk))
+		logger.V(5).Info("stream out:" + string(chunk))
 		streamChan <- string(chunk)
 		return nil
 	}

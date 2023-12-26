@@ -107,10 +107,10 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	for _, node := range a.Spec.Nodes {
 		n, err := InitNode(ctx, node.Name, *node.Ref, cli)
 		if err != nil {
-			return fmt.Errorf("initnode %s failed: %v", node.Name, err)
+			return fmt.Errorf("initnode %s failed: %w", node.Name, err)
 		}
 		if err := n.Init(ctx, cli, map[string]any{}); err != nil { // TODO arg
-			return fmt.Errorf("node %s init failed: %v", node.Name, err)
+			return fmt.Errorf("node %s init failed: %w", node.Name, err)
 		}
 		a.Nodes[node.Name] = n
 		if node.Name == inputNodeName {
@@ -142,7 +142,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 			a.StartingNodes = append(a.StartingNodes, current)
 		}
 	}
-	klog.Infof("init application success ending node: %#v\n", a.EndingNode)
+	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("init application success starting nodes: %#v\n", a.StartingNodes))
 	return nil
 }
 
@@ -189,44 +189,56 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 	return output, nil
 }
 
-func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (base.Node, error) {
+func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (n base.Node, err error) {
+	logger := klog.FromContext(ctx)
+	defer func() {
+		if err != nil {
+			logger.Error(err, "initnode failed")
+		}
+	}()
 	baseNode := base.NewBaseNode(name, ref)
+	err = fmt.Errorf("unknown kind %s:%v", name, ref)
 	switch baseNode.Group() {
 	case "chain":
 		switch baseNode.Kind() {
 		case "llmchain":
+			logger.V(3).Info("initnode llmchain")
 			return chain.NewLLMChain(baseNode), nil
 		case "retrievalqachain":
+			logger.V(3).Info("initnode retrievalqachain")
 			return chain.NewRetrievalQAChain(baseNode), nil
 		default:
-			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
+			return nil, err
 		}
 	case "retriever":
 		switch baseNode.Kind() {
 		case "knowledgebaseretriever":
+			logger.V(3).Info("initnode knowledgebaseretriever")
 			return retriever.NewKnowledgeBaseRetriever(ctx, baseNode, cli)
 		default:
-			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
+			return nil, err
 		}
 	case "":
 		switch baseNode.Kind() {
 		case "llm":
+			logger.V(3).Info("initnode llm")
 			return llm.NewLLM(baseNode), nil
 		case "input":
 			return base.NewInput(baseNode), nil
 		case "output":
 			return base.NewOutput(baseNode), nil
 		default:
-			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
+			return nil, err
 		}
 	case "prompt":
 		switch baseNode.Kind() {
 		case "prompt":
+			logger.V(3).Info("initnode prompt")
 			return prompt.NewPrompt(baseNode), nil
 		default:
-			return nil, fmt.Errorf("%s:%v kind is not found", name, ref)
+			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("%s:%v group is not found", name, ref)
+		return nil, fmt.Errorf("unknown group %s:%v", name, ref)
 	}
 }
