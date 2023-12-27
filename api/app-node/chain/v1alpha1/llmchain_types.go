@@ -28,17 +28,6 @@ type LLMChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
 	CommonChainConfig `json:",inline"`
-
-	Input  LLMChainInput `json:"input"`
-	Output Output        `json:"output"`
-}
-
-type LLMChainInput struct {
-	LLM    node.LLMRef    `json:"llm"`
-	Prompt node.PromptRef `json:"prompt"`
-}
-type Output struct {
-	node.CommonOrInPutOrOutputRef `json:",inline"`
 }
 
 type CommonChainConfig struct {
@@ -116,4 +105,16 @@ type LLMChainList struct {
 
 func init() {
 	SchemeBuilder.Register(&LLMChain{}, &LLMChainList{})
+}
+
+var _ node.Node = (*LLMChain)(nil)
+
+func (c *LLMChain) SetRef() {
+	annotations := node.SetRefAnnotations(c.GetAnnotations(), []node.Ref{node.LLMRef.Len(1), node.PromptRef.Len(1)}, []node.Ref{node.OutputRef.Len(1)})
+	if c.GetAnnotations() == nil {
+		c.SetAnnotations(annotations)
+	}
+	for k, v := range annotations {
+		c.Annotations[k] = v
+	}
 }

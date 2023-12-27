@@ -27,6 +27,7 @@ import (
 
 	api "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	appnode "github.com/kubeagi/arcadia/controllers/app-node"
 )
 
 // RetrievalQAChainReconciler reconciles a RetrievalQAChain object
@@ -113,7 +114,9 @@ func (r *RetrievalQAChainReconciler) reconcile(ctx context.Context, log logr.Log
 	// TODO: we should do more checks later.For example:
 	// LLM status
 	// Prompt status
-	if instance.Spec.Input.Prompt.Name != "" && instance.Spec.Input.Retriever.Name != "" && instance.Spec.Input.LLM.Name != "" {
+	if err := appnode.CheckAndUpdateAnnotation(ctx, log, r.Client, instance); err != nil {
+		instance.Status.SetConditions(instance.Status.ErrorCondition(err.Error())...)
+	} else {
 		instance.Status.SetConditions(instance.Status.ReadyCondition()...)
 	}
 	return instance, ctrl.Result{}, nil

@@ -30,6 +30,7 @@ import (
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
 	"github.com/kubeagi/arcadia/pkg/application/chain"
+	"github.com/kubeagi/arcadia/pkg/application/knowledgebase"
 	"github.com/kubeagi/arcadia/pkg/application/llm"
 	"github.com/kubeagi/arcadia/pkg/application/prompt"
 	"github.com/kubeagi/arcadia/pkg/application/retriever"
@@ -47,6 +48,7 @@ type Output struct {
 }
 
 type Application struct {
+	Namespace     string
 	Spec          arcadiav1alpha1.ApplicationSpec
 	Inited        bool
 	Nodes         map[string]base.Node
@@ -78,8 +80,9 @@ func NewAppOrGetFromCache(ctx context.Context, app *arcadiav1alpha1.Application,
 	//	return a, nil
 	// }
 	a := &Application{
-		Spec:   app.Spec,
-		Inited: false,
+		Namespace: app.GetNamespace(),
+		Spec:      app.Spec,
+		Inited:    false,
 	}
 	// a.Spec = app.Spec
 	// a.Inited = false
@@ -105,7 +108,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	}
 
 	for _, node := range a.Spec.Nodes {
-		n, err := InitNode(ctx, node.Name, *node.Ref, cli)
+		n, err := InitNode(ctx, a.Namespace, node.Name, *node.Ref, cli)
 		if err != nil {
 			return fmt.Errorf("initnode %s failed: %w", node.Name, err)
 		}
@@ -161,9 +164,21 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 		e := e.Value.(base.Node)
 		if !visited[e.Name()] {
 			out["_need_stream"] = false
+			reWait := false
+			for _, n := range e.GetPrevNode() {
+				if !visited[n.Name()] {
+					reWait = true
+					break
+				}
+			}
+			if reWait {
+				waitRunningNodes.PushBack(e)
+				continue
+			}
 			if a.EndingNode.Name() == e.Name() && input.NeedStream {
 				out["_need_stream"] = true
 			}
+			klog.FromContext(ctx).V(3).Info(fmt.Sprintf("try to run node:%s", e.Name()))
 			if out, err = e.Run(ctx, cli, out); err != nil {
 				return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
 			}
@@ -189,14 +204,14 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 	return output, nil
 }
 
-func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (n base.Node, err error) {
+func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (n base.Node, err error) {
 	logger := klog.FromContext(ctx)
 	defer func() {
 		if err != nil {
 			logger.Error(err, "initnode failed")
 		}
 	}()
-	baseNode := base.NewBaseNode(name, ref)
+	baseNode := base.NewBaseNode(appNamespace, name, ref)
 	err = fmt.Errorf("unknown kind %s:%v", name, ref)
 	switch baseNode.Group() {
 	case "chain":
@@ -214,7 +229,7 @@ func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectR
 		switch baseNode.Kind() {
 		case "knowledgebaseretriever":
 			logger.V(3).Info("initnode knowledgebaseretriever")
-			return retriever.NewKnowledgeBaseRetriever(ctx, baseNode, cli)
+			return retriever.NewKnowledgeBaseRetriever(baseNode), nil
 		default:
 			return nil, err
 		}
@@ -227,6 +242,9 @@ func InitNode(ctx context.Context, name string, ref arcadiav1alpha1.TypedObjectR
 			return base.NewInput(baseNode), nil
 		case "output":
 			return base.NewOutput(baseNode), nil
+		case "knowledgebase":
+			logger.V(3).Info("initnode knowledgebase")
+			return knowledgebase.NewKnowledgebase(baseNode), nil
 		default:
 			return nil, err
 		}

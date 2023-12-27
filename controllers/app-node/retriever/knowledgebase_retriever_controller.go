@@ -27,6 +27,7 @@ import (
 
 	api "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	appnode "github.com/kubeagi/arcadia/controllers/app-node"
 )
 
 // KnowledgeBaseRetrieverReconciler reconciles a KnowledgeBaseRetriever object
@@ -113,7 +114,9 @@ func (r *KnowledgeBaseRetrieverReconciler) reconcile(ctx context.Context, log lo
 	// TODO: we should do more checks later.For example:
 	// LLM status
 	// Prompt status
-	if instance.Spec.Input.KnowledgeBaseRef.Name != "" {
+	if err := appnode.CheckAndUpdateAnnotation(ctx, log, r.Client, instance); err != nil {
+		instance.Status.SetConditions(instance.Status.ErrorCondition(err.Error())...)
+	} else {
 		instance.Status.SetConditions(instance.Status.ReadyCondition()...)
 	}
 	return instance, ctrl.Result{}, nil

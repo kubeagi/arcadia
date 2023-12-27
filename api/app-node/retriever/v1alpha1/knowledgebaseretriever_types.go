@@ -26,17 +26,7 @@ import (
 // KnowledgeBaseRetrieverSpec defines the desired state of KnowledgeBaseRetriever
 type KnowledgeBaseRetrieverSpec struct {
 	v1alpha1.CommonSpec   `json:",inline"`
-	Input                 Input  `json:"input,omitempty"`
-	Output                Output `json:"output,omitempty"`
 	CommonRetrieverConfig `json:",inline"`
-}
-
-type Input struct {
-	node.KnowledgeBaseRef `json:",inline"`
-}
-
-type Output struct {
-	node.CommonOrInPutOrOutputRef `json:",inline"`
 }
 
 type CommonRetrieverConfig struct {
@@ -88,4 +78,16 @@ type KnowledgeBaseRetrieverList struct {
 
 func init() {
 	SchemeBuilder.Register(&KnowledgeBaseRetriever{}, &KnowledgeBaseRetrieverList{})
+}
+
+var _ node.Node = (*KnowledgeBaseRetriever)(nil)
+
+func (c *KnowledgeBaseRetriever) SetRef() {
+	annotations := node.SetRefAnnotations(c.GetAnnotations(), []node.Ref{node.KnowledgeBaseRef.Len(1)}, []node.Ref{node.RetrievalQAChainRef.Len(1)})
+	if c.GetAnnotations() == nil {
+		c.SetAnnotations(annotations)
+	}
+	for k, v := range annotations {
+		c.Annotations[k] = v
+	}
 }

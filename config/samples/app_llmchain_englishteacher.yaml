@@ -51,6 +51,9 @@ kind: Prompt
 metadata:
   name: base-chat-english-teacher
   namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
 spec:
   displayName: "设定英语老师的prompt"
   description: "设定英语老师的prompt,来自https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-an-english-translator-and-improver"
@@ -62,34 +65,17 @@ spec:
     Keep the meaning same, but make them more literary. 
     I want you to only reply the correction, the improvements and nothing else, do not write explanations.
     My sentence is: '{{.question}}'
-  input:
-    kind: "Input"
-    name: "Input"
-  output:
-    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
-    kind: LLMChain
-    name: base-chat-english-teacher
 ---
 apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: LLMChain
 metadata:
   name: base-chat-english-teacher
   namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"LLM","group":"arcadia.kubeagi.k8s.com.cn","length":1},{"kind":"prompt","group":"prompt.arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"Output","length":1}]'
 spec:
   displayName: "llm chain"
   description: "llm chain"
   memory:
     maxTokenLimit: 20480
-  input:
-    llm:
-      apiGroup: arcadia.kubeagi.k8s.com.cn
-      kind: LLM
-      name: app-shared-llm-service
-    prompt:
-      apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
-      kind: Prompt
-      name: base-chat-english-teacher
-  output:
-    apiGroup: "arcadia.kubeagi.k8s.com.cn"
-    kind: "Output"
-    name: "output-node"

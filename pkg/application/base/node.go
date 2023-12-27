@@ -29,6 +29,8 @@ type Node interface {
 	Name() string
 	Group() string
 	Kind() string
+	RefName() string
+	RefNamespace() string
 	Init(ctx context.Context, cli dynamic.Interface, args map[string]any) error
 	Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error)
 	SetPrevNode(nodes ...Node)
@@ -37,7 +39,7 @@ type Node interface {
 	GetNextNode() []Node
 }
 
-func NewBaseNode(nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
+func NewBaseNode(appNamespace, nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
 	return BaseNode{
 		name: nodeName,
 		Ref:  ref,
@@ -47,10 +49,11 @@ func NewBaseNode(nodeName string, ref arcadiav1alpha1.TypedObjectReference) Base
 }
 
 type BaseNode struct {
-	name string
-	Ref  arcadiav1alpha1.TypedObjectReference
-	prev []Node
-	next []Node
+	appNamespace string
+	name         string
+	Ref          arcadiav1alpha1.TypedObjectReference
+	prev         []Node
+	next         []Node
 }
 
 func (c *BaseNode) Name() string {
@@ -73,6 +76,13 @@ func (c *BaseNode) Kind() string {
 	return strings.ToLower(c.Ref.Kind)
 }
 
+func (c *BaseNode) RefName() string {
+	return c.Ref.Name
+}
+
+func (c *BaseNode) RefNamespace() string {
+	return c.Ref.GetNamespace(c.appNamespace)
+}
 func (c *BaseNode) GetPrevNode() []Node {
 	return c.prev
 }

@@ -16,101 +16,71 @@ limitations under the License.
 
 package appnode
 
-// +kubebuilder:object:generate=true
-type CommonRef struct {
-	// Kind is the type of resource being referenced
-	// +optional
-	Kind string `json:"kind,omitempty"`
-	// Name is the name of resource being referenced
-	// +optional
-	Name string `json:"name,omitempty"`
+import (
+	"encoding/json"
+
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+)
+
+const (
+	InputLengthAnnotationKey  = v1alpha1.Group + `/input-rules`
+	OutputLengthAnnotationKey = v1alpha1.Group + `/output-rules`
+)
+
+type Ref struct {
+	Kind   string `json:"kind,omitempty"`
+	Group  string `json:"group,omitempty"`
+	Length int    `json:"length,omitempty"`
 }
 
-// +kubebuilder:object:generate=true
-type ChainRef struct {
-	CommonRef `json:",inline"`
-	// +kubebuilder:validation:Enum="chain.arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="chain.arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
+func (r *Ref) Len(i int) Ref {
+	r.Length = i
+	return *r
 }
 
-// +kubebuilder:object:generate=true
-type PromptRef struct {
-	CommonRef `json:",inline"`
-	// +kubebuilder:validation:Enum="prompt.arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="prompt.arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
+type Node interface {
+	SetRef()
 }
 
-// +kubebuilder:object:generate=true
-type LLMRef struct {
-	// +kubebuilder:validation:Enum="LLM"
-	// kubebuilder:default="LLM"
-	// Kind is the type of resource being referenced
-	Kind string `json:"kind"`
-	// Name is the name of resource being referenced
-	// +optional
-	Name string `json:"name,omitempty"`
-	// +kubebuilder:validation:Enum="arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
-}
+var (
+	ChainRef = Ref{
+		Group: "chain.arcadia.kubeagi.k8s.com.cn",
+	}
+	PromptRef = Ref{
+		Kind:  "prompt",
+		Group: "prompt.arcadia.kubeagi.k8s.com.cn",
+	}
+	LLMRef = Ref{
+		Kind:  "LLM",
+		Group: "arcadia.kubeagi.k8s.com.cn",
+	}
+	RetrieverRef = Ref{
+		Group: "retriever.arcadia.kubeagi.k8s.com.cn",
+	}
+	KnowledgeBaseRef = Ref{
+		Kind:  "KnowledgeBase",
+		Group: "arcadia.kubeagi.k8s.com.cn",
+	}
+	InputRef = Ref{
+		Kind: "Input",
+	}
+	OutputRef = Ref{
+		Kind: "Output",
+	}
+	RetrievalQAChainRef = Ref{
+		Group: "chain.arcadia.kubeagi.k8s.com.cn",
+		Kind:  "RetrievalQAChain",
+	}
+	CommonRef = Ref{}
+)
 
-// +kubebuilder:object:generate=true
-type LLMChainRef struct {
-	// +kubebuilder:validation:Enum="LLMChain"
-	// kubebuilder:default="LLMChain"
-	// Kind is the type of resource being referenced
-	Kind string `json:"kind"`
-	// Name is the name of resource being referenced
-	// +optional
-	Name string `json:"name,omitempty"`
-	// +kubebuilder:validation:Enum="chain.arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="chain.arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
-}
-
-// +kubebuilder:object:generate=true
-type RetrieverRef struct {
-	CommonRef `json:",inline"`
-
-	// +kubebuilder:validation:Enum="retriever.arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="retriever.arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
-}
-
-// +kubebuilder:object:generate=true
-type KnowledgeBaseRef struct {
-	// +kubebuilder:validation:Enum="KnowledgeBase"
-	// kubebuilder:default="KnowledgeBase"
-	// Kind is the type of resource being referenced
-	Kind string `json:"kind"`
-	// Name is the name of resource being referenced
-	// +optional
-	Name string `json:"name,omitempty"`
-
-	// +kubebuilder:validation:Enum="arcadia.kubeagi.k8s.com.cn"
-	// kubebuilder:default="arcadia.kubeagi.k8s.com.cn"
-	// APIGroup is the group for the resource being referenced.
-	APIGroup string `json:"apiGroup"`
-}
-
-// +kubebuilder:object:generate=true
-type CommonOrInPutOrOutputRef struct {
-	// APIGroup is the group for the resource being referenced.
-	// If APIGroup is not specified, the specified Kind must be in the core API group.
-	// For any other third-party types, APIGroup is required.
-	APIGroup *string `json:"apiGroup,omitempty"`
-	// Kind is the type of resource being referenced
-	//+kubebuilder:default=Input
-	//+kubebuilder:example=Input;Output
-	// +optional
-	Kind string `json:"kind,omitempty"`
-	// Name is the name of resource being referenced
-	Name string `json:"name,omitempty"`
+func SetRefAnnotations(annotations map[string]string, inputRef []Ref, outputRef []Ref) map[string]string {
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	input, _ := json.Marshal(inputRef)
+	annotations[InputLengthAnnotationKey] = string(input)
+	output, _ := json.Marshal(outputRef)
+	annotations[OutputLengthAnnotationKey] = string(output)
+	return annotations
 }
