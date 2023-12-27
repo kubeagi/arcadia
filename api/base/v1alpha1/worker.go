@@ -158,13 +158,8 @@ func (worker Worker) BuildEmbedder() *Embedder {
 			Name:      worker.Name,
 		},
 		Spec: EmbedderSpec{
-			CommonSpec: CommonSpec{
-				Creator: worker.Spec.Creator,
-				// Use the model name as the displayname
-				DisplayName: worker.Spec.Model.Name,
-				Description: "Embedder created by Worker(OpenAI compatible)",
-			},
-			Type: embeddings.OpenAI,
+			CommonSpec: worker.Spec.CommonSpec,
+			Type:       embeddings.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
 					Kind:      "Worker",
@@ -183,13 +178,8 @@ func (worker Worker) BuildLLM() *LLM {
 			Name:      worker.Name,
 		},
 		Spec: LLMSpec{
-			CommonSpec: CommonSpec{
-				Creator: worker.Spec.Creator,
-				// Use the model name as the displayname
-				DisplayName: worker.Spec.Model.Name,
-				Description: "LLM created by Worker(OpenAI compatible)",
-			},
-			Type: llms.OpenAI,
+			CommonSpec: worker.Spec.CommonSpec,
+			Type:       llms.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
 					Kind:      "Worker",
