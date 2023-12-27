@@ -31,10 +31,12 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	"github.com/kubeagi/arcadia/apiserver/pkg/worker"
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
+// LLM2model convert unstructured `CR LLM` to graphql model `Llm`
 func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Llm {
 	llm := &v1alpha1.LLM{}
 	if err := utils.UnstructuredToStructured(obj, llm); err != nil {
@@ -44,14 +46,26 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 	id := string(llm.GetUID())
 	creationtimestamp := llm.GetCreationTimestamp().Time
 
+	llmType := string(llm.Spec.Type)
+	provider := string(llm.Spec.Provider.GetType())
+
 	// conditioned status
 	condition := llm.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
 	status := common.GetObjStatus(llm)
 	message := string(condition.Message)
-
-	llmType := string(llm.Spec.Type)
-	provider := string(llm.Spec.Provider.GetType())
+	// Use worker's status&message if LLM's provider is `Worker`
+	if llm.Spec.Provider.GetType() == v1alpha1.ProviderTypeWorker {
+		w, err := worker.ReadWorker(ctx, c, llm.Name, llm.Namespace)
+		if err == nil {
+			if w.Status != nil {
+				status = *w.Status
+			}
+			if w.Message != nil {
+				message = *w.Message
+			}
+		}
+	}
 
 	// get llm's api url
 	var baseURL string
@@ -82,7 +96,13 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 	return &md
 }
 
-func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+// ListLLMs return a list of LLMs based on input params
+func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+	opts := common.DefaultListOptions()
+	for _, optFunc := range listOpts {
+		optFunc(opts)
+	}
+
 	keyword, labelSelector, fieldSelector := "", "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
@@ -101,12 +121,10 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 		pageSize = *input.PageSize
 	}
 
-	listOptions := metav1.ListOptions{
+	us, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "LLM")).Namespace(input.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 		FieldSelector: fieldSelector,
-	}
-
-	us, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "LLM")).Namespace(input.Namespace).List(ctx, listOptions)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +134,12 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 	})
 
 	totalCount := len(us.Items)
+
+	// if pageSize is -1 which means unlimited pagesize,return all
+	if pageSize == common.UnlimitedPageSize {
+		page = 1
+		pageSize = totalCount
+	}
 
 	result := make([]generated.PageNode, 0, pageSize)
 	pageStart := (page - 1) * pageSize
@@ -132,7 +156,9 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 				continue
 			}
 		}
-		result = append(result, m)
+
+		// convertFunc
+		result = append(result, opts.ConvertFunc(m))
 
 		// break if page size matches
 		if len(result) == pageSize {

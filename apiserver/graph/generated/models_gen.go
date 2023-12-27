@@ -882,17 +882,30 @@ type ListModelInput struct {
 	PageSize *int `json:"pageSize,omitempty"`
 }
 
-type ListModelService struct {
+type ListModelServiceInput struct {
 	// 关键词搜索
 	Keyword   *string `json:"keyword,omitempty"`
 	Namespace string  `json:"namespace"`
 	Page      *int    `json:"page,omitempty"`
 	PageSize  *int    `json:"pageSize,omitempty"`
-	// all, llm, embedding
-	ModelType string `json:"modelType"`
-	// worker, 3rd
+	// 模型服务的类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - llm 则仅返回LLM模型服务
+	//     - embedding 则仅返回Embedding模型服务
+	//     - llm,embedding 则返回同时提供LLM和Embedding能力的模型服务
+	Types *string `json:"types,omitempty"`
+	// 模型服务供应商类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - worker 则仅返回本地模型服务
+	//     - 3rd_party 则仅返回第三方模型服务
 	ProviderType *string `json:"providerType,omitempty"`
-	// openai, zhipuai
+	// 模型服务供应商类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - openai 则仅返回接口类型类型为openai的模型服务
+	//     - zhipuai 则仅返回接口类型类型为zhipuai的模型服务
 	APIType *string `json:"apiType,omitempty"`
 }
 
@@ -992,19 +1005,32 @@ type ModelService struct {
 	Creator     *string                `json:"creator,omitempty"`
 	DisplayName *string                `json:"displayName,omitempty"`
 	Description *string                `json:"description,omitempty"`
-	// 模型服务能力类型，支持 llm 和 embedding 两种模型类型
-	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
-	Types             *string    `json:"types,omitempty"`
+	// 模型服务的创建和更新时间
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
+	// 模型服务供应商的类型
+	// 规则: 3rd_party 第三方
+	// 规则: worker 本地
+	ProviderType *string `json:"providerType,omitempty"`
+	// 模型服务能力类型，支持 llm 和 embedding 两种模型类型
+	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
-	// 模型对应的 LLM 及 embedder CR 资源
-	LlmResource      *Llm      `json:"llmResource,omitempty"`
-	EmbedderResource *Embedder `json:"embedderResource,omitempty"`
-	// 第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
-	Resource *Resources `json:"resource,omitempty"`
+	// 服务地址: 仅针对第三方模型服务
+	BaseURL string `json:"baseUrl"`
+	// 状态
+	// 规则: 目前分为六种状态
+	//   - True: 正常 (第三方模型服务)
+	//   - False: 异常 (第三方模型服务)
+	//   - Unknown: 未知 (本地模型服务)
+	//   - Pending: 发布中 (本地模型服务)
+	//   - Running: 已发布 (本地模型服务)
+	//   - Error: 异常 (本地模型服务)
+	Status *string `json:"status,omitempty"`
+	// 详细的状态消息描述
+	Message *string `json:"message,omitempty"`
 }
 
 func (ModelService) IsPageNode() {}
@@ -1016,7 +1042,7 @@ type ModelServiceMutation struct {
 }
 
 type ModelServiceQuery struct {
-	GetModelService   *ModelService   `json:"getModelService,omitempty"`
+	GetModelService   ModelService    `json:"getModelService"`
 	ListModelServices PaginatedResult `json:"listModelServices"`
 	CheckModelService ModelService    `json:"checkModelService"`
 }
