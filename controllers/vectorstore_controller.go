@@ -23,10 +23,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -103,7 +104,7 @@ func (r *VectorStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	if err := r.CheckVectorStore(ctx, log, vs); err != nil {
-		return reconcile.Result{RequeueAfter: waitMedium}, err
+		return reconcile.Result{RequeueAfter: waitMedium}, nil
 	}
 
 	return ctrl.Result{RequeueAfter: waitLonger}, nil
@@ -112,7 +113,12 @@ func (r *VectorStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *VectorStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.VectorStore{}).
+		For(&arcadiav1alpha1.VectorStore{},
+			builder.WithPredicates(
+				predicate.Or(
+					FinalizersChangedPredicate{},
+					predicate.GenerationChangedPredicate{},
+					predicate.LabelChangedPredicate{}))).
 		Complete(r)
 }
 
@@ -120,13 +126,13 @@ func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.L
 	log.V(5).Info("check vectorstore")
 	switch vs.Spec.Type() {
 	case arcadiav1alpha1.VectorStoreTypeChroma:
-		_, err := chroma.New(
+		_, err = chroma.New(
 			chroma.WithOpenAiAPIKey("fake_key_just_for_chroma_heartbeat"),
 			chroma.WithChromaURL(vs.Spec.Endpoint.URL),
 			chroma.WithDistanceFunction(vs.Spec.Chroma.DistanceFunction),
 		)
 		if err != nil {
-			klog.Errorln("failed to connect to vectorstore", err)
+			log.Error(err, "failed to connect to vectorstore")
 			r.setCondition(vs, vs.ErrorCondition(err.Error()))
 		} else {
 			r.setCondition(vs, vs.ReadyCondition())
@@ -134,7 +140,10 @@ func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.L
 	default:
 		r.setCondition(vs, vs.ErrorCondition("unsupported vectorstore type"))
 	}
-	return r.patchStatus(ctx, vs)
+	if err := r.patchStatus(ctx, vs); err != nil {
+		return err
+	}
+	return err
 }
 func (r *VectorStoreReconciler) setCondition(vs *arcadiav1alpha1.VectorStore, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.VectorStore {
 	vs.Status.SetConditions(condition...)
