@@ -32,6 +32,16 @@ type DatasourceSpec struct {
 
 	// OSS defines info for object storage service
 	OSS *OSS `json:"oss,omitempty"`
+
+	// RDMA configure RDMA pulls the model file directly from the remote service to the host node.
+	RDMA *RDMA `json:"rdma,omitempty"`
+}
+
+type RDMA struct {
+	// Path on a model storage server, the usual storage path is /path/ns/mode-name, and the path field is /path/, which must end in /.
+	// example: /opt/kubeagi/, /opt/, /
+	// +kubebuilder:validation:Pattern=(^\/$)|(^\/[a-zA-Z0-9\_.@-]+(\/[a-zA-Z0-9\_.@-]+)*\/$)
+	Path string `json:"path"`
 }
 
 // OSS defines info for object storage service as datasource
