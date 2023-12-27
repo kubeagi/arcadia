@@ -137,6 +137,7 @@ extend type Mutation {
 type ModelServiceQuery {
     getModelService(name: String!, namespace: String!, apiType: String!): ModelService
     listModelServices(input: ListModelService): PaginatedResult!
+    checkModelService(input: CreateModelServiceInput!): ModelService!
 }
 
 extend type Query {

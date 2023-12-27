@@ -18,6 +18,7 @@ package modelservice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +30,8 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/embedder"
 	"github.com/kubeagi/arcadia/apiserver/pkg/llm"
 	"github.com/kubeagi/arcadia/apiserver/pkg/worker"
+	"github.com/kubeagi/arcadia/pkg/llms/openai"
+	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
 func CreateModelService(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
@@ -96,7 +99,7 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 
 	ms := generated.ModelService{
 		// fulfill all params
-		// TBD: ID, Creator
+		// TBD: ID, Creator, Resource
 		Name:              input.Name,
 		Namespace:         input.Namespace,
 		DisplayName:       &displayName,
@@ -162,20 +165,23 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input generate
 }
 
 func DeleteModelService(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	_, err := embedder.DeleteEmbedders(ctx, c, input)
-	if err != nil {
-		return nil, err
+	var errText string
+	_, err1 := embedder.DeleteEmbedders(ctx, c, input)
+	if err1 != nil {
+		errText += "embedder: " + err1.Error()
 	}
-	_, err = llm.DeleteLLMs(ctx, c, input)
-	if err != nil {
-		return nil, err
+	_, err2 := llm.DeleteLLMs(ctx, c, input)
+	if err2 != nil {
+		errText += " llm:" + err2.Error()
+	}
+	if errText != "" {
+		return nil, errors.New("error occurred during deleting: " + errText)
 	}
 	return nil, nil
 }
 
 var (
 	fixedPage = 1
-
 	// because the data is to be paged, no parameters are provided,
 	// and the default return is 10. Getting modelserve needs to get all the llms and embedding,
 	// so a larger pageSize is provided here.
@@ -539,4 +545,64 @@ func GetModelService(ctx context.Context, c dynamic.Interface, name, namespace, 
 		return nil, fmt.Errorf("not found modelService %s", name)
 	}
 	return ms, nil
+}
+
+var (
+	ErrWrongAuthFormat  = errors.New("wrong auth format, auth[\"apikey\"] should be string")
+	ErrNoAuthProvided   = errors.New("no auth provided")
+	ErrNoAPIKeyProvided = errors.New("no apiKey provided")
+)
+
+func CheckModelService(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
+	var err error
+	if input.Endpoint.Auth != nil {
+		var info string
+		if input.Endpoint.Auth["apiKey"] == nil {
+			return nil, ErrNoAPIKeyProvided
+		}
+		if _, ok := input.Endpoint.Auth["apiKey"].(string); !ok {
+			return nil, ErrWrongAuthFormat
+		}
+
+		switch *input.APIType {
+		case "openai":
+			info, err = checkOpenAI(ctx, c, input)
+		case "zhipuai":
+			info, err = checkZhipuAI(ctx, c, input)
+		default:
+			err = fmt.Errorf("not support api type %s", *input.APIType)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		return &generated.ModelService{
+			// TODO: implement a ‘status' field for ModelService as a better place to store info instead of Description
+			Name:        input.Name,
+			Namespace:   input.Namespace,
+			APIType:     input.APIType,
+			Description: &info,
+		}, nil
+	}
+	return nil, ErrNoAuthProvided
+}
+
+func checkOpenAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
+	apiKey := input.Endpoint.Auth["apiKey"].(string)
+	client := openai.NewOpenAI(apiKey, input.Endpoint.URL)
+	res, err := client.Validate()
+	if err != nil {
+		return "", err
+	}
+	return res.String(), nil
+}
+
+func checkZhipuAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
+	apiKey := input.Endpoint.Auth["apiKey"].(string)
+	client := zhipuai.NewZhiPuAI(apiKey)
+	res, err := client.Validate()
+	if err != nil {
+		return "", err
+	}
+	return res.String(), nil
 }

@@ -200,6 +200,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 	if input.Endpointinput.Auth != nil {
 		secret := common.MakeAuthSecretName(llm.Name, "llm")
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,
 		}, input.Endpointinput.Auth, nil)
@@ -218,7 +219,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		return nil, err
 	}
 
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLM"}).
+	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"}).
 		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredLLM}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
@@ -229,6 +230,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		// user obj as the owner
 		secret := common.MakeAuthSecretName(llm.Name, "LLM")
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,
 		}, input.Endpointinput.Auth, obj)
@@ -271,7 +273,7 @@ func DeleteLLMs(ctx context.Context, c dynamic.Interface, input *generated.Delet
 		labelSelector = *input.LabelSelector
 	}
 
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLMs"})
+	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"})
 	if name != "" {
 		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {

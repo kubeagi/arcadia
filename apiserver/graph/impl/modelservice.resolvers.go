@@ -56,6 +56,15 @@ func (r *modelServiceQueryResolver) ListModelServices(ctx context.Context, obj *
 	return modelservice.ListModelServices(ctx, c, input)
 }
 
+// CheckModelService is the resolver for the checkModelService field.
+func (r *modelServiceQueryResolver) CheckModelService(ctx context.Context, obj *generated.ModelServiceQuery, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return modelservice.CheckModelService(ctx, c, input)
+}
+
 // ModelService is the resolver for the ModelService field.
 func (r *mutationResolver) ModelService(ctx context.Context) (*generated.ModelServiceMutation, error) {
 	return &generated.ModelServiceMutation{}, nil

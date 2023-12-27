@@ -252,3 +252,5 @@ models:
         resolver: true
       listModelServices:
         resolver: true
+      checkModelService:
+        resolver: true
