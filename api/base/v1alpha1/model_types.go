@@ -31,10 +31,8 @@ type ModelSpec struct {
 	// Comma separated field which can be wrapped by {llm,embedding}
 	Types string `json:"types,omitempty"`
 
-	// TODO: extend model to utilize third party storage sources
-	// Source *TypedObjectReference `json:"source,omitempty"`
-	// // Path(relative to source) to the model files
-	// Path string `json:"path,omitempty"`
+	// Source define the source of the model file
+	Source *TypedObjectReference `json:"source,omitempty"`
 }
 
 // ModelStatus defines the observed state of Model

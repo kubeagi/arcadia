@@ -174,34 +174,40 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 // CheckModel to update status
 func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Model) error {
 	logger.V(5).Info("check model")
-	var err error
 
-	var ds datasource.Datasource
-	var info any
+	var (
+		ds   datasource.Datasource
+		info any
+	)
 
-	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
-	if err != nil {
-		return r.UpdateStatus(ctx, instance, err)
-	}
-	endpoint := system.Spec.Endpoint.DeepCopy()
-	if endpoint != nil && endpoint.AuthSecret != nil {
-		endpoint.AuthSecret.WithNameSpace(system.Namespace)
-	}
-	ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
-	if err != nil {
-		return r.UpdateStatus(ctx, instance, err)
-	}
-	// oss info:
-	// - bucket: same as the instance namespace
-	// - object: path joined with "model/{instance.name}"
-	info = &arcadiav1alpha1.OSS{
-		Bucket: instance.Namespace,
-		Object: instance.ObjectPath(),
-	}
+	// If source is empty, it means that the data is still sourced from the internal minio and a state check is required,
+	// otherwise we consider the model file for the trans-core service to be ready.
+	if instance.Spec.Source == nil {
+		logger.V(5).Info(fmt.Sprintf("model %s source is empty, check minio status.", instance.Name))
+		system, err := config.GetSystemDatasource(ctx, r.Client, nil)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
+		endpoint := system.Spec.Endpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(system.Namespace)
+		}
+		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
+		// oss info:
+		// - bucket: same as the instance namespace
+		// - object: path joined with "model/{instance.name}"
+		info = &arcadiav1alpha1.OSS{
+			Bucket: instance.Namespace,
+			Object: instance.ObjectPath(),
+		}
 
-	// check datasource against info
-	if err := ds.Stat(ctx, info); err != nil {
-		return r.UpdateStatus(ctx, instance, err)
+		// check datasource against info
+		if err := ds.Stat(ctx, info); err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
 	}
 
 	// update status
