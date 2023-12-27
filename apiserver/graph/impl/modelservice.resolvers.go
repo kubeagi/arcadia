@@ -39,16 +39,16 @@ func (r *modelServiceMutationResolver) DeleteModelService(ctx context.Context, o
 }
 
 // GetModelService is the resolver for the getModelService field.
-func (r *modelServiceQueryResolver) GetModelService(ctx context.Context, obj *generated.ModelServiceQuery, name string, namespace string, apiType string) (*generated.ModelService, error) {
+func (r *modelServiceQueryResolver) GetModelService(ctx context.Context, obj *generated.ModelServiceQuery, name string, namespace string) (*generated.ModelService, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return modelservice.GetModelService(ctx, c, name, namespace, apiType)
+	return modelservice.ReadModelService(ctx, c, name, namespace)
 }
 
 // ListModelServices is the resolver for the listModelServices field.
-func (r *modelServiceQueryResolver) ListModelServices(ctx context.Context, obj *generated.ModelServiceQuery, input *generated.ListModelService) (*generated.PaginatedResult, error) {
+func (r *modelServiceQueryResolver) ListModelServices(ctx context.Context, obj *generated.ModelServiceQuery, input *generated.ListModelServiceInput) (*generated.PaginatedResult, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err

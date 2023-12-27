@@ -40,6 +40,13 @@ var (
 	StatusFalse = "False"
 )
 
+// ModelType
+var (
+	ModelTypeAll       = "llm,embedding"
+	ModelTypeLLM       = "llm"
+	ModelTypeEmbedding = "embedding"
+)
+
 // Resource operations
 
 // ResourceGet provides a common way to get a resource
@@ -145,4 +152,43 @@ func GetObjStatus(obj client.Object) string {
 	}
 
 	return string(condition.Status)
+}
+
+// PageNodeConvertFunc convert `any` to a `PageNode`
+type PageNodeConvertFunc func(any) generated.PageNode
+
+var (
+	DefaultPageNodeConvertFunc = func(node any) generated.PageNode {
+		pageNode, ok := node.(generated.PageNode)
+		if !ok {
+			return nil
+		}
+		return pageNode
+	}
+)
+
+var (
+	// UnlimitedPageSize which means all
+	UnlimitedPageSize = -1
+)
+
+// ListOptions for graphql list
+type ListOptions struct {
+	ConvertFunc PageNodeConvertFunc
+}
+
+// DefaultListOptions initialize a ListOptions with default settings
+func DefaultListOptions() *ListOptions {
+	return &ListOptions{
+		ConvertFunc: DefaultPageNodeConvertFunc,
+	}
+}
+
+type ListOptionsFunc func(options *ListOptions)
+
+// WithPageNodeConvertFunc update the PageNodeConvertFunc
+func WithPageNodeConvertFunc(convertFunc PageNodeConvertFunc) ListOptionsFunc {
+	return func(option *ListOptions) {
+		option.ConvertFunc = convertFunc
+	}
 }
