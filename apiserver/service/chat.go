@@ -17,18 +17,22 @@ limitations under the License.
 package service
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
+	"github.com/kubeagi/arcadia/apiserver/pkg/requestid"
 )
 
 // @BasePath /chat
@@ -53,23 +57,44 @@ func chatHandler() gin.HandlerFunc {
 			return
 		}
 		req.Debug = c.Query("debug") == "true"
-		stream := req.ResponseMode == chat.Streaming
+		req.NewChat = len(req.ConversationID) == 0
+		if req.NewChat {
+			req.ConversationID = string(uuid.NewUUID())
+		}
 		var response *chat.ChatRespBody
 		var err error
 
-		if stream {
+		if req.ResponseMode.IsStreaming() {
 			buf := strings.Builder{}
 			// handle chat streaming mode
 			respStream := make(chan string, 1)
 			go func() {
 				defer func() {
-					if err := recover(); err != nil {
-						klog.Errorln("An error occurred when run chat.AppRun: %s", err)
+					if e := recover(); e != nil {
+						err, ok := e.(error)
+						if ok {
+							klog.FromContext(c.Request.Context()).Error(err, "A panic occurred when run chat.AppRun")
+						} else {
+							klog.FromContext(c.Request.Context()).Error(fmt.Errorf("get err:%#v", e), "A panic occurred when run chat.AppRun")
+						}
 					}
 				}()
-				response, err = chat.AppRun(c, req, respStream)
-				if response.Message == buf.String() {
+				response, err = chat.AppRun(c.Request.Context(), req, respStream)
+				if err != nil {
+					c.SSEvent("error", chat.ChatRespBody{
+						ConversationID: req.ConversationID,
+						Message:        err.Error(),
+						CreatedAt:      time.Now(),
+					})
+					// c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
+					klog.FromContext(c.Request.Context()).Error(err, "error resp")
 					close(respStream)
+					return
+				}
+				if response != nil {
+					if str := buf.String(); response.Message == str || strings.TrimSpace(str) == strings.TrimSpace(response.Message) {
+						close(respStream)
+					}
 				}
 			}()
 
@@ -98,7 +123,7 @@ func chatHandler() gin.HandlerFunc {
 			c.Writer.Header().Set("Cache-Control", "no-cache")
 			c.Writer.Header().Set("Connection", "keep-alive")
 			c.Writer.Header().Set("Transfer-Encoding", "chunked")
-			klog.Infoln("start to receive messages...")
+			klog.FromContext(c.Request.Context()).Info("start to receive messages...")
 			clientDisconnected := c.Stream(func(w io.Writer) bool {
 				if msg, ok := <-respStream; ok {
 					c.SSEvent("", chat.ChatRespBody{
@@ -113,19 +138,20 @@ func chatHandler() gin.HandlerFunc {
 				return false
 			})
 			if clientDisconnected {
-				klog.Infoln("chatHandler: client is disconnected")
+				klog.FromContext(c.Request.Context()).Info("chatHandler: the client is disconnected")
 			}
-			klog.Infoln("end to receive messages.")
+			klog.FromContext(c.Request.Context()).Info("end to receive messages")
 		} else {
 			// handle chat blocking mode
-			response, err = chat.AppRun(c, req, nil)
+			response, err = chat.AppRun(c.Request.Context(), req, nil)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-				klog.Infof("error resp: %v", err)
+				klog.FromContext(c.Request.Context()).Error(err, "error resp")
 				return
 			}
 			c.JSON(http.StatusOK, response)
 		}
+		klog.FromContext(c.Request.Context()).V(3).Info("chat done", "req", req)
 	}
 }
 
@@ -144,15 +170,17 @@ func listConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
 		if err := c.ShouldBindJSON(&req); err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "list conversation: error binding json")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
 		resp, err := chat.ListConversations(c, req)
 		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error list conversation")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-			klog.Infof("error resp: %v", err)
 			return
 		}
+		klog.FromContext(c.Request.Context()).V(3).Info("list conversation done", "req", req)
 		c.JSON(http.StatusOK, resp)
 	}
 }
@@ -172,15 +200,18 @@ func deleteConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conversationID := c.Param("conversationID")
 		if conversationID == "" {
-			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: "conversationID is required"})
+			err := errors.New("conversationID is required")
+			klog.FromContext(c.Request.Context()).Error(err, "conversationID is required")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
 		err := chat.DeleteConversation(c, conversationID)
 		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error delete conversation")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-			klog.Infof("error resp: %v", err)
 			return
 		}
+		klog.FromContext(c.Request.Context()).V(3).Info("delete conversation done", "conversationID", conversationID)
 		c.JSON(http.StatusOK, chat.SimpleResp{Message: "ok"})
 	}
 }
@@ -200,16 +231,18 @@ func historyHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ConversationReqBody{}
 		if err := c.ShouldBindJSON(&req); err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "historyHandler: error binding json")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
 		resp, err := chat.ListMessages(c, req)
 		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error list messages")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-			klog.Infof("error resp: %v", err)
 			return
 		}
 		c.JSON(http.StatusOK, resp)
+		klog.FromContext(c.Request.Context()).V(3).Info("get message history done", "req", req)
 	}
 }
 
@@ -229,32 +262,36 @@ func referenceHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		messageID := c.Param("messageID")
 		if messageID == "" {
-			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: "messageID is required"})
+			err := errors.New("messageID is required")
+			klog.FromContext(c.Request.Context()).Error(err, "messageID is required")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
 		req := chat.MessageReqBody{
 			MessageID: messageID,
 		}
 		if err := c.ShouldBindJSON(&req); err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "referenceHandler: error binding json")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
 		resp, err := chat.GetMessageReferences(c, req)
 		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error get message references")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-			klog.Infof("error resp: %v", err)
 			return
 		}
+		klog.FromContext(c.Request.Context()).V(3).Info("get message references done", "req", req)
 		c.JSON(http.StatusOK, resp)
 	}
 }
 
 func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
-	g.POST("", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), chatHandler()) // chat with bot
+	g.POST("", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatHandler()) // chat with bot
 
-	g.POST("/conversations", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), listConversationHandler())                     // list conversations
-	g.DELETE("/conversations/:conversationID", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), deleteConversationHandler()) // delete conversation
+	g.POST("/conversations", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), listConversationHandler())                     // list conversations
+	g.DELETE("/conversations/:conversationID", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), deleteConversationHandler()) // delete conversation
 
-	g.POST("/messages", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), historyHandler())                         // messages history
-	g.POST("/messages/:messageID/references", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), referenceHandler()) // messages reference
+	g.POST("/messages", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), historyHandler())                         // messages history
+	g.POST("/messages/:messageID/references", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), referenceHandler()) // messages reference
 }
