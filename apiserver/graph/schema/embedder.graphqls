@@ -57,9 +57,9 @@ input CreateEmbedderInput {
 }
 
 input UpdateEmbedderInput {
-    """模型服务资源名称（不可同名）"""
+    """待修改模型服务资源名称(必填)"""
     name: String!
-    """模型服务创建命名空间"""
+    """待修改模型服务创建命名空间(必填)"""
     namespace: String!
 
     """模型服务资源标签"""
@@ -71,6 +71,15 @@ input UpdateEmbedderInput {
     displayName: String
     """模型服务资源描述"""
     description: String
+
+    """模型服务访问信息"""
+    endpointinput: EndpointInput
+
+    """
+    向量化模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
 }
 
 type EmbedderQuery {

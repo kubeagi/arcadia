@@ -289,7 +289,7 @@ type CreateModelServiceInput struct {
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`
@@ -1222,9 +1222,9 @@ type UpdateDatasourceInput struct {
 }
 
 type UpdateEmbedderInput struct {
-	// 模型服务资源名称（不可同名）
+	// 待修改模型服务资源名称(必填)
 	Name string `json:"name"`
-	// 模型服务创建命名空间
+	// 待修改模型服务创建命名空间(必填)
 	Namespace string `json:"namespace"`
 	// 模型服务资源标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
@@ -1234,6 +1234,11 @@ type UpdateEmbedderInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型服务资源描述
 	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 向量化模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
 }
 
 // 知识库更新的输入
@@ -1252,6 +1257,26 @@ type UpdateKnowledgeBaseInput struct {
 	Description *string `json:"description,omitempty"`
 	// 更新知识库文件
 	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
+}
+
+type UpdateLLMInput struct {
+	// 待修改模型服务资源名称(必填)
+	Name string `json:"name"`
+	// 待修改模型服务创建命名空间(必填)
+	Namespace string `json:"namespace"`
+	// 模型服务资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 模型服务资源展示名称作为显示，并提供编辑
+	DisplayName *string `json:"displayName,omitempty"`
+	// 模型服务资源描述
+	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
 }
 
 // 模型更新的输入
@@ -1291,7 +1316,7 @@ type UpdateModelServiceInput struct {
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`

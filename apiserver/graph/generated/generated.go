@@ -3577,6 +3577,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDatasourceInput,
 		ec.unmarshalInputUpdateEmbedderInput,
 		ec.unmarshalInputUpdateKnowledgeBaseInput,
+		ec.unmarshalInputUpdateLLMInput,
 		ec.unmarshalInputUpdateModelInput,
 		ec.unmarshalInputUpdateModelServiceInput,
 		ec.unmarshalInputUpdateVersionedDatasetInput,
@@ -4660,9 +4661,9 @@ input CreateEmbedderInput {
 }
 
 input UpdateEmbedderInput {
-    """模型服务资源名称（不可同名）"""
+    """待修改模型服务资源名称(必填)"""
     name: String!
-    """模型服务创建命名空间"""
+    """待修改模型服务创建命名空间(必填)"""
     namespace: String!
 
     """模型服务资源标签"""
@@ -4674,6 +4675,15 @@ input UpdateEmbedderInput {
     displayName: String
     """模型服务资源描述"""
     description: String
+
+    """模型服务访问信息"""
+    endpointinput: EndpointInput
+
+    """
+    向量化模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
 }
 
 type EmbedderQuery {
@@ -5078,6 +5088,31 @@ input CreateLLMInput {
     type: String
 }
 
+input UpdateLLMInput {
+    """待修改模型服务资源名称(必填)"""
+    name: String!
+    """待修改模型服务创建命名空间(必填)"""
+    namespace: String!
+    """模型服务资源标签"""
+    labels: Map
+    """模型服务资源注释"""
+    annotations: Map
+    """模型服务资源展示名称作为显示，并提供编辑"""
+    displayName: String
+
+    """模型服务资源描述"""
+    description: String
+
+    """模型服务访问信息"""
+    endpointinput: EndpointInput
+
+    """
+    模型服务接口类型
+    规则:  目前支持 zhipuai,openai两种接口类型
+    """
+    type: String
+}
+
 type LLMQuery {
     getLLM(name: String!, namespace: String!): LLM!
     listLLMs(input: ListCommonInput!): PaginatedResult!
@@ -5086,8 +5121,7 @@ type LLMQuery {
 # query
 extend type Query{
     LLM: LLMQuery
-}
-`, BuiltIn: false},
+}`, BuiltIn: false},
 	{Name: "../schema/model.graphqls", Input: `"""模型"""
 type Model {
     """
@@ -5351,7 +5385,7 @@ input CreateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
@@ -5397,7 +5431,7 @@ input UpdateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
@@ -28910,7 +28944,7 @@ func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28971,6 +29005,24 @@ func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Contex
 				return it, err
 			}
 			it.Description = data
+		case "endpointinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endpointinput"))
+			data, err := ec.unmarshalOEndpointInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐEndpointInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Endpointinput = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		}
 	}
 
@@ -29054,6 +29106,98 @@ func (ec *executionContext) unmarshalInputUpdateKnowledgeBaseInput(ctx context.C
 				return it, err
 			}
 			it.FileGroups = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateLLMInput(ctx context.Context, obj interface{}) (UpdateLLMInput, error) {
+	var it UpdateLLMInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "labels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		case "annotations":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("annotations"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Annotations = data
+		case "displayName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "endpointinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endpointinput"))
+			data, err := ec.unmarshalOEndpointInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐEndpointInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Endpointinput = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
 		}
 	}
 

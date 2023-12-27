@@ -26,7 +26,7 @@ func (r *modelServiceMutationResolver) UpdateModelService(ctx context.Context, o
 	if err != nil {
 		return nil, err
 	}
-	return modelservice.UpdateModelService(ctx, c, *input)
+	return modelservice.UpdateModelService(ctx, c, input)
 }
 
 // DeleteModelService is the resolver for the deleteModelService field.

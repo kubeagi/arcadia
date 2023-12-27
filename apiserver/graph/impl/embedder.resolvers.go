@@ -27,15 +27,7 @@ func (r *embedderMutationResolver) UpdateEmbedder(ctx context.Context, obj *gene
 	if err != nil {
 		return nil, err
 	}
-	name, displayname := "", ""
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-	if input.Name != "" {
-		name = input.Name
-
-	}
-	return embedder.UpdateEmbedder(ctx, c, name, input.Namespace, displayname)
+	return embedder.UpdateEmbedder(ctx, c, input)
 }
 
 // DeleteEmbedders is the resolver for the deleteEmbedders field.

@@ -94,7 +94,7 @@ input CreateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
@@ -140,7 +140,7 @@ input UpdateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 

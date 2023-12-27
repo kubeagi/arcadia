@@ -100,26 +100,80 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 }
 
 // UpdateModelService updates a 3rd_party model service
-func UpdateModelService(ctx context.Context, c dynamic.Interface, input generated.UpdateModelServiceInput) (*generated.ModelService, error) {
-	name, namespace, displayName := "", "", ""
-	if input.Name != "" {
-		name = input.Name
+func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generated.UpdateModelServiceInput) (*generated.ModelService, error) {
+	var updatedLLM *generated.Llm
+	var updatedEmbedder *generated.Embedder
+
+	ms, err := ReadModelService(ctx, c, input.Name, input.Namespace)
+	if err != nil {
+		return nil, errors.New("read model service failed: " + err.Error())
 	}
-	if input.Namespace != "" {
-		namespace = input.Namespace
-	}
+
+	var newDisplayName, newDescription, newAPIType string
+	var newLabels, newAnnotations map[string]interface{}
+
 	if input.DisplayName != nil {
-		displayName = *input.DisplayName
+		newDisplayName = *input.DisplayName
+	} else {
+		newDisplayName = *ms.DisplayName
+	}
+	if input.Description != nil {
+		newDescription = *input.Description
+	} else {
+		newDescription = *ms.Description
+	}
+	if input.APIType != nil {
+		newAPIType = *input.APIType
+	} else {
+		newAPIType = *ms.APIType
+	}
+	if input.Labels != nil {
+		newLabels = input.Labels
+	} else {
+		newLabels = ms.Labels
+	}
+	if input.Annotations != nil {
+		newAnnotations = input.Annotations
+	} else {
+		newAnnotations = ms.Annotations
 	}
 
-	updatedLLM, err := llm.UpdateLLM(ctx, c, name, namespace, displayName)
-	if err != nil {
-		return nil, err
+	updateLLMInput := generated.UpdateLLMInput{
+		Name:          input.Name,
+		Namespace:     input.Namespace,
+		DisplayName:   &newDisplayName,
+		Description:   &newDescription,
+		Labels:        newLabels,
+		Annotations:   newAnnotations,
+		Type:          &newAPIType,
+		Endpointinput: &input.Endpoint,
 	}
 
-	updatedEmbedder, err := embedder.UpdateEmbedder(ctx, c, name, namespace, displayName)
-	if err != nil {
-		return nil, err
+	updateEmbedderInput := generated.UpdateEmbedderInput{
+		Name:          input.Name,
+		Namespace:     input.Namespace,
+		DisplayName:   &newDisplayName,
+		Description:   &newDescription,
+		Labels:        newLabels,
+		Annotations:   newAnnotations,
+		Type:          &newAPIType,
+		Endpointinput: &input.Endpoint,
+	}
+
+	// TODO: codes to delete/create llm/embedding resource if input.Types is changed. For now it will not work.
+
+	if strings.Contains(*ms.Types, "llm") {
+		updatedLLM, err = llm.UpdateLLM(ctx, c, &updateLLMInput)
+		if err != nil {
+			return nil, errors.New("update LLM failed: " + err.Error())
+		}
+	}
+
+	if strings.Contains(*ms.Types, "embedding") {
+		updatedEmbedder, err = embedder.UpdateEmbedder(ctx, c, &updateEmbedderInput)
+		if err != nil {
+			return nil, errors.New("update embedding failed: " + err.Error())
+		}
 	}
 
 	var creationTimestamp, updateTimestamp *time.Time
@@ -135,12 +189,12 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input generate
 	ds := &generated.ModelService{
 		Name:              input.Name,
 		Namespace:         input.Namespace,
-		DisplayName:       input.DisplayName,
-		Description:       input.Description,
-		Labels:            input.Labels,
-		Annotations:       input.Annotations,
-		Types:             input.Types,
-		APIType:           input.APIType,
+		DisplayName:       &newDisplayName,
+		Description:       &newDescription,
+		Labels:            newLabels,
+		Annotations:       newAnnotations,
+		Types:             ms.Types,
+		APIType:           &newAPIType,
 		CreationTimestamp: creationTimestamp,
 		UpdateTimestamp:   updateTimestamp,
 	}
@@ -149,18 +203,30 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input generate
 
 // DeleteModelService deletes a 3rd_party model service
 func DeleteModelService(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	_, err := embedder.DeleteEmbedders(ctx, c, input)
+	// check types of the model service
+	ms, err := ReadModelService(ctx, c, *input.Name, input.Namespace)
 	if err != nil {
 		return nil, err
 	}
-	_, err = llm.DeleteLLMs(ctx, c, input)
-	if err != nil {
-		return nil, err
+	if ms.Types == nil {
+		return nil, errors.New("model service's type does not exist")
+	}
+	if strings.Contains(*ms.Types, "llm") {
+		_, err := llm.DeleteLLMs(ctx, c, input)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if strings.Contains(*ms.Types, "embedding") {
+		_, err := embedder.DeleteEmbedders(ctx, c, input)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, nil
 }
 
-// GetModelService get a 3rd_party model service
+// ReadModelService get a 3rd_party model service
 func ReadModelService(ctx context.Context, c dynamic.Interface, name string, namespace string) (*generated.ModelService, error) {
 	var modelService = &generated.ModelService{}
 
@@ -176,7 +242,6 @@ func ReadModelService(ctx context.Context, c dynamic.Interface, name string, nam
 	if llm != nil && embedder != nil {
 		modelService.Types = &common.ModelTypeAll
 	}
-
 	return modelService, nil
 }
 
