@@ -39,6 +39,18 @@ type ModelService {
 
 
     """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
+
+    """
     服务地址: 仅针对第三方模型服务
     """
     baseUrl: String!
@@ -90,6 +102,19 @@ input CreateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
 input UpdateModelServiceInput {
@@ -123,6 +148,18 @@ input UpdateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
 input ListModelServiceInput {

@@ -70,6 +70,12 @@ func (llm LLM) Get3rdPartyModels() []string {
 	if llm.Spec.Provider.GetType() != ProviderType3rdParty {
 		return []string{}
 	}
+
+	//  if models(customized) are provided,then return it
+	if llm.Spec.Models != nil && len(llm.Spec.Models) != 0 {
+		return llm.Spec.Models
+	}
+
 	switch llm.Spec.Type {
 	case llms.ZhiPuAI:
 		return llms.ZhiPuAIModels

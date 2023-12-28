@@ -17,10 +17,13 @@ limitations under the License.
 package openai
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
+
+	langchainllms "github.com/tmc/langchaingo/llms"
+	langchainopenai "github.com/tmc/langchaingo/llms/openai"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
@@ -37,14 +40,20 @@ type OpenAI struct {
 	baseURL string
 }
 
-func NewOpenAI(apiKey string, baseURL string) *OpenAI {
+func NewOpenAI(apiKey string, baseURL string) (*OpenAI, error) {
 	if baseURL == "" {
 		baseURL = OpenaiModelAPIURL
 	}
+
+	if apiKey == "" {
+		// TODO: maybe we should consider local pseudo-openAI LLM worker that doesn't require an apiKey?
+		return nil, fmt.Errorf("auth is empty")
+	}
+
 	return &OpenAI{
 		apiKey:  apiKey,
 		baseURL: baseURL,
-	}
+	}, nil
 }
 
 func (o OpenAI) Type() llms.LLMType {
@@ -55,43 +64,26 @@ func (o *OpenAI) Call(data []byte) (llms.Response, error) {
 	return nil, errors.New("not implemented yet")
 }
 
-func (o *OpenAI) Validate() (llms.Response, error) {
-	// Validate OpenAI type CRD LLM Instance
-	// instance.Spec.URL should be like "https://api.openai.com/"
-
-	if o.apiKey == "" {
-		// TODO: maybe we should consider local pseudo-openAI LLM worker that doesn't require an apiKey?
-		return nil, fmt.Errorf("auth is empty")
+// Validate OpenAI service
+func (o *OpenAI) Validate(ctx context.Context, options ...langchainllms.CallOption) (llms.Response, error) {
+	// validate against models
+	llm, err := langchainopenai.New(
+		langchainopenai.WithBaseURL(o.baseURL),
+		langchainopenai.WithToken(o.apiKey),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("init openai client: %w", err)
 	}
 
-	testURL := o.baseURL + "/models"
-	testAuth := "Bearer " + o.apiKey // openAI official requirement
-
-	req, err := http.NewRequest("GET", testURL, nil)
+	resp, err := llm.Call(ctx, "Hello", options...)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", testAuth)
-	req.Header.Set("Content-Type", "application/json")
-
-	cli := &http.Client{}
-	resp, err := cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("returns unexpected status code: %d", resp.StatusCode)
-	}
-
-	// FIXME: response object
-	response, err := parseHTTPResponse(resp)
-	if err != nil {
-		return nil, err
-	}
-	return response, nil
+	return &Response{
+		Code:    200,
+		Data:    resp,
+		Msg:     "",
+		Success: true,
+	}, nil
 }
-
-// TODO: Openai Model Object & Other definition

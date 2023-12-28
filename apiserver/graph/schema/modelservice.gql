@@ -12,6 +12,7 @@ mutation createModelService($input: CreateModelServiceInput!) {
             providerType
             types
             apiType
+            models
             creationTimestamp
             updateTimestamp
             status
@@ -35,6 +36,7 @@ mutation updateModelService($input: UpdateModelServiceInput) {
             providerType
             types
             apiType
+            models
             creationTimestamp
             updateTimestamp
             status
@@ -64,6 +66,7 @@ query getModelService($name: String!, $namespace: String!) {
             providerType
             types
             apiType
+            models
             creationTimestamp
             updateTimestamp
             status
@@ -92,6 +95,7 @@ query listModelServices($input: ListModelServiceInput) {
                     providerType
                     types
                     apiType
+                    models
                     creationTimestamp
                     updateTimestamp
                     status

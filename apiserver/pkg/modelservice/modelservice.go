@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tmc/langchaingo/llms"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -214,10 +215,13 @@ func ListModelServices(ctx context.Context, c dynamic.Interface, input *generate
 	serviceMapList := make(map[string]*generated.ModelService)
 	for _, node := range append(llmList.Nodes, embedderList.Nodes...) {
 		ms, _ := node.(*generated.ModelService)
-		_, ok := serviceMapList[ms.Name]
+		curr, ok := serviceMapList[ms.Name]
 		// if llm & embedder has same name,we treat it as `ModelTypeAll(llm,embedding)`
 		if ok {
 			ms.Types = &common.ModelTypeAll
+			// combine models provided by this model service
+			ms.LlmModels = append(ms.LlmModels, curr.LlmModels...)
+			ms.EmbeddingModels = append(ms.EmbeddingModels, curr.EmbeddingModels...)
 		}
 		serviceMapList[ms.Name] = ms
 	}
@@ -334,8 +338,13 @@ func CheckModelService(ctx context.Context, c dynamic.Interface, input generated
 
 func checkOpenAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
-	client := openai.NewOpenAI(apiKey, input.Endpoint.URL)
-	res, err := client.Validate()
+	client, err := openai.NewOpenAI(apiKey, input.Endpoint.URL)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: able to validate openai models
+	res, err := client.Validate(ctx, llms.WithModel(""))
 	if err != nil {
 		return "", err
 	}
@@ -345,7 +354,7 @@ func checkOpenAI(ctx context.Context, c dynamic.Interface, input generated.Creat
 func checkZhipuAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
 	client := zhipuai.NewZhiPuAI(apiKey)
-	res, err := client.Validate()
+	res, err := client.Validate(ctx)
 	if err != nil {
 		return "", err
 	}

@@ -288,6 +288,12 @@ type CreateModelServiceInput struct {
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 }
 
 type CreateVersionedDatasetInput struct {
@@ -1018,6 +1024,12 @@ type ModelService struct {
 	// 模型服务 API 类型
 	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 	// 服务地址: 仅针对第三方模型服务
 	BaseURL string `json:"baseUrl"`
 	// 状态
@@ -1276,6 +1288,12 @@ type UpdateModelServiceInput struct {
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 }
 
 type UpdateVersionedDatasetInput struct {

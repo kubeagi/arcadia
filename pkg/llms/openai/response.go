@@ -18,15 +18,13 @@ package openai
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 type Response struct {
 	Code    int    `json:"code"`
-	Data    string `json:"data"` // JSON format of the returned data
+	Data    string `json:"data"`
 	Msg     string `json:"msg"`
 	Success bool   `json:"success"`
 }
@@ -49,18 +47,4 @@ func (response *Response) String() string {
 
 func (response *Response) Unmarshal(bytes []byte) error {
 	return json.Unmarshal(bytes, response)
-}
-
-func parseHTTPResponse(resp *http.Response) (*Response, error) {
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("exception: %s", resp.Status)
-	}
-
-	var data = new(Response)
-	err := json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }

@@ -60,6 +60,12 @@ func (e Embedder) Get3rdPartyModels() []string {
 	if e.Spec.Provider.GetType() != ProviderType3rdParty {
 		return []string{}
 	}
+
+	//  if models(customized) are provided,then return it
+	if e.Spec.Models != nil && len(e.Spec.Models) != 0 {
+		return e.Spec.Models
+	}
+
 	switch e.Spec.Type {
 	case embeddings.ZhiPuAI:
 		return embeddings.ZhiPuAIModels

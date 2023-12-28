@@ -42,6 +42,8 @@ func Embedder2ModelService(embedder *generated.Embedder) *generated.ModelService
 		APIType: embedder.Type,
 		// BaseURL of this Embedder
 		BaseURL: embedder.BaseURL,
+		// EmbeddingModels of this modelservice
+		EmbeddingModels: embedder.Models,
 		// Statuds of this model service
 		Status:  embedder.Status,
 		Message: embedder.Message,
@@ -68,8 +70,10 @@ func LLM2ModelService(llm *generated.Llm) *generated.ModelService {
 		Types: &common.ModelTypeLLM,
 		// APIType of this modelservice
 		APIType: llm.Type,
-		// BaseURL of this Embedder
+		// BaseURL of this modelservice
 		BaseURL: llm.BaseURL,
+		// EmbeddingModels of this modelservice
+		LlmModels: llm.Models,
 		// Statuds of this model service
 		Status:  llm.Status,
 		Message: llm.Message,
