@@ -17,6 +17,8 @@ type DataProcessQuery {
   dataProcessSupportType: DataProcessSupportType
   # 数据处理详情
   dataProcessDetails(input: DataProcessDetailsInput): DataProcessDetails
+  # 检验名称是否重复
+  checkDataProcessTaskName(input: CheckDataProcessTaskNameInput): DataProcessResponse
 }
 
 
@@ -77,6 +79,10 @@ input DataProcessDetailsInput {
   id: String!
 }
 
+input CheckDataProcessTaskNameInput {
+  name: String!
+  namespace: String!
+}
 
 # 数据处理列表分页
 type PaginatedDataProcessItem {
@@ -170,6 +176,7 @@ type DataProcessDetailsItem {
 type DataProcessConfig {
   name: String!
   description: String!
+  file_num: Int!
   status: String!
   children: [DataProcessConfigChildren]
 }

@@ -117,7 +117,7 @@ data:
             update_user character varying(32) COLLATE pg_catalog."default",
             update_program character varying(32) COLLATE pg_catalog."default",
             CONSTRAINT data_process_task_document_pkey PRIMARY KEY (id)
-        )
+        );
 
         COMMENT ON TABLE public.data_process_task_document IS '数据处理任务文档';
         COMMENT ON COLUMN public.data_process_task_document.id IS '主键';
@@ -135,6 +135,37 @@ data:
         COMMENT ON COLUMN public.data_process_task_document.update_datetime IS '更新时间';
         COMMENT ON COLUMN public.data_process_task_document.update_user IS '更新用户';
         COMMENT ON COLUMN public.data_process_task_document.update_program IS '更新程序';
+
+        CREATE TABLE IF NOT EXISTS public.data_process_task_detail_preview
+        (
+            id character varying(32) COLLATE pg_catalog."default" NOT NULL,
+            task_id character varying(32) COLLATE pg_catalog."default",
+            file_name character varying(512) COLLATE pg_catalog."default",
+            transform_type character varying(64) COLLATE pg_catalog."default",
+            pre_content text COLLATE pg_catalog."default",
+            post_content text COLLATE pg_catalog."default",
+            create_datetime character varying(32) COLLATE pg_catalog."default",
+            create_user character varying(32) COLLATE pg_catalog."default",
+            create_program character varying(64) COLLATE pg_catalog."default",
+            update_datetime character varying(32) COLLATE pg_catalog."default",
+            update_user character varying(32) COLLATE pg_catalog."default",
+            update_program character varying(32) COLLATE pg_catalog."default",
+            CONSTRAINT data_process_detail_preview_pkey PRIMARY KEY (id)
+        );
+
+        COMMENT ON TABLE public.data_process_task_detail_preview IS '数据处理详情预览';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.id IS '主键';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.task_id IS '任务Id';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.file_name IS '文件名称';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.transform_type IS '转换类型';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.pre_content IS '处理前的内容';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.post_content IS '处理后的内容';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.create_datetime IS '创建时间';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.create_user IS '创建用户';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.create_program IS '创建程序';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.update_datetime IS '更新时间';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.update_user IS '更新用户';
+        COMMENT ON COLUMN public.data_process_task_detail_preview.update_program IS '更新程序';
 
 kind: ConfigMap
 metadata:

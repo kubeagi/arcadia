@@ -243,3 +243,27 @@ def info_by_id(
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
+
+def count_by_name(
+    req_json,
+    pool
+):
+    """Check for duplicate names."""
+    params = {
+        'name': req_json['name'],
+        'namespace': req_json['namespace']
+    }
+
+    sql = """
+        select
+          count(*)
+        from
+          public.data_process_task
+        where
+          name = %(name)s and
+          namespace = %(namespace)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_count_query(pool, sql, params)
+    return res
+
