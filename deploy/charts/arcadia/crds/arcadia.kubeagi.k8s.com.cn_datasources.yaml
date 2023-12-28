@@ -103,10 +103,15 @@ spec:
                 description: RDMA configure RDMA pulls the model file directly from
                   the remote service to the host node.
                 properties:
+                  nodePaths:
+                    additionalProperties:
+                      type: string
+                    type: object
                   path:
-                    description: 'Path on a model storage server, the usual storage
-                      path is /path/ns/mode-name, and the path field is /path/, which
-                      must end in /. example: /opt/kubeagi/, /opt/, /'
+                    description: 'We consider the model storage path on the sender''s
+                      side and the save path on the receiver''s side to be the same,
+                      so a single Path is uniformly configured here. example: /opt/kubeagi/,
+                      /opt/, /'
                     pattern: (^\/$)|(^\/[a-zA-Z0-9\_.@-]+(\/[a-zA-Z0-9\_.@-]+)*\/$)
                     type: string
                 required:

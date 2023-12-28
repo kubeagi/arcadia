@@ -169,6 +169,8 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 			return r.UpdateStatus(ctx, instance, err)
 		}
 		info = instance.Spec.OSS.DeepCopy()
+	case arcadiav1alpha1.DatasourceTypeRDMA:
+		return r.UpdateStatus(ctx, instance, nil)
 	default:
 		ds, err = datasource.NewUnknown(ctx, r.Client)
 		if err != nil {
