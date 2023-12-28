@@ -21,8 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/go-logr/logr"
+	langchainllms "github.com/tmc/langchaingo/llms"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -170,22 +172,32 @@ func (r *LLMReconciler) check3rdPartyLLM(ctx context.Context, logger logr.Logger
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
+	models := instance.Get3rdPartyModels()
+	if len(models) == 0 {
+		return r.UpdateStatus(ctx, instance, nil, errors.New("no models provided by this embedder"))
+	}
+
 	switch instance.Spec.Type {
 	case llms.ZhiPuAI:
-		embedClient := zhipuai.NewZhiPuAI(apiKey)
-		res, err := embedClient.Validate()
+		llmClient := zhipuai.NewZhiPuAI(apiKey)
+		res, err := llmClient.Validate(ctx)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)
 		}
 		msg = res.String()
 	case llms.OpenAI:
-		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Endpoint.URL)
-		res, err := embedClient.Validate()
+		llmClient, err := openai.NewOpenAI(apiKey, instance.Spec.Endpoint.URL)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)
 		}
-		msg = res.String()
-
+		// validate against models
+		for _, model := range models {
+			res, err := llmClient.Validate(ctx, langchainllms.WithModel(model))
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			msg = strings.Join([]string{msg, res.String()}, "\n")
+		}
 	default:
 		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.Type))
 	}

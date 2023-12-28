@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: qwen-7b-chat-fs
+type: Opaque
+data:
+  apiKey: "MTZlZDcxYzcwMDE0NGFiMjIyMmI5YmEwZDFhMTBhZTUuUTljWVZtWWxmdjlnZGtDeQ==" # replace this with your API key
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLM
+metadata:
+  name: qwen-7b-chat-fs
+spec:
+  displayName: 通义千问7B对话
+  description: "这是一个对话模型服务,由Arcadia的Worker提供"
+  type: "openai"
+  models:
+    - a3e0c8a6-101c-4000-a1cd-d523ff7f521d
+  provider:
+    endpoint:
+      url: "http://fastchat-api.172.22.96.167.nip.io/v1" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: qwen-7b-chat-fs
+      insecure: true

@@ -23,6 +23,8 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	langchainembeddings "github.com/tmc/langchaingo/embeddings"
+	langchainopenai "github.com/tmc/langchaingo/llms/openai"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +42,7 @@ import (
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
-	"github.com/kubeagi/arcadia/pkg/llms/openai"
+	embeddingszhipuai "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
 
@@ -184,22 +186,45 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}
 
+	// embedding models provided by 3rd_party
+	models := instance.Get3rdPartyModels()
+	if len(models) == 0 {
+		return r.UpdateStatus(ctx, instance, nil, errors.New("no models provided by this embedder"))
+	}
+
+	embedingText := "validate embedding"
 	switch instance.Spec.Type {
 	case embeddings.ZhiPuAI:
-		embedClient := zhipuai.NewZhiPuAI(apiKey)
-		res, err := embedClient.Validate()
+		embedClient, err := embeddingszhipuai.NewZhiPuAI(embeddingszhipuai.WithClient(*zhipuai.NewZhiPuAI(apiKey)))
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, nil, err)
 		}
-		msg = res.String()
+		_, err = embedClient.EmbedQuery(ctx, embedingText)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
+		}
+		msg = "Success"
 	case embeddings.OpenAI:
-		embedClient := openai.NewOpenAI(apiKey, instance.Spec.Endpoint.URL)
-		res, err := embedClient.Validate()
-		if err != nil {
-			return r.UpdateStatus(ctx, instance, nil, err)
+		// validate all embedding models
+		for _, model := range models {
+			llm, err := langchainopenai.New(
+				langchainopenai.WithBaseURL(instance.Spec.Endpoint.URL),
+				langchainopenai.WithToken(apiKey),
+				langchainopenai.WithModel(model),
+			)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			embedClient, err := langchainembeddings.NewEmbedder(llm)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			_, err = embedClient.EmbedQuery(ctx, embedingText)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			msg = "Success"
 		}
-		msg = res.String()
-
 	default:
 		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.Type))
 	}

@@ -19,11 +19,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/textsplitter"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
-	"os"
 
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
@@ -79,7 +80,7 @@ func runLoad(ctx context.Context) error {
 
 	fmt.Println("Connecting platform...")
 	z := zhipuai.NewZhiPuAI(apiKey)
-	_, err := z.Validate()
+	_, err := z.Validate(ctx)
 	if err != nil {
 		return fmt.Errorf("error validating ZhiPuAI api key: %s", err.Error())
 	}

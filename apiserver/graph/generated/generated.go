@@ -430,8 +430,10 @@ type ComplexityRoot struct {
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
 		DisplayName       func(childComplexity int) int
+		EmbeddingModels   func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
+		LlmModels         func(childComplexity int) int
 		Message           func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
@@ -2655,6 +2657,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ModelService.DisplayName(childComplexity), true
 
+	case "ModelService.embeddingModels":
+		if e.complexity.ModelService.EmbeddingModels == nil {
+			break
+		}
+
+		return e.complexity.ModelService.EmbeddingModels(childComplexity), true
+
 	case "ModelService.id":
 		if e.complexity.ModelService.ID == nil {
 			break
@@ -2668,6 +2677,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ModelService.Labels(childComplexity), true
+
+	case "ModelService.llmModels":
+		if e.complexity.ModelService.LlmModels == nil {
+			break
+		}
+
+		return e.complexity.ModelService.LlmModels(childComplexity), true
 
 	case "ModelService.message":
 		if e.complexity.ModelService.Message == nil {
@@ -5280,6 +5296,18 @@ extend type Query {
 
 
     """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
+
+    """
     服务地址: 仅针对第三方模型服务
     """
     baseUrl: String!
@@ -5331,6 +5359,19 @@ input CreateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
 input UpdateModelServiceInput {
@@ -5364,6 +5405,18 @@ input UpdateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
 input ListModelServiceInput {
@@ -18853,6 +18906,88 @@ func (ec *executionContext) fieldContext_ModelService_apiType(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelService_llmModels(ctx context.Context, field graphql.CollectedField, obj *ModelService) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ModelService_llmModels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LlmModels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ModelService_llmModels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelService",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelService_embeddingModels(ctx context.Context, field graphql.CollectedField, obj *ModelService) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ModelService_embeddingModels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbeddingModels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ModelService_embeddingModels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelService",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelService_baseUrl(ctx context.Context, field graphql.CollectedField, obj *ModelService) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ModelService_baseUrl(ctx, field)
 	if err != nil {
@@ -19044,6 +19179,10 @@ func (ec *executionContext) fieldContext_ModelServiceMutation_createModelService
 				return ec.fieldContext_ModelService_types(ctx, field)
 			case "apiType":
 				return ec.fieldContext_ModelService_apiType(ctx, field)
+			case "llmModels":
+				return ec.fieldContext_ModelService_llmModels(ctx, field)
+			case "embeddingModels":
+				return ec.fieldContext_ModelService_embeddingModels(ctx, field)
 			case "baseUrl":
 				return ec.fieldContext_ModelService_baseUrl(ctx, field)
 			case "status":
@@ -19133,6 +19272,10 @@ func (ec *executionContext) fieldContext_ModelServiceMutation_updateModelService
 				return ec.fieldContext_ModelService_types(ctx, field)
 			case "apiType":
 				return ec.fieldContext_ModelService_apiType(ctx, field)
+			case "llmModels":
+				return ec.fieldContext_ModelService_llmModels(ctx, field)
+			case "embeddingModels":
+				return ec.fieldContext_ModelService_embeddingModels(ctx, field)
 			case "baseUrl":
 				return ec.fieldContext_ModelService_baseUrl(ctx, field)
 			case "status":
@@ -19274,6 +19417,10 @@ func (ec *executionContext) fieldContext_ModelServiceQuery_getModelService(ctx c
 				return ec.fieldContext_ModelService_types(ctx, field)
 			case "apiType":
 				return ec.fieldContext_ModelService_apiType(ctx, field)
+			case "llmModels":
+				return ec.fieldContext_ModelService_llmModels(ctx, field)
+			case "embeddingModels":
+				return ec.fieldContext_ModelService_embeddingModels(ctx, field)
 			case "baseUrl":
 				return ec.fieldContext_ModelService_baseUrl(ctx, field)
 			case "status":
@@ -19430,6 +19577,10 @@ func (ec *executionContext) fieldContext_ModelServiceQuery_checkModelService(ctx
 				return ec.fieldContext_ModelService_types(ctx, field)
 			case "apiType":
 				return ec.fieldContext_ModelService_apiType(ctx, field)
+			case "llmModels":
+				return ec.fieldContext_ModelService_llmModels(ctx, field)
+			case "embeddingModels":
+				return ec.fieldContext_ModelService_embeddingModels(ctx, field)
 			case "baseUrl":
 				return ec.fieldContext_ModelService_baseUrl(ctx, field)
 			case "status":
@@ -26833,7 +26984,7 @@ func (ec *executionContext) unmarshalInputCreateModelServiceInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types", "apiType", "endpoint"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types", "apiType", "endpoint", "llmModels", "embeddingModels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26921,6 +27072,24 @@ func (ec *executionContext) unmarshalInputCreateModelServiceInput(ctx context.Co
 				return it, err
 			}
 			it.Endpoint = data
+		case "llmModels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmModels = data
+		case "embeddingModels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embeddingModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingModels = data
 		}
 	}
 
@@ -28981,7 +29150,7 @@ func (ec *executionContext) unmarshalInputUpdateModelServiceInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types", "apiType", "endpoint"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types", "apiType", "endpoint", "llmModels", "embeddingModels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29069,6 +29238,24 @@ func (ec *executionContext) unmarshalInputUpdateModelServiceInput(ctx context.Co
 				return it, err
 			}
 			it.Endpoint = data
+		case "llmModels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmModels = data
+		case "embeddingModels":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embeddingModels"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingModels = data
 		}
 	}
 
@@ -32845,6 +33032,10 @@ func (ec *executionContext) _ModelService(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ModelService_types(ctx, field, obj)
 		case "apiType":
 			out.Values[i] = ec._ModelService_apiType(ctx, field, obj)
+		case "llmModels":
+			out.Values[i] = ec._ModelService_llmModels(ctx, field, obj)
+		case "embeddingModels":
+			out.Values[i] = ec._ModelService_embeddingModels(ctx, field, obj)
 		case "baseUrl":
 			out.Values[i] = ec._ModelService_baseUrl(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

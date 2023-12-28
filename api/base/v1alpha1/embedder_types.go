@@ -34,6 +34,10 @@ type EmbedderSpec struct {
 
 	// Provider defines the provider info which provide this embedder service
 	Provider `json:"provider,omitempty"`
+
+	// Models provided by this LLM
+	// If not set,we will use default model list based on LLMType
+	Models []string `json:"models,omitempty"`
 }
 
 // EmbeddingsStatus defines the observed state of Embedder

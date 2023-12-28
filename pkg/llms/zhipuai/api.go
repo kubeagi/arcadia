@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/r3labs/sse/v2"
+	langchainllms "github.com/tmc/langchaingo/llms"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
@@ -132,7 +133,8 @@ func (z *ZhiPuAI) SSEInvoke(params ModelParams, handler func(*sse.Event)) error 
 	return Stream(url, token, params, ZhipuaiModelDefaultTimeout, handler)
 }
 
-func (z *ZhiPuAI) Validate() (llms.Response, error) {
+// Validate zhipuai service against CallOption
+func (z *ZhiPuAI) Validate(ctx context.Context, options ...langchainllms.CallOption) (llms.Response, error) {
 	url := BuildAPIURL(llms.ZhiPuAILite, ZhiPuAIInvoke)
 	token, err := GenerateToken(z.apiKey, APITokenTTLSeconds)
 	if err != nil {
