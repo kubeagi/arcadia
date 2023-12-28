@@ -327,7 +327,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
 	}
-	if input.PageSize != nil && *input.PageSize > 0 {
+	if input.PageSize != nil {
 		pageSize = *input.PageSize
 	}
 
