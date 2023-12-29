@@ -38,6 +38,8 @@ import (
 
 const (
 	WokerCommonSuffix = "-worker"
+
+	RDMANodeLabel = "arcadia.kubeagi.k8s.com.cn/rdma"
 )
 
 var (
@@ -152,6 +154,17 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
+	if d.Spec.Type() == arcadiav1alpha1.DatasourceTypeRDMA {
+		storage = corev1.Volume{
+			Name: "models",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					// /rdma/abc/uid -> /data/models
+					Path: fmt.Sprintf("%s/%s", d.Spec.RDMA.Path, w.GetUID()),
+				},
+			},
+		}
+	}
 
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -194,17 +207,20 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	podWorker.service = service
 	podWorker.deployment = deployment
 
-	// init loader(Only oss supported yet)
-	endpoint := d.Spec.Endpoint.DeepCopy()
-	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
-		endpoint.AuthSecret.WithNameSpace(d.Namespace)
-	}
 	switch d.Spec.Type() {
 	case arcadiav1alpha1.DatasourceTypeOSS:
+		// init loader(Only oss supported yet)
+		endpoint := d.Spec.Endpoint.DeepCopy()
+		if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+			endpoint.AuthSecret.WithNameSpace(d.Namespace)
+		}
 		l, err := NewLoaderOSS(ctx, c, endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("failed to new a loader with %w", err)
 		}
+		podWorker.l = l
+	case arcadiav1alpha1.DatasourceTypeRDMA:
+		l := NewRDMALoader(c, w.Spec.Model.Name, string(w.GetUID()), d)
 		podWorker.l = l
 	default:
 		return nil, fmt.Errorf("datasource %s with type %s not supported in worker", d.Name, d.Spec.Type())
@@ -244,9 +260,8 @@ func (podWorker *PodWorker) Model() *arcadiav1alpha1.Model {
 // Now we have a pvc(if configured),service,LLM(if a llm model),Embedder(if a embedding model)
 func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 	var err error
-
-	// prepare pvc
-	if podWorker.Worker().Spec.Storage != nil {
+	// If the local directory is mounted, there is no need to create the pvc
+	if podWorker.Worker().Spec.Storage != nil && podWorker.storage.HostPath == nil {
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: podWorker.Namespace,
@@ -372,6 +387,16 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 	}
 	conRunner, _ := runner.(*corev1.Container)
 
+	if podWorker.storage.HostPath != nil {
+		conRunner.Lifecycle = &corev1.Lifecycle{
+			PreStop: &corev1.LifecycleHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{"/bin/bash", "-c", fmt.Sprintf("rm -rf /data/models/%s", podWorker.Model().Name)},
+				},
+			},
+		}
+	}
+
 	// initialize deployment
 	desiredDep := podWorker.deployment.DeepCopy()
 	// configure pod template
@@ -389,6 +414,33 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 			Volumes:        []corev1.Volume{podWorker.storage},
 		},
 	}
+	if podWorker.storage.HostPath != nil {
+		podSpecTempalte.Spec.Affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Operator: corev1.NodeSelectorOpExists,
+									Key:      RDMANodeLabel,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		podSpecTempalte.Spec.Volumes = append(podSpecTempalte.Spec.Volumes, corev1.Volume{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/tmp",
+				},
+			},
+		})
+	}
+
 	desiredDep.Spec.Template = podSpecTempalte
 	err = controllerutil.SetControllerReference(podWorker.Worker(), desiredDep, podWorker.s)
 	if err != nil {

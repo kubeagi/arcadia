@@ -132,3 +132,55 @@ type LoaderGit struct{}
 func (loader *LoaderGit) Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error) {
 	return nil, ErrNotImplementedYet
 }
+
+var _ ModelLoader = (*RDMALoader)(nil)
+
+// RDMALoader Support for RDMA.
+// Allow Pod to user hostpath and RDMA to pull models faster and start services
+type RDMALoader struct {
+	c client.Client
+
+	modelName string
+	// workerUID/modelname is the local model storage path
+	workerUID string
+
+	datasource *arcadiav1alpha1.Datasource
+}
+
+func NewRDMALoader(c client.Client, modelName, workerUID string, source *arcadiav1alpha1.Datasource) *RDMALoader {
+	return &RDMALoader{c: c, modelName: modelName, workerUID: workerUID, datasource: source}
+}
+
+func (r *RDMALoader) Build(ctx context.Context, _ *arcadiav1alpha1.TypedObjectReference) (any, error) {
+	rdmaEndpoint := r.datasource.Spec.Endpoint.URL
+	remoteBaseSavePath := r.datasource.Spec.RDMA.Path
+
+	container := &corev1.Container{
+		Name:            "rdma-loader",
+		Image:           "wetman2023/floo:23.12",
+		ImagePullPolicy: "IfNotPresent",
+		Command: []string{
+			"/bin/bash",
+			"-c",
+			// pulls files from the service's 'rdmaEndpoint:/remoteBaseSavePath/modelName' directory to the local 'UID' directory.
+			fmt.Sprintf("floo_get --from=%s --to=$TO --srv=%s --dir=%s%s", rdmaEndpoint, r.workerUID, remoteBaseSavePath, r.modelName),
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name: "TO",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "status.hostIP",
+					},
+				},
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "tmp",
+				MountPath: "/tmp",
+			},
+		},
+	}
+	return container, nil
+}
