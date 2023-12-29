@@ -75,6 +75,9 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 			ContentType: input.ContentType,
 		},
 	}
+	if input.Filed != nil {
+		dataset.Spec.Field = *input.Filed
+	}
 	if input.DisplayName != nil {
 		dataset.Spec.DisplayName = *input.DisplayName
 	}
