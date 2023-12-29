@@ -24,6 +24,7 @@ changelog:
   filters:
     exclude:
       - '^Merge pull request'
+      - '^Merge branch'
 release:
   draft: true
   replace_existing_draft: false
