@@ -80,6 +80,7 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
+		Creator:           &llm.Spec.Creator,
 		CreationTimestamp: &creationtimestamp,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
@@ -221,6 +222,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 			Type: llms.LLMType(APIType),
 		},
 	}
+	common.SetCreator(ctx, &llm.Spec.CommonSpec)
 
 	// create auth secret
 	if input.Endpointinput.Auth != nil {

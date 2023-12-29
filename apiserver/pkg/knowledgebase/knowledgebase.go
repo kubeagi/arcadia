@@ -87,6 +87,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
+		Creator:           &knowledgebase.Spec.Creator,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &knowledgebase.Spec.DisplayName,
@@ -140,6 +141,7 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 			FileGroups:  filegroups,
 		},
 	}
+	common.SetCreator(ctx, &knowledgebase.Spec.CommonSpec)
 
 	unstructuredKnowledgeBase, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&knowledgebase)
 	if err != nil {

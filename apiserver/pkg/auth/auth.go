@@ -154,6 +154,11 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 				return
 			}
 			ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), UserNameContextKey, userName))
+		} else {
+			u := &User{}
+			if err := oidcIDtoken.Claims(u); err == nil {
+				ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), UserNameContextKey, u.Name))
+			}
 		}
 
 		// for graphql query

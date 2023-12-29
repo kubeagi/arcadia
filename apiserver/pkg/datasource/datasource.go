@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -80,6 +81,7 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 		ID:                &id,
 		Name:              datasource.Name,
 		Namespace:         datasource.Namespace,
+		Creator:           pointer.String(datasource.Spec.Creator),
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &datasource.Spec.DisplayName,
@@ -121,6 +123,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 			},
 		},
 	}
+	common.SetCreator(ctx, &datasource.Spec.CommonSpec)
 
 	// make endpoint
 	endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{

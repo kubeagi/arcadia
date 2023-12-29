@@ -174,6 +174,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 			},
 		},
 	}
+	common.SetCreator(ctx, &worker.Spec.CommonSpec)
 
 	// cpu & memory
 	resources := v1.ResourceRequirements{
