@@ -38,13 +38,11 @@ type CommonChainConfig struct {
 	// Usually this value is just empty
 	Model string `json:"model,omitempty"`
 	// MaxTokens is the maximum number of tokens to generate to use in a llm call.
-	// +kubebuilder:validation:Minimum=10
-	// +kubebuilder:validation:Maximum=4096
-	// +kubebuilder:default=512
 	MaxTokens int `json:"maxTokens,omitempty"`
 	// Temperature is the temperature for sampling to use in a llm call, between 0 and 1.
 	//+kubebuilder:validation:Minimum=0
 	//+kubebuilder:validation:Maximum=1
+	//+kubebuilder:default=0.7
 	Temperature float64 `json:"temperature,omitempty"`
 	// StopWords is a list of words to stop on to use in a llm call.
 	StopWords []string `json:"stopWords,omitempty"`
@@ -57,6 +55,9 @@ type CommonChainConfig struct {
 	// MinLength is the minimum length of the generated text in a llm call.
 	MinLength int `json:"minLength,omitempty"`
 	// MaxLength is the maximum length of the generated text in a llm call.
+	// +kubebuilder:validation:Minimum=10
+	// +kubebuilder:validation:Maximum=4096
+	// +kubebuilder:default=1024
 	MaxLength int `json:"maxLength,omitempty"`
 	// RepetitionPenalty is the repetition penalty for sampling in a llm call.
 	RepetitionPenalty float64 `json:"repetitionPenalty,omitempty"`
