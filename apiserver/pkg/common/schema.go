@@ -97,6 +97,11 @@ var (
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "llms",
 		},
+		"embedder": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "embedders",
+		},
 	}
 )
 
