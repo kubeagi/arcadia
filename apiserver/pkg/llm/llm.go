@@ -270,15 +270,60 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 	return genLLM, nil
 }
 
-func UpdateLLM(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*generated.Llm, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "LLMs"})
-	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.UpdateLLMInput) (*generated.Llm, error) {
+	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "LLM",
+		Name:      input.Name,
+		Namespace: &input.Namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
-	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	updatedLLM := &v1alpha1.LLM{}
+	if err := utils.UnstructuredToStructured(obj, updatedLLM); err != nil {
+		return nil, err
+	}
+
+	updatedLLM.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	updatedLLM.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+
+	if input.DisplayName != nil {
+		updatedLLM.Spec.CommonSpec.DisplayName = *input.DisplayName
+	}
+	if input.Description != nil {
+		updatedLLM.Spec.CommonSpec.Description = *input.Description
+	}
+	if input.Type != nil {
+		updatedLLM.Spec.Type = llms.LLMType(*input.Type)
+	}
+
+	// Update endpoint
+	if input.Endpointinput != nil {
+		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
+			APIGroup:  &updatedLLM.APIVersion,
+			Kind:      updatedLLM.Kind,
+			Name:      updatedLLM.Name,
+			Namespace: &updatedLLM.Namespace,
+		}, *input.Endpointinput)
+		if err != nil {
+			return nil, err
+		}
+		updatedLLM.Spec.Provider.Endpoint = &endpoint
+	}
+
+	unstructuredLLM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&updatedLLM)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "LLM",
+		Namespace: &updatedLLM.Namespace,
+		Name:      updatedLLM.Name,
+	}, unstructuredLLM, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}

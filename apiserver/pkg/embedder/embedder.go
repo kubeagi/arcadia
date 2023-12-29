@@ -175,15 +175,60 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 	return ds, nil
 }
 
-func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*generated.Embedder, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"})
-	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.UpdateEmbedderInput) (*generated.Embedder, error) {
+	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Embedder",
+		Name:      input.Name,
+		Namespace: &input.Namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
-	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	updatedEmbedder := &v1alpha1.Embedder{}
+	if err := utils.UnstructuredToStructured(obj, updatedEmbedder); err != nil {
+		return nil, err
+	}
+
+	updatedEmbedder.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	updatedEmbedder.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+
+	if input.DisplayName != nil {
+		updatedEmbedder.Spec.CommonSpec.DisplayName = *input.DisplayName
+	}
+	if input.Description != nil {
+		updatedEmbedder.Spec.CommonSpec.Description = *input.Description
+	}
+	if input.Type != nil {
+		updatedEmbedder.Spec.Type = embeddings.EmbeddingType(*input.Type)
+	}
+
+	// Update endpoint
+	if input.Endpointinput != nil {
+		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
+			APIGroup:  &updatedEmbedder.APIVersion,
+			Kind:      updatedEmbedder.Kind,
+			Name:      updatedEmbedder.Name,
+			Namespace: &updatedEmbedder.Namespace,
+		}, *input.Endpointinput)
+		if err != nil {
+			return nil, err
+		}
+		updatedEmbedder.Spec.Provider.Endpoint = &endpoint
+	}
+
+	unstructuredEmbedder, err := runtime.DefaultUnstructuredConverter.ToUnstructured(updatedEmbedder)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Embedder",
+		Namespace: &updatedEmbedder.Namespace,
+		Name:      updatedEmbedder.Name,
+	}, unstructuredEmbedder, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
