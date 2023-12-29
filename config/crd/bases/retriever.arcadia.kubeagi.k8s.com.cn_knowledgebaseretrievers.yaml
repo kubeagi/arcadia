@@ -50,49 +50,12 @@ spec:
                 description: DocNullReturn is the return statement when the query
                   result is empty from the retriever.
                 type: string
-              input:
-                properties:
-                  apiGroup:
-                    description: kubebuilder:default="arcadia.kubeagi.k8s.com.cn"
-                      APIGroup is the group for the resource being referenced.
-                    enum:
-                    - arcadia.kubeagi.k8s.com.cn
-                    type: string
-                  kind:
-                    description: kubebuilder:default="KnowledgeBase" Kind is the type
-                      of resource being referenced
-                    enum:
-                    - KnowledgeBase
-                    type: string
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                required:
-                - apiGroup
-                - kind
-                type: object
               numDocuments:
                 default: 5
                 description: NumDocuments is the max number of documents to return.
                 maximum: 10
                 minimum: 1
                 type: integer
-              output:
-                properties:
-                  apiGroup:
-                    description: APIGroup is the group for the resource being referenced.
-                      If APIGroup is not specified, the specified Kind must be in
-                      the core API group. For any other third-party types, APIGroup
-                      is required.
-                    type: string
-                  kind:
-                    default: Input
-                    description: Kind is the type of resource being referenced
-                    type: string
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                type: object
               scoreThreshold:
                 default: 0.3
                 description: ScoreThreshold is the cosine distance float score threshold.

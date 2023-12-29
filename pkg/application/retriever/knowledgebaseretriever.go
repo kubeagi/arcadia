@@ -58,11 +58,19 @@ type KnowledgeBaseRetriever struct {
 	DocNullReturn string
 }
 
-func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli dynamic.Interface) (*KnowledgeBaseRetriever, error) {
+func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
+	return &KnowledgeBaseRetriever{
+		nil,
+		baseNode,
+		"",
+	}
+}
+
+func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
 	ns := base.GetAppNamespace(ctx)
 	instance := &apiretriever.KnowledgeBaseRetriever{}
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
-		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
+		Namespace(l.BaseNode.Ref.GetNamespace(ns)).Get(ctx, l.BaseNode.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("can't find the retriever in cluster: %w", err)
 	}
@@ -70,11 +78,23 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	if err != nil {
 		return nil, fmt.Errorf("can't convert the retriever in cluster: %w", err)
 	}
-	knowledgebaseName := instance.Spec.Input.KnowledgeBaseRef.Name
+	l.DocNullReturn = instance.Spec.DocNullReturn
+
+	var knowledgebaseName, knowledgebaseNamespace string
+	for _, n := range l.BaseNode.GetPrevNode() {
+		if n.Kind() == "knowledgebase" {
+			knowledgebaseName = n.RefName()
+			knowledgebaseNamespace = n.RefNamespace()
+			break
+		}
+	}
+	if knowledgebaseName == "" || knowledgebaseNamespace == "" {
+		return nil, fmt.Errorf("knowledgebase is not setting")
+	}
 
 	knowledgebase := &v1alpha1.KnowledgeBase{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, knowledgebaseName, metav1.GetOptions{})
+		Namespace(knowledgebaseNamespace).Get(ctx, knowledgebaseName, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
 	}
@@ -124,17 +144,10 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 		if err != nil {
 			return nil, err
 		}
-		return &KnowledgeBaseRetriever{
-			vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold)),
-			baseNode,
-			instance.Spec.DocNullReturn,
-		}, nil
+		l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
 	default:
 		return nil, fmt.Errorf("unknown vectorstore type: %s", vectorStore.Spec.Type())
 	}
-}
-
-func (l *KnowledgeBaseRetriever) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
 	args["retriever"] = l
 	return args, nil
 }

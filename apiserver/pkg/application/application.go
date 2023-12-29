@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
 
-	node "github.com/kubeagi/arcadia/api/app-node"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
@@ -41,7 +40,19 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 )
 
-func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, chainInput *apichain.LLMChainInput, retriever *apiretriever.KnowledgeBaseRetriever, app *v1alpha1.Application) (*generated.Application, error) {
+func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
+	if len(app.Spec.Nodes) > 0 {
+		return
+	}
+	gApp.DocNullReturn = pointer.String("未找到您询问的内容，请详细描述您的问题")
+	gApp.NumDocuments = pointer.Int(5)
+	gApp.ScoreThreshold = pointer.Float64(0.3)
+	gApp.Temperature = pointer.Float64(0)
+	gApp.MaxLength = pointer.Int(512)
+	gApp.ConversionWindowSize = pointer.Int(5)
+}
+
+func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.KnowledgeBaseRetriever, app *v1alpha1.Application) (*generated.Application, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
@@ -77,15 +88,23 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, c
 		gApp.MaxLength = pointer.Int(chainConfig.MaxLength)
 		gApp.ConversionWindowSize = pointer.Int(chainConfig.Memory.ConversionWindowSize)
 	}
-	if chainInput != nil {
-		gApp.Llm = chainInput.LLM.Name
+	for _, node := range app.Spec.Nodes {
+		if node.Ref == nil {
+			continue
+		}
+		switch strings.ToLower(node.Ref.Kind) {
+		case "llm":
+			gApp.Llm = node.Ref.Name
+		case "knowledgebase":
+			gApp.Knowledgebase = pointer.String(node.Ref.Name)
+		}
 	}
 	if retriever != nil {
-		gApp.Knowledgebase = pointer.String(retriever.Spec.Input.KnowledgeBaseRef.Name)
 		gApp.ScoreThreshold = pointer.Float64(float64(retriever.Spec.ScoreThreshold))
 		gApp.NumDocuments = pointer.Int(retriever.Spec.NumDocuments)
 		gApp.DocNullReturn = pointer.String(retriever.Spec.DocNullReturn)
 	}
+	addDefaultValue(gApp, app)
 	return gApp, nil
 }
 
@@ -222,9 +241,8 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 		return nil, err
 	}
 	var (
-		chainConfig   *apichain.CommonChainConfig
-		llmChainInput *apichain.LLMChainInput
-		retriever     *apiretriever.KnowledgeBaseRetriever
+		chainConfig *apichain.CommonChainConfig
+		retriever   *apiretriever.KnowledgeBaseRetriever
 	)
 	hasKnowledgeBaseRetriever := false
 	for _, node := range app.Spec.Nodes {
@@ -240,7 +258,6 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 		}
 		if qachain.UID != "" {
 			chainConfig = &qachain.Spec.CommonChainConfig
-			llmChainInput = &qachain.Spec.Input.LLMChainInput
 		}
 		retriever = &apiretriever.KnowledgeBaseRetriever{}
 		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever"), namespace, name, retriever); err != nil {
@@ -253,11 +270,10 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 		}
 		if llmchain.UID != "" {
 			chainConfig = &llmchain.Spec.CommonChainConfig
-			llmChainInput = &llmchain.Spec.Input
 		}
 	}
 
-	return cr2app(prompt, chainConfig, llmChainInput, retriever, app)
+	return cr2app(prompt, chainConfig, retriever, app)
 }
 
 func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
@@ -339,19 +355,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 				DisplayName: "prompt",
 				Description: "prompt",
 			},
-			Input: apiprompt.Input{
-				CommonOrInPutOrOutputRef: node.CommonOrInPutOrOutputRef{
-					Kind: "Input",
-					Name: "Input",
-				},
-			},
-			Output: apiprompt.Output{
-				CommonOrInPutOrOutputRef: node.CommonOrInPutOrOutputRef{
-					APIGroup: pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
-					Kind:     chainKind,
-					Name:     input.Name,
-				},
-			},
 		},
 	}
 	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), input.Namespace, input.Name, func() {
@@ -370,9 +373,8 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 
 	// 3. create or update chain
 	var (
-		chainConfig   *apichain.CommonChainConfig
-		llmchainInput *apichain.LLMChainInput
-		retriever     *apiretriever.KnowledgeBaseRetriever
+		chainConfig *apichain.CommonChainConfig
+		retriever   *apiretriever.KnowledgeBaseRetriever
 	)
 	if utils.HasValue(input.Knowledgebase) {
 		qachain := &apichain.RetrievalQAChain{
@@ -397,35 +399,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
 					Temperature: pointer.Float64Deref(input.Temperature, 0),
 				},
-				Input: apichain.RetrievalQAChainInput{
-					LLMChainInput: apichain.LLMChainInput{
-						LLM: node.LLMRef{
-							Kind:     "LLM",
-							Name:     input.Llm,
-							APIGroup: "arcadia.kubeagi.k8s.com.cn",
-						},
-						Prompt: node.PromptRef{
-							CommonRef: node.CommonRef{
-								Kind: "Prompt",
-								Name: input.Name,
-							},
-							APIGroup: "prompt.arcadia.kubeagi.k8s.com.cn",
-						},
-					},
-					Retriever: node.RetrieverRef{
-						CommonRef: node.CommonRef{
-							Kind: "KnowledgeBaseRetriever",
-							Name: input.Name,
-						},
-						APIGroup: "retriever.arcadia.kubeagi.k8s.com.cn",
-					},
-				},
-				Output: apichain.Output{
-					CommonOrInPutOrOutputRef: node.CommonOrInPutOrOutputRef{
-						Kind: "Output",
-						Name: "Output",
-					},
-				},
 			},
 		}
 		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
@@ -433,12 +406,10 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			qachain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, qachain.Spec.MaxLength)
 			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
 			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
-			qachain.Spec.Input.LLM.Name = input.Llm
 		}, qachain); err != nil {
 			return nil, err
 		}
 		chainConfig = &qachain.Spec.CommonChainConfig
-		llmchainInput = &qachain.Spec.Input.LLMChainInput
 	} else {
 		llmchain := &apichain.LLMChain{
 			TypeMeta: metav1.TypeMeta{
@@ -462,26 +433,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
 					Temperature: pointer.Float64Deref(input.Temperature, 0),
 				},
-				Input: apichain.LLMChainInput{
-					LLM: node.LLMRef{
-						Kind:     "LLM",
-						Name:     input.Llm,
-						APIGroup: "arcadia.kubeagi.k8s.com.cn",
-					},
-					Prompt: node.PromptRef{
-						CommonRef: node.CommonRef{
-							Kind: "Prompt",
-							Name: input.Name,
-						},
-						APIGroup: "prompt.arcadia.kubeagi.k8s.com.cn",
-					},
-				},
-				Output: apichain.Output{
-					CommonOrInPutOrOutputRef: node.CommonOrInPutOrOutputRef{
-						Kind: "Output",
-						Name: "Output",
-					},
-				},
 			},
 		}
 		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
@@ -489,12 +440,10 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			llmchain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, llmchain.Spec.MaxLength)
 			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
 			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
-			llmchain.Spec.Input.LLM.Name = input.Llm
 		}, llmchain); err != nil {
 			return nil, err
 		}
 		chainConfig = &llmchain.Spec.CommonChainConfig
-		llmchainInput = &llmchain.Spec.Input
 	}
 
 	// 4. create or update retriever
@@ -513,20 +462,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					DisplayName: "retriever",
 					Description: "retriever",
 				},
-				Input: apiretriever.Input{
-					KnowledgeBaseRef: node.KnowledgeBaseRef{
-						Kind:     "KnowledgeBase",
-						Name:     *input.Knowledgebase,
-						APIGroup: "arcadia.kubeagi.k8s.com.cn",
-					},
-				},
-				Output: apiretriever.Output{
-					CommonOrInPutOrOutputRef: node.CommonOrInPutOrOutputRef{
-						APIGroup: pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
-						Kind:     "RetrievalQAChain",
-						Name:     input.Name,
-					},
-				},
 				CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
 					ScoreThreshold: float32(pointer.Float64Deref(input.ScoreThreshold, 0)),
 					NumDocuments:   pointer.IntDeref(input.NumDocuments, 0),
@@ -538,7 +473,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			retriever.Spec.ScoreThreshold = float32(pointer.Float64Deref(input.ScoreThreshold, float64(retriever.Spec.ScoreThreshold)))
 			retriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, retriever.Spec.NumDocuments)
 			retriever.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, retriever.Spec.DocNullReturn)
-			retriever.Spec.Input.KnowledgeBaseRef.Name = *input.Knowledgebase
 		}, retriever); err != nil {
 			return nil, err
 		}
@@ -556,16 +490,16 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		},
 	}
 	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), input.Namespace, input.Name, func() {
-		app.Spec.Nodes = redefineNodes(input.Knowledgebase != nil, input.Name, input.Llm)
+		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm)
 		app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
 	}, app); err != nil {
 		return nil, err
 	}
 
-	return cr2app(prompt, chainConfig, llmchainInput, retriever, app)
+	return cr2app(prompt, chainConfig, retriever, app)
 }
 
-func redefineNodes(hasknowledgebase bool, name, llmName string) (nodes []v1alpha1.Node) {
+func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha1.Node) {
 	nodes = []v1alpha1.Node{
 		{
 			NodeConfig: v1alpha1.NodeConfig{
@@ -606,7 +540,7 @@ func redefineNodes(hasknowledgebase bool, name, llmName string) (nodes []v1alpha
 			NextNodeName: []string{"chain-node"},
 		},
 	}
-	if !hasknowledgebase {
+	if knowledgebase == nil {
 		nodes = append(nodes, v1alpha1.Node{
 			NodeConfig: v1alpha1.NodeConfig{
 				Name:        "chain-node",
@@ -622,6 +556,19 @@ func redefineNodes(hasknowledgebase bool, name, llmName string) (nodes []v1alpha
 		})
 	} else {
 		nodes = append(nodes,
+			v1alpha1.Node{
+				NodeConfig: v1alpha1.NodeConfig{
+					Name:        "knowledgebase-node",
+					DisplayName: "知识库",
+					Description: "连接知识库",
+					Ref: &v1alpha1.TypedObjectReference{
+						APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
+						Kind:     "KnowledgeBase",
+						Name:     pointer.StringDeref(knowledgebase, ""),
+					},
+				},
+				NextNodeName: []string{"retriever-node"},
+			},
 			v1alpha1.Node{
 				NodeConfig: v1alpha1.NodeConfig{
 					Name:        "retriever-node",

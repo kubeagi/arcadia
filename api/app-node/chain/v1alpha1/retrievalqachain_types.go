@@ -28,14 +28,6 @@ type RetrievalQAChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
 	CommonChainConfig `json:",inline"`
-
-	Input  RetrievalQAChainInput `json:"input"`
-	Output Output                `json:"output"`
-}
-
-type RetrievalQAChainInput struct {
-	LLMChainInput `json:",inline"`
-	Retriever     node.RetrieverRef `json:"retriever"`
 }
 
 // RetrievalQAChainStatus defines the observed state of RetrievalQAChain
@@ -74,4 +66,16 @@ type RetrievalQAChainList struct {
 
 func init() {
 	SchemeBuilder.Register(&RetrievalQAChain{}, &RetrievalQAChainList{})
+}
+
+var _ node.Node = (*RetrievalQAChain)(nil)
+
+func (c *RetrievalQAChain) SetRef() {
+	annotations := node.SetRefAnnotations(c.GetAnnotations(), []node.Ref{node.LLMRef.Len(1), node.PromptRef.Len(1), node.RetrieverRef.Len(1)}, []node.Ref{node.OutputRef.Len(1)})
+	if c.GetAnnotations() == nil {
+		c.SetAnnotations(annotations)
+	}
+	for k, v := range annotations {
+		c.Annotations[k] = v
+	}
 }

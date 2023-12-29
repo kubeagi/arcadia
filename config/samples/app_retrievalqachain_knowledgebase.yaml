@@ -31,6 +31,14 @@ spec:
         kind: LLM
         name: app-shared-llm-service
       nextNodeName: ["chain-node"]
+    - name: knowledgebase-node
+      displayName: "使用的知识库"
+      description: "要用哪个知识库"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBase
+        name: knowledgebase-sample
+      nextNodeName: ["retriever-node"]
     - name: retriever-node
       displayName: "从知识库提取信息的retriever"
       description: "连接应用和知识库"
@@ -59,6 +67,9 @@ kind: Prompt
 metadata:
   name: base-chat-with-knowledgebase
   namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
 spec:
   displayName: "设定知识库应用的prompt"
   description: "设定知识库应用的prompt, 来自 https://github.com/tmc/langchaingo/blob/af36340149bbf35ae51c80357fa80bf648c33512/chains/question_answering.go#L9"
@@ -70,54 +81,28 @@ spec:
     Question: {{.question}}
     
     Helpful Answer:
-  input:
-    kind: "Input"
-    name: "Input"
-  output:
-    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
-    kind: RetrievalQAChain
-    name: base-chat-with-knowledgebase
 ---
 apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: RetrievalQAChain
 metadata:
   name: base-chat-with-knowledgebase
   namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"LLM","group":"arcadia.kubeagi.k8s.com.cn","length":1},{"kind":"prompt","group":"prompt.arcadia.kubeagi.k8s.com.cn","length":1},{"group":"retriever.arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"Output","length":1}]'
 spec:
   displayName: "RetrievalQAChain"
   description: "用于搜索QA的Chain"
   memory:
     maxTokenLimit: 20480
-  input:
-    llm:
-      apiGroup: arcadia.kubeagi.k8s.com.cn
-      kind: LLM
-      name: app-shared-llm-service
-    prompt:
-      apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
-      kind: Prompt
-      name: base-chat-with-knowledgebase
-    retriever:
-      apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
-      kind: KnowledgeBaseRetriever
-      name: base-chat-with-knowledgebase
-  output:
-    apiGroup: "arcadia.kubeagi.k8s.com.cn"
-    kind: "Output"
-    name: "output-node"
 ---
 apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: KnowledgeBaseRetriever
 metadata:
   name: base-chat-with-knowledgebase
   namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"KnowledgeBase","group":"arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
 spec:
   displayName: "从知识库获取信息的Retriever"
-  input:
-    apiGroup: arcadia.kubeagi.k8s.com.cn
-    kind: KnowledgeBase
-    name: knowledgebase-sample
-  output:
-    apiGroup: chain.arcadia.kubeagi.k8s.com.cn
-    kind: RetrievalQAChain
-    name: base-chat-with-knowledgebase

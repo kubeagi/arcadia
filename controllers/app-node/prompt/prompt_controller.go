@@ -27,6 +27,7 @@ import (
 
 	api "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	appnode "github.com/kubeagi/arcadia/controllers/app-node"
 )
 
 // PromptReconciler reconciles an Prompt object
@@ -111,7 +112,9 @@ func (r *PromptReconciler) reconcile(ctx context.Context, log logr.Logger, insta
 	}
 	// Note: should change here
 	// TODO: should add more check here
-	if instance.Spec.Input.Name != "" {
+	if err := appnode.CheckAndUpdateAnnotation(ctx, log, r.Client, instance); err != nil {
+		instance.Status.SetConditions(instance.Status.ErrorCondition(err.Error())...)
+	} else {
 		instance.Status.SetConditions(instance.Status.ReadyCondition()...)
 	}
 	return instance, ctrl.Result{}, nil
