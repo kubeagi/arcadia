@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -76,6 +77,7 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
+		Creator:           pointer.String(embedder.Spec.Creator),
 		CreationTimestamp: &creationtimestamp,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
@@ -146,6 +148,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 			Namespace: &input.Namespace,
 		}
 	}
+	common.SetCreator(ctx, &embedder.Spec.CommonSpec)
 
 	unstructuredEmbedder, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&embedder)
 	if err != nil {

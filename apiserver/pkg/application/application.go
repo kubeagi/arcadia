@@ -138,6 +138,7 @@ func CreateApplication(ctx context.Context, c dynamic.Interface, input generated
 			Nodes:    []v1alpha1.Node{},
 		},
 	}
+	common.SetCreator(ctx, &app.Spec.CommonSpec)
 	object, err := runtime.DefaultUnstructuredConverter.ToUnstructured(app)
 	if err != nil {
 		return nil, err

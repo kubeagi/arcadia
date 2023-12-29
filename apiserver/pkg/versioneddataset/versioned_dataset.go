@@ -360,6 +360,7 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	if input.Description != nil {
 		vds.Spec.Description = *input.Description
 	}
+	common.SetCreator(ctx, &vds.Spec.CommonSpec)
 	vds.SetLabels(graphqlutils.MapAny2Str(input.Labels))
 	vds.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 	if len(input.FileGrups) > 0 {

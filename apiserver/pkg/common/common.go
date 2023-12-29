@@ -27,6 +27,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
@@ -191,4 +192,9 @@ func WithPageNodeConvertFunc(convertFunc PageNodeConvertFunc) ListOptionsFunc {
 	return func(option *ListOptions) {
 		option.ConvertFunc = convertFunc
 	}
+}
+
+func SetCreator(ctx context.Context, common *v1alpha1.CommonSpec) {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	common.Creator = currentUser
 }
