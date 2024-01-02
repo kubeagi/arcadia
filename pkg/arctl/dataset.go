@@ -554,6 +554,6 @@ func (cachedDS *Dataset) embedDocuments(ctx context.Context, documents []schema.
 	if err != nil {
 		return err
 	}
-
-	return chroma.AddDocuments(ctx, documents)
+	_, err = chroma.AddDocuments(ctx, documents)
+	return err
 }

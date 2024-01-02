@@ -32,6 +32,10 @@ jobs:
         # the syntax to skip all the next steps unless we let the pre step fail, and failure is not what we want.
         # see https://github.com/actions/runner/issues/662
         if: steps.cache.outputs.cache-hit != 'true'
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
       - name: Build operator image
         if: steps.cache.outputs.cache-hit != 'true'
         run: |

@@ -33,7 +33,7 @@ import (
 
 type LLM struct {
 	base.BaseNode
-	langchainllms.LanguageModel
+	langchainllms.LLM
 }
 
 func NewLLM(baseNode base.BaseNode) *LLM {
@@ -58,7 +58,7 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	if err != nil {
 		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}
-	z.LanguageModel = llm
+	z.LLM = llm
 	return nil
 }
 

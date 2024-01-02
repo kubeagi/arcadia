@@ -83,7 +83,7 @@ func getChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	return options
 }
 
-func getMemory(llm llms.LanguageModel, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory) langchaingoschema.Memory {
+func getMemory(llm llms.LLM, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory) langchaingoschema.Memory {
 	if config.MaxTokenLimit > 0 {
 		return memory.NewConversationTokenBuffer(llm, config.MaxTokenLimit, memory.WithInputKey("question"), memory.WithOutputKey("text"), memory.WithChatHistory(history))
 	}

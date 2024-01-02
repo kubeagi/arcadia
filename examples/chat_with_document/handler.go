@@ -176,8 +176,8 @@ func (w Workload) EmbedAndStoreDocument(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	return chroma.AddDocuments(ctx, documents)
+	_, err = chroma.AddDocuments(ctx, documents)
+	return err
 }
 
 func StreamQueryHandler(c *fiber.Ctx) error {

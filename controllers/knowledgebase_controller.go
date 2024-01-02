@@ -472,7 +472,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		if err != nil {
 			return err
 		}
-		if err = s.AddDocuments(ctx, documents); err != nil {
+		if _, err = s.AddDocuments(ctx, documents); err != nil {
 			return err
 		}
 	}

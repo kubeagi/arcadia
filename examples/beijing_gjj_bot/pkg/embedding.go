@@ -66,7 +66,8 @@ func (d *Bot) EmbeddingFileTitle(ctx context.Context, fileName string) (err erro
 		documents = append(documents, schema.Document{PageContent: t})
 	}
 	//fmt.Println(d.Tree.String())
-	return d.DB.AddDocuments(ctx, documents)
+	_, err = d.DB.AddDocuments(ctx, documents)
+	return err
 }
 
 func (d *Bot) Query(ctx context.Context, text string, chatHistory []string, lastNode *Node) (res string, foundNode *Node, err error) {

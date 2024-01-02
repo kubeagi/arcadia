@@ -52,23 +52,12 @@ func (e ZhiPuAI) EmbedDocuments(ctx context.Context, texts []string) ([][]float3
 	)
 
 	emb := make([][]float32, 0, len(texts))
-	for _, texts := range batchedTexts {
-		curTextEmbeddings, err := e.client.CreateEmbedding(ctx, texts)
+	for _, batch := range batchedTexts {
+		curTextEmbeddings, err := e.client.CreateEmbedding(ctx, batch)
 		if err != nil {
 			return nil, err
 		}
-
-		textLengths := make([]int, 0, len(texts))
-		for _, text := range texts {
-			textLengths = append(textLengths, len(text))
-		}
-
-		combined, err := embeddings.CombineVectors(curTextEmbeddings, textLengths)
-		if err != nil {
-			return nil, err
-		}
-
-		emb = append(emb, combined)
+		emb = append(emb, curTextEmbeddings...)
 	}
 
 	return emb, nil
