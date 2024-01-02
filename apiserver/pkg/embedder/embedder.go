@@ -26,15 +26,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	"github.com/kubeagi/arcadia/apiserver/pkg/worker"
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
+// Embedder2model convert unstructured `CR Embedder` to graphql model `Embedder`
 func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Embedder {
 	embedder := &v1alpha1.Embedder{}
 	if err := utils.UnstructuredToStructured(obj, embedder); err != nil {
@@ -44,16 +47,22 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 	id := string(embedder.GetUID())
 	creationtimestamp := embedder.GetCreationTimestamp().Time
 
-	servicetype := string(embedder.Spec.Type)
+	embedderType := string(embedder.Spec.Type)
+	provider := string(embedder.Spec.Provider.GetType())
 
 	// conditioned status
 	condition := embedder.Status.GetCondition(v1alpha1.TypeReady)
 	updateTime := condition.LastTransitionTime.Time
 	status := common.GetObjStatus(embedder)
 	message := string(condition.Message)
-
-	// provider type
-	provider := string(embedder.Spec.Provider.GetType())
+	// Use worker's status&message if LLM's provider is `Worker`
+	if embedder.Spec.Provider.GetType() == v1alpha1.ProviderTypeWorker {
+		w, err := worker.ReadWorker(ctx, c, embedder.Name, embedder.Namespace)
+		if err == nil {
+			status = *w.Status
+			message = *w.Message
+		}
+	}
 
 	// get embedder's api url
 	var baseURL string
@@ -68,12 +77,13 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 		ID:                &id,
 		Name:              obj.GetName(),
 		Namespace:         obj.GetNamespace(),
+		Creator:           pointer.String(embedder.Spec.Creator),
 		CreationTimestamp: &creationtimestamp,
 		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
 		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
 		DisplayName:       &embedder.Spec.DisplayName,
 		Description:       &embedder.Spec.Description,
-		Type:              &servicetype,
+		Type:              &embedderType,
 		Provider:          &provider,
 		BaseURL:           baseURL,
 		Models:            embedder.GetModelList(),
@@ -125,6 +135,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		// create auth secret
 		secret := common.MakeAuthSecretName(embedder.Name, "embedder")
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,
 		}, input.Endpointinput.Auth, nil)
@@ -137,6 +148,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 			Namespace: &input.Namespace,
 		}
 	}
+	common.SetCreator(ctx, &embedder.Spec.CommonSpec)
 
 	unstructuredEmbedder, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&embedder)
 	if err != nil {
@@ -153,6 +165,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		// user obj as the owner
 		secret := common.MakeAuthSecretName(embedder.Name, "embedder")
 		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
+			Kind:      "Secret",
 			Name:      secret,
 			Namespace: &input.Namespace,
 		}, input.Endpointinput.Auth, obj)
@@ -165,15 +178,60 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 	return ds, nil
 }
 
-func UpdateEmbedder(ctx context.Context, c dynamic.Interface, name, namespace, displayname string) (*generated.Embedder, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"})
-	obj, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.UpdateEmbedderInput) (*generated.Embedder, error) {
+	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Embedder",
+		Name:      input.Name,
+		Namespace: &input.Namespace,
+	}, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	obj.Object["spec"].(map[string]interface{})["displayName"] = displayname
-	updatedObject, err := resource.Namespace(namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	updatedEmbedder := &v1alpha1.Embedder{}
+	if err := utils.UnstructuredToStructured(obj, updatedEmbedder); err != nil {
+		return nil, err
+	}
+
+	updatedEmbedder.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	updatedEmbedder.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+
+	if input.DisplayName != nil {
+		updatedEmbedder.Spec.CommonSpec.DisplayName = *input.DisplayName
+	}
+	if input.Description != nil {
+		updatedEmbedder.Spec.CommonSpec.Description = *input.Description
+	}
+	if input.Type != nil {
+		updatedEmbedder.Spec.Type = embeddings.EmbeddingType(*input.Type)
+	}
+
+	// Update endpoint
+	if input.Endpointinput != nil {
+		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
+			APIGroup:  &updatedEmbedder.APIVersion,
+			Kind:      updatedEmbedder.Kind,
+			Name:      updatedEmbedder.Name,
+			Namespace: &updatedEmbedder.Namespace,
+		}, *input.Endpointinput)
+		if err != nil {
+			return nil, err
+		}
+		updatedEmbedder.Spec.Provider.Endpoint = &endpoint
+	}
+
+	unstructuredEmbedder, err := runtime.DefaultUnstructuredConverter.ToUnstructured(updatedEmbedder)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Embedder",
+		Namespace: &updatedEmbedder.Namespace,
+		Name:      updatedEmbedder.Name,
+	}, unstructuredEmbedder, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +270,13 @@ func DeleteEmbedders(ctx context.Context, c dynamic.Interface, input *generated.
 	return nil, nil
 }
 
-func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+	// listOpts in this graphql query
+	opts := common.DefaultListOptions()
+	for _, optFunc := range listOpts {
+		optFunc(opts)
+	}
+
 	keyword, labelSelector, fieldSelector := "", "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
@@ -227,7 +291,7 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
 	}
-	if input.PageSize != nil && *input.PageSize > 0 {
+	if input.PageSize != nil {
 		pageSize = *input.PageSize
 	}
 
@@ -246,6 +310,12 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 
 	totalCount := len(us.Items)
 
+	// if pageSize is -1 which means unlimited pagesize,return all
+	if pageSize == common.UnlimitedPageSize {
+		page = 1
+		pageSize = totalCount
+	}
+
 	result := make([]generated.PageNode, 0, pageSize)
 	pageStart := (page - 1) * pageSize
 	for index, u := range us.Items {
@@ -260,7 +330,7 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 				continue
 			}
 		}
-		result = append(result, m)
+		result = append(result, opts.ConvertFunc(m))
 
 		// break if page size matches
 		if len(result) == pageSize {

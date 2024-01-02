@@ -19,7 +19,7 @@ import traceback
 import time
 
 import zhipuai
-from common import log_tag_const
+from common import log_tag_const, const
 from common.config import config
 from llm_prompt_template import llm_prompt
 
@@ -55,9 +55,9 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         if prompt_template is None:
             prompt_template = llm_prompt.get_default_prompt_template()
         if top_p is None:
-            top_p = 0.7
+            top_p = "0.7"
         if temperature is None:
-            temperature = 0.8
+            temperature = "0.8"
 
         content = prompt_template.format(
             text=text
@@ -66,7 +66,9 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         result = []
         status = 200
         message = ''
+
         invoke_count = 0
+        wait_seconds = const.llm_wait_seconds
         while True:
             logger.debug(''.join([
                 f"{log_tag_const.ZHI_PU_AI} content.\n",
@@ -87,8 +89,8 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
                     response = zhipuai.model_api.invoke(
                         model="chatglm_6b",
                         prompt=[{"role": "user", "content": content}],
-                        top_p=top_p,
-                        temperature=temperature,
+                        top_p=float(top_p),
+                        temperature=float(temperature),
                     )
                     if response['success']:
                         result = self.__format_response_to_qa_list(response)
@@ -105,20 +107,20 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
 
                             break
                         else:
-                            logger.warn('failed to get QA list, wait for 10 seconds and retry')
-                            time.sleep(10) # sleep 10 seconds
+                            logger.warn(f"failed to get QA list, wait for {wait_seconds} seconds and retry")
+                            time.sleep(wait_seconds) # sleep 120 seconds
                             invoke_count += 1
                     else:
                         logger.error(''.join([
                             f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
                             f"The error is: \n{response['msg']}\n"
                         ]))
-                        logger.warn('zhipuai request failed, wait for 10 seconds and retry')
-                        time.sleep(10) # sleep 10 seconds
+                        logger.warn(f"zhipuai request failed, wait for {wait_seconds} seconds and retry")
+                        time.sleep(wait_seconds) # sleep 120 seconds
                         invoke_count += 1
             except Exception as ex:
-                logger.warn('zhipuai request exception, wait for 10 seconds and retry')
-                time.sleep(10)
+                logger.warn(f"zhipuai request exception, wait for {wait_seconds} seconds and retry")
+                time.sleep(wait_seconds)
                 invoke_count += 1
 
         return {

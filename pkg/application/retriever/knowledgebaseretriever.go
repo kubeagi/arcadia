@@ -58,29 +58,49 @@ type KnowledgeBaseRetriever struct {
 	DocNullReturn string
 }
 
-func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli dynamic.Interface) (*KnowledgeBaseRetriever, error) {
+func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
+	return &KnowledgeBaseRetriever{
+		nil,
+		baseNode,
+		"",
+	}
+}
+
+func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
 	ns := base.GetAppNamespace(ctx)
 	instance := &apiretriever.KnowledgeBaseRetriever{}
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
-		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, baseNode.Ref.Name, metav1.GetOptions{})
+		Namespace(l.BaseNode.Ref.GetNamespace(ns)).Get(ctx, l.BaseNode.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("can't find the retriever in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't convert the retriever in cluster: %w", err)
 	}
-	knowledgebaseName := instance.Spec.Input.KnowledgeBaseRef.Name
+	l.DocNullReturn = instance.Spec.DocNullReturn
+
+	var knowledgebaseName, knowledgebaseNamespace string
+	for _, n := range l.BaseNode.GetPrevNode() {
+		if n.Kind() == "knowledgebase" {
+			knowledgebaseName = n.RefName()
+			knowledgebaseNamespace = n.RefNamespace()
+			break
+		}
+	}
+	if knowledgebaseName == "" || knowledgebaseNamespace == "" {
+		return nil, fmt.Errorf("knowledgebase is not setting")
+	}
 
 	knowledgebase := &v1alpha1.KnowledgeBase{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(baseNode.Ref.GetNamespace(ns)).Get(ctx, knowledgebaseName, metav1.GetOptions{})
+		Namespace(knowledgebaseNamespace).Get(ctx, knowledgebaseName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), knowledgebase)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't convert the knowledgebase in cluster: %w", err)
 	}
 
 	embedderReq := knowledgebase.Spec.Embedder
@@ -93,25 +113,25 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"}).
 		Namespace(embedderReq.GetNamespace(ns)).Get(ctx, embedderReq.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't find the embedder in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), embedder)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't convert the embedder in cluster: %w", err)
 	}
 	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cli)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
 	}
 	vectorStore := &v1alpha1.VectorStore{}
 	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "vectorstores"}).
 		Namespace(vectorStoreReq.GetNamespace(ns)).Get(ctx, vectorStoreReq.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), vectorStore)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't convert the vectorstore in cluster: %w", err)
 	}
 	switch vectorStore.Spec.Type() { // nolint: gocritic
 	case v1alpha1.VectorStoreTypeChroma:
@@ -124,17 +144,10 @@ func NewKnowledgeBaseRetriever(ctx context.Context, baseNode base.BaseNode, cli 
 		if err != nil {
 			return nil, err
 		}
-		return &KnowledgeBaseRetriever{
-			vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold)),
-			baseNode,
-			instance.Spec.DocNullReturn,
-		}, nil
+		l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
 	default:
 		return nil, fmt.Errorf("unknown vectorstore type: %s", vectorStore.Spec.Type())
 	}
-}
-
-func (l *KnowledgeBaseRetriever) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
 	args["retriever"] = l
 	return args, nil
 }
@@ -151,16 +164,17 @@ type KnowledgeBaseStuffDocuments struct {
 var _ chains.Chain = &KnowledgeBaseStuffDocuments{}
 var _ callbacks.Handler = &KnowledgeBaseStuffDocuments{}
 
-func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Document) string {
+func (c *KnowledgeBaseStuffDocuments) joinDocuments(ctx context.Context, docs []langchaingoschema.Document) string {
+	logger := klog.FromContext(ctx)
 	var text string
 	docLen := len(docs)
 	for k, doc := range docs {
-		klog.Infof("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %f\n", k, doc.PageContent, doc.Score)
+		logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %f\n", k, doc.PageContent, doc.Score))
 		for key, v := range doc.Metadata {
 			if str, ok := v.([]byte); ok {
-				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %s\n", k, key, string(str))
+				logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %s\n", k, key, string(str)))
 			} else {
-				klog.Infof("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v)
+				logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v))
 			}
 		}
 		answer, _ := doc.Metadata["a"].([]byte)
@@ -182,7 +196,7 @@ func (c *KnowledgeBaseStuffDocuments) joinDocuments(docs []langchaingoschema.Doc
 			LineNumber: line,
 		})
 	}
-	klog.Infof("KnowledgeBaseRetriever: finally get related text: %s\n", text)
+	logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: finally get related text: %s\n", text))
 	if len(text) == 0 {
 		c.isDocNullReturn = true
 	}
@@ -208,7 +222,7 @@ func (c *KnowledgeBaseStuffDocuments) Call(ctx context.Context, values map[strin
 		inputValues[key] = value
 	}
 
-	inputValues[c.DocumentVariableName] = c.joinDocuments(docs)
+	inputValues[c.DocumentVariableName] = c.joinDocuments(ctx, docs)
 	return chains.Call(ctx, c.LLMChain, inputValues, options...)
 }
 
@@ -224,10 +238,10 @@ func (c KnowledgeBaseStuffDocuments) GetOutputKeys() []string {
 	return c.StuffDocuments.GetOutputKeys()
 }
 
-func (c KnowledgeBaseStuffDocuments) HandleChainEnd(_ context.Context, outputValues map[string]any) {
+func (c KnowledgeBaseStuffDocuments) HandleChainEnd(ctx context.Context, outputValues map[string]any) {
 	if !c.isDocNullReturn {
 		return
 	}
-	klog.Infof("raw llmChain output: %s, but there is no doc return, so set output to %s\n", outputValues[c.LLMChain.OutputKey], c.DocNullReturn)
+	klog.FromContext(ctx).Info(fmt.Sprintf("raw llmChain output: %s, but there is no doc return, so set output to %s\n", outputValues[c.LLMChain.OutputKey], c.DocNullReturn))
 	outputValues[c.LLMChain.OutputKey] = c.DocNullReturn
 }

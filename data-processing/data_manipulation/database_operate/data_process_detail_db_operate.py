@@ -227,7 +227,7 @@ def list_file_name_in_qa_by_task_id(
     sql = """
       select 
         file_name 
-        from public.data_process_task_question_answer
+      from public.data_process_task_question_answer
       where 
       task_id = %(task_id)s
       group by file_name
@@ -251,8 +251,7 @@ def top_n_list_qa_for_preview(
     pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json['task_id'],
-      'file_name': req_json['file_name']
+      'task_id': req_json['task_id']
     }
 
     sql = """
@@ -261,14 +260,128 @@ def top_n_list_qa_for_preview(
           task_id,
           file_name,
           question,
-          answer
+          answer,
+          create_datetime,
+          create_user,
+          create_program,
+          update_datetime,
+          update_user,
+          update_program
         from
           public.data_process_task_question_answer
         where
-          task_id = %(task_id)s and 
-          file_name = %(file_name)s
-        order by update_datetime desc
+          task_id = %(task_id)s
+        order by random()
         limit 10
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+
+def delete_transform_by_task_id(
+    req_json,
+    pool
+):
+    """delete transform info by task id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['id']
+    }
+
+    sql = """
+        delete from public.data_process_task_detail
+        where
+          task_id = %(task_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+def delete_qa_by_task_id(
+    req_json,
+    pool
+):
+    """delete qa info by task id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['id']
+    }
+
+    sql = """
+        delete from public.data_process_task_question_answer
+        where
+          task_id = %(task_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+def list_file_name_for_clean(
+    req_json,
+    pool
+):
+    """List file name for clean in the task detail.
+  
+      req_json is a dictionary object. for example:
+      {
+          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+      }
+      pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['task_id']
+    }
+
+    sql = """
+      select 
+        file_name 
+      from public.data_process_task_detail
+      where 
+        task_id = %(task_id)s and
+        transform_type in ('remove_invisible_characters', 'space_standardization', 'remove_garbled_text', 'traditional_to_simplified', 'remove_html_tag', 'remove_emojis')
+      group by file_name
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+
+
+def list_file_name_for_privacy(
+    req_json,
+    pool
+):
+    """List file name for privacy in the task detail.
+  
+      req_json is a dictionary object. for example:
+      {
+          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+      }
+      pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['task_id']
+    }
+
+    sql = """
+      select 
+        file_name 
+      from public.data_process_task_detail
+      where 
+        task_id = %(task_id)s and
+        transform_type in ('remove_email', 'space_standardization', 'remove_ip_address', 'remove_number')
+      group by file_name
     """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)

@@ -91,7 +91,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
-		return args, err
+		return args, fmt.Errorf("can't convert obj to RetrievalQAChain: %w", err)
 	}
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
@@ -121,9 +121,10 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
 		args["_references"] = stuffDocuments.References
 	}
-	klog.V(5).Infof("blocking out: %s", out)
+	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out
+		return args, nil
 	}
-	return args, err
+	return args, fmt.Errorf("retrievalqachain run error: %w", err)
 }

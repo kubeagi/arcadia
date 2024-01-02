@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 
+	langchainllms "github.com/tmc/langchaingo/llms"
+
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
@@ -73,7 +75,7 @@ func (z *DashScope) Call(data []byte) (llms.Response, error) {
 	return do(context.TODO(), DashScopeChatURL, z.apiKey, data, z.sse, false, params.Model)
 }
 
-func (z *DashScope) Validate() (llms.Response, error) {
+func (z *DashScope) Validate(ctx context.Context, options ...langchainllms.CallOption) (llms.Response, error) {
 	return nil, errors.New("not implemented")
 }
 

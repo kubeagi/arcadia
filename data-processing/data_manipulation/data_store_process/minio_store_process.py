@@ -22,7 +22,7 @@ import pandas as pd
 from common import log_tag_const
 from common.config import config
 from data_store_clients import minio_store_client
-from database_operate import data_process_db_operate, data_process_document_db_operate
+from database_operate import data_process_db_operate, data_process_document_db_operate, data_process_detail_db_operate, data_process_detail_preview_db_operate
 from file_handle import csv_handle, pdf_handle, word_handle
 from kube import dataset_cr
 from utils import file_utils
@@ -93,20 +93,13 @@ def text_manipulate(
 
         file_name = item['name']
         file_extension = file_name.split('.')[-1].lower()
-        if file_extension in ['csv']:
-            # 处理CSV文件
-            result = csv_handle.text_manipulate({
-                'file_name': file_name,
-                'support_type': support_type
-            })
-
-        elif file_extension in ['pdf']:
+        if file_extension in ['pdf']:
             # 处理PDF文件
             result = pdf_handle.text_manipulate(
                 chunk_size=req_json.get('chunk_size'),
                 chunk_overlap=req_json.get('chunk_overlap'),
                 file_name=file_name,
-                document_id=document_id,
+                document_id=item.get('document_id'),
                 support_type=support_type,
                 conn_pool=pool,
                 task_id=id,
@@ -126,12 +119,42 @@ def text_manipulate(
                 create_user=req_json['creator']
             )
 
-        if result is None or result.get('status') != 200:
+        if result is None:
+            logger.error(f"{log_tag_const.MINIO_STORE_PROCESS} The file type is not supported. The current file type is: {file_extension}")
             # 任务失败
             task_status = 'process_fail'
             break
 
+        if result.get('status') != 200:
+            # 任务失败
+            logger.error(''.join([
+                f"{log_tag_const.MINIO_STORE_PROCESS} Data process fail \n",
+                f"The file name: {file_name}\n",
+                f"The error is: {result.get('message')}\n"
+            ]))
+            task_status = 'process_fail'
+            break
+
         data_volumes_file.append(result['data'])
+
+    # insert QA list to detail preview
+    logger.debug(f"{log_tag_const.MINIO_STORE_PROCESS} Insert QA list for detail preview.")
+    list_qa_params = {
+        'task_id': id
+    }
+    list_qa_res = data_process_detail_db_operate.top_n_list_qa_for_preview(
+        list_qa_params,
+        pool=pool
+    )
+
+    for item in list_qa_res.get('data'):
+        item['transform_type']='qa_split'
+        item['pre_content']=item['question']
+        item['post_content']=item['answer']
+        data_process_detail_preview_db_operate.insert(
+            item,
+            pool=pool
+        )
 
     # 将清洗后的文件上传到MinIO中
     # 上传final文件夹下的文件，并添加tag

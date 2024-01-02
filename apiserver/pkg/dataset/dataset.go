@@ -75,6 +75,9 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 			ContentType: input.ContentType,
 		},
 	}
+	if input.Filed != nil {
+		dataset.Spec.Field = *input.Filed
+	}
 	if input.DisplayName != nil {
 		dataset.Spec.DisplayName = *input.DisplayName
 	}
@@ -83,6 +86,7 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 	}
 	dataset.Labels = utils.MapAny2Str(input.Labels)
 	dataset.Annotations = utils.MapAny2Str(input.Annotations)
+	common.SetCreator(ctx, &dataset.Spec.CommonSpec)
 
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dataset)
 	if err != nil {

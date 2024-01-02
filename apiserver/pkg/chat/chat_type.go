@@ -26,6 +26,10 @@ import (
 
 type ResponseMode string
 
+func (r ResponseMode) IsStreaming() bool {
+	return r == Streaming
+}
+
 const (
 	// Blocking means the response is returned in a blocking manner
 	Blocking ResponseMode = "blocking"
@@ -62,6 +66,7 @@ type ChatReqBody struct {
 	ResponseMode        ResponseMode `json:"response_mode" binding:"required" example:"blocking"`
 	ConversationReqBody `json:",inline"`
 	Debug               bool `json:"-"`
+	NewChat             bool `json:"-"`
 }
 
 type ChatRespBody struct {

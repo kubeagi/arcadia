@@ -183,3 +183,28 @@ def list_file_by_task_id(
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
+
+def delete_by_task_id(
+    req_json,
+    pool
+):
+    """delete info by task id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['id']
+    }
+
+    sql = """
+        delete from public.data_process_task_document
+        where
+          task_id = %(task_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res

@@ -161,9 +161,29 @@ func (r *WorkerReconciler) initialize(ctx context.Context, logger logr.Logger, i
 
 func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, worker *arcadiav1alpha1.Worker) (*arcadiav1alpha1.Worker, error) {
 	logger.V(5).Info("GetSystemDatasource which hosts the worker's model files")
-	datasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
-	if err != nil {
-		return worker, errors.Wrap(err, "Failed to get system datasource")
+
+	m := arcadiav1alpha1.Model{}
+	ns := worker.Namespace
+	if worker.Spec.Model.Namespace != nil && *worker.Spec.Model.Namespace != "" {
+		ns = *worker.Spec.Model.Namespace
+	}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: worker.Spec.Model.Name, Namespace: ns}, &m); err != nil {
+		return worker, errors.Wrap(err, "failed to get model")
+	}
+
+	var (
+		datasource = &arcadiav1alpha1.Datasource{}
+		err        error
+	)
+	if m.Spec.Source != nil {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: m.Spec.Source.Name}, datasource); err != nil {
+			return worker, errors.Wrap(err, "model config datasource, but get it failed.")
+		}
+	} else {
+		datasource, err = config.GetSystemDatasource(ctx, r.Client, nil)
+		if err != nil {
+			return worker, errors.Wrap(err, "Failed to get system datasource")
+		}
 	}
 
 	// Only PodWorker(hosts this worker via a single pod) supported now

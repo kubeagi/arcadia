@@ -9,40 +9,16 @@ mutation createModelService($input: CreateModelServiceInput!) {
             creator
             displayName
             description
+            providerType
             types
             apiType
+            llmModels
+            embeddingModels
             creationTimestamp
             updateTimestamp
-            llmResource {
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                baseUrl
-                models
-                provider
-                type
-                updateTimestamp
-                status
-                message
-            }
-            embedderResource {
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                type
-                baseUrl
-                models
-                provider
-                updateTimestamp
-                status
-                message
-            }
+            status
+            message
+            baseUrl
         }
     }
 }
@@ -58,40 +34,16 @@ mutation updateModelService($input: UpdateModelServiceInput) {
             creator
             displayName
             description
+            providerType
             types
             apiType
+            llmModels
+            embeddingModels
             creationTimestamp
             updateTimestamp
-            llmResource {
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                baseUrl
-                models
-                provider
-                type
-                updateTimestamp
-                status
-                message
-            }
-            embedderResource {
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                type
-                baseUrl
-                models
-                provider
-                updateTimestamp
-                status
-                message
-            }
+            status
+            message
+            baseUrl
         }
     }
 }
@@ -102,9 +54,9 @@ mutation deleteModelServices($input: DeleteCommonInput) {
     }
 }
 
-query getModelService($name: String!, $namespace: String!, $apiType: String!) {
+query getModelService($name: String!, $namespace: String!) {
     ModelService {
-        getModelService(name: $name, namespace: $namespace, apiType: $apiType) {
+        getModelService(name: $name, namespace: $namespace) {
             id
             name
             namespace
@@ -113,50 +65,21 @@ query getModelService($name: String!, $namespace: String!, $apiType: String!) {
             creator
             displayName
             description
+            providerType
             types
             apiType
+            llmModels
+            embeddingModels
             creationTimestamp
-            updateTimestamp 
-            llmResource {
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                baseUrl
-                models
-                provider
-                type
-                updateTimestamp
-                status
-                message
-            }
-            embedderResource{
-                name
-                namespace
-                labels
-                annotations
-                displayName
-                description
-                baseUrl
-                models
-                provider
-                type
-                updateTimestamp
-                status
-                message
-            }
-            resource {
-                cpu
-                memory
-                nvidiaGPU
-            }
+            updateTimestamp
+            status
+            message
+            baseUrl
         }
     }
 }
 
-query listModelServices($input: ListModelService) {
+query listModelServices($input: ListModelServiceInput) {
     ModelService {
         listModelServices(input: $input) {
             totalCount
@@ -172,47 +95,29 @@ query listModelServices($input: ListModelService) {
                     creator
                     displayName
                     description
+                    providerType
                     types
                     apiType
+                    llmModels
+                    embeddingModels
                     creationTimestamp
-                    updateTimestamp 
-                    llmResource {
-                        name
-                        namespace
-                        labels
-                        annotations
-                        displayName
-                        description
-                        baseUrl
-                        models
-                        provider
-                        type
-                        updateTimestamp
-                        status
-                        message
-                    }
-                    embedderResource{
-                        name
-                        namespace
-                        labels
-                        annotations
-                        displayName
-                        description
-                        baseUrl
-                        models
-                        provider
-                        type
-                        updateTimestamp
-                        status
-                        message
-                    }
-                    resource {
-                        cpu
-                        memory
-                        nvidiaGPU
-                    }
+                    updateTimestamp
+                    status
+                    message
+                    baseUrl
                 }
             }
+        }
+    }
+}
+
+query checkModelService($input: CreateModelServiceInput!) {
+    ModelService {
+        checkModelService(input: $input) {
+            name
+            namespace
+            apiType
+            description
         }
     }
 }

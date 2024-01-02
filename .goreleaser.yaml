@@ -1,0 +1,52 @@
+# Make sure to check the documentation at https://goreleaser.com
+git:
+  ignore_tags:
+  - "arcadia-*"
+  - "component-store-*"
+  - "llm-worker-*"
+  - "jupyterlab-*"
+builds:
+  - skip: true
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: New Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - '^Merge pull request'
+      - '^Merge branch'
+release:
+  draft: true
+  replace_existing_draft: false
+  mode: append
+  header: |
+    ## {{.ProjectName}}-v{{.Version}}
+
+    Welcome to this new release!
+    
+    ### Images built for this release:
+    - `kubeagi/arcadia:v{{ .Version }}`
+    - `kubeagi/data-processing:v{{ .Version }}`
+    
+    ### Breaking Changes:
+    None
+    
+    ### Feature summary 🚀 🚀 🚀
+    TODO
+  footer: |
+    ## Thanks to our Contributors!
+    
+    Thank you to everyone who contributed to {{.Tag}}! ❤️
+
+    And thank you very much to everyone else not listed here who contributed in other ways like filing issues, giving feedback, testing fixes, helping users in slack, etc. 🙏
+  name_template: "v{{.Version}}"

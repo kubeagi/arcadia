@@ -2,37 +2,75 @@ type ModelService {
     id: String
     name: String!
     namespace: String!
+
     labels: Map
     annotations: Map
+    
     creator: String
     displayName: String
     description: String
+
+    """
+    模型服务的创建和更新时间
+    """
+    creationTimestamp: Time
+    updateTimestamp: Time
+
+
+    """
+    模型服务供应商的类型
+    规则: 3rd_party 第三方
+    规则: worker 本地
+    """
+    providerType: String
+
+
     """
     模型服务能力类型，支持 llm 和 embedding 两种模型类型
     规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
     """
     types: String
 
-    creationTimestamp: Time
-    updateTimestamp: Time
-
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
-    """
-    模型对应的 LLM 及 embedder CR 资源
-    """
-    llmResource: LLM
-    embedderResource: Embedder
 
     """
-    第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
     """
-    resource: Resources
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
+
+    """
+    服务地址: 仅针对第三方模型服务
+    """
+    baseUrl: String!
+
+    """
+    状态
+    规则: 目前分为六种状态
+      - True: 正常 (第三方模型服务)
+      - False: 异常 (第三方模型服务)
+      - Unknown: 未知 (本地模型服务)
+      - Pending: 发布中 (本地模型服务)
+      - Running: 已发布 (本地模型服务)
+      - Error: 异常 (本地模型服务)
+    """
+    status: String
+
+    """详细的状态消息描述"""
+    message: String
 }
+
 input CreateModelServiceInput {
     """模型服务资源名称（不可同名）"""
     name: String!
@@ -56,7 +94,7 @@ input CreateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
@@ -64,6 +102,19 @@ input CreateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
 input UpdateModelServiceInput {
@@ -89,7 +140,7 @@ input UpdateModelServiceInput {
 
     """
     模型服务 API 类型
-    规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+    规则：支持 openai, zhipuai 两种类型
     """
     apiType: String
 
@@ -97,9 +148,21 @@ input UpdateModelServiceInput {
     模型服务终端输入
     """
     endpoint: EndpointInput!
+
+    """
+    模型服务的大语言模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    llmModels: [String!]
+
+    """
+    模型服务的Embedding模型列表
+    规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+    """
+    embeddingModels: [String!]
 }
 
-input ListModelService {
+input ListModelServiceInput {
     """
     关键词搜索
     """
@@ -109,17 +172,30 @@ input ListModelService {
     pageSize: Int
 
     """
-    all, llm, embedding
+    模型服务的类型
+    规则: 
+        - 为空默认不过滤
+        - llm 则仅返回LLM模型服务
+        - embedding 则仅返回Embedding模型服务
+        - llm,embedding 则返回同时提供LLM和Embedding能力的模型服务
     """
-    modelType: String!
+    types: String
 
     """
-    worker, 3rd
+    模型服务供应商类型
+    规则: 
+        - 为空默认不过滤
+        - worker 则仅返回本地模型服务
+        - 3rd_party 则仅返回第三方模型服务
     """
     providerType: String
 
     """
-    openai, zhipuai
+    模型服务供应商类型
+    规则: 
+        - 为空默认不过滤
+        - openai 则仅返回接口类型类型为openai的模型服务
+        - zhipuai 则仅返回接口类型类型为zhipuai的模型服务
     """
     apiType: String
 }
@@ -135,8 +211,9 @@ extend type Mutation {
 }
 
 type ModelServiceQuery {
-    getModelService(name: String!, namespace: String!, apiType: String!): ModelService
-    listModelServices(input: ListModelService): PaginatedResult!
+    getModelService(name: String!, namespace: String!): ModelService!
+    listModelServices(input: ListModelServiceInput): PaginatedResult!
+    checkModelService(input: CreateModelServiceInput!): ModelService!
 }
 
 extend type Query {

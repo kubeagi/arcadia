@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -76,7 +77,7 @@ func run() error {
 
 	fmt.Println("Connecting platform...")
 	z := zhipuai.NewZhiPuAI(apiKey)
-	_, err := z.Validate()
+	_, err := z.Validate(context.TODO())
 	if err != nil {
 		return fmt.Errorf("error validating ZhiPuAI api key: %s", err.Error())
 	}

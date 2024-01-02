@@ -108,6 +108,7 @@ func CreateModel(ctx context.Context, c dynamic.Interface, input generated.Creat
 			Types: types,
 		},
 	}
+	common.SetCreator(ctx, &model.Spec.CommonSpec)
 	unstructuredModel, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&model)
 	if err != nil {
 		return nil, err

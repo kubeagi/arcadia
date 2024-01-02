@@ -3,6 +3,8 @@ name: Build KubeAGI arcadia image
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
 env:
   GO_VER: 1.20
   GO_TAGS: ""
@@ -45,6 +47,15 @@ jobs:
       - uses: benjlevesque/short-sha@v2.2
         name: Get short commit sha
         id: short-sha
+      - name: Set extra image tags
+        id: set-release-tags
+        run: |
+          if [[ $GITHUB_REF =~ ^refs/tags/v.* ]]; then
+            echo "ARCADIA_RLEASE_TAG=kubeagi/arcadia:$TAG" >> "$GITHUB_OUTPUT"
+            echo "DATA-PPRCESSING_RLEASE_TAG=kubeagi/data-processing:$TAG" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          TAG: ${{ steps.set-env.outputs.TAG }}
       - name: Build and push
         id: push
         uses: docker/build-push-action@v5
@@ -54,9 +65,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             kubeagi/arcadia:latest
-            kubeagi/arcadia:${{ steps.set-env.outputs.TAG }}
             kubeagi/arcadia:v${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
             kubeagi/arcadia:${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
+            ${{ steps.set-release-tags.outputs.ARCADIA_RLEASE_TAG }}
           push: true
           build-args: |
             GO_VER=${{ env.GO_VER }}
@@ -72,7 +83,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             kubeagi/data-processing:latest
-            kubeagi/data-processing:${{ steps.set-env.outputs.TAG }}
             kubeagi/data-processing:v${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
             kubeagi/data-processing:${{ steps.set-env.outputs.TAG }}-${{ steps.set-env.outputs.DATE }}-${{ steps.short-sha.outputs.sha }}
+            ${{ steps.set-env.outputs.DATA-PPRCESSING_RLEASE_TAG }}
           push: true

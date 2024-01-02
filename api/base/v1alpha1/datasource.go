@@ -24,6 +24,7 @@ type DatasourceType string
 
 const (
 	DatasourceTypeOSS     DatasourceType = "oss"
+	DatasourceTypeRDMA    DatasourceType = "RDMA"
 	DatasourceTypeUnknown DatasourceType = "unknown"
 )
 
@@ -31,6 +32,9 @@ func (ds DatasourceSpec) Type() DatasourceType {
 	// Object storage service
 	if ds.OSS != nil {
 		return DatasourceTypeOSS
+	}
+	if ds.RDMA != nil {
+		return DatasourceTypeRDMA
 	}
 
 	return DatasourceTypeUnknown

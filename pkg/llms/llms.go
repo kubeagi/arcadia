@@ -16,7 +16,12 @@ limitations under the License.
 
 package llms
 
-import "errors"
+import (
+	"context"
+	"errors"
+
+	langchainllms "github.com/tmc/langchaingo/llms"
+)
 
 type LLMType string
 
@@ -40,7 +45,7 @@ var ZhiPuAIModels = []string{ZhiPuAILite, ZhiPuAIStd, ZhiPuAIPro, ZhiPuAITurbo}
 type LLM interface {
 	Type() LLMType
 	Call([]byte) (Response, error)
-	Validate() (Response, error)
+	Validate(context.Context, ...langchainllms.CallOption) (Response, error)
 }
 
 type ModelParams interface {
@@ -68,6 +73,6 @@ func (unknown UnknowLLM) Call(data []byte) (Response, error) {
 	return nil, errors.New("unknown llm type")
 }
 
-func (unknown UnknowLLM) Validate() (Response, error) {
+func (unknown UnknowLLM) Validate(ctx context.Context, options ...langchainllms.CallOption) (Response, error) {
 	return nil, errors.New("unknown llm type")
 }

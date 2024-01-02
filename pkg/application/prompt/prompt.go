@@ -18,6 +18,7 @@ package prompt
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/tmc/langchaingo/prompts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,14 +47,14 @@ func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string
 	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "prompts"}).
 		Namespace(p.Ref.GetNamespace(ns)).Get(ctx, p.Ref.Name, metav1.GetOptions{})
 	if err != nil {
-		return args, err
+		return args, fmt.Errorf("can't find the prompt in cluster: %w", err)
 	}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
 	if err != nil {
-		return args, err
+		return args, fmt.Errorf("can't convert the prompt in cluster: %w", err)
 	}
 	template := prompts.NewChatPromptTemplate([]prompts.MessageFormatter{
-		prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}), // It's not working now, and it's counterproductive.
+		prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}),
 		prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}),
 	})
 	// todo format

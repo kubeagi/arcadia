@@ -115,6 +115,11 @@ type ApplicationQuery struct {
 	ListApplicationMetadata PaginatedResult `json:"listApplicationMetadata"`
 }
 
+type CheckDataProcessTaskNameInput struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
 type CountDataProcessItem struct {
 	Status  int    `json:"status"`
 	Data    int    `json:"data"`
@@ -284,10 +289,16 @@ type CreateModelServiceInput struct {
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 }
 
 type CreateVersionedDatasetInput struct {
@@ -343,6 +354,7 @@ type CreateWorkerInput struct {
 type DataProcessConfig struct {
 	Name        string                       `json:"name"`
 	Description string                       `json:"description"`
+	FileNum     int                          `json:"file_num"`
 	Status      string                       `json:"status"`
 	Children    []*DataProcessConfigChildren `json:"children,omitempty"`
 }
@@ -428,6 +440,7 @@ type DataProcessQuery struct {
 	AllDataProcessListByCount *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
 	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
 	DataProcessDetails        *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
+	CheckDataProcessTaskName  *DataProcessResponse      `json:"checkDataProcessTaskName,omitempty"`
 }
 
 type DataProcessResponse struct {
@@ -882,17 +895,30 @@ type ListModelInput struct {
 	PageSize *int `json:"pageSize,omitempty"`
 }
 
-type ListModelService struct {
+type ListModelServiceInput struct {
 	// 关键词搜索
 	Keyword   *string `json:"keyword,omitempty"`
 	Namespace string  `json:"namespace"`
 	Page      *int    `json:"page,omitempty"`
 	PageSize  *int    `json:"pageSize,omitempty"`
-	// all, llm, embedding
-	ModelType string `json:"modelType"`
-	// worker, 3rd
+	// 模型服务的类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - llm 则仅返回LLM模型服务
+	//     - embedding 则仅返回Embedding模型服务
+	//     - llm,embedding 则返回同时提供LLM和Embedding能力的模型服务
+	Types *string `json:"types,omitempty"`
+	// 模型服务供应商类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - worker 则仅返回本地模型服务
+	//     - 3rd_party 则仅返回第三方模型服务
 	ProviderType *string `json:"providerType,omitempty"`
-	// openai, zhipuai
+	// 模型服务供应商类型
+	// 规则:
+	//     - 为空默认不过滤
+	//     - openai 则仅返回接口类型类型为openai的模型服务
+	//     - zhipuai 则仅返回接口类型类型为zhipuai的模型服务
 	APIType *string `json:"apiType,omitempty"`
 }
 
@@ -992,19 +1018,38 @@ type ModelService struct {
 	Creator     *string                `json:"creator,omitempty"`
 	DisplayName *string                `json:"displayName,omitempty"`
 	Description *string                `json:"description,omitempty"`
-	// 模型服务能力类型，支持 llm 和 embedding 两种模型类型
-	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
-	Types             *string    `json:"types,omitempty"`
+	// 模型服务的创建和更新时间
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	UpdateTimestamp   *time.Time `json:"updateTimestamp,omitempty"`
+	// 模型服务供应商的类型
+	// 规则: 3rd_party 第三方
+	// 规则: worker 本地
+	ProviderType *string `json:"providerType,omitempty"`
+	// 模型服务能力类型，支持 llm 和 embedding 两种模型类型
+	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
+	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
-	// 模型对应的 LLM 及 embedder CR 资源
-	LlmResource      *Llm      `json:"llmResource,omitempty"`
-	EmbedderResource *Embedder `json:"embedderResource,omitempty"`
-	// 第三方的服务不会有这个字段, 只有内部的Worker创建的才会有这个字段。
-	Resource *Resources `json:"resource,omitempty"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
+	// 服务地址: 仅针对第三方模型服务
+	BaseURL string `json:"baseUrl"`
+	// 状态
+	// 规则: 目前分为六种状态
+	//   - True: 正常 (第三方模型服务)
+	//   - False: 异常 (第三方模型服务)
+	//   - Unknown: 未知 (本地模型服务)
+	//   - Pending: 发布中 (本地模型服务)
+	//   - Running: 已发布 (本地模型服务)
+	//   - Error: 异常 (本地模型服务)
+	Status *string `json:"status,omitempty"`
+	// 详细的状态消息描述
+	Message *string `json:"message,omitempty"`
 }
 
 func (ModelService) IsPageNode() {}
@@ -1016,8 +1061,9 @@ type ModelServiceMutation struct {
 }
 
 type ModelServiceQuery struct {
-	GetModelService   *ModelService   `json:"getModelService,omitempty"`
+	GetModelService   ModelService    `json:"getModelService"`
 	ListModelServices PaginatedResult `json:"listModelServices"`
+	CheckModelService ModelService    `json:"checkModelService"`
 }
 
 // 对象存储的使用信息
@@ -1176,9 +1222,9 @@ type UpdateDatasourceInput struct {
 }
 
 type UpdateEmbedderInput struct {
-	// 模型服务资源名称（不可同名）
+	// 待修改模型服务资源名称(必填)
 	Name string `json:"name"`
-	// 模型服务创建命名空间
+	// 待修改模型服务创建命名空间(必填)
 	Namespace string `json:"namespace"`
 	// 模型服务资源标签
 	Labels map[string]interface{} `json:"labels,omitempty"`
@@ -1188,6 +1234,11 @@ type UpdateEmbedderInput struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	// 模型服务资源描述
 	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 向量化模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
 }
 
 // 知识库更新的输入
@@ -1206,6 +1257,26 @@ type UpdateKnowledgeBaseInput struct {
 	Description *string `json:"description,omitempty"`
 	// 更新知识库文件
 	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
+}
+
+type UpdateLLMInput struct {
+	// 待修改模型服务资源名称(必填)
+	Name string `json:"name"`
+	// 待修改模型服务创建命名空间(必填)
+	Namespace string `json:"namespace"`
+	// 模型服务资源标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 模型服务资源注释
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 模型服务资源展示名称作为显示，并提供编辑
+	DisplayName *string `json:"displayName,omitempty"`
+	// 模型服务资源描述
+	Description *string `json:"description,omitempty"`
+	// 模型服务访问信息
+	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
+	// 模型服务接口类型
+	// 规则:  目前支持 zhipuai,openai两种接口类型
+	Type *string `json:"type,omitempty"`
 }
 
 // 模型更新的输入
@@ -1245,10 +1316,16 @@ type UpdateModelServiceInput struct {
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types *string `json:"types,omitempty"`
 	// 模型服务 API 类型
-	// 规则：与 pkgs/llms.LLMType 相同，支持 openai, zhipuai 两种类型
+	// 规则：支持 openai, zhipuai 两种类型
 	APIType *string `json:"apiType,omitempty"`
 	// 模型服务终端输入
 	Endpoint EndpointInput `json:"endpoint"`
+	// 模型服务的大语言模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	LlmModels []string `json:"llmModels,omitempty"`
+	// 模型服务的Embedding模型列表
+	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
+	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 }
 
 type UpdateVersionedDatasetInput struct {

@@ -22,7 +22,8 @@ from common import log_tag_const
 from data_store_process import minio_store_process
 from database_operate import (data_process_db_operate,
                               data_process_detail_db_operate,
-                              data_process_document_db_operate)
+                              data_process_document_db_operate,
+                              data_process_detail_preview_db_operate)
 from kube import dataset_cr
 from parallel import thread_parallel
 from utils import date_time_utils
@@ -125,6 +126,14 @@ def delete_by_id(
     pool
 ):
     """Delete a record with id"""
+    # 删除需要在详情中预览的信息
+    data_process_detail_db_operate.delete_transform_by_task_id(req_json, pool=pool)
+    # 删除生成的QA信息
+    data_process_detail_db_operate.delete_qa_by_task_id(req_json, pool=pool)
+    data_process_detail_preview_db_operate.delete_qa_by_task_id(req_json, pool=pool)
+    # 删除对应的进度信息
+    data_process_document_db_operate.delete_by_task_id(req_json, pool=pool)
+
     return data_process_db_operate.delete_by_id(req_json, pool=pool)
 
 
@@ -187,6 +196,28 @@ def info_by_id(
         'data': data
     }
 
+def check_task_name(
+    req_json,
+    pool
+):
+    # 判断名称是否已存在
+    count = data_process_db_operate.count_by_name(
+        req_json,
+        pool=pool
+    )
+
+    if count.get('data') > 0:
+        return {
+            'status': 1000,
+            'message': '任务名称已存在，请重新输入！',
+            'data': ''
+        }
+    
+    return {
+        'status': 200,
+        'message': '',
+        'data': ''
+    }
 
 def _get_default_data_for_detail():
     """Get the data for the detail"""
@@ -296,6 +327,10 @@ def _set_basic_info_for_config_map_for_result(
             from_result['chunk_processing'] = {
                 'name': 'chunk_processing',
                 'description': '拆分处理',
+                'file_num': _get_qa_process_file_num(
+                    task_id=task_id,
+                    conn_pool=conn_pool
+                ),
                 'status': _get_qa_split_status(
                     task_id=task_id,
                     conn_pool=conn_pool
@@ -312,11 +347,15 @@ def _set_basic_info_for_config_map_for_result(
        process_cofig_map.get('remove_emojis'):
         if from_result.get('clean') is None:
             from_result['clean'] = {
-                    'name': 'clean',
-                    'description': '异常清洗配置',
-                    'status': 'success',
-                    'children': []
-                }
+                'name': 'clean',
+                'description': '异常清洗配置',
+                'file_num': _get_clean_process_file_num(
+                    task_id=task_id,
+                    conn_pool=conn_pool
+                ),
+                'status': 'success',
+                'children': []
+            }
             
     # remove privacy
     if process_cofig_map.get('remove_email') or \
@@ -326,6 +365,10 @@ def _set_basic_info_for_config_map_for_result(
             from_result['privacy'] = {
                 'name': 'privacy',
                 'description': '数据隐私处理',
+                'file_num': _get_privacy_process_file_num(
+                    task_id=task_id,
+                    conn_pool=conn_pool
+                ),
                 'status': 'success',
                 'children': []
             }
@@ -550,13 +593,17 @@ def _get_qa_list_preview(
     task_id: task od;
     conn_pool: database connection pool
     """
+    logger.debug(''.join([
+        f"{log_tag_const.MINIO_STORE_PROCESS} Get preview for QA "
+    ]))
     qa_list_preview = []
     # step 1
     # list file name in QA
     list_file_name_params = {
-        'task_id': task_id
+        'task_id': task_id,
+        'transform_type': 'qa_split'
     }
-    list_file_name_res = data_process_detail_db_operate.list_file_name_in_qa_by_task_id(
+    list_file_name_res = data_process_detail_preview_db_operate.list_file_name_by_task_id(
         list_file_name_params,
         pool=conn_pool
     )
@@ -569,20 +616,20 @@ def _get_qa_list_preview(
     
     # step 2
     # iterate the QA list preview
+    list_qa_params = {
+        'task_id': task_id,
+        'transform_type': 'qa_split'
+    }
+    list_qa_res = data_process_detail_preview_db_operate.list_for_preview(
+        list_qa_params,
+        pool=conn_pool
+    )
     for item in qa_list_preview:
-        list_qa_params = {
-            'task_id': task_id,
-            'file_name': item['file_name']
-        }
-        list_qa_res = data_process_detail_db_operate.top_n_list_qa_for_preview(
-            list_qa_params,
-            pool=conn_pool
-        )
-        if list_qa_res['status'] == 200:
-            for item_qa in list_qa_res['data']:
+        for item_qa in list_qa_res['data']:
+            if item.get('file_name') == item_qa.get('file_name'):
                 item['content'].append({
-                    'pre': item_qa['question'],
-                    'post': item_qa['answer']
+                    'pre': item_qa['pre_content'],
+                    'post': item_qa['post_content']
                 })
         
     return qa_list_preview
@@ -665,3 +712,65 @@ def _get_llm_config(
         llm_config['provider'] = '3rd_party'
 
     return llm_config
+
+def _get_qa_process_file_num(
+    task_id,
+    conn_pool
+):
+    list_file_name_params = {
+        'task_id': task_id
+    }
+    list_file_name_res = data_process_detail_db_operate.list_file_name_in_qa_by_task_id(
+        list_file_name_params,
+        pool=conn_pool
+    )
+
+    if list_file_name_res.get('status') == 200:
+        return len(list_file_name_res.get('data'))
+    else:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after QA "
+        ]))
+        return 0
+
+
+def _get_clean_process_file_num(
+    task_id,
+    conn_pool
+):
+    list_file_name_params = {
+        'task_id': task_id
+    }
+    list_file_name_res = data_process_detail_db_operate.list_file_name_for_clean(
+        list_file_name_params,
+        pool=conn_pool
+    )
+
+    if list_file_name_res.get('status') == 200:
+        return len(list_file_name_res.get('data'))
+    else:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after cleaning "
+        ]))
+        return 0
+
+
+def _get_privacy_process_file_num(
+    task_id,
+    conn_pool
+):
+    list_file_name_params = {
+        'task_id': task_id
+    }
+    list_file_name_res = data_process_detail_db_operate.list_file_name_for_privacy(
+        list_file_name_params,
+        pool=conn_pool
+    )
+
+    if list_file_name_res.get('status') == 200:
+        return len(list_file_name_res.get('data'))
+    else:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after privacy "
+        ]))
+        return 0

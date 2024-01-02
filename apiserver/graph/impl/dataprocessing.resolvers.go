@@ -65,6 +65,15 @@ func (r *dataProcessQueryResolver) DataProcessDetails(ctx context.Context, obj *
 	return dataprocessing.DataProcessDetails(ctx, c, obj, input)
 }
 
+// CheckDataProcessTaskName is the resolver for the checkDataProcessTaskName field.
+func (r *dataProcessQueryResolver) CheckDataProcessTaskName(ctx context.Context, obj *generated.DataProcessQuery, input *generated.CheckDataProcessTaskNameInput) (*generated.DataProcessResponse, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.CheckDataProcessTaskName(ctx, c, obj, input)
+}
+
 // DataProcess is the resolver for the dataProcess field.
 func (r *mutationResolver) DataProcess(ctx context.Context) (*generated.DataProcessMutation, error) {
 	return &generated.DataProcessMutation{}, nil

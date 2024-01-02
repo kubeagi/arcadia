@@ -45,7 +45,8 @@ const (
 	NvidiaGPU = "nvidia.com/gpu"
 )
 
-func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Worker {
+// Worker2model convert unstructured `CR Worker` to graphql model
+func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Worker {
 	worker := &v1alpha1.Worker{}
 	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
 		return &generated.Worker{}
@@ -61,6 +62,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 
 	// Unknown,Pending ,Running ,Error
 	status := common.GetObjStatus(worker)
+	message := condition.Message
 
 	// replicas
 	var replicas string
@@ -97,6 +99,7 @@ func worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		Description:       &worker.Spec.Description,
 		Type:              &workerType,
 		Status:            &status,
+		Message:           &message,
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
 		Replicas:          &replicas,
@@ -171,6 +174,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 			},
 		},
 	}
+	common.SetCreator(ctx, &worker.Spec.CommonSpec)
 
 	// cpu & memory
 	resources := v1.ResourceRequirements{
@@ -194,7 +198,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	if err != nil {
 		return nil, err
 	}
-	return worker2model(ctx, c, obj), nil
+	return Worker2model(ctx, c, obj), nil
 }
 
 func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
@@ -267,7 +271,7 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		return nil, err
 	}
 
-	return worker2model(ctx, c, updatedObject), nil
+	return Worker2model(ctx, c, updatedObject), nil
 }
 
 func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -301,7 +305,12 @@ func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.De
 	return nil, nil
 }
 
-func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput) (*generated.PaginatedResult, error) {
+func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+	opts := common.DefaultListOptions()
+	for _, optFunc := range listOpts {
+		optFunc(opts)
+	}
+
 	keyword, modelTypes, labelSelector, fieldSelector := "", "", "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
@@ -319,7 +328,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
 	}
-	if input.PageSize != nil && *input.PageSize > 0 {
+	if input.PageSize != nil {
 		pageSize = *input.PageSize
 	}
 
@@ -338,6 +347,12 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 
 	totalCount := len(us.Items)
 
+	// if pageSize is -1 which means unlimited pagesize,return all
+	if pageSize == common.UnlimitedPageSize {
+		page = 1
+		pageSize = totalCount
+	}
+
 	result := make([]generated.PageNode, 0, pageSize)
 	pageStart := (page - 1) * pageSize
 	for index, u := range us.Items {
@@ -345,7 +360,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 		if index < pageStart {
 			continue
 		}
-		m := worker2model(ctx, c, &u)
+		m := Worker2model(ctx, c, &u)
 		// filter based on `keyword`
 		if keyword != "" {
 			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
@@ -358,7 +373,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 			}
 		}
 
-		result = append(result, m)
+		result = append(result, opts.ConvertFunc(m))
 
 		// break if page size matches
 		if len(result) == pageSize {
@@ -388,5 +403,5 @@ func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string
 	if err != nil {
 		return nil, err
 	}
-	return worker2model(ctx, c, u), nil
+	return Worker2model(ctx, c, u), nil
 }

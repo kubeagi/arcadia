@@ -28,9 +28,6 @@ type PromptSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
 	CommonPromptConfig `json:",inline"`
-
-	Input  Input  `json:"input,omitempty"`
-	Output Output `json:"output,omitempty"`
 }
 
 type CommonPromptConfig struct {
@@ -39,14 +36,6 @@ type CommonPromptConfig struct {
 	// user prompts，support template
 	// +kubebuilder:default="{{.question}}"
 	UserMessage string `json:"userMessage,omitempty"`
-}
-
-type Input struct {
-	node.CommonOrInPutOrOutputRef `json:",inline"`
-}
-
-type Output struct {
-	node.CommonOrInPutOrOutputRef `json:",inline"`
 }
 
 // PromptStatus defines the observed state of Prompt
@@ -82,4 +71,16 @@ type PromptList struct {
 
 func init() {
 	SchemeBuilder.Register(&Prompt{}, &PromptList{})
+}
+
+var _ node.Node = (*Prompt)(nil)
+
+func (c *Prompt) SetRef() {
+	annotations := node.SetRefAnnotations(c.GetAnnotations(), []node.Ref{node.InputRef.Len(1)}, []node.Ref{node.CommonRef.Len(1)})
+	if c.GetAnnotations() == nil {
+		c.SetAnnotations(annotations)
+	}
+	for k, v := range annotations {
+		c.Annotations[k] = v
+	}
 }

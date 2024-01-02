@@ -54,6 +54,12 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              models:
+                description: Models provided by this LLM If not set,we will use default
+                  model list based on LLMType
+                items:
+                  type: string
+                type: array
               provider:
                 description: Provider defines the provider info which provide this
                   embedder service

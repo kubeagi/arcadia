@@ -203,3 +203,31 @@ func DataProcessDetails(ctx context.Context, c dynamic.Interface, obj *generated
 	}
 	return data, nil
 }
+
+func CheckDataProcessTaskName(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.CheckDataProcessTaskNameInput) (*generated.DataProcessResponse, error) {
+	// prepare http request
+	jsonParams, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", url+"/check-task-name", bytes.NewBuffer(jsonParams))
+	if err != nil {
+		return nil, err
+	}
+
+	// call dataprocessing server
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// parse http response
+	data := &generated.DataProcessResponse{}
+	err = json.NewDecoder(resp.Body).Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}

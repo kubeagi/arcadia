@@ -66,6 +66,7 @@ query dataProcessDetails($input: DataProcessDetailsInput){
         config {
           name
           description
+          file_num
           status
           children {
             name
@@ -100,6 +101,16 @@ query dataProcessDetails($input: DataProcessDetailsInput){
           }
         }
       }
+      message
+    }
+  }
+}
+
+query checkDataProcessTaskName($input: CheckDataProcessTaskNameInput){
+  dataProcess {
+    checkDataProcessTaskName(input: $input) {
+      status
+      data 
       message
     }
   }

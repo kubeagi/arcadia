@@ -160,6 +160,8 @@ models:
         resolver: true
       dataProcessDetails:
         resolver: true
+      checkDataProcessTaskName:
+        resolver: true
   DataProcessMutation:
     fields:
       createDataProcessTask:
@@ -251,4 +253,6 @@ models:
       getModelService:
         resolver: true
       listModelServices:
+        resolver: true
+      checkModelService:
         resolver: true
