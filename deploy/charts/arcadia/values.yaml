@@ -7,7 +7,7 @@ global:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 controller:
-  image: kubeagi/arcadia:v0.1.0-20231219-874e2b1
+  image: kubeagi/arcadia:v0.1.0-20231230-c8518fb
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -20,7 +20,7 @@ controller:
 # @section graphql and bff server
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
-  image: kubeagi/arcadia:v0.1.0-20231219-874e2b1
+  image: kubeagi/arcadia:v0.1.0-20231230-c8518fb
   enableplayground: false
   port: 8081
   ingress:
@@ -38,7 +38,7 @@ apiserver:
 portal:
   enabled: true
   kubebbEnabled: true
-  image: kubeagi/portal:v0.1.0-20231216-df45bd2
+  image: kubeagi/portal:v0.1.0-20231229-f7b210e
   port: 80
   ingress:
     path: kubeagi-portal-public
@@ -48,7 +48,7 @@ portal:
 fastchat:
   image:
     repository: kubeagi/arcadia-fastchat
-    # Use either v0.1.0 or vllm-v0.1.0(with vllm enabled)
+    # Use either v0.1.0 or vllm-v0.1.0 (with vllm enabled)
     tag: v0.1.0
   ingress:
     enabled: true
@@ -113,7 +113,7 @@ chromadb:
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
   enabled: true
-  image: kubeagi/data-processing:v0.1.0-20231219-874e2b1
+  image: kubeagi/data-processing:v0.1.0-20231230-c8518fb
   port: 28888
   config:
     llm:

@@ -45,6 +45,8 @@ If you don't have a kubernetes cluster, you can schedule a [kind cluster](https:
 
 Visit our [online documents](http://kubeagi.k8s.com.cn/docs/intro)
 
+Read [user guide](http://kubeagi.k8s.com.cn/docs/UserGuide/intro)
+
 ## CLI
 
 We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./pkg/arctl/README.md) for more details.

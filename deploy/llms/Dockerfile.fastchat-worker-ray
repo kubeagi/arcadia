@@ -1,0 +1,8 @@
+ARG BASE_IMAGE_VERSION="vllm-v0.1.0"
+FROM kubeagi/arcadia-fastchat-worker:${BASE_IMAGE_VERSION}
+
+# Allow to use environment variable to set ray & python version to pass the version check
+# for now, ray: 2.9.0, python: 3.9.x
+# this utils.py file is from ray 2.9.0 ray-ml image
+# search 'KubeAGI' in utils.py for what's changed
+COPY utils.py /usr/local/lib/python3.9/dist-packages/ray/_private/utils.py

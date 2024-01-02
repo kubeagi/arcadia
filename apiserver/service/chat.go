@@ -31,6 +31,11 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
 )
 
+const (
+	// Time interval to check if the chat stream should be closed if no more message arrives
+	WaitTimeoutForChatStreaming = 5
+)
+
 // @BasePath /chat
 
 // @Summary chat with application
@@ -76,14 +81,14 @@ func chatHandler() gin.HandlerFunc {
 			// Use a ticker to check if there is no data arrived and close the stream
 			// TODO: check if any better solution for this?
 			hasData := true
-			ticker := time.NewTicker(5 * time.Second)
+			ticker := time.NewTicker(WaitTimeoutForChatStreaming * time.Second)
 			quit := make(chan struct{})
 			defer close(quit)
 			go func() {
 				for {
 					select {
 					case <-ticker.C:
-						// If there is no generated data within 5 seconds, just close it
+						// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
 						if !hasData {
 							close(respStream)
 						}
