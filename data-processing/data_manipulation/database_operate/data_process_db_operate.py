@@ -34,21 +34,26 @@ def list_by_page(
 
     sql = """
         select
-          id,
-          name,
-          status,
-          namespace,
-          pre_data_set_name,
-          pre_data_set_version,
-          post_data_set_name,
-          post_data_set_version,
-          start_datetime
+          dpt.id,
+          dpt.name,
+          dpt.status,
+          dpt.namespace,
+          dpt.pre_data_set_name,
+          dpt.pre_data_set_version,
+          dpt.post_data_set_name,
+          dpt.post_data_set_version,
+          dpt.start_datetime,
+          dptl.error_msg
         from
-          public.data_process_task
+          public.data_process_task dpt
+        left join
+          public.data_process_task_log dptl
+        on
+          dpt.current_log_id = dptl.id
         where
-          name like %(keyword)s and
-          namespace = %(namespace)s
-        order by start_datetime desc
+          dpt.name like %(keyword)s and
+          dpt.namespace = %(namespace)s
+        order by dpt.start_datetime desc
         limit %(pageSize)s offset %(pageIndex)s
     """.strip()
 
@@ -115,6 +120,7 @@ def add(
         'file_type': req_json['file_type'],
         'status': 'processing',
         'namespace': req_json['namespace'],
+        'bucket_name': req_json['bucket_name'],
         'pre_data_set_name': req_json['pre_data_set_name'],
         'pre_data_set_version': req_json['pre_data_set_version'],
         'file_names': ujson.dumps(req_json['file_names']),
@@ -137,6 +143,7 @@ def add(
           file_type,
           status,
           namespace,
+          bucket_name,
           pre_data_set_name,
           pre_data_set_version,
           file_names,
@@ -157,6 +164,7 @@ def add(
           %(file_type)s,
           %(status)s,
           %(namespace)s,
+          %(bucket_name)s,
           %(pre_data_set_name)s,
           %(pre_data_set_version)s,
           %(file_names)s,
@@ -189,6 +197,7 @@ def update_status_by_id(
     params = {
         'id': req_json['id'],
         'status': req_json['status'],
+        'current_log_id': req_json['current_log_id'],
         'end_datetime': now,
         'update_datetime': now,
         'update_program': program,
@@ -198,6 +207,7 @@ def update_status_by_id(
     sql = """
         update public.data_process_task set
           status = %(status)s,
+          current_log_id = %(current_log_id)s,
           update_datetime = %(update_datetime)s,
           end_datetime = %(end_datetime)s,
           update_program = %(update_program)s,
@@ -221,24 +231,29 @@ def info_by_id(
 
     sql = """
         select
-          id,
-          name,
-          file_type,
-          status,
-          pre_data_set_name,
-          pre_data_set_version,
-          post_data_set_name,
-          post_data_set_version,
-          file_names,
-          data_process_config_info,
-          start_datetime,
-          end_datetime,
-          create_user,
-          update_datetime
+          dpt.id,
+          dpt.name,
+          dpt.file_type,
+          dpt.status,
+          dpt.pre_data_set_name,
+          dpt.pre_data_set_version,
+          dpt.post_data_set_name,
+          dpt.post_data_set_version,
+          dpt.file_names,
+          dpt.data_process_config_info,
+          dpt.start_datetime,
+          dpt.end_datetime,
+          dpt.create_user,
+          dpt.update_datetime,
+          dptl.error_msg
         from
-          public.data_process_task
+          public.data_process_task dpt
+        left join
+          public.data_process_task_log dptl
+        on
+          dpt.current_log_id = dptl.id
         where
-          id = %(id)s
+          dpt.id = %(id)s
     """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)

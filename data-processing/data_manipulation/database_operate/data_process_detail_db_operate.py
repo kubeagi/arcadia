@@ -29,6 +29,8 @@ def insert_transform_info(
     params = {
         'id': req_json['id'],
         'task_id': req_json['task_id'],
+        'document_id': req_json['document_id'],
+        'document_chunk_id': req_json['document_chunk_id'],
         'file_name': req_json['file_name'],
         'transform_type': req_json['transform_type'],
         'pre_content': req_json['pre_content'],
@@ -45,6 +47,8 @@ def insert_transform_info(
         insert into public.data_process_task_detail (
           id,
           task_id,
+          document_id,
+          document_chunk_id,
           file_name,
           transform_type,
           pre_content,
@@ -59,6 +63,8 @@ def insert_transform_info(
         values (
           %(id)s,
           %(task_id)s,
+          %(document_id)s,
+          %(document_chunk_id)s,
           %(file_name)s,
           %(transform_type)s,
           %(pre_content)s,
@@ -88,6 +94,8 @@ def insert_question_answer_info(
     params = {
         'id': req_json['id'],
         'task_id': req_json['task_id'],
+        'document_id': req_json['document_id'],
+        'document_chunk_id': req_json['document_chunk_id'],
         'file_name': req_json['file_name'],
         'question': req_json['question'],
         'answer': req_json['answer'],
@@ -103,6 +111,8 @@ def insert_question_answer_info(
         insert into public.data_process_task_question_answer (
           id,
           task_id,
+          document_id,
+          document_chunk_id,
           file_name,
           question,
           answer,
@@ -116,6 +126,8 @@ def insert_question_answer_info(
         values (
           %(id)s,
           %(task_id)s,
+          %(document_id)s,
+          %(document_chunk_id)s,
           %(file_name)s,
           %(question)s,
           %(answer)s,
@@ -328,6 +340,7 @@ def delete_qa_by_task_id(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
+
 def list_file_name_for_clean(
     req_json,
     pool
@@ -352,11 +365,106 @@ def list_file_name_for_clean(
         task_id = %(task_id)s and
         transform_type in ('remove_invisible_characters', 'space_standardization', 'remove_garbled_text', 'traditional_to_simplified', 'remove_html_tag', 'remove_emojis')
       group by file_name
-    """.strip()
+      """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
+
+def insert_question_answer_clean_info(
+    req_json,
+    pool
+):
+    """Insert a question answer clean info"""
+    now = date_time_utils.now_str()
+    user = req_json['create_user']
+    program = '数据处理任务问题和答案-新增'
+
+    params = {
+        'id': req_json['id'],
+        'task_id': req_json['task_id'],
+        'document_id': req_json['document_id'],
+        'document_chunk_id': req_json['document_chunk_id'],
+        'file_name': req_json['file_name'],
+        'question': req_json['question'],
+        'answer': req_json['answer'],
+        'create_datetime': now,
+        'create_user': user,
+        'create_program': program,
+        'update_datetime': now,
+        'update_user': user,
+        'update_program': program
+    }
+
+    sql = """
+        insert into public.data_process_task_question_answer_clean (
+          id,
+          task_id,
+          document_id,
+          document_chunk_id,
+          file_name,
+          question,
+          answer,
+          create_datetime,
+          create_user,
+          create_program,
+          update_datetime,
+          update_program,
+          update_user
+        )
+        values (
+          %(id)s,
+          %(task_id)s,
+          %(document_id)s,
+          %(document_chunk_id)s,
+          %(file_name)s,
+          %(question)s,
+          %(answer)s,
+          %(create_datetime)s,
+          %(create_program)s,
+          %(create_user)s,
+          %(update_datetime)s,
+          %(update_program)s,
+          %(update_user)s 
+        )
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+
+def query_question_answer_list(
+    document_id,
+    pool
+):
+    """List question answer with document id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "document_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'document_id': document_id
+    }
+
+    sql = """
+      select
+        id,
+        task_id,
+        document_id,
+        document_chunk_id,
+        file_name,
+        question,
+        answer
+      from public.data_process_task_question_answer_clean
+      where 
+        document_id = %(document_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
 
 def list_file_name_for_privacy(
     req_json,
@@ -385,4 +493,29 @@ def list_file_name_for_privacy(
     """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+
+def delete_qa_clean_by_task_id(
+    req_json,
+    pool
+):
+    """delete qa clean info by task id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json['id']
+    }
+
+    sql = """
+        delete from public.data_process_task_question_answer_clean
+        where
+          task_id = %(task_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
     return res

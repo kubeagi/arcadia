@@ -93,31 +93,21 @@ class QAProviderOpenAI(BaseQAProvider):
                     ]))
 
                     status = 1000
-                    message = traceback.format_exc()
-
                     break
                 else:
                     response = llm_chain.run(text=text)
                     result = self.__get_qa_list_from_response(response)
                     if len(result) > 0:
                         break
-                    elif invoke_count > int(config.llm_qa_retry_count):
-                        logger.error(''.join([
-                            f"{log_tag_const.OPEN_AI} Cannot access the open ai service.\n",
-                            f"The tracing error is: \n{traceback.format_exc()}\n"
-                        ]))
-
-                        status = 1000
-                        message = traceback.format_exc()
-
-                        break
                     else:
                         logger.warn('failed to get QA list, wait for 10 seconds and retry')
                         time.sleep(10) # sleep 10 seconds
                         invoke_count += 1
+                        message = '模型调用成功，生成的QA格式不对，请更换prompt'
             except Exception as ex:
                 time.sleep(10)
                 invoke_count += 1
+                message = '调用本地模型失败，请检查模型是否可用'
         
         return {
             'status': status,
@@ -141,22 +131,25 @@ class QAProviderOpenAI(BaseQAProvider):
             the response from open ai service
         """
         result = []
+        try:
+            pattern = re.compile(r'Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)')
 
-        pattern = re.compile(r'Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)')
 
+            # 移除换行符
+            response_text = response.replace('\\n', '')
+            matches = pattern.findall(response_text)
 
-        # 移除换行符
-        response_text = response.replace('\\n', '')
-        matches = pattern.findall(response_text)
-
-        result = []
-        for match in matches:
-            q = match[1]
-            a = match[4]
-            if q and a:
-                a = re.sub(r'[\n]', '', a).strip()
-                result.append([q, a])
-
+            for match in matches:
+                q = match[1]
+                a = match[4]
+                if q and a:
+                    a = re.sub(r'[\n]', '', a).strip()
+                    result.append([q, a])
+        except Exception as ex:
+            logger.error(''.join([
+                f"{log_tag_const.OPEN_AI} 从结果中提取QA失败\n",
+                f"The tracing error is: \n{traceback.format_exc()}\n"
+            ]))
         
         return result
 

@@ -14,6 +14,7 @@
 
 
 import os
+from pathlib import Path
 
 
 def get_file_name(
@@ -40,3 +41,19 @@ def get_temp_file_path():
 def delete_file(file_path):
     """Delete file"""
     os.remove(file_path)
+
+
+def get_file_extension(file_name):
+    """Get file extension"""
+    path = Path(file_name)
+    extension = path.suffix
+    file_extension = extension[1:].lower()
+
+    return file_extension
+
+def get_file_name_without_extension(file_name):
+    """Get file name without extension"""
+    path = Path(file_name)
+    file_name_without_extension = path.stem
+
+    return file_name_without_extension

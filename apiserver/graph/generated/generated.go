@@ -167,6 +167,7 @@ type ComplexityRoot struct {
 		Config             func(childComplexity int) int
 		Creator            func(childComplexity int) int
 		EndTime            func(childComplexity int) int
+		ErrorMsg           func(childComplexity int) int
 		FileNum            func(childComplexity int) int
 		FileType           func(childComplexity int) int
 		ID                 func(childComplexity int) int
@@ -180,6 +181,7 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessItem struct {
+		ErrorMsg           func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		PostDataSetName    func(childComplexity int) int
@@ -1224,6 +1226,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DataProcessDetailsItem.EndTime(childComplexity), true
 
+	case "DataProcessDetailsItem.error_msg":
+		if e.complexity.DataProcessDetailsItem.ErrorMsg == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.ErrorMsg(childComplexity), true
+
 	case "DataProcessDetailsItem.file_num":
 		if e.complexity.DataProcessDetailsItem.FileNum == nil {
 			break
@@ -1293,6 +1302,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessDetailsItem.Status(childComplexity), true
+
+	case "DataProcessItem.error_msg":
+		if e.complexity.DataProcessItem.ErrorMsg == nil {
+			break
+		}
+
+		return e.complexity.DataProcessItem.ErrorMsg(childComplexity), true
 
 	case "DataProcessItem.id":
 		if e.complexity.DataProcessItem.ID == nil {
@@ -4112,6 +4128,8 @@ type DataProcessItem {
   post_data_set_version: String
   # 开始时间
   start_datetime: String!
+  # 错误日志
+  error_msg: String
 }
 
 # 数据处理支持类型
@@ -4165,6 +4183,7 @@ type DataProcessDetailsItem {
   start_time: String!
   end_time: String!
   creator: String!
+  error_msg: String
   config: [DataProcessConfig!]
 }
 
@@ -9794,6 +9813,8 @@ func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Con
 				return ec.fieldContext_DataProcessDetailsItem_end_time(ctx, field)
 			case "creator":
 				return ec.fieldContext_DataProcessDetailsItem_creator(ctx, field)
+			case "error_msg":
+				return ec.fieldContext_DataProcessDetailsItem_error_msg(ctx, field)
 			case "config":
 				return ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
 			}
@@ -10375,6 +10396,47 @@ func (ec *executionContext) fieldContext_DataProcessDetailsItem_creator(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _DataProcessDetailsItem_error_msg(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_error_msg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrorMsg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_error_msg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataProcessDetailsItem_config(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
 	if err != nil {
@@ -10765,6 +10827,47 @@ func (ec *executionContext) _DataProcessItem_start_datetime(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_DataProcessItem_start_datetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessItem_error_msg(ctx context.Context, field graphql.CollectedField, obj *DataProcessItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessItem_error_msg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrorMsg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessItem_error_msg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataProcessItem",
 		Field:      field,
@@ -20362,6 +20465,8 @@ func (ec *executionContext) fieldContext_PaginatedDataProcessItem_data(ctx conte
 				return ec.fieldContext_DataProcessItem_post_data_set_version(ctx, field)
 			case "start_datetime":
 				return ec.fieldContext_DataProcessItem_start_datetime(ctx, field)
+			case "error_msg":
+				return ec.fieldContext_DataProcessItem_error_msg(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessItem", field.Name)
 		},
@@ -30536,6 +30641,8 @@ func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "error_msg":
+			out.Values[i] = ec._DataProcessDetailsItem_error_msg(ctx, field, obj)
 		case "config":
 			out.Values[i] = ec._DataProcessDetailsItem_config(ctx, field, obj)
 		default:
@@ -30609,6 +30716,8 @@ func (ec *executionContext) _DataProcessItem(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "error_msg":
+			out.Values[i] = ec._DataProcessItem_error_msg(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

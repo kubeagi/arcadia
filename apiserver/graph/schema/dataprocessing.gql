@@ -11,6 +11,7 @@ query allDataProcessListByPage($input: AllDataProcessListByPageInput!){
         post_data_set_name
         post_data_set_version
         start_datetime
+        error_msg
       }
       message
     }
@@ -63,6 +64,7 @@ query dataProcessDetails($input: DataProcessDetailsInput){
         start_time
         end_time
         creator
+        error_msg
         config {
           name
           description
