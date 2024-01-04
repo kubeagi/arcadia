@@ -20,9 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // DatasourceSpec defines the desired state of Datasource
 type DatasourceSpec struct {
 	CommonSpec `json:",inline"`
@@ -35,6 +32,9 @@ type DatasourceSpec struct {
 
 	// RDMA configure RDMA pulls the model file directly from the remote service to the host node.
 	RDMA *RDMA `json:"rdma,omitempty"`
+
+	// PostgreSQL defines info for PostgreSQL
+	PostgreSQL *PostgreSQL `json:"postgresql,omitempty"`
 }
 
 type RDMA struct {
@@ -53,6 +53,37 @@ type OSS struct {
 	// Object must end with a slash "/" if it is a directory
 	Object string `json:"object,omitempty"`
 }
+
+// PostgreSQL defines info for PostgreSQL
+//
+// ref: https://github.com/jackc/pgx/blame/v5.5.1/pgconn/config.go#L409
+// they are common standard PostgreSQL environment variables
+// For convenience, we use the same name.
+//
+// The PGUSER/PGPASSWORD/PGPASSFILE/PGSSLPASSWORD parameters have been intentionally excluded
+// because they contain sensitive information and are stored in the secret pointed to by `endpoint.authSecret`.
+type PostgreSQL struct {
+	Host               string `json:"PGHOST,omitempty"`
+	Port               string `json:"PGPORT,omitempty"`
+	Database           string `json:"PGDATABASE,omitempty"`
+	AppName            string `json:"PGAPPNAME,omitempty"`
+	ConnectTimeout     string `json:"PGCONNECT_TIMEOUT,omitempty"`
+	SSLMode            string `json:"PGSSLMODE,omitempty"`
+	SSLKey             string `json:"PGSSLKEY,omitempty"`
+	SSLCert            string `json:"PGSSLCERT,omitempty"`
+	SSLSni             string `json:"PGSSLSNI,omitempty"`
+	SSLRootCert        string `json:"PGSSLROOTCERT,omitempty"`
+	TargetSessionAttrs string `json:"PGTARGETSESSIONATTRS,omitempty"`
+	Service            string `json:"PGSERVICE,omitempty"`
+	ServiceFile        string `json:"PGSERVICEFILE,omitempty"`
+}
+
+const (
+	PGUSER        = "PGUSER"
+	PGPASSWORD    = "PGPASSWORD"
+	PGPASSFILE    = "PGPASSFILE"
+	PGSSLPASSWORD = "PGSSLPASSWORD"
+)
 
 // DatasourceStatus defines the observed state of Datasource
 type DatasourceStatus struct {

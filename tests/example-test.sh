@@ -224,11 +224,20 @@ helm install -narcadia arcadia deploy/charts/arcadia -f tests/deploy-values.yaml
 info "4. check system datasource arcadia-minio(system datasource)"
 waitCRDStatusReady "Datasource" "arcadia" "arcadia-minio"
 
-info "5. create and verify a oss datasource"
+info "5. create and verify datasource"
+info "5.1 oss datasource"
 kubectl apply -f config/samples/arcadia_v1alpha1_datasource.yaml
 waitCRDStatusReady "Datasource" "arcadia" "datasource-sample"
 datasourceType=$(kubectl get datasource -n arcadia datasource-sample -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
 if [[ $datasourceType != "oss" ]]; then
+	error "Datasource should be oss but got $datasourceType"
+	exit 1
+fi
+info "5.2 PostgreSQL datasource"
+kubectl apply -f config/samples/arcadia_v1alpha1_datasource_postgresql.yaml
+waitCRDStatusReady "Datasource" "arcadia" "datasource-postgresql-sample"
+datasourceType=$(kubectl get datasource -n arcadia datasource-postgresql-sample -o=jsonpath='{.metadata.labels.arcadia\.kubeagi\.k8s\.com\.cn/datasource-type}')
+if [[ $datasourceType != "postgresql" ]]; then
 	error "Datasource should be oss but got $datasourceType"
 	exit 1
 fi

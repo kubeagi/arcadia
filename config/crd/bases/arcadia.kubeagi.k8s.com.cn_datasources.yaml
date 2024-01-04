@@ -99,6 +99,36 @@ spec:
                     description: Object must end with a slash "/" if it is a directory
                     type: string
                 type: object
+              postgresql:
+                description: PostgreSQL defines info for PostgreSQL
+                properties:
+                  PGAPPNAME:
+                    type: string
+                  PGCONNECT_TIMEOUT:
+                    type: string
+                  PGDATABASE:
+                    type: string
+                  PGHOST:
+                    type: string
+                  PGPORT:
+                    type: string
+                  PGSERVICE:
+                    type: string
+                  PGSERVICEFILE:
+                    type: string
+                  PGSSLCERT:
+                    type: string
+                  PGSSLKEY:
+                    type: string
+                  PGSSLMODE:
+                    type: string
+                  PGSSLROOTCERT:
+                    type: string
+                  PGSSLSNI:
+                    type: string
+                  PGTARGETSESSIONATTRS:
+                    type: string
+                type: object
               rdma:
                 description: RDMA configure RDMA pulls the model file directly from
                   the remote service to the host node.
