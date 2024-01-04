@@ -105,7 +105,8 @@ const (
 	md5Query        = "md5"
 	cachePrefix     = "totallines"
 
-	maxCSVLines = 100
+	maxCSVLines     = 100
+	namespaceHeader = "namespace"
 )
 
 /*
@@ -132,7 +133,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	}
 
 	fileName := ctx.Query("fileName")
-	bucketName := ctx.Query(bucketQuery)
+	bucketName := ctx.GetHeader(namespaceHeader)
 	bucketPath := ctx.Query(bucketPathQuery)
 	etag := ctx.Query("etag")
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
@@ -249,6 +250,7 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		return
 	}
 
+	body.Bucket = ctx.GetHeader(namespaceHeader)
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
@@ -324,6 +326,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		return
 	}
 
+	body.Bucket = ctx.GetHeader(namespaceHeader)
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
@@ -390,6 +393,7 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		})
 		return
 	}
+	body.Bucket = ctx.GetHeader(namespaceHeader)
 	err = source.Complete(ctx.Request.Context(),
 		datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath),
@@ -424,6 +428,7 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 		return
 	}
 
+	body.Bucket = ctx.GetHeader(namespaceHeader)
 	bucketPath := strings.TrimSuffix(body.BucketPath, "/")
 	for _, f := range body.Files {
 		go func(fn string) {
@@ -453,6 +458,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 		})
 		return
 	}
+	body.Bucket = ctx.GetHeader(namespaceHeader)
 	if err := source.Abort(ctx.Request.Context(), datasource.WithBucket(body.Bucket), datasource.WithBucketPath(body.BucketPath),
 		datasource.WithFileName(body.FileName), datasource.WithUploadID(body.UploadID)); err != nil {
 		klog.Errorf("failed to stop file upload, error %s", err)
@@ -467,7 +473,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 
 func (m *minioAPI) StatFile(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
-	bucket := ctx.Query(bucketQuery)
+	bucket := ctx.GetHeader(namespaceHeader)
 	bucketPath := ctx.Query(bucketPathQuery)
 
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
@@ -518,7 +524,7 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 		end = 0
 	}
 
-	bucket := ctx.Query(bucketQuery)
+	bucket := ctx.GetHeader(namespaceHeader)
 	bucketPath := ctx.Query(bucketPathQuery)
 	fileName := ctx.Query("fileName")
 
@@ -569,7 +575,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		})
 		return
 	}
-	bucket = ctx.Query(bucketQuery)
+	bucket = ctx.GetHeader(namespaceHeader)
 	bucketPath = ctx.Query(bucketPathQuery)
 	fileName = ctx.Query("fileName")
 
