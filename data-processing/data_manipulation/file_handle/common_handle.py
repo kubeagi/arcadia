@@ -22,7 +22,9 @@ import pandas as pd
 import ulid
 from common import log_tag_const
 from common.config import config
-from database_operate import data_process_detail_db_operate, data_process_document_db_operate
+from database_operate import (data_process_detail_db_operate,
+                              data_process_document_db_operate,
+                              data_process_document_chunk_db_operate)
 from langchain.text_splitter import SpacyTextSplitter
 from llm_api_service.qa_provider_open_ai import QAProviderOpenAI
 from llm_api_service.qa_provider_zhi_pu_ai_online import QAProviderZhiPuAIOnline
@@ -34,120 +36,125 @@ logger = logging.getLogger(__name__)
 
 
 def text_manipulate(
+    all_document_for_process,
     file_name,
-    document_id,
-    content,
     support_type,
     conn_pool,
-    task_id,
-    create_user,
-    chunk_size,
-    chunk_overlap
+    create_user
 ):
     """Manipulate the text content.
     
+    all_document_for_process: document info
     file_name: file name;
     support_type: support type;
     conn_pool: database connection pool;
-    task_id: data process task id;
-    chunk_size: chunk size;
-    chunk_overlap: chunk overlap;
+    create_user: creator;
     """
     
     logger.debug(f"{log_tag_const.COMMON_HANDLE} Start to manipulate the text")
 
     try:
         support_type_map = _convert_support_type_to_map(support_type)
-        
-        # Clean the data such as removing invisible characters.
-        clean_result = _data_clean(
-            support_type_map=support_type_map,
-            file_name=file_name,
-            data=content,
-            conn_pool=conn_pool,
-            task_id=task_id,
-            create_user=create_user
+        document_chunk_size = len(all_document_for_process)
+
+        # 更新文件状态为开始
+        task_id = all_document_for_process[0].get('task_id')
+        document_id = all_document_for_process[0].get('document_id')
+        _update_document_status_and_start_time(
+            id=all_document_for_process[0].get('document_id'),
+            chunk_size=document_chunk_size,
+            conn_pool=conn_pool
         )
 
-        if clean_result['status'] == 200:
-            content = clean_result['data']
-
-        # Remove the privacy info such as removing email.
-        clean_result = _remove_privacy_info(
-            support_type_map=support_type_map,
-            file_name=file_name,
-            data=content,
-            conn_pool=conn_pool,
-            task_id=task_id,
-            create_user=create_user
-        )
-
-        if clean_result['status'] == 200:
-            content = clean_result['data']
-
-        
-        # 数据量
-        object_count = 0
-        object_name = ''
-        if support_type_map.get('qa_split'):
-            logger.debug(f"{log_tag_const.QA_SPLIT} Start to split QA.")
-            qa_list_dict = support_type_map.get('qa_split')
-            llm_config = qa_list_dict.get('llm_config')
-
-            qa_response = _generate_qa_list(
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                data=content,
-                document_id=document_id,
+        text_process_success_num = 0
+        for document in all_document_for_process:
+            document_chunk_id = document.get('id')
+            # Clean the data such as removing invisible characters.
+            clean_result = _data_clean(
+                support_type_map=support_type_map,
+                file_name=file_name,
+                data=document.get('content'),
                 conn_pool=conn_pool,
-                llm_config=llm_config
+                task_id=task_id,
+                document_id=document_id,
+                document_chunk_id=document_chunk_id,
+                create_user=create_user
             )
 
-            if qa_response.get('status') != 200:
-                return qa_response
+            if clean_result['status'] == 200:
+                content = clean_result['data']
 
-            logger.debug(f"{log_tag_const.QA_SPLIT} The QA data is: \n{qa_response}\n")
+            # Remove the privacy info such as removing email.
+            clean_result = _remove_privacy_info(
+                support_type_map=support_type_map,
+                file_name=file_name,
+                data=document.get('content'),
+                conn_pool=conn_pool,
+                task_id=task_id,
+                document_id=document_id,
+                document_chunk_id=document_chunk_id,
+                create_user=create_user
+            )
 
-            # start to insert qa data
-            qa_data = qa_response.get('data')
-            for i in range(len(qa_data)):
-                if i == 0:
-                    continue
-                qa_insert_item = {
-                    'id': ulid.ulid(),
-                    'task_id': task_id,
-                    'file_name': file_name,
-                    'question': qa_data[i][0],
-                    'answer': qa_data[i][1],
-                    'create_user': create_user
-                }
-               
-                data_process_detail_db_operate.insert_question_answer_info(
-                    qa_insert_item,
-                    pool=conn_pool
+            if clean_result['status'] == 200:
+                content = clean_result['data']
+
+            if support_type_map.get('qa_split'):
+                logger.debug(f"{log_tag_const.QA_SPLIT} Start to split QA.")
+                text_process_success_num += 1
+
+                qa_response = _qa_split(
+                    support_type_map=support_type_map,
+                    task_id=task_id,
+                    document_chunk_size=document_chunk_size,
+                    document_chunk_id=document_chunk_id,
+                    file_name=file_name,
+                    content=content,
+                    document_id=document_id,
+                    text_process_success_num=text_process_success_num,
+                    conn_pool=conn_pool,
+                    create_user=create_user
                 )
 
-            # Save the csv file.        
-            file_name_without_extension = file_name.rsplit('.', 1)[0] + '_final'
-            csv_utils.save_csv(
-                file_name=file_name_without_extension + '.csv',
-                phase_value='final',
-                data=qa_data
-            )
-            
-            object_name = file_name_without_extension + '.csv'
-            # 减 1 是为了去除表头
-            object_count = len(qa_data) - 1
-            
-            logger.debug(f"{log_tag_const.QA_SPLIT} Finish splitting QA.")
+                if qa_response.get('status') != 200:
+                    return qa_response
+        
+        # 文件处理成功，更新data_process_task_document中的文件状态
+        _updata_document_status_and_end_time(
+            id=document_id,
+            status='success',
+            conn_pool=conn_pool
+        )
+
+        # 通过documentId查询生成的所有QA数据
+        qa_list = data_process_detail_db_operate.query_question_answer_list(
+            document_id=document_id,
+            pool=conn_pool
+        )
+
+        qa_data_dict = [['q', 'a']]
+        for item in qa_list.get('data'):
+            qa_data_dict.append([
+                item.get('question'),
+                item.get('answer')
+            ])
+
+        # Save the csv file.        
+        file_name_without_extension = file_utils.get_file_name_without_extension(file_name)
+        file_name_csv = file_name_without_extension + '.csv'
+        csv_utils.save_csv(
+            file_name=file_name_csv,
+            phase_value='final',
+            data=qa_data_dict
+        )
         
         logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
         return {
             'status': 200,
             'message': '',
             'data': {
-                'object_name': object_name,
-                'object_count': object_count
+                'object_name': file_name_csv,
+                'object_count': len(qa_list.get('data'))
             }
         }
     except Exception as ex:
@@ -166,6 +173,8 @@ def _data_clean(
     support_type_map,
     data,
     task_id,
+    document_id,
+    document_chunk_id,
     file_name,
     create_user,
     conn_pool
@@ -206,6 +215,8 @@ def _data_clean(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_invisible_characters',
                         'pre_content': item['pre_content'],
@@ -231,6 +242,8 @@ def _data_clean(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'space_standardization',
                         'pre_content': item['pre_content'],
@@ -254,6 +267,8 @@ def _data_clean(
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id,
                     'file_name': file_name,
                     'transform_type': 'remove_garbled_text',
                     'pre_content': data,
@@ -277,6 +292,8 @@ def _data_clean(
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id,
                     'file_name': file_name,
                     'transform_type': 'traditional_to_simplified',
                     'pre_content': data,
@@ -300,6 +317,8 @@ def _data_clean(
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id,
                     'file_name': file_name,
                     'transform_type': 'remove_html_tag',
                     'pre_content': data,
@@ -325,6 +344,8 @@ def _data_clean(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_emojis',
                         'pre_content': item['pre_content'],
@@ -348,6 +369,8 @@ def _remove_privacy_info(
     support_type_map,
     data,
     task_id,
+    document_id,
+    document_chunk_id,
     file_name,
     create_user,
     conn_pool
@@ -388,6 +411,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_email',
                         'pre_content': item['pre_content'],
@@ -413,6 +438,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_ip_address',
                         'pre_content': item['pre_content'],
@@ -438,6 +465,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
@@ -461,6 +490,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
@@ -484,6 +515,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
@@ -507,6 +540,8 @@ def _remove_privacy_info(
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id,
                         'file_name': file_name,
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
@@ -526,23 +561,102 @@ def _remove_privacy_info(
     }
 
 
+def _qa_split(
+    support_type_map,
+    task_id,
+    document_chunk_size,
+    document_chunk_id,
+    file_name,
+    content,
+    document_id,
+    text_process_success_num,
+    conn_pool,
+    create_user
+):
+    qa_list_dict = support_type_map.get('qa_split')
+    llm_config = qa_list_dict.get('llm_config')
+
+    # 更新chunk状态为开始
+    _update_document_chunk_status_and_start_time(
+        id=document_chunk_id,
+        update_user=create_user,
+        conn_pool=conn_pool
+    )
+
+    qa_response = _generate_qa_list(
+        content=content,
+        llm_config=llm_config
+    )
+
+    if qa_response.get('status') != 200:
+        # 处理失败
+        # 更新data_process_task_document_chunk中的状态
+        _updata_document_chunk_status_and_end_time(
+            id=document_chunk_id,
+            update_user=create_user,
+            status='fail',
+            conn_pool=conn_pool
+        )
+
+        # 更新data_process_task_document中的文件状态
+        _updata_document_status_and_end_time(
+            id=document_id,
+            status='fail',
+            conn_pool=conn_pool
+        )
+    else:
+        # 将QA数据存入表中
+        qa_data = qa_response.get('data')
+        for i in range(len(qa_data)):
+            qa_insert_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'question': qa_data[i][0],
+                'answer': qa_data[i][1],
+                'create_user': create_user
+            }
+            
+            data_process_detail_db_operate.insert_question_answer_info(
+                qa_insert_item,
+                pool=conn_pool
+            )
+
+            data_process_detail_db_operate.insert_question_answer_clean_info(
+                qa_insert_item,
+                pool=conn_pool
+            )
+
+        # 更新data_process_task_document_chunk中的状态
+        _updata_document_chunk_status_and_end_time(
+            id=document_chunk_id,
+            update_user=create_user,
+            status='success',
+            conn_pool=conn_pool
+        )
+
+        # 更新文件处理进度
+        progress = int(text_process_success_num / document_chunk_size * 100)
+        _updata_document_progress(
+            id=document_id,
+            progress=progress,
+            update_user=create_user,
+            conn_pool=conn_pool
+        )
+
+    return qa_response
+
 
 def _generate_qa_list(
-    chunk_size,
-    chunk_overlap,
-    data,
-    document_id,
-    conn_pool,
+    content,
     llm_config
 ):
     """Generate the Question and Answer list.
-    
-    chunk_size: chunk size;
-    chunk_overlap: chunk overlap;
-    data: the text used to generate QA;
-    name: llms cr name;
-    namespace: llms cr namespace;
-    model: model id or model version;
+
+    content: the text used to generate QA;
+    llm_config: llms config info;
     """
     name=llm_config.get('name')
     namespace=llm_config.get('namespace')
@@ -552,33 +666,6 @@ def _generate_qa_list(
     top_p=llm_config.get('top_p')
     max_tokens=llm_config.get('max_tokens')
 
-    # Split the text.
-    if chunk_size is None:
-        chunk_size = config.knowledge_chunk_size
-
-    if chunk_overlap is None:
-        chunk_overlap = config.knowledge_chunk_overlap
-
-    text_splitter = SpacyTextSplitter(
-        separator="\n\n",
-        pipeline="zh_core_web_sm",
-        chunk_size=int(chunk_size),
-        chunk_overlap=int(chunk_overlap)
-    )
-    texts = text_splitter.split_text(data)
-    
-    logger.debug(''.join([
-        f"original text is: \n{data}\n",
-        f"split text is: \n{texts}\n"
-    ]))
-
-    # 更新文件状态为开始
-    _update_document_status_and_start_time(
-        id=document_id,
-        texts=texts,
-        conn_pool=conn_pool
-    )
-
     # llms cr 中模型相关信息
     llm_spec_info = model_cr.get_spec_for_llms_k8s_cr(
         name=name,
@@ -586,7 +673,7 @@ def _generate_qa_list(
     )
 
     # Generate the QA list.
-    qa_list = [['q', 'a']]
+    qa_list = []
     if llm_spec_info.get('data').get('provider').get('worker'):
         # get base url for configmap
         base_url = model_cr.get_worker_base_url_k8s_configmap(
@@ -609,43 +696,17 @@ def _generate_qa_list(
             temperature=temperature,
             max_tokens=max_tokens
         )
-        # text process success number
-        text_process_success_num=0
 
-        for item in texts:
-            text = item.replace("\n", "")
-            data = qa_provider.generate_qa_list(
-                text=text,
-                prompt_template=prompt_template
-            )
-
-            if data.get('status') != 200:
-                # 文件处理失败，更新data_process_task_document中的文件状态
-                _updata_document_status_and_end_time(
-                    id=document_id,
-                    status='fail',
-                    conn_pool=conn_pool
-                )
-
-                return data
-
-            qa_list.extend(data.get('data'))
-
-            # 更新文件处理进度
-            text_process_success_num += 1
-            progress = int(text_process_success_num / len(texts) * 100)
-            _updata_document_progress(
-                id=document_id,
-                progress=progress,
-                conn_pool=conn_pool
-            )
-        
-        # 文件处理成功，更新data_process_task_document中的文件状态
-        _updata_document_status_and_end_time(
-            id=document_id,
-            status='success',
-            conn_pool=conn_pool
+        data = qa_provider.generate_qa_list(
+            text=content,
+            prompt_template=prompt_template
         )
+
+        if data.get('status') != 200:
+            # 文件处理失败
+            return data
+
+        qa_list.extend(data.get('data'))
     else:
         endpoint = llm_spec_info.get('data').get('provider').get('endpoint')
         base_url = endpoint.get('url')
@@ -657,7 +718,6 @@ def _generate_qa_list(
             namespace=namespace
         )
         api_key = secret_info.get('apiKey')
-
         llm_type = llm_spec_info.get('data').get('type')
 
         logger.debug(''.join([
@@ -671,46 +731,19 @@ def _generate_qa_list(
         if llm_type == 'zhipuai':
             zhipuai_api_key = base64.b64decode(api_key).decode('utf-8')
             qa_provider = QAProviderZhiPuAIOnline(api_key=zhipuai_api_key)
-            # text process success number
-            text_process_success_num=0
 
             # generate QA list
-            for item in texts:
-                text = item.replace("\n", "")
-                data = qa_provider.generate_qa_list(
-                    text=text,
-                    model=model,
-                    prompt_template=prompt_template,
-                    top_p=top_p,
-                    temperature=temperature
-                )
-                if data.get('status') != 200:
-                    # 文件处理失败，更新data_process_task_document中的文件状态
-                    _updata_document_status_and_end_time(
-                        id=document_id,
-                        status='fail',
-                        conn_pool=conn_pool
-                    )
-
-                    return data
-
-                qa_list.extend(data.get('data'))
-
-                # 更新文件处理进度
-                text_process_success_num += 1
-                progress = int(text_process_success_num / len(texts) * 100)
-                _updata_document_progress(
-                    id=document_id,
-                    progress=progress,
-                    conn_pool=conn_pool
-                )
-
-            # 文件处理成功，更新data_process_task_document中的文件状态
-            _updata_document_status_and_end_time(
-                id=document_id,
-                status='success',
-                conn_pool=conn_pool
+            data = qa_provider.generate_qa_list(
+                text=content,
+                model=model,
+                prompt_template=prompt_template,
+                top_p=top_p,
+                temperature=temperature
             )
+            if data.get('status') != 200:
+                return data
+
+            qa_list.extend(data.get('data'))
         else:
             return {
                 'status': 1000,
@@ -753,7 +786,7 @@ def _convert_support_type_to_map(supprt_type):
 
 def _update_document_status_and_start_time(
     id,
-    texts,
+    chunk_size,
     conn_pool
 ):
     try:
@@ -762,7 +795,7 @@ def _update_document_status_and_start_time(
             'id': id,
             'status': 'doing',
             'start_time': now,
-            'chunk_size': len(texts)
+            'chunk_size': chunk_size
         }
         data_process_document_db_operate.update_document_status_and_start_time(
             document_update_item,
@@ -821,12 +854,14 @@ def _updata_document_status_and_end_time(
 def _updata_document_progress(
     id,
     progress,
+    update_user,
     conn_pool
 ):
     try:
         now = date_time_utils.now_str()
         document_update_item = {
             'id': id,
+            'update_user': update_user,
             'progress': progress
         }
         data_process_document_db_operate.update_document_progress(
@@ -850,3 +885,71 @@ def _updata_document_progress(
             'data': traceback.format_exc()
         }
 
+def _update_document_chunk_status_and_start_time(
+    id,
+    update_user,
+    conn_pool
+):
+    try:
+        now = date_time_utils.now_str()
+        document_chunk_update_item = {
+            'id': id,
+            'status': 'doing',
+            'update_user': update_user,
+            'start_time': now
+        }
+        data_process_document_chunk_db_operate.update_document_chunk_status_and_start_time(
+            document_chunk_update_item,
+            pool=conn_pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.COMMON_HANDLE} update chunk document status ",
+            f"\n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 1000,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+def _updata_document_chunk_status_and_end_time(
+    id,
+    status,
+    update_user,
+    conn_pool
+):
+    try:
+        now = date_time_utils.now_str()
+        document_chunk_update_item = {
+            'id': id,
+            'status': status,
+            'update_user': update_user,
+            'end_time': now
+        }
+        data_process_document_chunk_db_operate.update_document_chunk_status_and_end_time(
+            document_chunk_update_item,
+            pool=conn_pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.COMMON_HANDLE} update document status ",
+            f"\n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 1000,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }

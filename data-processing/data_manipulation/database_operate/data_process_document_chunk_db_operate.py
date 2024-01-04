@@ -23,17 +23,16 @@ def add(
     """Add a new record"""
     now = date_time_utils.now_str()
     user = req_json['creator']
-    program = '数据处理文件进度-新增'
+    program = '数据处理文件拆分-新增'
 
     params = {
         'id': req_json.get('id'),
-        'file_name': req_json.get('file_name'),
+        'document_id': req_json.get('document_id'),
         'status': req_json.get('status'),
-        'progress': req_json.get('progress'),
         'task_id': req_json.get('task_id'),
-        'from_source_type': req_json.get('from_source_type'),
-        'from_source_path': req_json.get('from_source_path'),
-        'document_type': req_json.get('document_type'),
+        'content': req_json.get('content'),
+        'meta_info': req_json.get('meta_info'),
+        'page_number': req_json.get('page_number'),
         'create_datetime': now,
         'create_user': user,
         'create_program': program,
@@ -43,15 +42,14 @@ def add(
     }
 
     sql = """
-        insert into public.data_process_task_document (
+        insert into public.data_process_task_document_chunk (
           id,
-          file_name,
+          document_id,
           status,
-          progress,
           task_id,
-          from_source_type,
-          from_source_path,
-          document_type,
+          content,
+          meta_info,
+          page_number,
           create_datetime,
           create_user,
           create_program,
@@ -61,13 +59,12 @@ def add(
         )
         values (
           %(id)s,
-          %(file_name)s,
+          %(document_id)s,
           %(status)s,
-          %(progress)s,
           %(task_id)s,
-          %(from_source_type)s,
-          %(from_source_path)s,
-          %(document_type)s,
+          %(content)s,
+          %(meta_info)s,
+          %(page_number)s,
           %(create_datetime)s,
           %(create_user)s,
           %(create_program)s,
@@ -80,86 +77,29 @@ def add(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def update_document_status_and_start_time(
+def update_document_chunk_status_and_start_time(
     req_json,
     pool
 ):
     """Update the status and start time with id"""
     now = req_json['start_time']
-    program = '文件开始处理-修改'
+    program = '开始处理chunk后的内容'
 
     params = {
         'id': req_json['id'],
         'status': req_json['status'],
         'start_time': now,
-        'chunk_size': req_json['chunk_size'],
-        'update_datetime': now,
-        'update_program': program
-    }
-
-    sql = """
-        update public.data_process_task_document set
-          status = %(status)s,
-          start_time = %(start_time)s,
-          chunk_size = %(chunk_size)s,
-          update_datetime = %(update_datetime)s,
-          update_program = %(update_program)s
-        where
-          id = %(id)s
-    """.strip()
-
-    res = postgresql_pool_client.execute_update(pool, sql, params)
-    return res
-
-def update_document_status_and_end_time(
-    req_json,
-    pool
-):
-    """Update the status and end time with id"""
-    now = req_json['end_time']
-    program = '文件处理完成-修改'
-
-    params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'end_time': now,
-        'update_datetime': now,
-        'update_program': program
-    }
-
-    sql = """
-        update public.data_process_task_document set
-          status = %(status)s,
-          end_time = %(end_time)s,
-          update_datetime = %(update_datetime)s,
-          update_program = %(update_program)s
-        where
-          id = %(id)s
-    """.strip()
-
-    res = postgresql_pool_client.execute_update(pool, sql, params)
-    return res
-
-def update_document_progress(
-    req_json,
-    pool
-):
-    """Update the progress with id"""
-    now = date_time_utils.now_str()
-    program = '文件处理进度-修改'
-
-    params = {
-        'id': req_json['id'],
-        'progress': req_json['progress'],
         'update_datetime': now,
         'update_user': req_json['update_user'],
         'update_program': program
     }
 
     sql = """
-        update public.data_process_task_document set
-          progress = %(progress)s,
+        update public.data_process_task_document_chunk set
+          status = %(status)s,
+          start_time = %(start_time)s,
           update_datetime = %(update_datetime)s,
+          update_user = %(update_user)s,
           update_program = %(update_program)s
         where
           id = %(id)s
@@ -168,30 +108,35 @@ def update_document_progress(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def list_file_by_task_id(
+def update_document_chunk_status_and_end_time(
     req_json,
     pool
 ):
-    """info with id"""
+    """Update the status and end time with id"""
+    now = req_json['end_time']
+    program = 'chunk后的内容处理完成'
+
     params = {
-        'task_id': req_json['task_id']
+        'id': req_json['id'],
+        'status': req_json['status'],
+        'end_time': now,
+        'update_datetime': now,
+        'update_user': req_json['update_user'],
+        'update_program': program
     }
 
     sql = """
-        select
-          id,
-          file_name,
-          status,
-          start_time,
-          end_time,
-          progress
-        from
-          public.data_process_task_document
+        update public.data_process_task_document_chunk set
+          status = %(status)s,
+          end_time = %(end_time)s,
+          update_datetime = %(update_datetime)s,
+          update_user = %(update_user)s,
+          update_program = %(update_program)s
         where
-          task_id = %(task_id)s
+          id = %(id)s
     """.strip()
 
-    res = postgresql_pool_client.execute_query(pool, sql, params)
+    res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
 def delete_by_task_id(
@@ -211,10 +156,11 @@ def delete_by_task_id(
     }
 
     sql = """
-        delete from public.data_process_task_document
+        delete from public.data_process_task_document_chunk
         where
           task_id = %(task_id)s
     """.strip()
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
+

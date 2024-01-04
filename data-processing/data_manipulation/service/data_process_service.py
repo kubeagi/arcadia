@@ -23,7 +23,8 @@ from data_store_process import minio_store_process
 from database_operate import (data_process_db_operate,
                               data_process_detail_db_operate,
                               data_process_document_db_operate,
-                              data_process_detail_preview_db_operate)
+                              data_process_detail_preview_db_operate,
+                              data_process_document_chunk_db_operate)
 from kube import dataset_cr
 from parallel import thread_parallel
 from utils import date_time_utils
@@ -131,8 +132,11 @@ def delete_by_id(
     # 删除生成的QA信息
     data_process_detail_db_operate.delete_qa_by_task_id(req_json, pool=pool)
     data_process_detail_preview_db_operate.delete_qa_by_task_id(req_json, pool=pool)
+    data_process_detail_db_operate.delete_qa_clean_by_task_id(req_json, pool=pool)
     # 删除对应的进度信息
     data_process_document_db_operate.delete_by_task_id(req_json, pool=pool)
+    # 删除chunk的信息
+    data_process_document_chunk_db_operate.delete_by_task_id(req_json, pool=pool)
 
     return data_process_db_operate.delete_by_id(req_json, pool=pool)
 
@@ -279,6 +283,7 @@ def _get_and_set_basic_detail_info(
         from_result['start_time'] = detail_info_data['start_datetime']
         from_result['end_time'] = detail_info_data['end_datetime']
         from_result['creator'] = detail_info_data['create_user']
+        from_result['error_msg'] = detail_info_data['error_msg']
         from_result['data_process_config_info'] = detail_info_data['data_process_config_info']
     else:
         from_result['id'] = ''

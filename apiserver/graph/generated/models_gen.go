@@ -416,6 +416,7 @@ type DataProcessDetailsItem struct {
 	StartTime          string               `json:"start_time"`
 	EndTime            string               `json:"end_time"`
 	Creator            string               `json:"creator"`
+	ErrorMsg           *string              `json:"error_msg,omitempty"`
 	Config             []*DataProcessConfig `json:"config,omitempty"`
 }
 
@@ -428,6 +429,7 @@ type DataProcessItem struct {
 	PostDataSetName    string  `json:"post_data_set_name"`
 	PostDataSetVersion *string `json:"post_data_set_version,omitempty"`
 	StartDatetime      string  `json:"start_datetime"`
+	ErrorMsg           *string `json:"error_msg,omitempty"`
 }
 
 type DataProcessMutation struct {

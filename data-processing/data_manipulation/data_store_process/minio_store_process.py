@@ -17,15 +17,21 @@ import io
 import logging
 import os
 import ulid
+import traceback
 
 import pandas as pd
 from common import log_tag_const
 from common.config import config
 from data_store_clients import minio_store_client
-from database_operate import data_process_db_operate, data_process_document_db_operate, data_process_detail_db_operate, data_process_detail_preview_db_operate
+from database_operate import (data_process_db_operate,
+                              data_process_document_db_operate,
+                              data_process_detail_db_operate,
+                              data_process_detail_preview_db_operate,
+                              data_process_log_db_operate)
 from file_handle import csv_handle, pdf_handle, word_handle
 from kube import dataset_cr
 from utils import file_utils
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +50,20 @@ def text_manipulate(
     support_type = req_json['data_process_config_info']
     file_names = req_json['file_names']
 
+    # 新增数据处理任务日志
+    log_id = ulid.ulid()
+    insert_log_item = {
+        'id': log_id,
+        'task_id': id,
+        'type': 'NOW',
+        'error_msg': '',
+        'creator': req_json.get('creator')
+    }
+    data_process_log_db_operate.add(
+        insert_log_item,
+        pool=pool
+    )
+
     # minio 数据集统一前缀
     minio_dataset_prefix = config.minio_dataset_prefix
 
@@ -56,26 +76,21 @@ def text_manipulate(
     # get a minio client
     minio_client = minio_store_client.get_minio_client()
 
-    # 将文件都下载到本地
-    for file_name in file_names:
-        minio_store_client.download(
-            minio_client,
-            bucket_name=bucket_name,
-            folder_prefix=folder_prefix,
-            file_name=file_name['name']
-        )
-
     # 将文件信息存入data_process_task_document表中
     for file_name in file_names:
         # 新增文档处理进度信息
         document_id = ulid.ulid()
+        extension = file_utils.get_file_extension(file_name['name'])
         document_insert_item = {
             'id': document_id,
             'task_id': id,
             'file_name': file_name['name'],
             'status': 'not_start',
             'progress': '0',
-            'creator': req_json['creator']
+            'creator': req_json['creator'],
+            'from_source_type': 'MinIO',
+            'from_source_path': config.minio_api_url,
+            'document_type': extension
         }
         data_process_document_db_operate.add(
             document_insert_item,
@@ -85,14 +100,23 @@ def text_manipulate(
 
     # 文件处理
     task_status = 'process_complete'
+    error_msg = ''
     # 存放每个文件对应的数据量
     data_volumes_file = []
     
     for item in file_names:
         result = None
-
         file_name = item['name']
-        file_extension = file_name.split('.')[-1].lower()
+
+        # 将文件下载到本地
+        minio_store_client.download(
+            minio_client,
+            bucket_name=bucket_name,
+            folder_prefix=folder_prefix,
+            file_name=file_name
+        )
+
+        file_extension = file_utils.get_file_extension(file_name)
         if file_extension in ['pdf']:
             # 处理PDF文件
             result = pdf_handle.text_manipulate(
@@ -118,11 +142,18 @@ def text_manipulate(
                 task_id=id,
                 create_user=req_json['creator']
             )
+        
+        # 将下载的本地文件删除
+        _remove_local_file(file_name)
 
         if result is None:
-            logger.error(f"{log_tag_const.MINIO_STORE_PROCESS} The file type is not supported. The current file type is: {file_extension}")
+            logger.error(''.join([
+                f"{log_tag_const.MINIO_STORE_PROCESS} The file type is not supported \n",
+                f"The current file type is: {file_extension}"
+            ]))
             # 任务失败
             task_status = 'process_fail'
+            error_msg = f"{file_extension} file type is not currently supported."
             break
 
         if result.get('status') != 200:
@@ -133,6 +164,7 @@ def text_manipulate(
                 f"The error is: {result.get('message')}\n"
             ]))
             task_status = 'process_fail'
+            error_msg = result.get('message')
             break
 
         data_volumes_file.append(result['data'])
@@ -168,15 +200,22 @@ def text_manipulate(
         data_volumes_file=data_volumes_file
     )
 
-    # 将本地临时文件删除
-    for item in file_names:
-        remove_file_path = file_utils.get_temp_file_path()
-        local_file_path = remove_file_path + 'original/' + item['name']
-        file_utils.delete_file(local_file_path)
+    # 更新数据处理任务日志
+    update_log_item = {
+        'id': log_id,
+        'status': task_status,
+        'error_msg': error_msg,
+        'creator': req_json['creator']
+    }
+    data_process_log_db_operate.update_status_by_id(
+        update_log_item,
+        pool=pool
+    )
 
     # 数据库更新任务状态
     update_params = {
         'id': id,
+        'current_log_id': log_id,
         'status': task_status,
         'user': req_json['creator']
     }
@@ -199,7 +238,26 @@ def text_manipulate(
     }
 
 
-
+def _remove_local_file(file_name):
+    try:
+        remove_file_path = file_utils.get_temp_file_path()
+        local_file_path = remove_file_path + 'original/' + file_name
+        file_utils.delete_file(local_file_path)
+        return {
+            'status': 200,
+            'message': '删除成功',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} remove local file fail \n",
+            f"the error. \n{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
 
 
 

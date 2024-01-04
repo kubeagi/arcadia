@@ -17,8 +17,11 @@ import logging
 import traceback
 
 from common import log_tag_const
+from common.config import config
 from file_handle import common_handle
-from utils import csv_utils, file_utils, docx_utils
+from utils import file_utils, docx_utils
+from langchain.text_splitter import SpacyTextSplitter
+from database_operate import data_process_document_chunk_db_operate
 
 logger = logging.getLogger(__name__)
 
@@ -49,21 +52,42 @@ def docx_text_manipulate(
         word_file_path = file_utils.get_temp_file_path()
         file_path = word_file_path + 'original/' + file_name
         
-        # step 1
-        # Get the content from the word fild.
-        content = docx_utils.get_content(file_path)
-        logger.debug(f"{log_tag_const.WORD_HANDLE} The word content is\n {content}")
+        # Text splitter
+        documents = _get_documents_by_langchain(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            file_path=file_path
+        )
+
+        # step 2
+        # save all chunk info to database
+        all_document_for_process = []
+        for document in documents:
+            chunck_id = ulid.ulid()
+            content = document.replace("\n", "")
+            chunk_insert_item = {
+                'id': chunck_id,
+                'document_id': document_id,
+                'task_id': task_id,
+                'status': 'not_start',
+                'content': content,
+                'meta_info': '',
+                'page_number': '',
+                'creator': create_user
+            }
+            all_document_for_process.append(chunk_insert_item)
+
+            data_process_document_chunk_db_operate.add(
+                chunk_insert_item,
+                pool=conn_pool
+            )
 
         response = common_handle.text_manipulate(
             file_name=file_name,
-            document_id=document_id,
-            content=content,
+            all_document_for_process=all_document_for_process,
             support_type=support_type,
             conn_pool=conn_pool,
-            task_id=task_id,
-            create_user=create_user,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            create_user=create_user
         )
 
         return response
@@ -78,3 +102,26 @@ def docx_text_manipulate(
             'message': str(ex),
             'data': traceback.format_exc()
         }
+
+def _get_documents_by_langchain(
+    chunk_size,
+    chunk_overlap,
+    file_path
+):
+    # Split the text.
+    if chunk_size is None:
+        chunk_size = config.knowledge_chunk_size
+
+    if chunk_overlap is None:
+        chunk_overlap = config.knowledge_chunk_overlap
+
+    content = docx_utils.get_content(file_path)
+    text_splitter = SpacyTextSplitter(
+        separator="\n\n",
+        pipeline="zh_core_web_sm",
+        chunk_size=int(chunk_size),
+        chunk_overlap=int(chunk_overlap)
+    )
+    documents = text_splitter.split_text(data)
+
+    return documents

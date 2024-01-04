@@ -116,6 +116,8 @@ type DataProcessItem {
   post_data_set_version: String
   # 开始时间
   start_datetime: String!
+  # 错误日志
+  error_msg: String
 }
 
 # 数据处理支持类型
@@ -169,6 +171,7 @@ type DataProcessDetailsItem {
   start_time: String!
   end_time: String!
   creator: String!
+  error_msg: String
   config: [DataProcessConfig!]
 }
 
