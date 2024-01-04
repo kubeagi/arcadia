@@ -27,14 +27,16 @@ def insert_transform_info(
     program = '数据处理任务详情-新增'
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'document_id': req_json['document_id'],
-        'document_chunk_id': req_json['document_chunk_id'],
-        'file_name': req_json['file_name'],
-        'transform_type': req_json['transform_type'],
-        'pre_content': req_json['pre_content'],
-        'post_content': req_json['post_content'],
+        'id': req_json.get('id'),
+        'task_id': req_json.get('task_id'),
+        'document_id': req_json.get('document_id'),
+        'document_chunk_id': req_json.get('document_chunk_id'),
+        'file_name': req_json.get('file_name'),
+        'transform_type': req_json.get('transform_type'),
+        'pre_content': req_json.get('pre_content'),
+        'post_content': req_json.get('post_content'),
+        'status': req_json.get('status'),
+        'error_message': req_json.get('error_message'),
         'create_datetime': now,
         'create_user': user,
         'create_program': program,
@@ -53,6 +55,8 @@ def insert_transform_info(
           transform_type,
           pre_content,
           post_content,
+          status,
+          error_message,
           create_datetime,
           create_user,
           create_program,
@@ -69,6 +73,8 @@ def insert_transform_info(
           %(transform_type)s,
           %(pre_content)s,
           %(post_content)s,
+          %(status)s,
+          %(error_message)s,
           %(create_datetime)s,
           %(create_program)s,
           %(create_user)s,
@@ -519,3 +525,37 @@ def delete_qa_clean_by_task_id(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
+
+
+def list_for_transform_type(
+    req_json,
+    pool
+):
+    """List transform for clean in the task detail."""
+    params = {
+      'task_id': req_json.get('task_id'),
+      'document_id': req_json.get('document_id'),
+      'transform_type': tuple(req_json.get('transform_type'))
+    }
+
+    sql = """
+      select 
+        id,
+        task_id,
+        file_name,
+        transform_type,
+        pre_content,
+        post_content,
+        status,
+        error_message,
+        update_datetime
+      from public.data_process_task_detail
+      where
+        task_id = %(task_id)s and
+        document_id = %(document_id)s and
+        transform_type in %(transform_type)s
+      """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res
+

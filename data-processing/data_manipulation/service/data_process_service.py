@@ -24,8 +24,9 @@ from database_operate import (data_process_db_operate,
                               data_process_detail_db_operate,
                               data_process_document_db_operate,
                               data_process_detail_preview_db_operate,
-                              data_process_document_chunk_db_operate)
-from kube import dataset_cr
+                              data_process_document_chunk_db_operate,
+                              data_process_log_db_operate,
+                              data_process_stage_log_db_operate)
 from parallel import thread_parallel
 from utils import date_time_utils
 from kube import model_cr
@@ -83,16 +84,6 @@ def add(
     )
 
     if res['status'] == 200:
-        # update the dataset status
-        update_dataset = dataset_cr.update_dataset_k8s_cr(
-            bucket_name=req_json['bucket_name'],
-            version_data_set_name=req_json['version_data_set_name'],
-            reason='processing'
-        )
-
-        if update_dataset['status'] != 200:
-            return update_dataset
-
         try:
 
             async def async_text_manipulate(
@@ -137,6 +128,9 @@ def delete_by_id(
     data_process_document_db_operate.delete_by_task_id(req_json, pool=pool)
     # 删除chunk的信息
     data_process_document_chunk_db_operate.delete_by_task_id(req_json, pool=pool)
+    # 删除log信息
+    data_process_log_db_operate.delete_by_task_id(req_json, pool=pool)
+    data_process_stage_log_db_operate.delete_by_task_id(req_json, pool=pool)
 
     return data_process_db_operate.delete_by_id(req_json, pool=pool)
 
@@ -222,6 +216,31 @@ def check_task_name(
         'message': '',
         'data': ''
     }
+
+
+def get_log_info(
+    req_json,
+    pool
+):
+    # 获取任务日志信息
+    log_list = data_process_stage_log_db_operate.list_by_task_id(
+        req_json,
+        pool=pool
+    )
+
+    log_dict = []
+    for log_info in log_list.get('data'):
+        log_dict.append(log_info.get('stage_detail'))
+
+    separator = '=' * 100
+    log_detail = ('\n' + separator + '\n').join(log_dict)
+    
+    return {
+        'status': 200,
+        'message': '',
+        'data': log_detail
+    }
+
 
 def _get_default_data_for_detail():
     """Get the data for the detail"""

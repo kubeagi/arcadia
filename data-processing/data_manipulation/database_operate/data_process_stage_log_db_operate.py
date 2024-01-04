@@ -13,27 +13,30 @@
 # limitations under the License.
 
 
-import ujson
+import ulid
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def add(
+def insert(
     req_json,
     pool
 ):
     """Add a new record"""
     now = date_time_utils.now_str()
     user = req_json['creator']
-    program = '数据处理任务日志-新增'
+    program = '数据处理任务阶段日志-新增'
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'type': req_json['type'],
-        'status': 'processing',
-        'error_msg': req_json['error_msg'],
-        'start_datetime': now,
+        'id': ulid.ulid(),
+        'task_id': req_json.get('task_id'),
+        'log_id': req_json.get('log_id'),
+        'log_datetime': now,
+        'file_name': req_json.get('file_name'),
+        'stage_name': req_json.get('stage_name'),
+        'stage_status': req_json.get('stage_status'),
+        'stage_detail': req_json.get('stage_detail'),
+        'error_msg': req_json.get('error_msg'),
         'create_datetime': now,
         'create_user': user,
         'create_program': program,
@@ -43,13 +46,16 @@ def add(
     }
 
     sql = """
-        insert into public.data_process_task_log (
+        insert into public.data_process_task_stage_log (
           id,
           task_id,
-          type,
-          status,
+          log_id,
+          log_datetime,
+          file_name,
+          stage_name,
+          stage_status,
+          stage_detail,
           error_msg,
-          start_datetime,
           create_datetime,
           create_program,
           create_user,
@@ -60,10 +66,13 @@ def add(
         values (
           %(id)s,
           %(task_id)s,
-          %(type)s,
-          %(status)s,
+          %(log_id)s,
+          %(log_datetime)s,
+          %(file_name)s,
+          %(stage_name)s,
+          %(stage_status)s,
+          %(stage_detail)s,
           %(error_msg)s,
-          %(start_datetime)s,
           %(create_datetime)s,
           %(create_program)s,
           %(create_user)s,
@@ -77,38 +86,33 @@ def add(
     return res
 
 
-def update_status_by_id(
-    req_json, 
+def list_by_task_id(
+    req_json,
     pool
 ):
-    """Update the status with id"""
-    now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '添加错误日志信息'
-
+    """Get the list data for data processing log by task id"""
     params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'error_msg': req_json['error_msg'],
-        'end_datetime': now,
-        'update_datetime': now,
-        'update_program': program,
-        'update_user': user
+        'task_id': req_json.get('id')
     }
 
     sql = """
-        update public.data_process_task_log set
-          status = %(status)s,
-          end_datetime = %(end_datetime)s,
-          error_msg = %(error_msg)s,
-          update_datetime = %(update_datetime)s,
-          update_program = %(update_program)s,
-          update_user = %(update_user)s
+        select
+          id,
+          task_id,
+          log_id,
+          log_datetime,
+          stage_name,
+          stage_status,
+          stage_detail,
+          error_msg
+        from
+          public.data_process_task_stage_log
         where
-          id = %(id)s
+          task_id = %(task_id)s
+        order by log_datetime asc
     """.strip()
 
-    res = postgresql_pool_client.execute_update(pool, sql, params)
+    res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
 
@@ -129,11 +133,10 @@ def delete_by_task_id(
     }
 
     sql = """
-        delete from public.data_process_task_log
+        delete from public.data_process_task_stage_log
         where
           task_id = %(task_id)s
     """.strip()
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
-

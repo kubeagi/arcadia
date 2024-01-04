@@ -3,10 +3,6 @@
     -- configMap under deploy/charts/arcadia/templates/pg-init-data-configmap.yaml
     -- ****************************************************************************
 
-    -- Table: public.data_process_task
-
-    -- DROP TABLE IF EXISTS public.data_process_task;
-
     CREATE TABLE IF NOT EXISTS public.data_process_task
     (
         id character varying(32) COLLATE pg_catalog."default" NOT NULL,
@@ -29,12 +25,10 @@
         update_program character varying(64) COLLATE pg_catalog."default",
         namespace character varying(64) COLLATE pg_catalog."default",
         bucket_name character varying(64) COLLATE pg_catalog."default",
+        current_log_id character varying(32) COLLATE pg_catalog."default",
         CONSTRAINT data_process_task_pkey PRIMARY KEY (id)
     );
 
-    -- Table: public.data_process_task_detail
-
-    -- DROP TABLE IF EXISTS public.data_process_task_detail;
 
     CREATE TABLE IF NOT EXISTS public.data_process_task_detail
     (
@@ -52,6 +46,8 @@
         update_program character varying(32) COLLATE pg_catalog."default",
         document_id character varying(32) COLLATE pg_catalog."default",
         document_chunk_id character varying(32) COLLATE pg_catalog."default",
+        status character varying(64) COLLATE pg_catalog."default",
+        error_message text COLLATE pg_catalog."default",
         CONSTRAINT data_process_detail_pkey PRIMARY KEY (id)
     );
 
@@ -70,6 +66,8 @@
     COMMENT ON COLUMN public.data_process_task_detail.update_program IS '更新程序';
     COMMENT ON COLUMN public.data_process_task_detail.document_id IS '文档id';
     COMMENT ON COLUMN public.data_process_task_detail.document_chunk_id IS '文档chunk id';
+    COMMENT ON COLUMN public.data_process_task_detail.status IS '状态';
+    COMMENT ON COLUMN public.data_process_task_detail.error_message IS '错误信息';
 
     CREATE TABLE public.data_process_task_question_answer (
         id varchar(32) NOT NULL, -- 主键
@@ -88,8 +86,6 @@
         CONSTRAINT data_process_task_question_answer_pkey PRIMARY KEY (id)
     );
     COMMENT ON TABLE public.data_process_task_question_answer IS '数据处理问题答案';
-
-    -- Column comments
 
     COMMENT ON COLUMN public.data_process_task_question_answer.id IS '主键';
     COMMENT ON COLUMN public.data_process_task_question_answer.task_id IS '任务Id';
@@ -253,3 +249,73 @@
     COMMENT ON COLUMN public.data_process_task_question_answer_clean.update_datetime IS '更新时间';
     COMMENT ON COLUMN public.data_process_task_question_answer_clean.update_user IS '更新用户';
     COMMENT ON COLUMN public.data_process_task_question_answer_clean.update_program IS '更新程序';
+
+
+    CREATE TABLE IF NOT EXISTS public.data_process_task_log
+    (
+        id character varying(32) COLLATE pg_catalog."default",
+        task_id character varying(32) COLLATE pg_catalog."default",
+        type character varying(32) COLLATE pg_catalog."default",
+        start_datetime character varying(64) COLLATE pg_catalog."default",
+        end_datetime character varying(64) COLLATE pg_catalog."default",
+        status character varying(64) COLLATE pg_catalog."default",
+        error_msg text COLLATE pg_catalog."default",
+        create_datetime character varying(64) COLLATE pg_catalog."default",
+        create_user character varying(64) COLLATE pg_catalog."default",
+        create_program character varying(64) COLLATE pg_catalog."default",
+        update_datetime character varying(64) COLLATE pg_catalog."default",
+        update_user character varying(64) COLLATE pg_catalog."default",
+        update_program character varying(64) COLLATE pg_catalog."default"
+    );
+
+    COMMENT ON TABLE public.data_process_task_log IS '数据处理日志表';
+    COMMENT ON COLUMN public.data_process_task_log.id IS 'id';
+    COMMENT ON COLUMN public.data_process_task_log.task_id IS '任务id';
+    COMMENT ON COLUMN public.data_process_task_log.type IS '执行类型';
+    COMMENT ON COLUMN public.data_process_task_log.start_datetime IS '任务开始时间';
+    COMMENT ON COLUMN public.data_process_task_log.end_datetime IS '结束时间';
+    COMMENT ON COLUMN public.data_process_task_log.status IS '状态';
+    COMMENT ON COLUMN public.data_process_task_log.error_msg IS '错误信息';
+    COMMENT ON COLUMN public.data_process_task_log.create_datetime IS '创建时间';
+    COMMENT ON COLUMN public.data_process_task_log.create_user IS '创建人';
+    COMMENT ON COLUMN public.data_process_task_log.create_program IS '创建程序';
+    COMMENT ON COLUMN public.data_process_task_log.update_datetime IS '更新时间';
+    COMMENT ON COLUMN public.data_process_task_log.update_user IS '更新人';
+    COMMENT ON COLUMN public.data_process_task_log.update_program IS '更新程序';
+
+
+    CREATE TABLE IF NOT EXISTS public.data_process_task_stage_log
+    (
+        id character varying(32) COLLATE pg_catalog."default",
+        task_id character varying(32) COLLATE pg_catalog."default",
+        log_id character varying(32) COLLATE pg_catalog."default",
+        log_datetime character varying(32) COLLATE pg_catalog."default",
+        file_name character varying(64) COLLATE pg_catalog."default",
+        stage_name character varying(1024) COLLATE pg_catalog."default",
+        stage_status character varying(64) COLLATE pg_catalog."default",
+        stage_detail text COLLATE pg_catalog."default",
+        error_msg text COLLATE pg_catalog."default",
+        create_datetime character varying(64) COLLATE pg_catalog."default",
+        create_user character varying(64) COLLATE pg_catalog."default",
+        create_program character varying(64) COLLATE pg_catalog."default",
+        update_datetime character varying(64) COLLATE pg_catalog."default",
+        update_user character varying(64) COLLATE pg_catalog."default",
+        update_program character varying(64) COLLATE pg_catalog."default"
+    );
+
+    COMMENT ON TABLE public.data_process_task_stage_log IS '数据处理日志详情表';
+    COMMENT ON COLUMN public.data_process_task_stage_log.id IS 'id';
+    COMMENT ON COLUMN public.data_process_task_stage_log.task_id IS '任务id';
+    COMMENT ON COLUMN public.data_process_task_stage_log.log_id IS 'task log id';
+    COMMENT ON COLUMN public.data_process_task_stage_log.log_datetime IS '日志时间';
+    COMMENT ON COLUMN public.data_process_task_stage_log.file_name IS '文件名称';
+    COMMENT ON COLUMN public.data_process_task_stage_log.stage_name IS '阶段名称';
+    COMMENT ON COLUMN public.data_process_task_stage_log.stage_status IS '阶段状态';
+    COMMENT ON COLUMN public.data_process_task_stage_log.stage_detail IS '阶段详细';
+    COMMENT ON COLUMN public.data_process_task_stage_log.error_msg IS '错误信息';
+    COMMENT ON COLUMN public.data_process_task_stage_log.create_datetime IS '创建时间';
+    COMMENT ON COLUMN public.data_process_task_stage_log.create_user IS '创建人';
+    COMMENT ON COLUMN public.data_process_task_stage_log.create_program IS '创建程序';
+    COMMENT ON COLUMN public.data_process_task_stage_log.update_datetime IS '更新时间';
+    COMMENT ON COLUMN public.data_process_task_stage_log.update_user IS '更新人';
+    COMMENT ON COLUMN public.data_process_task_stage_log.update_program IS '更新程序';

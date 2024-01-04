@@ -137,3 +137,19 @@ async def check_task_name(request):
         pool=request.app.config['conn_pool']
     )
     return json(res) 
+
+@data_process.route('get-log-info', methods=['POST'])
+async def get_log_info(request):
+    """check task name by name and namespace.
+    
+    example for request.json
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    """
+    res = data_process_service.get_log_info(
+        request.json,
+        pool=request.app.config['conn_pool']
+    )
+    return json(res) 
+

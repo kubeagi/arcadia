@@ -74,6 +74,15 @@ func (r *dataProcessQueryResolver) CheckDataProcessTaskName(ctx context.Context,
 	return dataprocessing.CheckDataProcessTaskName(ctx, c, obj, input)
 }
 
+// GetLogInfo is the resolver for the getLogInfo field.
+func (r *dataProcessQueryResolver) GetLogInfo(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.GetLogInfo(ctx, c, obj, input)
+}
+
 // DataProcess is the resolver for the dataProcess field.
 func (r *mutationResolver) DataProcess(ctx context.Context) (*generated.DataProcessMutation, error) {
 	return &generated.DataProcessMutation{}, nil
