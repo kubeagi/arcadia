@@ -33,10 +33,9 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
-	pkgconf "github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -273,17 +272,11 @@ func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace s
 		keyword = *input.Keyword
 	}
 
-	systemDatasource, err := pkgconf.GetSystemDatasource(ctx, nil, c)
+	systemClient, err := client.GetClient(nil)
 	if err != nil {
 		return nil, err
 	}
-
-	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
-	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
-		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
-	}
-
-	oss, err := datasource.NewOSS(ctx, nil, c, endpoint)
+	oss, err := common.SystemDatasourceOSS(ctx, nil, systemClient)
 	if err != nil {
 		return nil, err
 	}
