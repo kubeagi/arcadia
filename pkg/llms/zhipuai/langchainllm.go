@@ -39,8 +39,7 @@ var (
 )
 
 var (
-	_ langchainllm.LanguageModel = (*ZhiPuAILLM)(nil)
-	_ langchainllm.ChatLLM       = (*ZhiPuAILLM)(nil)
+	_ langchainllm.LLM = (*ZhiPuAILLM)(nil)
 )
 
 type ZhiPuAILLM struct {
@@ -48,33 +47,27 @@ type ZhiPuAILLM struct {
 	RetryTimes int
 }
 
-func (z *ZhiPuAILLM) GeneratePrompt(ctx context.Context, promptValues []schema.PromptValue, options ...langchainllm.CallOption) (langchainllm.LLMResult, error) {
-	return langchainllm.GenerateChatPrompt(ctx, z, promptValues, options...)
-}
-
 func (z *ZhiPuAILLM) GetNumTokens(text string) int {
 	return langchainllm.CountTokens("gpt2", text)
 }
 
-var _ langchainllm.ChatLLM = (*ZhiPuAILLM)(nil)
-
-func (z *ZhiPuAILLM) Call(ctx context.Context, messages []schema.ChatMessage, options ...langchainllm.CallOption) (*schema.AIChatMessage, error) {
-	r, err := z.Generate(ctx, [][]schema.ChatMessage{messages}, options...)
+func (z *ZhiPuAILLM) Call(ctx context.Context, prompt string, options ...langchainllm.CallOption) (string, error) {
+	r, err := z.Generate(ctx, []string{prompt}, options...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate: %w", err)
+		return "", fmt.Errorf("failed to generate: %w", err)
 	}
 	if len(r) == 0 {
-		return nil, ErrEmptyResponse
+		return "", ErrEmptyResponse
 	}
-	return r[0].Message, nil
+	return r[0].Text, nil
 }
 
-func (z *ZhiPuAILLM) Generate(ctx context.Context, messageSets [][]schema.ChatMessage, options ...langchainllm.CallOption) ([]*langchainllm.Generation, error) {
+func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...langchainllm.CallOption) ([]*langchainllm.Generation, error) {
 	opts := langchainllm.CallOptions{}
 	for _, opt := range options {
 		opt(&opts)
 	}
-	generations := make([]*langchainllm.Generation, 0, len(messageSets))
+	generations := make([]*langchainllm.Generation, 0, len(prompts))
 	params := DefaultModelParams()
 	if opts.TopP > 0 && opts.TopP < 1 {
 		params.TopP = float32(opts.TopP)
@@ -85,22 +78,12 @@ func (z *ZhiPuAILLM) Generate(ctx context.Context, messageSets [][]schema.ChatMe
 	if opts.Model != "" {
 		params.Model = opts.Model
 	}
-	if len(messageSets) == 0 {
+	if len(prompts) == 0 {
 		return nil, ErrEmptyPrompt
 	}
-	for _, messageSet := range messageSets {
-		for _, m := range messageSet {
-			typ := m.GetType()
-			switch typ {
-			case schema.ChatMessageTypeAI:
-				params.Prompt = append(params.Prompt, Prompt{Role: Assistant, Content: m.GetContent()})
-			case schema.ChatMessageTypeHuman, schema.ChatMessageTypeGeneric:
-				params.Prompt = append(params.Prompt, Prompt{Role: User, Content: m.GetContent()})
-			default:
-				klog.Infof("zhipuai: message type %s not supported, just skip\n", typ)
-			}
-		}
-		klog.Infof("all history prompts: %#v\n", params.Prompt)
+	for _, prompt := range prompts {
+		params.Prompt = append(params.Prompt, Prompt{Role: User, Content: prompt})
+		klog.Infof("get prompts: %#v\n", params.Prompt)
 		client := NewZhiPuAI(z.apiKey)
 		needStream := opts.StreamingFunc != nil
 		if needStream {

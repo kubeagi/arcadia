@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// add documents
-	err = chroma.AddDocuments(context.TODO(), []schema.Document{
+	_, err = chroma.AddDocuments(context.TODO(), []schema.Document{
 		{PageContent: "This is a document about cats. Cats are great.",
 			Metadata: map[string]interface{}{"about": "cat"}},
 	})
@@ -58,7 +58,7 @@ func main() {
 		panic(fmt.Errorf("error add documents to chroma db: %s", err.Error()))
 	}
 
-	err = chroma.AddDocuments(context.TODO(), []schema.Document{
+	_, err = chroma.AddDocuments(context.TODO(), []schema.Document{
 		{PageContent: "This is a document about dogs. Dogs are great.",
 			Metadata: map[string]interface{}{"about": "dog"}},
 	})

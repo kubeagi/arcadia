@@ -36,7 +36,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cli dynamic.Interface) (langchainllms.LanguageModel, error) {
+func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cli dynamic.Interface) (langchainllms.LLM, error) {
 	if err := utils.ValidateClient(c, cli); err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 			z := zhipuai.NewZhiPuAI(apiKey)
 			return &zhipuai.ZhiPuAILLM{ZhiPuAI: *z, RetryTimes: 3}, nil
 		case llms.OpenAI:
-			return openai.NewChat(openai.WithToken(apiKey), openai.WithBaseURL(llm.Spec.Endpoint.URL))
+			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Spec.Endpoint.URL))
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c, cli)
@@ -86,7 +86,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 			return nil, fmt.Errorf("worker.spec.model not defined")
 		}
 		modelName := worker.MakeRegistrationModelName()
-		return openai.NewChat(openai.WithModel(modelName), openai.WithBaseURL(gateway.APIServer), openai.WithToken("fake"))
+		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gateway.APIServer), openai.WithToken("fake"))
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }

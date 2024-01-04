@@ -222,6 +222,6 @@ func loadPDFFiles(ctx context.Context, path string) error {
 	}
 
 	fmt.Printf("Adding %v documents...\n", len(docs))
-
-	return db.AddDocuments(ctx, docs)
+	_, err = db.AddDocuments(ctx, docs)
+	return err
 }
