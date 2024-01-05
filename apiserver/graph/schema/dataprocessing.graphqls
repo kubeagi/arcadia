@@ -20,7 +20,7 @@ type DataProcessQuery {
   # 检验名称是否重复
   checkDataProcessTaskName(input: CheckDataProcessTaskNameInput): DataProcessResponse
   # 日志信息
-  getLogInfo(input: DeleteDataProcessInput): DataProcessResponse
+  getLogInfo(input: DataProcessDetailsInput): DataProcessResponse
 }
 
 

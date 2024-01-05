@@ -203,7 +203,7 @@ type ComplexityRoot struct {
 		CheckDataProcessTaskName  func(childComplexity int, input *CheckDataProcessTaskNameInput) int
 		DataProcessDetails        func(childComplexity int, input *DataProcessDetailsInput) int
 		DataProcessSupportType    func(childComplexity int) int
-		GetLogInfo                func(childComplexity int, input *DeleteDataProcessInput) int
+		GetLogInfo                func(childComplexity int, input *DataProcessDetailsInput) int
 	}
 
 	DataProcessResponse struct {
@@ -621,7 +621,7 @@ type DataProcessQueryResolver interface {
 	DataProcessSupportType(ctx context.Context, obj *DataProcessQuery) (*DataProcessSupportType, error)
 	DataProcessDetails(ctx context.Context, obj *DataProcessQuery, input *DataProcessDetailsInput) (*DataProcessDetails, error)
 	CheckDataProcessTaskName(ctx context.Context, obj *DataProcessQuery, input *CheckDataProcessTaskNameInput) (*DataProcessResponse, error)
-	GetLogInfo(ctx context.Context, obj *DataProcessQuery, input *DeleteDataProcessInput) (*DataProcessResponse, error)
+	GetLogInfo(ctx context.Context, obj *DataProcessQuery, input *DataProcessDetailsInput) (*DataProcessResponse, error)
 }
 type DatasetResolver interface {
 	Versions(ctx context.Context, obj *Dataset, input ListVersionedDatasetInput) (*PaginatedResult, error)
@@ -1457,7 +1457,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.DataProcessQuery.GetLogInfo(childComplexity, args["input"].(*DeleteDataProcessInput)), true
+		return e.complexity.DataProcessQuery.GetLogInfo(childComplexity, args["input"].(*DataProcessDetailsInput)), true
 
 	case "DataProcessResponse.data":
 		if e.complexity.DataProcessResponse.Data == nil {
@@ -4046,7 +4046,7 @@ type DataProcessQuery {
   # 检验名称是否重复
   checkDataProcessTaskName(input: CheckDataProcessTaskNameInput): DataProcessResponse
   # 日志信息
-  getLogInfo(input: DeleteDataProcessInput): DataProcessResponse
+  getLogInfo(input: DataProcessDetailsInput): DataProcessResponse
 }
 
 
@@ -6196,10 +6196,10 @@ func (ec *executionContext) field_DataProcessQuery_dataProcessDetails_args(ctx c
 func (ec *executionContext) field_DataProcessQuery_getLogInfo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteDataProcessInput
+	var arg0 *DataProcessDetailsInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteDataProcessInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteDataProcessInput(ctx, tmp)
+		arg0, err = ec.unmarshalODataProcessDetailsInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessDetailsInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11334,7 +11334,7 @@ func (ec *executionContext) _DataProcessQuery_getLogInfo(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DataProcessQuery().GetLogInfo(rctx, obj, fc.Args["input"].(*DeleteDataProcessInput))
+		return ec.resolvers.DataProcessQuery().GetLogInfo(rctx, obj, fc.Args["input"].(*DataProcessDetailsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

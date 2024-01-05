@@ -232,7 +232,7 @@ func CheckDataProcessTaskName(ctx context.Context, c dynamic.Interface, obj *gen
 	return data, nil
 }
 
-func GetLogInfo(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
+func GetLogInfo(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
