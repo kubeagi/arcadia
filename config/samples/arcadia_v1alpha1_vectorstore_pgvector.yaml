@@ -1,0 +1,14 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VectorStore
+metadata:
+  name: pgvector-sample
+  namespace: arcadia
+spec:
+  displayName: "测试 PGVector VectorStore"
+  description: "测试 PGvector VectorStore"
+  pgvector:
+    dataSourceRef:
+      apiGroup: arcadia.kubeagi.k8s.com.cn
+      kind: Datasource
+      name: arcadia-postgresql
+      namespace: arcadia

@@ -28,16 +28,10 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
@@ -64,30 +58,12 @@ func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint
 		if endpoint.AuthSecret.Namespace == nil {
 			return nil, errors.New("no namespace found for endpoint.authsecret")
 		}
-		if err := utils.ValidateClient(c, dc); err != nil {
+		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c, dc)
+		if err != nil {
 			return nil, err
 		}
-		if dc != nil {
-			secret, err := dc.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-				Namespace(*endpoint.AuthSecret.Namespace).Get(ctx, endpoint.AuthSecret.Name, v1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			data, _, _ := unstructured.NestedStringMap(secret.Object, "data")
-			accessKeyID = utils.DecodeBase64Str(data["rootUser"])
-			secretAccessKey = utils.DecodeBase64Str(data["rootPassword"])
-		}
-		if c != nil {
-			secret := corev1.Secret{}
-			if err := c.Get(ctx, types.NamespacedName{
-				Namespace: *endpoint.AuthSecret.Namespace,
-				Name:      endpoint.AuthSecret.Name,
-			}, &secret); err != nil {
-				return nil, err
-			}
-			accessKeyID = string(secret.Data["rootUser"])
-			secretAccessKey = string(secret.Data["rootPassword"])
-		}
+		accessKeyID = string(data["rootUser"])
+		secretAccessKey = string(data["rootPassword"])
 	}
 
 	mc, err := minio.New(endpoint.URL, &minio.Options{

@@ -23,63 +23,70 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
-	_      Datasource = (*PostgreSQL)(nil)
-	locker sync.Mutex
+	_          Datasource = (*PostgreSQL)(nil)
+	locker     sync.Mutex
+	poolsMutex sync.Mutex
+	pools      = make(map[string]*PostgreSQL)
 )
+
+func GetPostgreSQLPool(ctx context.Context, c client.Client, dc dynamic.Interface, datasource *v1alpha1.Datasource) (*PostgreSQL, error) {
+	if datasource.Spec.Type() != v1alpha1.DatasourceTypePostgreSQL {
+		return nil, ErrUnknowDatasourceType
+	}
+	pg, ok := pools[string(datasource.GetUID())]
+	if ok && pg.Ref.GetGeneration() == datasource.GetGeneration() {
+		return pg, nil
+	}
+	pg, err := newPostgreSQL(ctx, c, dc, datasource.Spec.PostgreSQL, &datasource.Spec.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	pg.Ref = datasource.DeepCopy()
+	poolsMutex.Lock()
+	pools[string(datasource.GetUID())] = pg
+	poolsMutex.Unlock()
+	return pg, nil
+}
+
+func RemovePostgreSQLPool(datasource v1alpha1.Datasource) {
+	pg, ok := pools[string(datasource.GetUID())]
+	if !ok {
+		return
+	}
+	pg.Pool.Close()
+	poolsMutex.Lock()
+	delete(pools, string(datasource.GetUID()))
+	poolsMutex.Unlock()
+}
 
 // PostgreSQL is a wrapper to PostgreSQL
 type PostgreSQL struct {
 	*pgxpool.Pool
+	Ref *v1alpha1.Datasource
 }
 
 // NewPostgreSQL creates a new PostgreSQL pool
-func NewPostgreSQL(ctx context.Context, c client.Client, dc dynamic.Interface, config *v1alpha1.PostgreSQL, endpoint *v1alpha1.Endpoint) (*PostgreSQL, error) {
+func newPostgreSQL(ctx context.Context, c client.Client, dc dynamic.Interface, config *v1alpha1.PostgreSQL, endpoint *v1alpha1.Endpoint) (*PostgreSQL, error) {
 	var pgUser, pgPassword, pgPassFile, pgSSLPassword string
 	if endpoint.AuthSecret != nil {
 		if endpoint.AuthSecret.Namespace == nil {
 			return nil, errors.New("no namespace found for endpoint.authsecret")
 		}
-		if err := utils.ValidateClient(c, dc); err != nil {
+		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c, dc)
+		if err != nil {
 			return nil, err
 		}
-		if dc != nil {
-			secret, err := dc.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-				Namespace(*endpoint.AuthSecret.Namespace).Get(ctx, endpoint.AuthSecret.Name, v1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			data, _, _ := unstructured.NestedStringMap(secret.Object, "data")
-			pgUser = utils.DecodeBase64Str(data[v1alpha1.PGUSER])
-			pgPassword = utils.DecodeBase64Str(data[v1alpha1.PGPASSWORD])
-			pgPassFile = utils.DecodeBase64Str(data[v1alpha1.PGPASSFILE])
-			pgSSLPassword = utils.DecodeBase64Str(data[v1alpha1.PGSSLPASSWORD])
-		}
-		if c != nil {
-			secret := corev1.Secret{}
-			if err := c.Get(ctx, types.NamespacedName{
-				Namespace: *endpoint.AuthSecret.Namespace,
-				Name:      endpoint.AuthSecret.Name,
-			}, &secret); err != nil {
-				return nil, err
-			}
-			pgUser = string(secret.Data[v1alpha1.PGUSER])
-			pgPassword = string(secret.Data[v1alpha1.PGPASSWORD])
-			pgPassFile = string(secret.Data[v1alpha1.PGPASSFILE])
-			pgSSLPassword = string(secret.Data[v1alpha1.PGSSLPASSWORD])
-		}
+		pgUser = string(data[v1alpha1.PGUSER])
+		pgPassword = string(data[v1alpha1.PGPASSWORD])
+		pgPassFile = string(data[v1alpha1.PGPASSFILE])
+		pgSSLPassword = string(data[v1alpha1.PGSSLPASSWORD])
 	}
 	locker.Lock()
 	defer locker.Unlock()
@@ -191,7 +198,7 @@ func NewPostgreSQL(ctx context.Context, c client.Client, dc dynamic.Interface, c
 	if err != nil {
 		return nil, err
 	}
-	return &PostgreSQL{pool}, nil
+	return &PostgreSQL{Pool: pool}, nil
 }
 
 func (p *PostgreSQL) Stat(ctx context.Context, _ any) error {

@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -57,12 +56,4 @@ func ValidateClient(c client.Client, cli dynamic.Interface) error {
 		return fmt.Errorf(" client.Client and dynamic.Interface cannot be set at the same time")
 	}
 	return nil
-}
-
-func DecodeBase64Str(s string) string {
-	ds, err := base64.StdEncoding.DecodeString(s)
-	if err == nil {
-		return string(ds)
-	}
-	return ""
 }

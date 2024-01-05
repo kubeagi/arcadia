@@ -31,7 +31,6 @@ import (
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
-	"github.com/tmc/langchaingo/vectorstores/chroma"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +45,7 @@ import (
 	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	"github.com/kubeagi/arcadia/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/vectorstore"
 )
 
 const (
@@ -158,7 +158,7 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	// Observe generation change
 	if kb.Status.ObservedGeneration != kb.Generation {
 		kb.Status.ObservedGeneration = kb.Generation
-		r.setCondition(kb, kb.InitCondition())
+		kb = r.setCondition(kb, kb.InitCondition())
 		if updateStatusErr := r.patchStatus(ctx, kb); updateStatusErr != nil {
 			log.Error(updateStatusErr, "unable to update status after generation update")
 			return kb, ctrl.Result{Requeue: true}, updateStatusErr
@@ -173,27 +173,27 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	vectorStoreReq := kb.Spec.VectorStore
 	fileGroupsReq := kb.Spec.FileGroups
 	if embedderReq == nil || vectorStoreReq == nil || len(fileGroupsReq) == 0 {
-		r.setCondition(kb, kb.PendingCondition("embedder or vectorstore or filegroups is not setting"))
+		kb = r.setCondition(kb, kb.PendingCondition("embedder or vectorstore or filegroups is not setting"))
 		return kb, ctrl.Result{}, nil
 	}
 
 	embedder := &arcadiav1alpha1.Embedder{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.Embedder.Name, Namespace: kb.Spec.Embedder.GetNamespace(kb.GetNamespace())}, embedder); err != nil {
 		if apierrors.IsNotFound(err) {
-			r.setCondition(kb, kb.PendingCondition("embedder is not found"))
+			kb = r.setCondition(kb, kb.PendingCondition("embedder is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
-		r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{}, err
 	}
 
 	vectorStore := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace(kb.GetNamespace())}, vectorStore); err != nil {
 		if apierrors.IsNotFound(err) {
-			r.setCondition(kb, kb.PendingCondition("vectorStore is not found"))
+			kb = r.setCondition(kb, kb.PendingCondition("vectorStore is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
-		r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{}, err
 	}
 
@@ -205,18 +205,18 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 		}
 	}
 	if err := errors.Join(errs...); err != nil {
-		r.setCondition(kb, kb.ErrorCondition(err.Error()))
-		return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
+		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		return kb, ctrl.Result{RequeueAfter: waitMedium}, nil
 	} else {
 		for _, fileGroupDetail := range kb.Status.FileGroupDetail {
 			for _, fileDetail := range fileGroupDetail.FileDetails {
 				if fileDetail.Phase == arcadiav1alpha1.FileProcessPhaseFailed && fileDetail.ErrMessage != "" {
-					r.setCondition(kb, kb.ErrorCondition(fileDetail.ErrMessage))
-					return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
+					kb = r.setCondition(kb, kb.ErrorCondition(fileDetail.ErrMessage))
+					return kb, ctrl.Result{RequeueAfter: waitMedium}, nil
 				}
 			}
 		}
-		r.setCondition(kb, kb.ReadyCondition())
+		kb = r.setCondition(kb, kb.ReadyCondition())
 	}
 
 	return kb, ctrl.Result{}, nil
@@ -461,20 +461,16 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	for i, doc := range documents {
 		log.V(5).Info(fmt.Sprintf("document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
 	}
-	switch store.Spec.Type() { // nolint: gocritic
-	case arcadiav1alpha1.VectorStoreTypeChroma:
-		s, err := chroma.New(
-			chroma.WithChromaURL(store.Spec.Endpoint.URL),
-			chroma.WithDistanceFunction(store.Spec.Chroma.DistanceFunction),
-			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
-			chroma.WithEmbedder(em),
-		)
-		if err != nil {
-			return err
-		}
-		if _, err = s.AddDocuments(ctx, documents); err != nil {
-			return err
-		}
+	s, finish, err := vectorstore.NewVectorStore(ctx, store, em, kb.VectorStoreCollectionName(), r.Client, nil)
+	if err != nil {
+		return err
+	}
+	log.Info("handle file: add documents to embedder")
+	if _, err = s.AddDocuments(ctx, documents); err != nil {
+		return err
+	}
+	if finish != nil {
+		finish()
 	}
 	log.Info("handle file succeeded")
 	return nil
@@ -493,21 +489,7 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
 		return
 	}
-	switch vectorStore.Spec.Type() { // nolint: gocritic
-	case arcadiav1alpha1.VectorStoreTypeChroma:
-		s, err := chroma.New(
-			chroma.WithChromaURL(vectorStore.Spec.Endpoint.URL),
-			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
-			// workaround to fix 'invalid options: missing embedder or openai api key'
-			chroma.WithOpenAiAPIKey("fake-api-key"),
-		)
-		if err != nil {
-			log.Error(err, "reconcile delete: init vector store error, may leave garbage data")
-		}
-		if err = s.RemoveCollection(); err != nil {
-			log.Error(err, "reconcile delete: remove vector store error, may leave garbage data")
-		}
-	}
+	_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName())
 }
 
 func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {

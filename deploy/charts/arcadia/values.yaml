@@ -7,6 +7,7 @@ global:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 controller:
+  loglevel: 3
   image: kubeagi/arcadia:latest
   imagePullPolicy: IfNotPresent
   resources:
@@ -140,7 +141,7 @@ postgresql:
   image:
     registry: docker.io
     repository: kubeagi/postgresql
-    tag: 16.1.0-debian-11-r15
+    tag: 16.1.0-debian-11-r18-pgvector-v0.5.1
     pullPolicy: IfNotPresent
   primary:
     initdb:

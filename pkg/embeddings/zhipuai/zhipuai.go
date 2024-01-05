@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/tmc/langchaingo/embeddings"
+	"k8s.io/klog/v2"
 
 	llmzhipuai "github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
@@ -53,10 +54,12 @@ func (e ZhiPuAI) EmbedDocuments(ctx context.Context, texts []string) ([][]float3
 
 	emb := make([][]float32, 0, len(texts))
 	for _, batch := range batchedTexts {
+		klog.V(5).Infoln("try to create an embedding batch:", batch)
 		curTextEmbeddings, err := e.client.CreateEmbedding(ctx, batch)
 		if err != nil {
 			return nil, err
 		}
+		klog.V(5).Infoln("create an embedding batch done")
 		emb = append(emb, curTextEmbeddings...)
 	}
 

@@ -1,0 +1,23 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: KnowledgeBase
+metadata:
+  name: knowledgebase-sample-pgvector
+  namespace: arcadia
+spec:
+  displayName: "测试 KnowledgeBase"
+  description: "测试 KnowledgeBase"
+  embedder:
+    kind: Embedders
+    name: zhipuai-embedders-sample
+    namespace: arcadia
+  vectorStore:
+    kind: VectorStores
+    name: pgvector-sample
+    namespace: arcadia
+  fileGroups:
+  - source:
+      kind: VersionedDataset
+      name: dataset-playground-v1
+      namespace: arcadia
+    paths:
+      - qa.csv

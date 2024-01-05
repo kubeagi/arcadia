@@ -5,7 +5,7 @@ metadata:
   name: datasource-postgresql-sample-authsecret
   namespace: arcadia
 data:
-  PGUSER: YWRtaW4=
+  PGUSER: cG9zdGdyZXM=
   PGPASSWORD: UGFzc3cwcmQh
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
@@ -20,5 +20,6 @@ spec:
     authSecret:
       kind: Secret
       name: datasource-postgresql-sample-authsecret
+      namespace: arcadia
   postgresql:
     PGDATABASE: arcadia
