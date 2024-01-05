@@ -39,6 +39,7 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds.Namespace = obj.GetNamespace()
 	n := obj.GetCreationTimestamp()
 	ds.CreationTimestamp = &n.Time
+	ds.UpdateTimestamp = &n.Time
 	ds.Labels = utils.MapStr2Any(obj.GetLabels())
 	ds.Annotations = utils.MapStr2Any(obj.GetAnnotations())
 	dataset := &v1alpha1.Dataset{}
