@@ -44,6 +44,12 @@ type WorkerSpec struct {
 	// - Memory
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// NodeSelectorRequirement to schedule this worker
+	MatchExpressions []corev1.NodeSelectorRequirement `json:"matchExpressions,omitempty"`
+
+	// Additional env to use
+	AdditionalEnvs []corev1.EnvVar `json:"additionalEnvs,omitempty"`
+
 	// Storage claimed to store model files
 	Storage *corev1.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 }

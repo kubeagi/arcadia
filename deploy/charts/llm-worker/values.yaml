@@ -5,7 +5,7 @@ image:
   repository: kubeagi/arcadia-fastchat-worker
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v0.1.0"
+  tag: "v0.2.0"
   env:
   - name: FASTCHAT_MODEL_NAME
     value: "baichuan2-7b"

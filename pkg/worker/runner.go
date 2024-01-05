@@ -20,8 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -73,25 +75,17 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 	// read worker address
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubeagi/arcadia-fastchat-worker:v0.1.0",
+		Image:           "kubeagi/arcadia-fastchat-worker:v0.2.0",
 		ImagePullPolicy: "IfNotPresent",
-		Command: []string{
-			"/bin/bash",
-			"-c",
-			`echo "Run model worker..."
-python3.9 -m fastchat.serve.model_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
---model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
---controller-address $FASTCHAT_CONTROLLER_ADDRESS \
---device $DEVICE --num-gpus $NUMBER_GPUS  \
---host 0.0.0.0 --port 21002`},
 		Env: []corev1.EnvVar{
+			{Name: "FASTCHAT_WORKER_NAME", Value: "fastchat.serve.model_worker"},
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
 			{Name: "FASTCHAT_REGISTRATION_MODEL_NAME", Value: runner.w.MakeRegistrationModelName()},
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
-			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
+			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
-			{Name: "DEVICE", Value: runner.Device().String()},
 			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
+			{Name: "EXTRA_ARGS", Value: fmt.Sprintf("--device %s", runner.Device().String())},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},
@@ -140,28 +134,53 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
-	// read worker address
+	rayClusterAddress := ""
+	pythonVersion := ""
+
+	// Get the real GPU requirement from env if configured
+	// this will be the total GPU from ray resource pool, not the resource requests/limits
+	gpuCount, _ := strconv.Atoi(runner.NumberOfGPUs())
+	rayClusterIndex := 0
+	for _, envItem := range runner.w.Spec.AdditionalEnvs {
+		if envItem.Name == "NUMBER_GPUS" {
+			gpuCount, _ = strconv.Atoi(envItem.Value)
+		}
+		if envItem.Name == "RAY_CLUSTER_INDEX" {
+			rayClusterIndex, _ = strconv.Atoi(envItem.Value)
+		}
+	}
+
+	// Get ray config from configMap
+	if gpuCount > 1 {
+		rayClusters, err := config.GetRayClusters(ctx, runner.c)
+		if err != nil || len(rayClusters) == 0 {
+			klog.Warningln("no ray cluster configured, fallback to local resoue: ", err)
+		} else {
+			// Use the 1st ray cluster for now
+			// TODO: let user to select with ray cluster to use
+			rayClusterAddress = rayClusters[rayClusterIndex].HeadAddress
+			pythonVersion = rayClusters[rayClusterIndex].PythonVersion
+			klog.Infof("run worker using ray: %s, number of GPU: %s", rayClusterAddress, runner.NumberOfGPUs())
+		}
+	} else {
+		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
+	}
+
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubeagi/arcadia-fastchat-worker:vllm-v0.1.0",
+		Image:           "kubeagi/arcadia-fastchat-worker:vllm-v0.2.0",
 		ImagePullPolicy: "IfNotPresent",
-		Command: []string{
-			"/bin/bash",
-			"-c",
-			`echo "Run model worker..."
-			python3.9 -m fastchat.serve.vllm_worker --model-names $FASTCHAT_REGISTRATION_MODEL_NAME \
-			--model-path /data/models/$FASTCHAT_MODEL_NAME --worker-address $FASTCHAT_WORKER_ADDRESS \
-			--controller-address $FASTCHAT_CONTROLLER_ADDRESS \
-			--num-gpus $NUMBER_GPUS \
-			--host 0.0.0.0 --port 21002 --trust-remote-code`},
 		Env: []corev1.EnvVar{
+			{Name: "FASTCHAT_WORKER_NAME", Value: "fastchat.serve.vllm_worker"},
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
 			{Name: "FASTCHAT_REGISTRATION_MODEL_NAME", Value: runner.w.MakeRegistrationModelName()},
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
-			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
+			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
-			// Ray will be used when NumberOfGPUs is more than 1
-			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
+			{Name: "EXTRA_ARGS", Value: "--trust-remote-code"},
+			// Need python version and ray address for distributed inference
+			{Name: "PYTHON_VERSION", Value: pythonVersion},
+			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},

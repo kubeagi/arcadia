@@ -31,8 +31,11 @@ type Config struct {
 	// VectorStore to access VectorStore api services
 	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
 
-	// Streamlit to get the configuration
+	// Streamlit to get the Streamlit configuration
 	Streamlit *Streamlit `json:"streamlit,omitempty"`
+
+	// Resource pool managed by Ray cluster
+	RayClusters []RayCluster `json:"rayClusters,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia
@@ -48,4 +51,16 @@ type Streamlit struct {
 	IngressClassName string `json:"ingressClassName"`
 	Host             string `json:"host"`
 	ContextPath      string `json:"contextPath"`
+}
+
+// RayCluster defines configuration of existing ray cluster that manage GPU resources
+type RayCluster struct {
+	// Name of this ray cluster
+	Name string `json:"name,omitempty"`
+	// Address of ray head address
+	HeadAddress string `json:"headAddress,omitempty"`
+	// Management dashboard of ray cluster, optional to configure it using ingress
+	DashboardHost string `json:"dashboardHost,omitempty"`
+	// Overwrite the python version in the woker
+	PythonVersion string `json:"pythonVersion,omitempty"`
 }
