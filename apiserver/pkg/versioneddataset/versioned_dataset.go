@@ -60,6 +60,7 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 		return nil, err
 	}
 	vds.CreationTimestamp = obj.GetCreationTimestamp().Time
+	vds.UpdateTimestamp = &vds.CreationTimestamp
 	vds.Creator = &versioneddataset.Spec.Creator
 	vds.DisplayName = &versioneddataset.Spec.DisplayName
 	vds.Description = &versioneddataset.Spec.Description
@@ -69,8 +70,6 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 		Name:      versioneddataset.Spec.Dataset.Name,
 		Namespace: versioneddataset.Spec.Dataset.Namespace,
 	}
-	now := time.Now()
-	vds.UpdateTimestamp = &now
 
 	vds.Version = versioneddataset.Spec.Version
 	vds.SyncStatus = new(string)
