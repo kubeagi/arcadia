@@ -1,6 +1,6 @@
 ## Roadmap of KubeAGI
 
-### v0.1.0 - 2023 Q4, will release soon
+### v0.1.0 - 2023 Q4 Released
 
 * Dataset Management - manage data, including local files, integrate with object storage(s3), data editing, version control, and file download
 * Data Processing - data cleaning, text splitting (e.g., text segmentation, QA splitting), file labeling
@@ -14,7 +14,7 @@
 * LLM Applications - prompt engineering, initial implementation of LLM application orchestration capabilities. Manage and orchestrate Prompt, LLM/Retriever Chain nodes, and provide relevant example applications (based on streamlit)
 * Guided walkthroughs and example scenarios - let the user get started to build LLM application quickly, add momre built-in chat example applications
 
-### v0.2.0 - 2024 Feb.
+### v0.2.0 - 2024 Feb. Ongoing
 * Support evaluation of Prompts under different LLMs and generate test reports.
 * RAG evaluation and RAG Question Generation
   - Optimize question generation, analyze question quality, filter out low-similarity questions

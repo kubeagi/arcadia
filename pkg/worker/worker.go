@@ -387,6 +387,7 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 	}
 	conRunner, _ := runner.(*corev1.Container)
 
+	// TODO: better way to handle local model file, maybe user want to use it as local cache
 	if podWorker.storage.HostPath != nil {
 		conRunner.Lifecycle = &corev1.Lifecycle{
 			PreStop: &corev1.LifecycleHandler{
@@ -400,7 +401,7 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 	// initialize deployment
 	desiredDep := podWorker.deployment.DeepCopy()
 	// configure pod template
-	podSpecTempalte := corev1.PodTemplateSpec{
+	podSpecTemplate := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
@@ -415,7 +416,7 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 		},
 	}
 	if podWorker.storage.HostPath != nil {
-		podSpecTempalte.Spec.Affinity = &corev1.Affinity{
+		podSpecTemplate.Spec.Affinity = &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
@@ -431,7 +432,7 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 				},
 			},
 		}
-		podSpecTempalte.Spec.Volumes = append(podSpecTempalte.Spec.Volumes, corev1.Volume{
+		podSpecTemplate.Spec.Volumes = append(podSpecTemplate.Spec.Volumes, corev1.Volume{
 			Name: "tmp",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
@@ -441,7 +442,34 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 		})
 	}
 
-	desiredDep.Spec.Template = podSpecTempalte
+	// Configure node affinity
+	if podWorker.w.Spec.MatchExpressions != nil {
+		if podSpecTemplate.Spec.Affinity != nil {
+			// Append to the current node selector
+			podSpecTemplate.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+				append(podSpecTemplate.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions, podWorker.w.Spec.MatchExpressions...)
+		} else {
+			// Create a new one
+			podSpecTemplate.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: podWorker.w.Spec.MatchExpressions,
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+
+	// Configure environment variable
+	if len(podSpecTemplate.Spec.Containers) > 0 {
+		podSpecTemplate.Spec.Containers[0].Env = append(podSpecTemplate.Spec.Containers[0].Env, podWorker.w.Spec.AdditionalEnvs...)
+	}
+
+	desiredDep.Spec.Template = podSpecTemplate
 	err = controllerutil.SetControllerReference(podWorker.Worker(), desiredDep, podWorker.s)
 	if err != nil {
 		return fmt.Errorf("failed to set owner reference with %w", err)

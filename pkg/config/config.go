@@ -45,6 +45,7 @@ var (
 	ErrNoConfigMinIO       = fmt.Errorf("config MinIO in comfigmap is not found")
 	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
 	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
+	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
 )
 
 func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
@@ -145,4 +146,16 @@ func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
 		return nil, ErrNoConfigStreamlit
 	}
 	return config.Streamlit, nil
+}
+
+// Get the ray cluster that can be used a resource pool
+func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) {
+	config, err := GetConfig(ctx, c, nil)
+	if err != nil {
+		return nil, err
+	}
+	if config.RayClusters == nil {
+		return nil, ErrNoConfigRayClusters
+	}
+	return config.RayClusters, nil
 }

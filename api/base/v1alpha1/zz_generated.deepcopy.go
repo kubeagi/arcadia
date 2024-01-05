@@ -1416,6 +1416,20 @@ func (in *WorkerSpec) DeepCopyInto(out *WorkerSpec) {
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.MatchExpressions != nil {
+		in, out := &in.MatchExpressions, &out.MatchExpressions
+		*out = make([]v1.NodeSelectorRequirement, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.AdditionalEnvs != nil {
+		in, out := &in.AdditionalEnvs, &out.AdditionalEnvs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Storage != nil {
 		in, out := &in.Storage, &out.Storage
 		*out = new(v1.PersistentVolumeClaimSpec)
