@@ -31,7 +31,7 @@ import (
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
-	"github.com/tmc/langchaingo/vectorstores/chroma"
+	"github.com/tmc/langchaingo/vectorstores"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +46,7 @@ import (
 	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	"github.com/kubeagi/arcadia/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/vectorstore"
 )
 
 const (
@@ -461,20 +462,13 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	for i, doc := range documents {
 		log.V(5).Info(fmt.Sprintf("document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
 	}
-	switch store.Spec.Type() { // nolint: gocritic
-	case arcadiav1alpha1.VectorStoreTypeChroma:
-		s, err := chroma.New(
-			chroma.WithChromaURL(store.Spec.Endpoint.URL),
-			chroma.WithDistanceFunction(store.Spec.Chroma.DistanceFunction),
-			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
-			chroma.WithEmbedder(em),
-		)
-		if err != nil {
-			return err
-		}
-		if _, err = s.AddDocuments(ctx, documents); err != nil {
-			return err
-		}
+	var s vectorstores.VectorStore
+	s, err = vectorstore.NewVectorStore(ctx, store, em, kb.VectorStoreCollectionName(), r.Client, nil)
+	if err != nil {
+		return err
+	}
+	if _, err = s.AddDocuments(ctx, documents); err != nil {
+		return err
 	}
 	log.Info("handle file succeeded")
 	return nil
@@ -493,21 +487,7 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
 		return
 	}
-	switch vectorStore.Spec.Type() { // nolint: gocritic
-	case arcadiav1alpha1.VectorStoreTypeChroma:
-		s, err := chroma.New(
-			chroma.WithChromaURL(vectorStore.Spec.Endpoint.URL),
-			chroma.WithNameSpace(kb.VectorStoreCollectionName()),
-			// workaround to fix 'invalid options: missing embedder or openai api key'
-			chroma.WithOpenAiAPIKey("fake-api-key"),
-		)
-		if err != nil {
-			log.Error(err, "reconcile delete: init vector store error, may leave garbage data")
-		}
-		if err = s.RemoveCollection(); err != nil {
-			log.Error(err, "reconcile delete: remove vector store error, may leave garbage data")
-		}
-	}
+	_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName())
 }
 
 func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {

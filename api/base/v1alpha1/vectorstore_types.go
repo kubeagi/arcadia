@@ -29,11 +29,26 @@ type VectorStoreSpec struct {
 	Endpoint *Endpoint `json:"endpoint,omitempty"`
 
 	Chroma *Chroma `json:"chroma,omitempty"`
+
+	PGVector *PGVector `json:"pgvector,omitempty"`
 }
 
 // Chroma defines the configuration of Chroma
 type Chroma struct {
 	DistanceFunction chromago.DistanceFunction `json:"distanceFunction,omitempty"`
+}
+
+type PGVector struct {
+	// PreDeleteCollection defines if the collection should be deleted before creating.
+	PreDeleteCollection bool `json:"preDeleteCollection,omitempty"`
+	// CollectionName defines the name of the collection
+	CollectionName string `json:"collectionName,omitempty"`
+	// EmbeddingTableName defines the name of the embedding table. if empty, use `langchain_pg_embedding`
+	EmbeddingTableName string `json:"embeddingTableName,omitempty"`
+	// CollectionTableName defines the name of the collection table. if empty, use `langchain_pg_collection`
+	CollectionTableName string `json:"collectionTableName,omitempty"`
+	// DataSourceRef defines the reference of the data source
+	DataSourceRef *TypedObjectReference `json:"dataSourceRef,omitempty"`
 }
 
 // VectorStoreStatus defines the observed state of VectorStore

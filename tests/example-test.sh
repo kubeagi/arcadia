@@ -244,6 +244,9 @@ fi
 
 info "6. verify default vectorstore"
 waitCRDStatusReady "VectorStore" "arcadia" "arcadia-vectorstore"
+info "6.2 verify PGVector vectorstore"
+kubectl apply -f config/samples/arcadia_v1alpha1_vectorstore_pgvector.yaml
+waitCRDStatusReady "VectorStore" "arcadia" "pgvector-sample"
 
 info "7. create and verify knowledgebase"
 
@@ -272,8 +275,11 @@ waitCRDStatusReady "Embedders" "arcadia" "zhipuai-embedders-sample"
 info "7.4 create knowledgebase and wait it ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase.yaml
 waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample"
+info "7.4.2 create knowledgebase base pgvector and wait it ready"
+kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase_pgvector.yaml
+waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample-pgvector"
 
-info "7.5 check this vectorstore has data"
+info "7.5 check chroma vectorstore has data"
 kubectl port-forward -n arcadia svc/arcadia-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
 info "port-forward chroma in pid: $chroma_pid"
@@ -300,9 +306,16 @@ info "port-forward portal in pid: $portal_pid"
 sleep 3
 getRespInAppChat "base-chat-english-teacher" "arcadia" "hi how are you?" "" "true"
 
-info "8.2 QA app using knowledgebase"
+info "8.2 QA app using knowledgebase base"
+info "8.2.1 QA app using knowledgebase base on chroma"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
+sleep 3
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
+
+info "8.2.2 QA app using knowledgebase base on pgvector"
+kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
 

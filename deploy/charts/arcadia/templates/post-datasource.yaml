@@ -39,8 +39,9 @@ spec:
     authSecret:
       kind: Secret
       name: {{ .Release.Name }}-postgresql-datasource-authsecret
+      namespace: {{ .Release.Namespace }}
   postgresql:
-    PGDATABASE: {{ .Values.postgresql.global.postgresql.auth.database }}
+    PGDATABASE: admin #FIXME: data-process should fix this error
 ---
 apiVersion: v1
 kind: Secret

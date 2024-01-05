@@ -88,7 +88,7 @@ func (r *DatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// indicated by the deletion timestamp being set.
 	if instance.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(instance, arcadiav1alpha1.Finalizer) {
 		logger.Info("Performing Finalizer Operations for Datasource before delete CR")
-		// TODO perform the finalizer operations here, for example: remove data?
+		r.RemoveDatasource(logger, instance)
 		logger.Info("Removing Finalizer for Datasource after successfully performing the operations")
 		controllerutil.RemoveFinalizer(instance, arcadiav1alpha1.Finalizer)
 		if err := r.Update(ctx, instance); err != nil {
@@ -172,7 +172,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	case arcadiav1alpha1.DatasourceTypeRDMA:
 		return r.UpdateStatus(ctx, instance, nil)
 	case arcadiav1alpha1.DatasourceTypePostgreSQL:
-		ds, err = datasource.NewPostgreSQL(ctx, r.Client, nil, instance.Spec.PostgreSQL, endpoint)
+		ds, err = datasource.GetPostgreSQLPool(ctx, r.Client, nil, instance)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
@@ -218,4 +218,15 @@ func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcad
 	}
 	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)
+}
+
+func (r *DatasourceReconciler) RemoveDatasource(logger logr.Logger, instance *arcadiav1alpha1.Datasource) {
+	logger.V(5).Info("remove datasource")
+	switch instance.Spec.Type() {
+	case arcadiav1alpha1.DatasourceTypeOSS:
+	case arcadiav1alpha1.DatasourceTypeRDMA:
+	case arcadiav1alpha1.DatasourceTypePostgreSQL:
+		datasource.RemovePostgreSQLPool(*instance)
+	default:
+	}
 }

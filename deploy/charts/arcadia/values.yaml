@@ -138,7 +138,7 @@ postgresql:
   image:
     registry: docker.io
     repository: kubeagi/postgresql
-    tag: 16.1.0-debian-11-r15
+    tag: 15-pgvector-v0.5.1
     pullPolicy: IfNotPresent
   primary:
     initdb:

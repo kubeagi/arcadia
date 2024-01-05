@@ -14,3 +14,23 @@ spec:
   chroma:
     distanceFunction: cosine
 
+{{- if .Values.postgresql.enabled }}
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: VectorStore
+metadata:
+  name:  {{ .Release.Name }}-pgvector-vectorstore
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "pgvector 向量数据库"
+  description: "pgvector 类型的向量数据库"
+  pgvector:
+    dataSourceRef:
+      apiGroup: arcadia.kubeagi.k8s.com.cn
+      kind: Datasource
+      name: {{ .Release.Name }}-postgresql
+      namespace: {{ .Release.Namespace }}
+{{- end }}
