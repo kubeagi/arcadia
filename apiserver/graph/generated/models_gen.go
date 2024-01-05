@@ -443,6 +443,7 @@ type DataProcessQuery struct {
 	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
 	DataProcessDetails        *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
 	CheckDataProcessTaskName  *DataProcessResponse      `json:"checkDataProcessTaskName,omitempty"`
+	GetLogInfo                *DataProcessResponse      `json:"getLogInfo,omitempty"`
 }
 
 type DataProcessResponse struct {

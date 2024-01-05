@@ -162,6 +162,8 @@ models:
         resolver: true
       checkDataProcessTaskName:
         resolver: true
+      getLogInfo:
+        resolver: true
   DataProcessMutation:
     fields:
       createDataProcessTask:

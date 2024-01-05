@@ -13,3 +13,17 @@
 # limitations under the License.
 
 llm_wait_seconds = 120
+
+clean_support_type = [
+    'remove_invisible_characters',
+    'space_standardization',
+    'remove_garbled_text',
+    'traditional_to_simplified',
+    'remove_html_tag',
+    'remove_emojis'
+]
+privacy_support_type = [
+    'remove_email',
+    'remove_ip_address',
+    'remove_number'
+]

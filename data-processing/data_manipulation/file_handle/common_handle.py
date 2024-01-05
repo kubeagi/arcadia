@@ -221,6 +221,7 @@ def _data_clean(
                         'transform_type': 'remove_invisible_characters',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -228,6 +229,22 @@ def _data_clean(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_invisible_characters',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
     
     # process for space standardization
@@ -248,6 +265,7 @@ def _data_clean(
                         'transform_type': 'space_standardization',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -255,6 +273,22 @@ def _data_clean(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'space_standardization',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
 
     # process for remove garbled text
@@ -273,13 +307,30 @@ def _data_clean(
                     'transform_type': 'remove_garbled_text',
                     'pre_content': data,
                     'post_content': result['data']['text'],
-                        'create_user': create_user
+                    'status': 'success',
+                    'create_user': create_user
                 }
                 data_process_detail_db_operate.insert_transform_info(
                     task_detail_item,
                     pool=conn_pool
                 )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_garbled_text',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
 
     # process for Traditional Chinese to Simplified Chinese
@@ -298,13 +349,30 @@ def _data_clean(
                     'transform_type': 'traditional_to_simplified',
                     'pre_content': data,
                     'post_content': result['data']['text'],
-                        'create_user': create_user
+                    'status': 'success',
+                    'create_user': create_user
                 }
                 data_process_detail_db_operate.insert_transform_info(
                     task_detail_item,
                     pool=conn_pool
                 )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'traditional_to_simplified',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
 
     # process for clean html code in text samples
@@ -323,6 +391,7 @@ def _data_clean(
                     'transform_type': 'remove_html_tag',
                     'pre_content': data,
                     'post_content': result['data']['text'],
+                    'status': 'success',
                     'create_user': create_user
                 }
                 data_process_detail_db_operate.insert_transform_info(
@@ -330,6 +399,22 @@ def _data_clean(
                     pool=conn_pool
                 )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_html_tag',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
     
 
     # process for remove emojis
@@ -350,6 +435,7 @@ def _data_clean(
                         'transform_type': 'remove_emojis',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -357,6 +443,22 @@ def _data_clean(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_emojis',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
     return {
         'status': 200,
@@ -417,6 +519,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_email',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -424,6 +527,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_email',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
         
 
     # remove ip addresses
@@ -444,6 +563,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_ip_address',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -451,6 +571,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_ip_address',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
     # remove number
     if support_type_map.get('remove_number'):
@@ -471,6 +607,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -478,6 +615,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_number',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
         
         # remove id card
         result = privacy_transform.remove_id_card(
@@ -496,6 +649,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -503,6 +657,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_number',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
         # remove weixin
         result = privacy_transform.remove_weixin(
@@ -521,6 +691,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -528,6 +699,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_number',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
 
         # remove bank card
         result = privacy_transform.remove_bank_card(
@@ -546,6 +733,7 @@ def _remove_privacy_info(
                         'transform_type': 'remove_number',
                         'pre_content': item['pre_content'],
                         'post_content': item['post_content'],
+                        'status': 'success',
                         'create_user': create_user
                     }
                     data_process_detail_db_operate.insert_transform_info(
@@ -553,6 +741,22 @@ def _remove_privacy_info(
                         pool=conn_pool
                     )
             data = result['data']['text']
+        else:
+            task_detail_item = {
+                'id': ulid.ulid(),
+                'task_id': task_id,
+                'document_id': document_id,
+                'document_chunk_id': document_chunk_id,
+                'file_name': file_name,
+                'transform_type': 'remove_number',
+                'status': 'fail',
+                'error_message': result.get('message'),
+                'create_user': create_user
+            }
+            data_process_detail_db_operate.insert_transform_info(
+                task_detail_item,
+                pool=conn_pool
+            )
    
     return {
         'status': 200,
