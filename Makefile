@@ -265,11 +265,17 @@ GRL_SDK_GENERATOR_IMAGE ?= yuntijs/gql-sdk-generator:latest
 GRAPH_API_ENDPOINT ?= http://0.0.0.0:8888/bff
 # TODO change this config to a more constant value: /kubeagi-apis/bff after frontend code is ready
 GRAPH_CLIENT_ENDPOINT ?= /kubeagi-apis/bff
+GRL_SDK_TEST_ONLY ?= true
+ifeq ($(GRL_SDK_TEST_ONLY), false)
+    DOCKER_ENV_TEST_ONLY =
+else
+    DOCKER_ENV_TEST_ONLY = --env TEST_ONLY=true
+endif
 .PHONY: bff-sdk-generator
 bff-sdk-generator:
 	docker run --rm --net=host --env SDK_PACKAGE_NAME=@yuntijs/arcadia-bff-sdk \
 	--env SDK_YUNTI_NAME=ArcadiaBffSDK --env GRAPH_API_ENDPOINT=${GRAPH_API_ENDPOINT} \
-	--env GRAPH_CLIENT_ENDPOINT=${GRAPH_CLIENT_ENDPOINT} \
+	--env GRAPH_CLIENT_ENDPOINT=${GRAPH_CLIENT_ENDPOINT} ${DOCKER_ENV_TEST_ONLY} \
 	-v $(shell pwd)/apiserver/graph/schema:/schema \
 	-v ~/.npmrc:/root/.npmrc ${GRL_SDK_GENERATOR_IMAGE}
 
