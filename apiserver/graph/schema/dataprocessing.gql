@@ -118,6 +118,16 @@ query checkDataProcessTaskName($input: CheckDataProcessTaskNameInput){
   }
 }
 
+query getLogInfo($input: DataProcessDetailsInput){
+  dataProcess {
+    getLogInfo(input: $input) {
+      status
+      data 
+      message
+    }
+  }
+}
+
 mutation createDataProcessTask($input: AddDataProcessInput) {
   dataProcess {
     createDataProcessTask(input: $input) {

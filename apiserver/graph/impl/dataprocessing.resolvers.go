@@ -75,7 +75,7 @@ func (r *dataProcessQueryResolver) CheckDataProcessTaskName(ctx context.Context,
 }
 
 // GetLogInfo is the resolver for the getLogInfo field.
-func (r *dataProcessQueryResolver) GetLogInfo(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
+func (r *dataProcessQueryResolver) GetLogInfo(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessResponse, error) {
 	c, err := getClientFromCtx(ctx)
 	if err != nil {
 		return nil, err
