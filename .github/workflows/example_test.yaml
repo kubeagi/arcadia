@@ -52,6 +52,8 @@ jobs:
           path: /tmp/operator.image.tar
 
   example-test:
+    env:
+      GRL_SDK_TEST_ONLY: true
     needs:
       - build-image
     runs-on: ubuntu-latest
@@ -94,3 +96,27 @@ jobs:
         with:
           name: ${{ github.sha }}-${{ matrix.no }}.logs
           path: ${{ env.LOG_DIR }}
+      - uses: dorny/paths-filter@v2
+        if: matrix.no == 1
+        id: gql-changes
+        with:
+          filters: |
+            gql:
+              - 'apiserver/graph/schema/*.gql'
+      - name: setting token to npmrc
+        if: github.event == 'push' && steps.gql-changes.outputs.gql == 'true' && matrix.no == 1
+        run: |
+          echo '//dev-npm.tenxcloud.net/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
+          echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
+      - name: Set variable on Push
+        if: github.event == 'push' && matrix.no == 1
+        run: |
+          echo "GRL_SDK_TEST_ONLY=false" >> $GITHUB_ENV
+      - name: make sdk
+        if: steps.gql-changes.outputs.gql == 'true' && matrix.no == 1
+        run: |
+          kubectl port-forward svc/arcadia-apiserver -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
+          export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
+          make bff-sdk-generator
+        env:
+          GRL_SDK_TEST_ONLY: ${{ env.GRL_SDK_TEST_ONLY }}
