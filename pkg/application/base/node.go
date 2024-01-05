@@ -41,10 +41,11 @@ type Node interface {
 
 func NewBaseNode(appNamespace, nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
 	return BaseNode{
-		name: nodeName,
-		Ref:  ref,
-		prev: make([]Node, 0),
-		next: make([]Node, 0),
+		appNamespace: appNamespace,
+		name:         nodeName,
+		Ref:          ref,
+		prev:         make([]Node, 0),
+		next:         make([]Node, 0),
 	}
 }
 
