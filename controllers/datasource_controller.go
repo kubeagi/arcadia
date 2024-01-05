@@ -154,16 +154,16 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	logger.V(5).Info("check datasource")
 	var err error
 
+	endpoint := instance.Spec.Endpoint.DeepCopy()
+	// set auth secret's namespace to the datasource's namespace
+	if endpoint.AuthSecret != nil {
+		endpoint.AuthSecret.WithNameSpace(instance.Namespace)
+	}
 	// create datasource
 	var ds datasource.Datasource
 	var info any
 	switch instance.Spec.Type() {
 	case arcadiav1alpha1.DatasourceTypeOSS:
-		endpoint := instance.Spec.Endpoint.DeepCopy()
-		// set auth secret's namespace to the datasource's namespace
-		if endpoint.AuthSecret != nil {
-			endpoint.AuthSecret.WithNameSpace(instance.Namespace)
-		}
 		ds, err = datasource.NewOSS(ctx, r.Client, nil, endpoint)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
@@ -171,6 +171,11 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 		info = instance.Spec.OSS.DeepCopy()
 	case arcadiav1alpha1.DatasourceTypeRDMA:
 		return r.UpdateStatus(ctx, instance, nil)
+	case arcadiav1alpha1.DatasourceTypePostgreSQL:
+		ds, err = datasource.NewPostgreSQL(ctx, r.Client, nil, instance.Spec.PostgreSQL, endpoint)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
 	default:
 		ds, err = datasource.NewUnknown(ctx, r.Client)
 		if err != nil {

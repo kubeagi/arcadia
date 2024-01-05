@@ -1,0 +1,24 @@
+## Datasource secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: datasource-postgresql-sample-authsecret
+  namespace: arcadia
+data:
+  PGUSER: YWRtaW4=
+  PGPASSWORD: UGFzc3cwcmQh
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name: datasource-postgresql-sample
+  namespace: arcadia
+spec:
+  displayName: "postgresql 数据源示例"
+  endpoint:
+    url: postgres://arcadia-postgresql.arcadia.svc.cluster.local:5432
+    authSecret:
+      kind: Secret
+      name: datasource-postgresql-sample-authsecret
+  postgresql:
+    PGDATABASE: arcadia

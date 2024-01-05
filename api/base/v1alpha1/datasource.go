@@ -23,19 +23,21 @@ const (
 type DatasourceType string
 
 const (
-	DatasourceTypeOSS     DatasourceType = "oss"
-	DatasourceTypeRDMA    DatasourceType = "RDMA"
-	DatasourceTypeUnknown DatasourceType = "unknown"
+	DatasourceTypeOSS        DatasourceType = "oss"
+	DatasourceTypeRDMA       DatasourceType = "RDMA"
+	DatasourceTypePostgreSQL DatasourceType = "postgresql"
+	DatasourceTypeUnknown    DatasourceType = "unknown"
 )
 
 func (ds DatasourceSpec) Type() DatasourceType {
-	// Object storage service
-	if ds.OSS != nil {
+	switch {
+	case ds.OSS != nil:
 		return DatasourceTypeOSS
-	}
-	if ds.RDMA != nil {
+	case ds.RDMA != nil:
 		return DatasourceTypeRDMA
+	case ds.PostgreSQL != nil:
+		return DatasourceTypePostgreSQL
+	default:
+		return DatasourceTypeUnknown
 	}
-
-	return DatasourceTypeUnknown
 }

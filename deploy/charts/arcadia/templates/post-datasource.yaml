@@ -19,3 +19,36 @@ spec:
   oss:
     # pre-defined buckets for arcadia
     bucket: {{ .Release.Namespace }}
+
+{{- if .Values.postgresql.enabled }}
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name:  {{ .Release.Name }}-postgresql
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "内置PG数据源"
+  description: "Arcadia 内置PG数据源"
+  endpoint:
+    url: postgres://{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}:5432
+    internalURL: postgres://{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}:5432
+    authSecret:
+      kind: Secret
+      name: {{ .Release.Name }}-postgresql-datasource-authsecret
+  postgresql:
+    PGDATABASE: {{ .Values.postgresql.global.postgresql.auth.database }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-postgresql-datasource-authsecret
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  PGUSER: {{ .Values.postgresql.global.postgresql.auth.username  | b64enc | quote }}
+  PGPASSWORD: {{ .Values.postgresql.global.postgresql.auth.password  | b64enc | quote }}
+{{- end }}

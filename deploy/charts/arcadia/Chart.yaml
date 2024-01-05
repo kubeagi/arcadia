@@ -2,7 +2,7 @@ apiVersion: v2
 name: arcadia
 description: A Helm chart(KubeBB Component) for KubeAGI Arcadia
 type: application
-version: 0.2.3
+version: 0.2.4
 appVersion: "0.1.0"
 
 keywords:
@@ -13,8 +13,14 @@ sources:
   - https://github.com/kubeagi/arcadia
 
 maintainers:
+  - name: nkwangleiGIT
+    url: https://github.com/nkwangleiGIT
   - name: bjwswang
     url: https://github.com/bjwswang
+  - name: Abirdcfly
+    url: https://github.com/Abirdcfly
+  - name: 0xff-dev
+    url: https://github.com/0xff-dev
   - name: lanture1064
     url: https://github.com/lanture1064
 

@@ -17,7 +17,6 @@ package datasource
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -75,13 +74,8 @@ func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint
 				return nil, err
 			}
 			data, _, _ := unstructured.NestedStringMap(secret.Object, "data")
-
-			if ds, err := base64.StdEncoding.DecodeString(data["rootUser"]); err == nil {
-				accessKeyID = string(ds)
-			}
-			if ds, err := base64.StdEncoding.DecodeString(data["rootPassword"]); err == nil {
-				secretAccessKey = string(ds)
-			}
+			accessKeyID = utils.DecodeBase64Str(data["rootUser"])
+			secretAccessKey = utils.DecodeBase64Str(data["rootPassword"])
 		}
 		if c != nil {
 			secret := corev1.Secret{}

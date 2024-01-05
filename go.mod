@@ -14,6 +14,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/gofiber/fiber/v2 v2.49.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/jackc/pgx/v5 v5.4.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.3
 	github.com/r3labs/sse/v2 v2.10.0
@@ -54,6 +55,9 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/puddle/v2 v2.2.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
@@ -74,6 +78,7 @@ require (
 	github.com/yargevad/filepathx v1.0.0 // indirect
 	go.starlark.net v0.0.0-20230302034142-4b1e35fe2254 // indirect
 	golang.org/x/arch v0.6.0 // indirect
+	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
