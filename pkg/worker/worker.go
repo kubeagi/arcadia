@@ -257,7 +257,7 @@ func (podWorker *PodWorker) Model() *arcadiav1alpha1.Model {
 }
 
 // BeforeStart will create resources which are related to this Worker
-// Now we have a pvc(if configured),service,LLM(if a llm model),Embedder(if a embedding model)
+// Now we have a pvc(if configured), service, LLM(if a llm model), Embedder(if a embedding model)
 func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 	var err error
 	// If the local directory is mounted, there is no need to create the pvc
