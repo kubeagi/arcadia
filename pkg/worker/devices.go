@@ -43,8 +43,8 @@ const (
 
 // DeviceBasedOnResource returns the device type based on the resource list
 func DeviceBasedOnResource(resource corev1.ResourceList) Device {
-	_, ok := resource[ResourceNvidiaGPU]
-	if ok {
+	value, ok := resource[ResourceNvidiaGPU]
+	if ok && value.Value() > 0 {
 		return CUDA
 	}
 	return CPU
