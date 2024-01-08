@@ -1,0 +1,19 @@
+# list
+query listRayClusters($input: ListCommonInput!){
+  RayCluster {
+    listRayClusters(input: $input) {
+      totalCount
+      hasNextPage
+      nodes {
+        __typename
+        ... on RayCluster {
+          index
+          name
+          headAddress
+          dashboardHost
+          pythonVersion
+        }
+      }
+    }
+  }
+}

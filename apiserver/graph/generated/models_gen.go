@@ -1097,6 +1097,28 @@ type PaginatedResult struct {
 	TotalCount  int        `json:"totalCount"`
 }
 
+// RayCluster集群
+type RayCluster struct {
+	// Ray集群的索引
+	Index int `json:"index"`
+	// 名称
+	// 规则: 遵循k8s命名
+	Name string `json:"name"`
+	// Ray集群head节点的地址
+	// 规则: 遵循k8s命名
+	HeadAddress *string `json:"headAddress,omitempty"`
+	// Ray集群dashboard的地址
+	DashboardHost *string `json:"dashboardHost,omitempty"`
+	// Ray集群应用要求的python版本
+	PythonVersion *string `json:"pythonVersion,omitempty"`
+}
+
+func (RayCluster) IsPageNode() {}
+
+type RayClusterQuery struct {
+	ListRayClusters PaginatedResult `json:"listRayClusters"`
+}
+
 // 模型服务worker节点的资源(limits)
 type Resources struct {
 	CPU       *string `json:"cpu,omitempty"`

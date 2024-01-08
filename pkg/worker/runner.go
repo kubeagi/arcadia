@@ -152,9 +152,9 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 
 	// Get ray config from configMap
 	if gpuCount > 1 {
-		rayClusters, err := config.GetRayClusters(ctx, runner.c)
+		rayClusters, err := config.GetRayClusters(ctx, runner.c, nil)
 		if err != nil || len(rayClusters) == 0 {
-			klog.Warningln("no ray cluster configured, fallback to local resoue: ", err)
+			klog.Warningln("no ray cluster configured, fallback to local resource: ", err)
 		} else {
 			// Use the 1st ray cluster for now
 			// TODO: let user to select with ray cluster to use

@@ -22,7 +22,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 
 	var filegroups []v1alpha1.FileGroup
 	var vectorstore v1alpha1.TypedObjectReference
-	vector, _ := config.GetVectorStore(ctx, c)
+	vector, _ := config.GetVectorStore(ctx, nil, c)
 	displayname, description, embedder := "", "", ""
 	if input.DisplayName != nil {
 		displayname = *input.DisplayName

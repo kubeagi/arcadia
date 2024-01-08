@@ -59,6 +59,7 @@ type ResolverRoot interface {
 	ModelServiceQuery() ModelServiceQueryResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	RayClusterQuery() RayClusterQueryResolver
 	VersionedDataset() VersionedDatasetResolver
 	VersionedDatasetMutation() VersionedDatasetMutationResolver
 	VersionedDatasetQuery() VersionedDatasetQueryResolver
@@ -502,8 +503,21 @@ type ComplexityRoot struct {
 		Llm              func(childComplexity int) int
 		Model            func(childComplexity int) int
 		ModelService     func(childComplexity int) int
+		RayCluster       func(childComplexity int) int
 		VersionedDataset func(childComplexity int) int
 		Worker           func(childComplexity int) int
+	}
+
+	RayCluster struct {
+		DashboardHost func(childComplexity int) int
+		HeadAddress   func(childComplexity int) int
+		Index         func(childComplexity int) int
+		Name          func(childComplexity int) int
+		PythonVersion func(childComplexity int) int
+	}
+
+	RayClusterQuery struct {
+		ListRayClusters func(childComplexity int, input ListCommonInput) int
 	}
 
 	Resources struct {
@@ -713,8 +727,12 @@ type QueryResolver interface {
 	Llm(ctx context.Context) (*LLMQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
 	ModelService(ctx context.Context) (*ModelServiceQuery, error)
+	RayCluster(ctx context.Context) (*RayClusterQuery, error)
 	VersionedDataset(ctx context.Context) (*VersionedDatasetQuery, error)
 	Worker(ctx context.Context) (*WorkerQuery, error)
+}
+type RayClusterQueryResolver interface {
+	ListRayClusters(ctx context.Context, obj *RayClusterQuery, input ListCommonInput) (*PaginatedResult, error)
 }
 type VersionedDatasetResolver interface {
 	Files(ctx context.Context, obj *VersionedDataset, input *FileFilter) (*PaginatedResult, error)
@@ -3063,6 +3081,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ModelService(childComplexity), true
 
+	case "Query.RayCluster":
+		if e.complexity.Query.RayCluster == nil {
+			break
+		}
+
+		return e.complexity.Query.RayCluster(childComplexity), true
+
 	case "Query.VersionedDataset":
 		if e.complexity.Query.VersionedDataset == nil {
 			break
@@ -3076,6 +3101,53 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Worker(childComplexity), true
+
+	case "RayCluster.dashboardHost":
+		if e.complexity.RayCluster.DashboardHost == nil {
+			break
+		}
+
+		return e.complexity.RayCluster.DashboardHost(childComplexity), true
+
+	case "RayCluster.headAddress":
+		if e.complexity.RayCluster.HeadAddress == nil {
+			break
+		}
+
+		return e.complexity.RayCluster.HeadAddress(childComplexity), true
+
+	case "RayCluster.index":
+		if e.complexity.RayCluster.Index == nil {
+			break
+		}
+
+		return e.complexity.RayCluster.Index(childComplexity), true
+
+	case "RayCluster.name":
+		if e.complexity.RayCluster.Name == nil {
+			break
+		}
+
+		return e.complexity.RayCluster.Name(childComplexity), true
+
+	case "RayCluster.pythonVersion":
+		if e.complexity.RayCluster.PythonVersion == nil {
+			break
+		}
+
+		return e.complexity.RayCluster.PythonVersion(childComplexity), true
+
+	case "RayClusterQuery.listRayClusters":
+		if e.complexity.RayClusterQuery.ListRayClusters == nil {
+			break
+		}
+
+		args, err := ec.field_RayClusterQuery_listRayClusters_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.RayClusterQuery.ListRayClusters(childComplexity, args["input"].(ListCommonInput)), true
 
 	case "Resources.cpu":
 		if e.complexity.Resources.CPU == nil {
@@ -4817,7 +4889,7 @@ type TypedObjectReference {
     namespace: String
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster
 `, BuiltIn: false},
 	{Name: "../schema/knowledgebase.graphqls", Input: `"""
 文件组
@@ -5546,6 +5618,41 @@ extend type Query {
     ModelService: ModelServiceQuery
 }
 `, BuiltIn: false},
+	{Name: "../schema/raycluster.graphqls", Input: `
+"""RayCluster集群"""
+type RayCluster {
+    """
+    Ray集群的索引
+    """
+    index: Int!
+    """
+    名称
+    规则: 遵循k8s命名
+    """
+    name: String!
+    """
+    Ray集群head节点的地址
+    规则: 遵循k8s命名
+    """
+    headAddress: String
+    """
+    Ray集群dashboard的地址
+    """
+    dashboardHost: String
+    """
+    Ray集群应用要求的python版本
+    """
+    pythonVersion: String
+}
+
+
+type RayClusterQuery {
+    listRayClusters(input: ListCommonInput!): PaginatedResult!
+}
+
+extend type Query {
+    RayCluster: RayClusterQuery
+}`, BuiltIn: false},
 	{Name: "../schema/versioned_dataset.graphqls", Input: `scalar Int64
 """
 VersionedDataset
@@ -6853,6 +6960,21 @@ func (ec *executionContext) field_Query_hello_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_RayClusterQuery_listRayClusters_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ListCommonInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListCommonInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -21310,6 +21432,51 @@ func (ec *executionContext) fieldContext_Query_ModelService(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_RayCluster(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_RayCluster(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RayCluster(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RayClusterQuery)
+	fc.Result = res
+	return ec.marshalORayClusterQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRayClusterQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_RayCluster(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "listRayClusters":
+				return ec.fieldContext_RayClusterQuery_listRayClusters(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RayClusterQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_VersionedDataset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_VersionedDataset(ctx, field)
 	if err != nil {
@@ -21529,6 +21696,284 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayCluster_index(ctx context.Context, field graphql.CollectedField, obj *RayCluster) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayCluster_index(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Index, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayCluster_index(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayCluster",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayCluster_name(ctx context.Context, field graphql.CollectedField, obj *RayCluster) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayCluster_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayCluster_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayCluster",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayCluster_headAddress(ctx context.Context, field graphql.CollectedField, obj *RayCluster) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayCluster_headAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HeadAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayCluster_headAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayCluster",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayCluster_dashboardHost(ctx context.Context, field graphql.CollectedField, obj *RayCluster) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayCluster_dashboardHost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DashboardHost, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayCluster_dashboardHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayCluster",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayCluster_pythonVersion(ctx context.Context, field graphql.CollectedField, obj *RayCluster) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayCluster_pythonVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PythonVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayCluster_pythonVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayCluster",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RayClusterQuery_listRayClusters(ctx context.Context, field graphql.CollectedField, obj *RayClusterQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RayClusterQuery_listRayClusters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RayClusterQuery().ListRayClusters(rctx, obj, fc.Args["input"].(ListCommonInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RayClusterQuery_listRayClusters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RayClusterQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_RayClusterQuery_listRayClusters_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -29920,6 +30365,13 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._ModelService(ctx, sel, obj)
+	case RayCluster:
+		return ec._RayCluster(ctx, sel, &obj)
+	case *RayCluster:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RayCluster(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -34163,6 +34615,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "RayCluster":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_RayCluster(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "VersionedDataset":
 			field := field
 
@@ -34209,6 +34680,126 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rayClusterImplementors = []string{"RayCluster", "PageNode"}
+
+func (ec *executionContext) _RayCluster(ctx context.Context, sel ast.SelectionSet, obj *RayCluster) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rayClusterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RayCluster")
+		case "index":
+			out.Values[i] = ec._RayCluster_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._RayCluster_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "headAddress":
+			out.Values[i] = ec._RayCluster_headAddress(ctx, field, obj)
+		case "dashboardHost":
+			out.Values[i] = ec._RayCluster_dashboardHost(ctx, field, obj)
+		case "pythonVersion":
+			out.Values[i] = ec._RayCluster_pythonVersion(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rayClusterQueryImplementors = []string{"RayClusterQuery"}
+
+func (ec *executionContext) _RayClusterQuery(ctx context.Context, sel ast.SelectionSet, obj *RayClusterQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rayClusterQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RayClusterQuery")
+		case "listRayClusters":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RayClusterQuery_listRayClusters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -37025,6 +37616,13 @@ func (ec *executionContext) marshalOPaginatedDataProcessItem2ᚖgithubᚗcomᚋk
 		return graphql.Null
 	}
 	return ec._PaginatedDataProcessItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORayClusterQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRayClusterQuery(ctx context.Context, sel ast.SelectionSet, v *RayClusterQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RayClusterQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOResourcesInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResourcesInput(ctx context.Context, v interface{}) (*ResourcesInput, error) {

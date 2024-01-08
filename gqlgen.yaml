@@ -258,3 +258,7 @@ models:
         resolver: true
       checkModelService:
         resolver: true
+  RayClusterQuery:
+    fields:
+      listRayClusters:
+        resolver: true
