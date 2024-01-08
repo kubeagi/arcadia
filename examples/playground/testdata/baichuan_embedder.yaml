@@ -1,0 +1,25 @@
+## Embedder secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: baichuan2-7b-worker-baichuan-sample-playground
+  namespace: system-tce
+type: Opaque
+data:
+  apiKey: "NGZjY2VjZWIxNjY2Y2QxMTgwOGMyMThkNmQ2MTk5NTAuVENYVXZhUUNXRnlJa3hCMw==" # replace this with your API key
+---
+## Embedder
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Embedder
+metadata:
+  name: baichuan2-7b-worker-baichuan-sample-playground
+  namespace: system-tce
+spec:
+  serviceType: "openai"
+  provider:
+    endpoint:
+      url: "http://arcadia-fastchat.172.22.96.167.nip.io/v1" # replace this with your LLM URL(Zhipuai use predefined url https://open.bigmodel.cn/api/paas/v3/model-api)
+      authSecret:
+        kind: secret
+        name: baichuan2-7b-worker-baichuan-sample-playground
+# baichuan2-7b-worker-baichuan-sample-playground
