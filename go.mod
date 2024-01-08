@@ -12,7 +12,7 @@ require (
 	github.com/gin-contrib/requestid v0.0.6
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.2.3
-	github.com/gofiber/fiber/v2 v2.49.1
+	github.com/gofiber/fiber/v2 v2.50.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jackc/pgx/v5 v5.4.1
 	github.com/onsi/ginkgo v1.16.5
@@ -24,7 +24,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
 	github.com/tmc/langchaingo v0.1.3
-	github.com/valyala/fasthttp v1.49.0
+	github.com/valyala/fasthttp v1.50.0
 	github.com/vektah/gqlparser/v2 v2.5.10
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
