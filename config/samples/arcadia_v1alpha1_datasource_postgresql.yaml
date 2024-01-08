@@ -20,5 +20,6 @@ spec:
     authSecret:
       kind: Secret
       name: datasource-postgresql-sample-authsecret
+      namespace: arcadia
   postgresql:
-    PGDATABASE: arcadia
+    PGDATABASE: admin

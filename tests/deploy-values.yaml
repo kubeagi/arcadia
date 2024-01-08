@@ -93,7 +93,7 @@ chromadb:
 # @section dataprocess is used to configure data processing service
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
-  enabled: false
+  enabled: true
   image: kubeagi/data-processing:latest
   port: 28888
   config:
@@ -119,5 +119,8 @@ postgresql:
   image:
     registry: docker.io
     repository: kubeagi/postgresql
-    tag: 16.1.0-debian-11-r15
+    tag: 15-pgvector-v0.5.1
     pullPolicy: IfNotPresent
+  primary:
+    initdb:
+      scriptsConfigMap: pg-init-data
