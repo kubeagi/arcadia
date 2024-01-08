@@ -1,4 +1,4 @@
-{{- if .Values.fastchat.ingress.enabled }}
+{{- if and (.Values.fastchat.enabled) (.Values.fastchat.ingress.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

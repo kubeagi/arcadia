@@ -1,3 +1,4 @@
+{{- if .Values.postgresql.enabled }}
 apiVersion: v1
 data:
   config: |
@@ -37,3 +38,4 @@ metadata:
     control-plane: {{ .Release.Name }}-arcadia
   name: {{ .Release.Name }}-config
   namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -46,6 +46,7 @@ portal:
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:
+  enabled: true
   image:
     repository: kubeagi/arcadia-fastchat
     tag: v0.1.0
@@ -98,6 +99,7 @@ minio:
 
 # @section chromadb is used to deploy a chromadb instance
 chromadb:
+  enabled: true
   image:
     repository: kubeagi/chromadb
   chromadb:
