@@ -308,45 +308,21 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
 	})
 
-	totalCount := len(us.Items)
-
-	// if pageSize is -1 which means unlimited pagesize,return all
-	if pageSize == common.UnlimitedPageSize {
-		page = 1
-		pageSize = totalCount
-	}
-
-	result := make([]generated.PageNode, 0, pageSize)
-	pageStart := (page - 1) * pageSize
-	for index, u := range us.Items {
-		// skip if smaller than the start index
-		if index < pageStart {
-			continue
-		}
+	result := make([]generated.PageNode, 0, len(us.Items))
+	for _, u := range us.Items {
 		m := Embedder2model(ctx, c, &u)
 		// filter based on `keyword`
-		if keyword != "" {
-			if !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-				continue
-			}
+		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
+			continue
 		}
 		result = append(result, opts.ConvertFunc(m))
-
-		// break if page size matches
-		if len(result) == pageSize {
-			break
-		}
 	}
-
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
-
+	totalCount := len(result)
+	start, end := common.PagePosition(page, pageSize, totalCount)
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
-		Nodes:       result,
+		Nodes:       result[start:end],
 	}, nil
 }
 

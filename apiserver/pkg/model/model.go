@@ -238,17 +238,7 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListMo
 		result = append(result, m)
 	}
 	totalCount := len(result)
-	pageStart := (page - 1) * pageSize
-	if pageStart < 0 {
-		pageStart = 0
-	}
-	if pageStart > totalCount {
-		pageStart = totalCount
-	}
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
+	pageStart, end := common.PagePosition(page, pageSize, totalCount)
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
