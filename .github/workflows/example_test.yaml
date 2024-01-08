@@ -2,11 +2,17 @@ name: KubeagiTests
 
 on:
   push:
-    branches: 
+    branches:
       - 'main'
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      OnlyTestGeneratedSdk:
+        description: 'only test bff-sdk-generator, but not push'
+        required: true
+        default: 'true'
+        type: boolean
 
 env:
   LOG_DIR: "/tmp/kubeagi-example-test/logs"
@@ -104,16 +110,22 @@ jobs:
             gql:
               - 'apiserver/graph/schema/*.gql'
       - name: setting token to npmrc
-        if: github.event == 'push' && steps.gql-changes.outputs.gql == 'true' && matrix.no == 1
+        if: (( github.event_name == 'push' && steps.gql-changes.outputs.gql == 'true') || github.event_name == 'workflow_dispatch') && matrix.no == 1
         run: |
           echo '//dev-npm.tenxcloud.net/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
           echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
-      - name: Set variable on Push
-        if: github.event == 'push' && matrix.no == 1
+      - name: Set variable on Merge pull request
+        if: github.event_name == 'push' && matrix.no == 1
         run: |
           echo "GRL_SDK_TEST_ONLY=false" >> $GITHUB_ENV
+      - name: Set variable on workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "GRL_SDK_TEST_ONLY=$TEST_ONLY" >> $GITHUB_ENV
+        env:
+          TEST_ONLY: ${{ inputs.OnlyTestGeneratedSdk }}
       - name: make sdk
-        if: steps.gql-changes.outputs.gql == 'true' && matrix.no == 1
+        if: (steps.gql-changes.outputs.gql == 'true' || github.event_name == 'workflow_dispatch') && matrix.no == 1
         run: |
           kubectl port-forward svc/arcadia-apiserver -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
           export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
