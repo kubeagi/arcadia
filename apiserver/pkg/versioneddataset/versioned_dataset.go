@@ -243,20 +243,11 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 		result = append(result, uu)
 	}
 	total := len(result)
-	end := page * size
-	if end > total {
-		end = total
-	}
-	start := (page - 1) * size
-	if start < total {
-		result = result[start:end]
-	} else {
-		result = make([]generated.PageNode, 0)
-	}
+	start, end := common.PagePosition(page, size, total)
 	return &generated.PaginatedResult{
 		TotalCount:  total,
 		HasNextPage: end < total,
-		Nodes:       result,
+		Nodes:       result[start:end],
 		Page:        &page,
 		PageSize:    &size,
 	}, nil

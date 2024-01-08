@@ -308,22 +308,11 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 		filtered = append(filtered, m)
 	}
 	totalCount := len(filtered)
-
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
-	start := (page - 1) * pageSize
-	if start < totalCount {
-		filtered = filtered[start:end]
-	} else {
-		filtered = []generated.PageNode{}
-	}
-
+	start, end := common.PagePosition(page, pageSize, totalCount)
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
-		Nodes:       filtered,
+		Nodes:       filtered[start:end],
 		Page:        &page,
 		PageSize:    &pageSize,
 	}, nil

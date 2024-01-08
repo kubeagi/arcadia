@@ -290,13 +290,10 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generate
 	}
 
 	totalCount := len(filteredResult)
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
+	start, end := common.PagePosition(page, pageSize, totalCount)
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
-		Nodes:       filteredResult[(page-1)*pageSize : end],
+		Nodes:       filteredResult[start:end],
 	}, nil
 }
