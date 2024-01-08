@@ -478,6 +478,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
