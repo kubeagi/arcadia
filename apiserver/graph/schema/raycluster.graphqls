@@ -1,0 +1,35 @@
+
+"""RayCluster集群"""
+type RayCluster {
+    """
+    Ray集群的索引
+    """
+    index: Int!
+    """
+    名称
+    规则: 遵循k8s命名
+    """
+    name: String!
+    """
+    Ray集群head节点的地址
+    规则: 遵循k8s命名
+    """
+    headAddress: String
+    """
+    Ray集群dashboard的地址
+    """
+    dashboardHost: String
+    """
+    Ray集群应用要求的python版本
+    """
+    pythonVersion: String
+}
+
+
+type RayClusterQuery {
+    listRayClusters(input: ListCommonInput!): PaginatedResult!
+}
+
+extend type Query {
+    RayCluster: RayClusterQuery
+}

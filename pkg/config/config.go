@@ -125,8 +125,8 @@ func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (con
 	return config, nil
 }
 
-func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, nil, c)
+func GetVectorStore(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfig(ctx, c, cli)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +137,8 @@ func GetVectorStore(ctx context.Context, c dynamic.Interface) (*arcadiav1alpha1.
 }
 
 // Get the configuration of streamlit tool
-func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
-	config, err := GetConfig(ctx, c, nil)
+func GetStreamlit(ctx context.Context, c client.Client, cli dynamic.Interface) (*Streamlit, error) {
+	config, err := GetConfig(ctx, c, cli)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +149,8 @@ func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
 }
 
 // Get the ray cluster that can be used a resource pool
-func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) {
-	config, err := GetConfig(ctx, c, nil)
+func GetRayClusters(ctx context.Context, c client.Client, cli dynamic.Interface) ([]RayCluster, error) {
+	config, err := GetConfig(ctx, c, cli)
 	if err != nil {
 		return nil, err
 	}
