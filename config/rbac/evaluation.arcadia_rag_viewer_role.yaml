@@ -1,0 +1,20 @@
+# permissions for end users to view rags.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rag-viewer-role
+rules:
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags/status
+  verbs:
+  - get

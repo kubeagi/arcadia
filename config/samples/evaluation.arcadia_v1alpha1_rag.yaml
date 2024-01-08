@@ -1,0 +1,6 @@
+apiVersion: evaluation.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: RAG
+metadata:
+  name: rag-sample
+spec:
+  # TODO(user): Add fields here

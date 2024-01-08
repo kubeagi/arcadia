@@ -12,4 +12,5 @@ resources:
 - arcadia_v1alpha1_model.yaml
 - arcadia_v1alpha1_application.yaml
 - app_llmchain_englishteacher.yaml
+- evaluation.arcadia_v1alpha1_rag.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
