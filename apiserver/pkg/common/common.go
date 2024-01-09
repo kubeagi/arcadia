@@ -198,3 +198,26 @@ func SetCreator(ctx context.Context, common *v1alpha1.CommonSpec) {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	common.Creator = currentUser
 }
+
+func PagePosition(page, size, total int) (int, int) {
+	// if pageSize is -1 which means unlimited pageSize,return all
+	if size == UnlimitedPageSize {
+		page = 1
+		size = total
+	}
+	if page <= 0 {
+		page = 1
+	}
+	if size <= 0 {
+		size = 10
+	}
+	start := (page - 1) * size
+	if start > total {
+		start = total
+	}
+	end := page * size
+	if end > total {
+		end = total
+	}
+	return start, end
+}
