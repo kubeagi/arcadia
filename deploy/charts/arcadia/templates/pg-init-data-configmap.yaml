@@ -1,3 +1,4 @@
+{{- if .Values.postgresql.enabled }}
 apiVersion: v1
 data:
   init-database-schema.sql: |2+
@@ -328,3 +329,4 @@ kind: ConfigMap
 metadata:
   name: pg-init-data
   namespace: {{ .Release.Namespace }}
+{{- end }}

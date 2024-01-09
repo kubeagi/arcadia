@@ -1,4 +1,4 @@
-{{- if .Values.portal.kubebbEnabled }}
+{{- if and (.Values.portal.enabled) (.Values.portal.kubebbEnabled) }}
 apiVersion: core.kubebb.k8s.com.cn/v1alpha1
 kind: Menu
 metadata:
