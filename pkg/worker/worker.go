@@ -160,7 +160,8 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					// /rdma/abc/uid -> /data/models
-					Path: fmt.Sprintf("%s/%s", d.Spec.RDMA.Path, w.GetUID()),
+					// The path has been restricted to contain a suffix `/`
+					Path: fmt.Sprintf("%s%s", d.Spec.RDMA.Path, w.GetUID()),
 				},
 			},
 		}
