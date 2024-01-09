@@ -473,6 +473,12 @@ type ComplexityRoot struct {
 		Worker           func(childComplexity int) int
 	}
 
+	NodeSelectorRequirement struct {
+		Key      func(childComplexity int) int
+		Operator func(childComplexity int) int
+		Values   func(childComplexity int) int
+	}
+
 	Oss struct {
 		Bucket func(childComplexity int) int
 		Object func(childComplexity int) int
@@ -565,6 +571,7 @@ type ComplexityRoot struct {
 
 	Worker struct {
 		API               func(childComplexity int) int
+		AdditionalEnvs    func(childComplexity int) int
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
@@ -572,6 +579,7 @@ type ComplexityRoot struct {
 		DisplayName       func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
+		MatchExpressions  func(childComplexity int) int
 		Message           func(childComplexity int) int
 		Model             func(childComplexity int) int
 		ModelTypes        func(childComplexity int) int
@@ -2936,6 +2944,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Worker(childComplexity), true
 
+	case "NodeSelectorRequirement.key":
+		if e.complexity.NodeSelectorRequirement.Key == nil {
+			break
+		}
+
+		return e.complexity.NodeSelectorRequirement.Key(childComplexity), true
+
+	case "NodeSelectorRequirement.operator":
+		if e.complexity.NodeSelectorRequirement.Operator == nil {
+			break
+		}
+
+		return e.complexity.NodeSelectorRequirement.Operator(childComplexity), true
+
+	case "NodeSelectorRequirement.values":
+		if e.complexity.NodeSelectorRequirement.Values == nil {
+			break
+		}
+
+		return e.complexity.NodeSelectorRequirement.Values(childComplexity), true
+
 	case "Oss.bucket":
 		if e.complexity.Oss.Bucket == nil {
 			break
@@ -3382,6 +3411,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Worker.API(childComplexity), true
 
+	case "Worker.additionalEnvs":
+		if e.complexity.Worker.AdditionalEnvs == nil {
+			break
+		}
+
+		return e.complexity.Worker.AdditionalEnvs(childComplexity), true
+
 	case "Worker.annotations":
 		if e.complexity.Worker.Annotations == nil {
 			break
@@ -3430,6 +3466,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Worker.Labels(childComplexity), true
+
+	case "Worker.matchExpressions":
+		if e.complexity.Worker.MatchExpressions == nil {
+			break
+		}
+
+		return e.complexity.Worker.MatchExpressions(childComplexity), true
 
 	case "Worker.message":
 		if e.complexity.Worker.Message == nil {
@@ -3670,6 +3713,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputListModelServiceInput,
 		ec.unmarshalInputListVersionedDatasetInput,
 		ec.unmarshalInputListWorkerInput,
+		ec.unmarshalInputNodeSelectorRequirementInput,
 		ec.unmarshalInputOssInput,
 		ec.unmarshalInputResourcesInput,
 		ec.unmarshalInputTypedObjectReferenceInput,
@@ -5893,6 +5937,18 @@ input ResourcesInput {
     nvidiaGPU: String
 }
 
+type NodeSelectorRequirement{
+    key: String!
+    operator: String!
+    values: [String!]!
+}
+
+input NodeSelectorRequirementInput {
+    key: String!
+    operator: String!
+    values: [String!]!
+}
+
 """本地模型服务节点"""
 type Worker {
     """
@@ -5984,6 +6040,16 @@ type Worker {
 
     """模型服务的api地址"""
     api: String
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirement]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 """创建模型服务worker的输入"""
@@ -6019,6 +6085,17 @@ input CreateWorkerInput{
     规则: 必填
     """
     resources: ResourcesInput!
+
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirementInput]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 """模型更新的输入"""
@@ -6053,6 +6130,16 @@ input UpdateWorkerInput {
     worker运行所需的资源
     """
     resources: ResourcesInput
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirementInput]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 input ListWorkerInput {
@@ -20500,6 +20587,138 @@ func (ec *executionContext) fieldContext_Mutation_Worker(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _NodeSelectorRequirement_key(ctx context.Context, field graphql.CollectedField, obj *NodeSelectorRequirement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSelectorRequirement_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSelectorRequirement_key(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSelectorRequirement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSelectorRequirement_operator(ctx context.Context, field graphql.CollectedField, obj *NodeSelectorRequirement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSelectorRequirement_operator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Operator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSelectorRequirement_operator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSelectorRequirement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeSelectorRequirement_values(ctx context.Context, field graphql.CollectedField, obj *NodeSelectorRequirement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeSelectorRequirement_values(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Values, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeSelectorRequirement_values(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeSelectorRequirement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Oss_bucket(ctx context.Context, field graphql.CollectedField, obj *Oss) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Oss_bucket(ctx, field)
 	if err != nil {
@@ -24138,6 +24357,96 @@ func (ec *executionContext) fieldContext_Worker_api(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Worker_matchExpressions(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_matchExpressions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchExpressions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*NodeSelectorRequirement)
+	fc.Result = res
+	return ec.marshalONodeSelectorRequirement2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_matchExpressions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NodeSelectorRequirement_key(ctx, field)
+			case "operator":
+				return ec.fieldContext_NodeSelectorRequirement_operator(ctx, field)
+			case "values":
+				return ec.fieldContext_NodeSelectorRequirement_values(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeSelectorRequirement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Worker_additionalEnvs(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Worker_additionalEnvs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalEnvs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Worker_additionalEnvs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Worker",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _WorkerMutation_createWorker(ctx context.Context, field graphql.CollectedField, obj *WorkerMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_WorkerMutation_createWorker(ctx, field)
 	if err != nil {
@@ -24213,6 +24522,10 @@ func (ec *executionContext) fieldContext_WorkerMutation_createWorker(ctx context
 				return ec.fieldContext_Worker_message(ctx, field)
 			case "api":
 				return ec.fieldContext_Worker_api(ctx, field)
+			case "matchExpressions":
+				return ec.fieldContext_Worker_matchExpressions(ctx, field)
+			case "additionalEnvs":
+				return ec.fieldContext_Worker_additionalEnvs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -24306,6 +24619,10 @@ func (ec *executionContext) fieldContext_WorkerMutation_updateWorker(ctx context
 				return ec.fieldContext_Worker_message(ctx, field)
 			case "api":
 				return ec.fieldContext_Worker_api(ctx, field)
+			case "matchExpressions":
+				return ec.fieldContext_Worker_matchExpressions(ctx, field)
+			case "additionalEnvs":
+				return ec.fieldContext_Worker_additionalEnvs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -24451,6 +24768,10 @@ func (ec *executionContext) fieldContext_WorkerQuery_getWorker(ctx context.Conte
 				return ec.fieldContext_Worker_message(ctx, field)
 			case "api":
 				return ec.fieldContext_Worker_api(ctx, field)
+			case "matchExpressions":
+				return ec.fieldContext_Worker_matchExpressions(ctx, field)
+			case "additionalEnvs":
+				return ec.fieldContext_Worker_additionalEnvs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Worker", field.Name)
 		},
@@ -27899,7 +28220,7 @@ func (ec *executionContext) unmarshalInputCreateWorkerInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "type", "model", "resources"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "type", "model", "resources", "matchExpressions", "additionalEnvs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27969,6 +28290,24 @@ func (ec *executionContext) unmarshalInputCreateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.Resources = data
+		case "matchExpressions":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchExpressions"))
+			data, err := ec.unmarshalONodeSelectorRequirementInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirementInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MatchExpressions = data
+		case "additionalEnvs":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("additionalEnvs"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdditionalEnvs = data
 		}
 	}
 
@@ -29029,6 +29368,53 @@ func (ec *executionContext) unmarshalInputListWorkerInput(ctx context.Context, o
 				return it, err
 			}
 			it.ModelTypes = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNodeSelectorRequirementInput(ctx context.Context, obj interface{}) (NodeSelectorRequirementInput, error) {
+	var it NodeSelectorRequirementInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"key", "operator", "values"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "key":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Key = data
+		case "operator":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operator"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Operator = data
+		case "values":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("values"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Values = data
 		}
 	}
 
@@ -30148,7 +30534,7 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "type", "replicas", "resources"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "type", "replicas", "resources", "matchExpressions", "additionalEnvs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30236,6 +30622,24 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.Resources = data
+		case "matchExpressions":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchExpressions"))
+			data, err := ec.unmarshalONodeSelectorRequirementInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirementInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MatchExpressions = data
+		case "additionalEnvs":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("additionalEnvs"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdditionalEnvs = data
 		}
 	}
 
@@ -34269,6 +34673,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var nodeSelectorRequirementImplementors = []string{"NodeSelectorRequirement"}
+
+func (ec *executionContext) _NodeSelectorRequirement(ctx context.Context, sel ast.SelectionSet, obj *NodeSelectorRequirement) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSelectorRequirementImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeSelectorRequirement")
+		case "key":
+			out.Values[i] = ec._NodeSelectorRequirement_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "operator":
+			out.Values[i] = ec._NodeSelectorRequirement_operator(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "values":
+			out.Values[i] = ec._NodeSelectorRequirement_values(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var ossImplementors = []string{"Oss"}
 
 func (ec *executionContext) _Oss(ctx context.Context, sel ast.SelectionSet, obj *Oss) graphql.Marshaler {
@@ -35336,6 +35789,10 @@ func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Worker_message(ctx, field, obj)
 		case "api":
 			out.Values[i] = ec._Worker_api(ctx, field, obj)
+		case "matchExpressions":
+			out.Values[i] = ec._Worker_matchExpressions(ctx, field, obj)
+		case "additionalEnvs":
+			out.Values[i] = ec._Worker_additionalEnvs(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36408,6 +36865,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -37547,6 +38036,82 @@ func (ec *executionContext) marshalOModelServiceQuery2ᚖgithubᚗcomᚋkubeagi�
 		return graphql.Null
 	}
 	return ec._ModelServiceQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONodeSelectorRequirement2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirement(ctx context.Context, sel ast.SelectionSet, v []*NodeSelectorRequirement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodeSelectorRequirement2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirement(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONodeSelectorRequirement2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirement(ctx context.Context, sel ast.SelectionSet, v *NodeSelectorRequirement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeSelectorRequirement(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONodeSelectorRequirementInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirementInput(ctx context.Context, v interface{}) ([]*NodeSelectorRequirementInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*NodeSelectorRequirementInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalONodeSelectorRequirementInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirementInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONodeSelectorRequirementInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirementInput(ctx context.Context, v interface{}) (*NodeSelectorRequirementInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputNodeSelectorRequirementInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOOss2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐOss(ctx context.Context, sel ast.SelectionSet, v *Oss) graphql.Marshaler {

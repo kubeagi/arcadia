@@ -23,6 +23,18 @@ input ResourcesInput {
     nvidiaGPU: String
 }
 
+type NodeSelectorRequirement{
+    key: String!
+    operator: String!
+    values: [String!]!
+}
+
+input NodeSelectorRequirementInput {
+    key: String!
+    operator: String!
+    values: [String!]!
+}
+
 """本地模型服务节点"""
 type Worker {
     """
@@ -114,6 +126,16 @@ type Worker {
 
     """模型服务的api地址"""
     api: String
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirement]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 """创建模型服务worker的输入"""
@@ -149,6 +171,17 @@ input CreateWorkerInput{
     规则: 必填
     """
     resources: ResourcesInput!
+
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirementInput]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 """模型更新的输入"""
@@ -183,6 +216,16 @@ input UpdateWorkerInput {
     worker运行所需的资源
     """
     resources: ResourcesInput
+
+    """
+    模型服务的节点亲合度配置
+    """
+    matchExpressions: [NodeSelectorRequirementInput]
+
+    """
+    worker运行配置的环境变量
+    """
+    additionalEnvs: Map
 }
 
 input ListWorkerInput {

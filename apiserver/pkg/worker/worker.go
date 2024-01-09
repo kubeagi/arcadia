@@ -82,6 +82,24 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		Memory:    &memoryStr,
 		NvidiaGpu: &nvidiaGPUStr,
 	}
+	matchExpressions := make([]*generated.NodeSelectorRequirement, 0)
+	if worker.Spec.MatchExpressions != nil {
+		for _, nodeSelector := range worker.Spec.MatchExpressions {
+			matchExpressions = append(matchExpressions, &generated.NodeSelectorRequirement{
+				Key:      nodeSelector.Key,
+				Operator: string(nodeSelector.Operator),
+				Values:   nodeSelector.Values,
+			})
+		}
+	}
+
+	// additional envs
+	additionalEnvs := make(map[string]interface{})
+	if worker.Spec.AdditionalEnvs != nil {
+		for _, env := range worker.Spec.AdditionalEnvs {
+			additionalEnvs[env.Name] = env.Value
+		}
+	}
 
 	workerType := string(worker.Type())
 
@@ -104,6 +122,8 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		UpdateTimestamp:   &updateTime,
 		Replicas:          &replicas,
 		Resources:         resources,
+		MatchExpressions:  matchExpressions,
+		AdditionalEnvs:    additionalEnvs,
 		ModelTypes:        "unknown",
 		API:               &api,
 	}
@@ -152,6 +172,29 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 		workerType = v1alpha1.WorkerType(*input.Type)
 	}
 
+	// set node selectors
+	var matchExpressions = make([]v1.NodeSelectorRequirement, 0)
+	if input.MatchExpressions != nil {
+		for _, nodeSelector := range input.MatchExpressions {
+			matchExpressions = append(matchExpressions, v1.NodeSelectorRequirement{
+				Key:      nodeSelector.Key,
+				Operator: v1.NodeSelectorOperator(nodeSelector.Operator),
+				Values:   nodeSelector.Values,
+			})
+		}
+	}
+
+	// set additional environment variables
+	var additionalEnvs = make([]v1.EnvVar, 0)
+	if input.AdditionalEnvs != nil {
+		for k, v := range input.AdditionalEnvs {
+			additionalEnvs = append(additionalEnvs, v1.EnvVar{
+				Name:  k,
+				Value: fmt.Sprint(v),
+			})
+		}
+	}
+
 	worker := v1alpha1.Worker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
@@ -172,6 +215,8 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 				Namespace: &modelNs,
 				Kind:      "Model",
 			},
+			AdditionalEnvs:   additionalEnvs,
+			MatchExpressions: matchExpressions,
 		},
 	}
 	common.SetCreator(ctx, &worker.Spec.CommonSpec)
@@ -254,6 +299,31 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		}
 
 		worker.Spec.Resources = resources
+	}
+
+	// set node selectors
+	if input.MatchExpressions != nil {
+		var matchExpressions = make([]v1.NodeSelectorRequirement, 0)
+		for _, nodeSelector := range input.MatchExpressions {
+			matchExpressions = append(matchExpressions, v1.NodeSelectorRequirement{
+				Key:      nodeSelector.Key,
+				Operator: v1.NodeSelectorOperator(nodeSelector.Operator),
+				Values:   nodeSelector.Values,
+			})
+		}
+		worker.Spec.MatchExpressions = matchExpressions
+	}
+
+	// set additional environment variables
+	if input.AdditionalEnvs != nil {
+		var additionalEnvs = make([]v1.EnvVar, 0)
+		for k, v := range input.AdditionalEnvs {
+			additionalEnvs = append(additionalEnvs, v1.EnvVar{
+				Name:  k,
+				Value: fmt.Sprint(v),
+			})
+		}
+		worker.Spec.AdditionalEnvs = additionalEnvs
 	}
 
 	unstructuredWorker, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&worker)

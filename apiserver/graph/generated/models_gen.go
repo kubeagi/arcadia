@@ -349,6 +349,10 @@ type CreateWorkerInput struct {
 	// worker运行所需的资源
 	// 规则: 必填
 	Resources ResourcesInput `json:"resources"`
+	// 模型服务的节点亲合度配置
+	MatchExpressions []*NodeSelectorRequirementInput `json:"matchExpressions,omitempty"`
+	// worker运行配置的环境变量
+	AdditionalEnvs map[string]interface{} `json:"additionalEnvs,omitempty"`
 }
 
 type DataProcessConfig struct {
@@ -1069,6 +1073,18 @@ type ModelServiceQuery struct {
 	CheckModelService ModelService    `json:"checkModelService"`
 }
 
+type NodeSelectorRequirement struct {
+	Key      string   `json:"key"`
+	Operator string   `json:"operator"`
+	Values   []string `json:"values"`
+}
+
+type NodeSelectorRequirementInput struct {
+	Key      string   `json:"key"`
+	Operator string   `json:"operator"`
+	Values   []string `json:"values"`
+}
+
 // 对象存储的使用信息
 type Oss struct {
 	// 所用的bucket名称
@@ -1396,6 +1412,10 @@ type UpdateWorkerInput struct {
 	Replicas *string `json:"replicas,omitempty"`
 	// worker运行所需的资源
 	Resources *ResourcesInput `json:"resources,omitempty"`
+	// 模型服务的节点亲合度配置
+	MatchExpressions []*NodeSelectorRequirementInput `json:"matchExpressions,omitempty"`
+	// worker运行配置的环境变量
+	AdditionalEnvs map[string]interface{} `json:"additionalEnvs,omitempty"`
 }
 
 // VersionedDataset
@@ -1504,6 +1524,10 @@ type Worker struct {
 	Message *string `json:"message,omitempty"`
 	// 模型服务的api地址
 	API *string `json:"api,omitempty"`
+	// 模型服务的节点亲合度配置
+	MatchExpressions []*NodeSelectorRequirement `json:"matchExpressions,omitempty"`
+	// worker运行配置的环境变量
+	AdditionalEnvs map[string]interface{} `json:"additionalEnvs,omitempty"`
 }
 
 func (Worker) IsPageNode() {}

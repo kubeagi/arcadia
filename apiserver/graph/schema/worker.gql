@@ -34,6 +34,12 @@ query listWorkers($input: ListWorkerInput!){
             memory
             nvidiaGPU
           }
+          matchExpressions {
+            key
+            operator
+            values
+          }
+          additionalEnvs
         }
       }
     }
@@ -71,6 +77,12 @@ query getWorker($name: String!, $namespace: String!) {
             memory
             nvidiaGPU
           }
+          matchExpressions {
+            key
+            operator
+            values
+          }
+          additionalEnvs
     }
   }
 }
@@ -106,6 +118,12 @@ mutation createWorker($input: CreateWorkerInput!) {
             memory
             nvidiaGPU
           }
+          matchExpressions {
+            key
+            operator
+            values
+          }
+          additionalEnvs
     }
   }
 }
@@ -141,6 +159,12 @@ mutation updateWorker($input: UpdateWorkerInput) {
             apiGroup
           }
           modelTypes
+          matchExpressions {
+            key
+            operator
+            values
+          }
+          additionalEnvs
     }
   }
 }
