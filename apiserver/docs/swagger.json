@@ -250,6 +250,84 @@
                     }
                 }
             }
+        },
+        "/model/files/chunks": {
+            "get": {
+                "description": "Get success chunks of a file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Get success chunks of a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MD5 value of the file",
+                        "name": "md5",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the file",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Path of the bucket",
+                        "name": "bucketPath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ETag of the file",
+                        "name": "etag",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.SuccessChunksResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -505,6 +583,37 @@
                     "description": "vector search score",
                     "type": "number",
                     "example": 0.34
+                }
+            }
+        },
+        "service.Chunk": {
+            "type": "object",
+            "properties": {
+                "etag": {
+                    "type": "string"
+                },
+                "partNubmer": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "service.SuccessChunksResult": {
+            "type": "object",
+            "properties": {
+                "chunks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.Chunk"
+                    }
+                },
+                "done": {
+                    "type": "boolean"
+                },
+                "uploadID": {
+                    "type": "string"
                 }
             }
         }
