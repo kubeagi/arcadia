@@ -40,10 +40,12 @@ import (
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/controllers"
+	evaluationarcadiav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	chaincontrollers "github.com/kubeagi/arcadia/controllers/app-node/chain"
 	promptcontrollers "github.com/kubeagi/arcadia/controllers/app-node/prompt"
 	retrievertrollers "github.com/kubeagi/arcadia/controllers/app-node/retriever"
+	basecontrollers "github.com/kubeagi/arcadia/controllers/base"
+	evaluationcontrollers "github.com/kubeagi/arcadia/controllers/evaluation"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 
@@ -65,6 +67,7 @@ func init() {
 	utilruntime.Must(apichain.AddToScheme(scheme))
 	utilruntime.Must(apiprompt.AddToScheme(scheme))
 	utilruntime.Must(apiretriever.AddToScheme(scheme))
+	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -146,7 +149,7 @@ func main() {
 		panic(err)
 	}
 
-	if err = (&controllers.LLMReconciler{
+	if err = (&basecontrollers.LLMReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -154,56 +157,56 @@ func main() {
 		os.Exit(1)
 	}
 	// Deprecated: will remove later, use promptcontrollers.PromptReconciler and construct a application
-	if err = (&controllers.PromptReconciler{
+	if err = (&basecontrollers.PromptReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Prompt")
 		os.Exit(1)
 	}
-	if err = (&controllers.DatasourceReconciler{
+	if err = (&basecontrollers.DatasourceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Datasource")
 		os.Exit(1)
 	}
-	if err = (&controllers.EmbedderReconciler{
+	if err = (&basecontrollers.EmbedderReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Embedder")
 		os.Exit(1)
 	}
-	if err = (&controllers.DatasetReconciler{
+	if err = (&basecontrollers.DatasetReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
 	}
-	if err = (&controllers.VersionedDatasetReconciler{
+	if err = (&basecontrollers.VersionedDatasetReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "VersionedDataset")
 		os.Exit(1)
 	}
-	if err = (&controllers.WorkerReconciler{
+	if err = (&basecontrollers.WorkerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Worker")
 		os.Exit(1)
 	}
-	if err = (&controllers.ModelReconciler{
+	if err = (&basecontrollers.ModelReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Model")
 		os.Exit(1)
 	}
-	if err = (&controllers.KnowledgeBaseReconciler{
+	if err = (&basecontrollers.KnowledgeBaseReconciler{
 		Client:                mgr.GetClient(),
 		Scheme:                mgr.GetScheme(),
 		HasHandledSuccessPath: make(map[string]bool, 0),
@@ -211,21 +214,21 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "KnowledgeBase")
 		os.Exit(1)
 	}
-	if err = (&controllers.VectorStoreReconciler{
+	if err = (&basecontrollers.VectorStoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "VectorStore")
 		os.Exit(1)
 	}
-	if err = (&controllers.NamespaceReconciler{
+	if err = (&basecontrollers.NamespaceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 		os.Exit(1)
 	}
-	if err = (&controllers.ApplicationReconciler{
+	if err = (&basecontrollers.ApplicationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -266,6 +269,13 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Prompt")
 			os.Exit(1)
 		}
+	}
+	if err = (&evaluationcontrollers.RAGReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RAG")
+		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 

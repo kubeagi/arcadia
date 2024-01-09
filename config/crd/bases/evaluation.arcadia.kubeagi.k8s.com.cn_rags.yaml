@@ -1,0 +1,166 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: rags.evaluation.arcadia.kubeagi.k8s.com.cn
+spec:
+  group: evaluation.arcadia.kubeagi.k8s.com.cn
+  names:
+    kind: RAG
+    listKind: RAGList
+    plural: rags
+    singular: rag
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RAG is the Schema for the rags API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RAGSpec defines the desired state of RAG
+            properties:
+              application:
+                description: Application(required) defines the target of this RAG
+                  evaluation
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              datasets:
+                description: Datasets defines the dataset which will be used to generate
+                  test datasets
+                items:
+                  description: Dataset stands for the files used to generate ragas
+                    test dataset
+                  properties:
+                    files:
+                      description: 'Files retrieved from Source and used in this testdataset
+                        - For file with tag `object_type: QA`, will be used directly
+                        - TODO: For file without special tags, will use `QAGenerationChain`
+                        to generate QAs (Not Supported Yet)'
+                      items:
+                        type: string
+                      type: array
+                    source:
+                      description: From defines the source which provides this QA
+                        Files for test dataset Only `VersionedDataset` allowed
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being
+                            referenced. If APIGroup is not specified, the specified
+                            Kind must be in the core API group. For any other third-party
+                            types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                  type: object
+                type: array
+              judge_llm:
+                description: JudgeLLM(required) defines the judge which is a LLM to
+                  evaluate RAG application against test dataset
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              metrics:
+                description: Metrics that this rag evaluation will do
+                items:
+                  properties:
+                    kind:
+                      description: Kind of this Metric
+                      type: string
+                    parameters:
+                      description: Parameters in this Metrics
+                      items:
+                        description: Parameter to metrics which is a key-value pair
+                        properties:
+                          key:
+                            type: string
+                          value:
+                            type: string
+                        type: object
+                      type: array
+                    tolerance_threshold:
+                      description: ToleranceThreshbold on this Metric If the evaluation
+                        score is smaller than this tolerance threshold,we treat this
+                        RAG solution as `Bad`
+                      type: integer
+                  type: object
+                type: array
+              report:
+                description: Report defines the evaluation report configurations
+                type: object
+            required:
+            - application
+            - datasets
+            - judge_llm
+            - metrics
+            type: object
+          status:
+            description: RAGStatus defines the observed state of RAG
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

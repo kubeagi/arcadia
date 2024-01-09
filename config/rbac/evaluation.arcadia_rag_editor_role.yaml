@@ -1,0 +1,24 @@
+# permissions for end users to edit rags.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rag-editor-role
+rules:
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags/status
+  verbs:
+  - get
