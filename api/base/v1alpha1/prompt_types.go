@@ -25,7 +25,7 @@ import (
 // PromptSpec defines the desired state of Prompt
 type PromptSpec struct {
 	// LLM serivice name(CRD LLM)
-	LLM string `json:"llm"`
+	LLM *TypedObjectReference `json:"llm"`
 	// ZhiPuAIParams defines the params of ZhiPuAI
 	ZhiPuAIParams *llmzhipuai.ModelParams `json:"zhiPuAIParams,omitempty"`
 }

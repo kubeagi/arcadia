@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -112,8 +113,12 @@ func (r *PromptReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prompt *arcadiav1alpha1.Prompt) error {
+	if prompt.Spec.LLM == nil {
+		return fmt.Errorf("no llm configuration provided")
+	}
+
 	llm := &arcadiav1alpha1.LLM{}
-	if err := r.Get(ctx, types.NamespacedName{Name: prompt.Spec.LLM, Namespace: prompt.Namespace}, llm); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: prompt.Spec.LLM.Name, Namespace: prompt.Spec.LLM.GetNamespace(prompt.Namespace)}, llm); err != nil {
 		return err
 	}
 
