@@ -2,10 +2,10 @@ componentConfig: true
 domain: kubeagi.k8s.com.cn
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-multigroup: true
 projectName: arcadia
 repo: github.com/kubeagi/arcadia
 resources:
@@ -141,5 +141,14 @@ resources:
   group: prompt
   kind: Prompt
   path: github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
+  group: evaluation
+  kind: RAG
+  path: github.com/kubeagi/arcadia/api/evaluation/v1alpha1
   version: v1alpha1
 version: "3"

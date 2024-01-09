@@ -11,5 +11,5 @@ dependencies:
 - name: chromadb
   repository: ""
   version: 0.1.19
-digest: sha256:e1baef276a6d9d9462cca0f5936c9be9017ac640efe82c13518b235c8f52d964
-generated: "2023-12-20T17:42:06.964973+08:00"
+digest: sha256:94bd784921bf4082574331977b211f635fa59972579cb8d8296c2b64901ada2a
+generated: "2024-01-09T06:09:53.933153139Z"
