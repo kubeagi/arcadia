@@ -251,6 +251,124 @@
                 }
             }
         },
+        "/model/files": {
+            "delete": {
+                "description": "Delete files",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Delete files",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.DelteFileBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model/files/chunk_url": {
+            "post": {
+                "description": "Get multipart upload URL",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Get multipart upload URL",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.GenChunkURLBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.GenChunkURLResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/model/files/chunks": {
             "get": {
                 "description": "Get success chunks of a file",
@@ -306,6 +424,402 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/service.SuccessChunksResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Complete multipart upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Complete multipart upload",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CompleteBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create new multipart upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "create new multipart upload",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.NewMultipartBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model/files/chunks/abort": {
+            "put": {
+                "description": "Abort a file upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Abort a file upload",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CompleteBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model/files/download": {
+            "get": {
+                "description": "Download files in chunks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Download files in chunks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "The start of the file",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "The end of the file",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Path of the bucket",
+                        "name": "bucketPath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the file",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model/files/stat": {
+            "get": {
+                "description": "Statistics file information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Statistics file information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the file",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Path of the bucket",
+                        "name": "bucketPath",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/versioneddataset/files/csv": {
+            "get": {
+                "description": "Read a file line by line",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Read a file line by line",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Start page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "The number of rows read each time",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Path of the bucket",
+                        "name": "bucketPath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the file",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ReadCSVResult"
                         }
                     },
                     "400": {
@@ -556,6 +1070,23 @@
                 }
             }
         },
+        "common.ReadCSVResult": {
+            "type": "object",
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "retriever.Reference": {
             "type": "object",
             "properties": {
@@ -596,6 +1127,107 @@
                     "type": "integer"
                 },
                 "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "service.CompleteBody": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "bucketPath": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "uploadID": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.DelteFileBody": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "bucketPath": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "service.GenChunkURLBody": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "bucketPath": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "partNumber": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "uploadID": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.GenChunkURLResult": {
+            "type": "object",
+            "properties": {
+                "completed": {
+                    "type": "boolean"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.NewMultipartBody": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "description": "The file is eventually stored in bucketPath/filtName in the bucket.",
+                    "type": "string"
+                },
+                "bucketPath": {
+                    "type": "string"
+                },
+                "chunkCount": {
+                    "description": "How many pieces do we have to divide it into?",
+                    "type": "integer"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "md5": {
+                    "description": "file md5",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "part size",
                     "type": "integer"
                 }
             }
