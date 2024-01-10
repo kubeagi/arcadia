@@ -212,6 +212,18 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, r)
 }
 
+// @Summary create new multipart upload
+// @Schemes
+// @Description create new multipart upload
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body NewMultipartBody true "query params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunks [post]
 func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 	var body NewMultipartBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -281,13 +293,18 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 	})
 }
 
-/*
-GetMultipartUploadURL
-The function will check if the provided partNumber has been uploaded completely.
-
-1. If it is completed, it will set complete=true.
-2. If it is not completed, it will set complete=false and return the upload URL.
-*/
+// @Summary Get multipart upload URL
+// @Schemes
+// @Description Get multipart upload URL
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body GenChunkURLBody true "query params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} GenChunkURLResult
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunk_url [post]
 func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	var body GenChunkURLBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -379,6 +396,18 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	})
 }
 
+// @Summary Complete multipart upload
+// @Schemes
+// @Description Complete multipart upload
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body CompleteBody true "query params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunks [put]
 func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 	var body CompleteBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -413,6 +442,18 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "success")
 }
 
+// @Summary Delete files
+// @Schemes
+// @Description Delete files
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body DelteFileBody true "query params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files [delete]
 func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 	var body DelteFileBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -443,6 +484,18 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "success")
 }
 
+// @Summary Abort a file upload
+// @Schemes
+// @Description Abort a file upload
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body CompleteBody true "query params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunks/abort [put]
 func (m *minioAPI) Abort(ctx *gin.Context) {
 	var body CompleteBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -474,6 +527,19 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "success")
 }
 
+// @Summary Statistics file information
+// @Schemes
+// @Description Statistics file information
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param fileName query string true "Name of the file"
+// @Param namespace header string true  "Name of the bucket"
+// @Param bucketPath query string true "Path of the bucket"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/stat [get]
 func (m *minioAPI) StatFile(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
 	bucket := ctx.GetHeader(namespaceHeader)
@@ -510,6 +576,21 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 	})
 }
 
+// @Summary Download files in chunks
+// @Schemes
+// @Description Download files in chunks
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param from query int true "The start of the file"
+// @Param end query int true "The end of the file"
+// @Param namespace header string true  "Name of the bucket"
+// @Param bucketPath query string true "Path of the bucket"
+// @Param fileName query string true "Name of the file"
+// @Success 200
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/download [get]
 func (m *minioAPI) Download(ctx *gin.Context) {
 	fromStr := ctx.Query("from")
 	endStr := ctx.Query("end")
@@ -553,6 +634,21 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	_, _ = io.Copy(ctx.Writer, info)
 }
 
+// @Summary Read a file line by line
+// @Schemes
+// @Description Read a file line by line
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param page query int true "Start page"
+// @Param size query int true "The number of rows read each time"
+// @Param namespace header string true  "Name of the bucket"
+// @Param bucketPath query string true "Path of the bucket"
+// @Param fileName query string true "Name of the file"
+// @Success 200 {object} common.ReadCSVResult
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /versioneddataset/files/csv [get]
 func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	var (
 		page       int64

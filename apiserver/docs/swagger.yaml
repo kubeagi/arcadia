@@ -165,6 +165,17 @@ definitions:
         example: ok
         type: string
     type: object
+  common.ReadCSVResult:
+    properties:
+      rows:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      total:
+        type: integer
+    type: object
   retriever.Reference:
     properties:
       answer:
@@ -195,6 +206,73 @@ definitions:
       partNubmer:
         type: integer
       size:
+        type: integer
+    type: object
+  service.CompleteBody:
+    properties:
+      bucket:
+        type: string
+      bucketPath:
+        type: string
+      fileName:
+        type: string
+      md5:
+        type: string
+      uploadID:
+        type: string
+    type: object
+  service.DelteFileBody:
+    properties:
+      bucket:
+        type: string
+      bucketPath:
+        type: string
+      files:
+        items:
+          type: string
+        type: array
+    type: object
+  service.GenChunkURLBody:
+    properties:
+      bucket:
+        type: string
+      bucketPath:
+        type: string
+      fileName:
+        type: string
+      md5:
+        type: string
+      partNumber:
+        type: integer
+      size:
+        type: integer
+      uploadID:
+        type: string
+    type: object
+  service.GenChunkURLResult:
+    properties:
+      completed:
+        type: boolean
+      url:
+        type: string
+    type: object
+  service.NewMultipartBody:
+    properties:
+      bucket:
+        description: The file is eventually stored in bucketPath/filtName in the bucket.
+        type: string
+      bucketPath:
+        type: string
+      chunkCount:
+        description: How many pieces do we have to divide it into?
+        type: integer
+      fileName:
+        type: string
+      md5:
+        description: file md5
+        type: string
+      size:
+        description: part size
         type: integer
     type: object
   service.SuccessChunksResult:
@@ -374,6 +452,84 @@ paths:
       summary: get one message references
       tags:
       - application
+  /model/files:
+    delete:
+      consumes:
+      - application/json
+      description: Delete files
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.DelteFileBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete files
+      tags:
+      - MinioAPI
+  /model/files/chunk_url:
+    post:
+      consumes:
+      - application/json
+      description: Get multipart upload URL
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.GenChunkURLBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.GenChunkURLResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get multipart upload URL
+      tags:
+      - MinioAPI
   /model/files/chunks:
     get:
       consumes:
@@ -425,6 +581,272 @@ paths:
               type: string
             type: object
       summary: Get success chunks of a file
+      tags:
+      - MinioAPI
+    post:
+      consumes:
+      - application/json
+      description: create new multipart upload
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.NewMultipartBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: create new multipart upload
+      tags:
+      - MinioAPI
+    put:
+      consumes:
+      - application/json
+      description: Complete multipart upload
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.CompleteBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Complete multipart upload
+      tags:
+      - MinioAPI
+  /model/files/chunks/abort:
+    put:
+      consumes:
+      - application/json
+      description: Abort a file upload
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.CompleteBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Abort a file upload
+      tags:
+      - MinioAPI
+  /model/files/download:
+    get:
+      consumes:
+      - application/json
+      description: Download files in chunks
+      parameters:
+      - description: The start of the file
+        in: query
+        name: from
+        required: true
+        type: integer
+      - description: The end of the file
+        in: query
+        name: end
+        required: true
+        type: integer
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: Path of the bucket
+        in: query
+        name: bucketPath
+        required: true
+        type: string
+      - description: Name of the file
+        in: query
+        name: fileName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Download files in chunks
+      tags:
+      - MinioAPI
+  /model/files/stat:
+    get:
+      consumes:
+      - application/json
+      description: Statistics file information
+      parameters:
+      - description: Name of the file
+        in: query
+        name: fileName
+        required: true
+        type: string
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: Path of the bucket
+        in: query
+        name: bucketPath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Statistics file information
+      tags:
+      - MinioAPI
+  /versioneddataset/files/csv:
+    get:
+      consumes:
+      - application/json
+      description: Read a file line by line
+      parameters:
+      - description: Start page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: The number of rows read each time
+        in: query
+        name: size
+        required: true
+        type: integer
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: Path of the bucket
+        in: query
+        name: bucketPath
+        required: true
+        type: string
+      - description: Name of the file
+        in: query
+        name: fileName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ReadCSVResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Read a file line by line
       tags:
       - MinioAPI
 swagger: "2.0"
