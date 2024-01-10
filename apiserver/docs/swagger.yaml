@@ -188,6 +188,26 @@ definitions:
         example: 0.34
         type: number
     type: object
+  service.Chunk:
+    properties:
+      etag:
+        type: string
+      partNubmer:
+        type: integer
+      size:
+        type: integer
+    type: object
+  service.SuccessChunksResult:
+    properties:
+      chunks:
+        items:
+          $ref: '#/definitions/service.Chunk'
+        type: array
+      done:
+        type: boolean
+      uploadID:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -354,4 +374,57 @@ paths:
       summary: get one message references
       tags:
       - application
+  /model/files/chunks:
+    get:
+      consumes:
+      - application/json
+      description: Get success chunks of a file
+      parameters:
+      - description: MD5 value of the file
+        in: query
+        name: md5
+        required: true
+        type: string
+      - description: Name of the file
+        in: query
+        name: fileName
+        required: true
+        type: string
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: Path of the bucket
+        in: query
+        name: bucketPath
+        required: true
+        type: string
+      - description: ETag of the file
+        in: query
+        name: etag
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.SuccessChunksResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get success chunks of a file
+      tags:
+      - MinioAPI
 swagger: "2.0"

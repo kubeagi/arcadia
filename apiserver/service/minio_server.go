@@ -109,19 +109,22 @@ const (
 	namespaceHeader = "namespace"
 )
 
-/*
-GetSuccessChunks
-There are three different scenarios:
-
-1. If the file exists, the function will return done=true and will not provide an uploadid.
-In this case, no further action is required for uploading because the file is already present.
-
-2. If the file does not exist, the function will return done=false.
-In this case, you need to request a new uploadid to initiate the upload process.
-
-3. If the upload is in progress, the function will return done=false, uploadid (e.g., uploadid=xx) and chunks={partNumber, etag}.
-In this case, you can utilize the provided uploadid to continue requesting the upload URL and proceed with the file upload process.
-*/
+// @BasePath /bff
+// @Summary Get success chunks of a file
+// @Schemes
+// @Description Get success chunks of a file
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param md5 query string true "MD5 value of the file"
+// @Param fileName query string true "Name of the file"
+// @Param namespace header string true "Name of the bucket"
+// @Param bucketPath query string true "Path of the bucket"
+// @Param etag query string true "ETag of the file"
+// @Success 200 {object} SuccessChunksResult
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunks [get]
 func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	fildMD5 := ctx.Query(md5Query)
 	if fildMD5 == "" {
