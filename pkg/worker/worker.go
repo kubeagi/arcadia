@@ -321,7 +321,10 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 
 	// prepare LLM/Embedder
 	model := podWorker.Model()
-	if model.IsEmbeddingModel() {
+
+	// If worker is utilizing vllm, then we should not create embedder for it
+	// vllm doesn't support embedding apis.See https://github.com/vllm-project/vllm/issues/183
+	if model.IsEmbeddingModel() && podWorker.Worker().Type() != arcadiav1alpha1.WorkerTypeFastchatVLLM {
 		embedder := &arcadiav1alpha1.Embedder{}
 		err := podWorker.c.Get(ctx, types.NamespacedName{Namespace: podWorker.Namespace, Name: podWorker.Name}, embedder)
 		switch ActionOnError(err) {
