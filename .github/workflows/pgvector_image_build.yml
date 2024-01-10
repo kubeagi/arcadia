@@ -3,6 +3,8 @@ name: Build pgvector images
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'deploy/pgvector/Dockerfile'
   push:
     branches: [main]
     paths:

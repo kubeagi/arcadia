@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -191,6 +192,9 @@ func (r *ApplicationReconciler) patchStatus(ctx context.Context, app *arcadiav1a
 	latest := &arcadiav1alpha1.Application{}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(app), latest); err != nil {
 		return err
+	}
+	if reflect.DeepEqual(app.Status, latest.Status) {
+		return nil
 	}
 	patch := client.MergeFrom(latest.DeepCopy())
 	latest.Status = app.Status

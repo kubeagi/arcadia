@@ -19,24 +19,17 @@ package vectorstore
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/tmc/langchaingo/embeddings"
-	"github.com/tmc/langchaingo/llms/openai"
+	lanchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
-	"github.com/tmc/langchaingo/vectorstores/pgvector"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
@@ -60,68 +53,7 @@ func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedd
 		}
 		v, err = chroma.New(ops...)
 	case arcadiav1alpha1.VectorStoreTypePGVector:
-		ops := []pgvector.Option{
-			pgvector.WithPreDeleteCollection(vs.Spec.PGVector.PreDeleteCollection),
-		}
-		if vs.Spec.PGVector.CollectionTableName != "" {
-			ops = append(ops, pgvector.WithCollectionTableName(vs.Spec.PGVector.CollectionTableName))
-		}
-		if vs.Spec.PGVector.EmbeddingTableName != "" {
-			ops = append(ops, pgvector.WithEmbeddingTableName(vs.Spec.PGVector.EmbeddingTableName))
-		}
-		if ref := vs.Spec.PGVector.DataSourceRef; ref != nil {
-			if err := utils.ValidateClient(c, dc); err != nil {
-				return nil, nil, err
-			}
-			ds := &arcadiav1alpha1.Datasource{}
-			if c != nil {
-				if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.GetNamespace(vs.GetNamespace())}, ds); err != nil {
-					return nil, nil, err
-				}
-			} else {
-				obj, err := dc.Resource(schema.GroupVersionResource{Group: "arcadia.kubeagi.k8s.com.cn", Version: "v1alpha1", Resource: "datasources"}).
-					Namespace(ref.GetNamespace(vs.GetNamespace())).Get(ctx, ref.Name, metav1.GetOptions{})
-				if err != nil {
-					return nil, nil, err
-				}
-				err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), ds)
-				if err != nil {
-					return nil, nil, err
-				}
-			}
-			vs.Spec.Endpoint = ds.Spec.Endpoint.DeepCopy()
-			pool, err := datasource.GetPostgreSQLPool(ctx, c, dc, ds)
-			if err != nil {
-				return nil, nil, err
-			}
-			conn, err := pool.Acquire(ctx)
-			if err != nil {
-				return nil, nil, err
-			}
-			klog.V(5).Info("acquire pg conn from pool")
-			finish = func() {
-				if conn != nil {
-					conn.Release()
-					klog.V(5).Info("release pg conn to pool")
-				}
-			}
-			ops = append(ops, pgvector.WithConn(conn.Conn()))
-		} else {
-			ops = append(ops, pgvector.WithConnectionURL(vs.Spec.Endpoint.URL))
-		}
-		if embedder != nil {
-			ops = append(ops, pgvector.WithEmbedder(embedder))
-		} else {
-			llm, _ := openai.New()
-			embedder, _ = embeddings.NewEmbedder(llm)
-		}
-		ops = append(ops, pgvector.WithEmbedder(embedder))
-		if collectionName != "" {
-			ops = append(ops, pgvector.WithCollectionName(collectionName))
-		} else {
-			ops = append(ops, pgvector.WithCollectionName(vs.Spec.PGVector.CollectionName))
-		}
-		v, err = pgvector.New(ctx, ops...)
+		v, finish, err = NewPGVectorStore(ctx, vs, c, dc, embedder, collectionName)
 	case arcadiav1alpha1.VectorStoreTypeUnknown:
 		fallthrough
 	default:
@@ -130,7 +62,7 @@ func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedd
 	return v, finish, err
 }
 
-func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, collectionName string) (err error) {
+func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, collectionName string, c client.Client, dc dynamic.Interface) (err error) {
 	switch vs.Spec.Type() {
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		ops := []chroma.Option{
@@ -151,19 +83,14 @@ func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.
 			return err
 		}
 	case arcadiav1alpha1.VectorStoreTypePGVector:
-		ops := []pgvector.Option{
-			pgvector.WithConnectionURL(vs.Spec.Endpoint.URL),
-			pgvector.WithPreDeleteCollection(vs.Spec.PGVector.PreDeleteCollection),
-			pgvector.WithCollectionTableName(vs.Spec.PGVector.CollectionTableName),
-		}
-		if collectionName != "" {
-			ops = append(ops, pgvector.WithCollectionName(collectionName))
-		} else {
-			ops = append(ops, pgvector.WithCollectionName(vs.Spec.PGVector.CollectionName))
-		}
-		v, err := pgvector.New(ctx, ops...)
+		v, finish, err := NewPGVectorStore(ctx, vs, c, dc, nil, collectionName)
+		defer func() {
+			if finish != nil {
+				finish()
+			}
+		}()
 		if err != nil {
-			log.Error(err, "reconcile delete: init vector store error, may leave garbage data")
+			log.Error(err, "reconcile delete: init pgvector error, may leave garbage data")
 			return err
 		}
 		if err = v.RemoveCollection(ctx); err != nil {
@@ -177,4 +104,30 @@ func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.
 		err = ErrUnsupportedVectorStoreType
 	}
 	return err
+}
+
+func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, embedder embeddings.Embedder, collectionName string, c client.Client, dc dynamic.Interface, documents []lanchaingoschema.Document) (err error) {
+	s, finish, err := NewVectorStore(ctx, vs, embedder, collectionName, c, dc)
+	if err != nil {
+		return err
+	}
+	log.Info("handle file: add documents to embedder")
+	if store, ok := s.(*PGVectorStore); ok {
+		// now only pgvector support Row-level updates
+		log.Info("handle file: use pgvector, filter out exist documents")
+		if documents, err = store.RemoveExist(ctx, log, documents); err != nil {
+			return err
+		}
+	}
+	for i, doc := range documents {
+		log.V(5).Info(fmt.Sprintf("add doc to vectorstore, document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
+	}
+	if _, err = s.AddDocuments(ctx, documents); err != nil {
+		return err
+	}
+	if finish != nil {
+		finish()
+	}
+	log.Info("handle file succeeded")
+	return nil
 }

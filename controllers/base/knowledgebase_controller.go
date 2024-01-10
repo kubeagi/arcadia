@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"reflect"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -68,6 +70,8 @@ type KnowledgeBaseReconciler struct {
 	Scheme                *runtime.Scheme
 	mu                    sync.Mutex
 	HasHandledSuccessPath map[string]bool
+	readyMu               sync.Mutex
+	ReadyMap              map[string]bool
 }
 
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=knowledgebases,verbs=get;list;watch;create;update;patch;delete
@@ -129,19 +133,29 @@ func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	kb, result, err = r.reconcile(ctx, log, kb)
 
 	// Update status after reconciliation.
-	if updateStatusErr := r.patchStatus(ctx, kb); updateStatusErr != nil {
+	if updateStatusErr := r.patchStatus(ctx, log, kb); updateStatusErr != nil {
 		log.Error(updateStatusErr, "unable to update status after reconciliation")
 		return ctrl.Result{Requeue: true}, updateStatusErr
 	}
+	log.V(5).Info("Reconcile done")
 
 	return result, err
 }
 
-func (r *KnowledgeBaseReconciler) patchStatus(ctx context.Context, kb *arcadiav1alpha1.KnowledgeBase) error {
+func (r *KnowledgeBaseReconciler) patchStatus(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) error {
 	latest := &arcadiav1alpha1.KnowledgeBase{}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(kb), latest); err != nil {
 		return err
 	}
+	if reflect.DeepEqual(kb.Status, latest.Status) {
+		log.V(5).Info("status not changed, skip")
+		return nil
+	}
+	if r.isReady(kb) && !kb.Status.IsReady() {
+		log.V(5).Info("status is ready,but not get it from cluster, has cache, skip update status")
+		return nil
+	}
+	log.V(5).Info(fmt.Sprintf("try to patch status %#v", kb.Status))
 	patch := client.MergeFrom(latest.DeepCopy())
 	latest.Status = kb.Status
 	return r.Client.Status().Patch(ctx, latest, patch, client.FieldOwner("knowledgebase-controller"))
@@ -155,17 +169,32 @@ func (r *KnowledgeBaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) (*arcadiav1alpha1.KnowledgeBase, ctrl.Result, error) {
-	// Observe generation change
-	if kb.Status.ObservedGeneration != kb.Generation {
-		kb.Status.ObservedGeneration = kb.Generation
-		kb = r.setCondition(kb, kb.InitCondition())
-		if updateStatusErr := r.patchStatus(ctx, kb); updateStatusErr != nil {
+	// Observe generation change or manual update
+	if kb.Status.ObservedGeneration != kb.Generation || kb.Annotations[arcadiav1alpha1.UpdateSourceFileAnnotationKey] != "" {
+		r.cleanupHasHandledSuccessPath(kb)
+		if kb.Status.ObservedGeneration != kb.Generation {
+			log.Info("Generation changed")
+			kb.Status.ObservedGeneration = kb.Generation
+		}
+		kb = r.setCondition(log, kb, kb.InitCondition())
+		if updateStatusErr := r.patchStatus(ctx, log, kb); updateStatusErr != nil {
 			log.Error(updateStatusErr, "unable to update status after generation update")
 			return kb, ctrl.Result{Requeue: true}, updateStatusErr
 		}
+		if kb.Annotations[arcadiav1alpha1.UpdateSourceFileAnnotationKey] != "" {
+			log.Info("Manual update")
+			kbNew := kb.DeepCopy()
+			delete(kbNew.Annotations, arcadiav1alpha1.UpdateSourceFileAnnotationKey)
+			err := r.Patch(ctx, kbNew, client.MergeFrom(kb))
+			if err != nil {
+				return kb, ctrl.Result{Requeue: true}, err
+			}
+		}
+		return kb, ctrl.Result{}, nil
 	}
 
-	if kb.Status.IsReady() {
+	if kb.Status.IsReady() || r.isReady(kb) {
+		log.Info("KnowledgeBase is ready, skip reconcile")
 		return kb, ctrl.Result{}, nil
 	}
 
@@ -173,27 +202,27 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 	vectorStoreReq := kb.Spec.VectorStore
 	fileGroupsReq := kb.Spec.FileGroups
 	if embedderReq == nil || vectorStoreReq == nil || len(fileGroupsReq) == 0 {
-		kb = r.setCondition(kb, kb.PendingCondition("embedder or vectorstore or filegroups is not setting"))
+		kb = r.setCondition(log, kb, kb.PendingCondition("embedder or vectorstore or filegroups is not setting"))
 		return kb, ctrl.Result{}, nil
 	}
 
 	embedder := &arcadiav1alpha1.Embedder{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.Embedder.Name, Namespace: kb.Spec.Embedder.GetNamespace(kb.GetNamespace())}, embedder); err != nil {
 		if apierrors.IsNotFound(err) {
-			kb = r.setCondition(kb, kb.PendingCondition("embedder is not found"))
+			kb = r.setCondition(log, kb, kb.PendingCondition("embedder is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
-		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		kb = r.setCondition(log, kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{}, err
 	}
 
 	vectorStore := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace(kb.GetNamespace())}, vectorStore); err != nil {
 		if apierrors.IsNotFound(err) {
-			kb = r.setCondition(kb, kb.PendingCondition("vectorStore is not found"))
+			kb = r.setCondition(log, kb, kb.PendingCondition("vectorStore is not found"))
 			return kb, ctrl.Result{RequeueAfter: waitLonger}, nil
 		}
-		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		kb = r.setCondition(log, kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{}, err
 	}
 
@@ -205,24 +234,35 @@ func (r *KnowledgeBaseReconciler) reconcile(ctx context.Context, log logr.Logger
 		}
 	}
 	if err := errors.Join(errs...); err != nil {
-		kb = r.setCondition(kb, kb.ErrorCondition(err.Error()))
+		kb = r.setCondition(log, kb, kb.ErrorCondition(err.Error()))
 		return kb, ctrl.Result{RequeueAfter: waitMedium}, nil
 	} else {
 		for _, fileGroupDetail := range kb.Status.FileGroupDetail {
 			for _, fileDetail := range fileGroupDetail.FileDetails {
 				if fileDetail.Phase == arcadiav1alpha1.FileProcessPhaseFailed && fileDetail.ErrMessage != "" {
-					kb = r.setCondition(kb, kb.ErrorCondition(fileDetail.ErrMessage))
+					kb = r.setCondition(log, kb, kb.ErrorCondition(fileDetail.ErrMessage))
 					return kb, ctrl.Result{RequeueAfter: waitMedium}, nil
 				}
 			}
 		}
-		kb = r.setCondition(kb, kb.ReadyCondition())
+		kb = r.setCondition(log, kb, kb.ReadyCondition())
 	}
-
 	return kb, ctrl.Result{}, nil
 }
 
-func (r *KnowledgeBaseReconciler) setCondition(kb *arcadiav1alpha1.KnowledgeBase, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.KnowledgeBase {
+func (r *KnowledgeBaseReconciler) setCondition(log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.KnowledgeBase {
+	ready := false
+	for _, c := range condition {
+		if c.Type == arcadiav1alpha1.TypeReady && c.Status == corev1.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	if ready {
+		r.ready(log, kb)
+	} else {
+		r.unready(log, kb)
+	}
 	kb.Status.SetConditions(condition...)
 	return kb
 }
@@ -270,6 +310,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		// brand new knowledgebase, init status.
 		kb.Status.FileGroupDetail = make([]arcadiav1alpha1.FileGroupDetail, 1)
 		kb.Status.FileGroupDetail[0].Init(group)
+		log.V(5).Info("init filegroupdetail status")
 	}
 	var fileGroupDetail *arcadiav1alpha1.FileGroupDetail
 	pathMap := make(map[string]*arcadiav1alpha1.FileDetails, 1)
@@ -284,6 +325,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	}
 	if fileGroupDetail == nil {
 		// this group is newly added
+		log.V(5).Info("new added group, init filegroupdetail status")
 		fileGroupDetail = &arcadiav1alpha1.FileGroupDetail{}
 		fileGroupDetail.Init(group)
 		kb.Status.FileGroupDetail = append(kb.Status.FileGroupDetail, *fileGroupDetail)
@@ -376,6 +418,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)] = true
 		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
+		log.Info("handle FileGroup succeeded")
 	}
 	return errors.Join(errs...)
 }
@@ -458,38 +501,18 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 			return err
 		}
 	}
-	for i, doc := range documents {
-		log.V(5).Info(fmt.Sprintf("document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
-	}
-	s, finish, err := vectorstore.NewVectorStore(ctx, store, em, kb.VectorStoreCollectionName(), r.Client, nil)
-	if err != nil {
-		return err
-	}
-	log.Info("handle file: add documents to embedder")
-	if _, err = s.AddDocuments(ctx, documents); err != nil {
-		return err
-	}
-	if finish != nil {
-		finish()
-	}
-	log.Info("handle file succeeded")
-	return nil
+	return vectorstore.AddDocuments(ctx, log, store, em, kb.VectorStoreCollectionName(), r.Client, nil, documents)
 }
 
 func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
-	r.mu.Lock()
-	for _, fg := range kb.Spec.FileGroups {
-		for _, path := range fg.Paths {
-			delete(r.HasHandledSuccessPath, r.hasHandledPathKey(kb, fg, path))
-		}
-	}
-	r.mu.Unlock()
+	r.cleanupHasHandledSuccessPath(kb)
+	r.unready(log, kb)
 	vectorStore := &arcadiav1alpha1.VectorStore{}
 	if err := r.Get(ctx, types.NamespacedName{Name: kb.Spec.VectorStore.Name, Namespace: kb.Spec.VectorStore.GetNamespace(kb.GetNamespace())}, vectorStore); err != nil {
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
 		return
 	}
-	_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName())
+	_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName(), r.Client, nil)
 }
 
 func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {
@@ -498,4 +521,33 @@ func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.Knowledg
 		sourceName = filegroup.Source.Name
 	}
 	return kb.Name + "/" + kb.Namespace + "/" + sourceName + "/" + path
+}
+
+func (r *KnowledgeBaseReconciler) cleanupHasHandledSuccessPath(kb *arcadiav1alpha1.KnowledgeBase) {
+	r.mu.Lock()
+	for _, fg := range kb.Spec.FileGroups {
+		for _, path := range fg.Paths {
+			delete(r.HasHandledSuccessPath, r.hasHandledPathKey(kb, fg, path))
+		}
+	}
+	r.mu.Unlock()
+}
+
+func (r *KnowledgeBaseReconciler) ready(log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
+	r.readyMu.Lock()
+	defer r.readyMu.Unlock()
+	log.V(5).Info("ready")
+	r.ReadyMap[string(kb.GetUID())] = true
+}
+
+func (r *KnowledgeBaseReconciler) unready(log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
+	r.readyMu.Lock()
+	defer r.readyMu.Unlock()
+	log.V(5).Info("unready")
+	delete(r.ReadyMap, string(kb.GetUID()))
+}
+
+func (r *KnowledgeBaseReconciler) isReady(kb *arcadiav1alpha1.KnowledgeBase) bool {
+	v, ok := r.ReadyMap[string(kb.GetUID())]
+	return ok && v
 }

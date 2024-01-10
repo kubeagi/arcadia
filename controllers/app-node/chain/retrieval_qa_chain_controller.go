@@ -18,6 +18,7 @@ package chain
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -126,6 +127,9 @@ func (r *RetrievalQAChainReconciler) patchStatus(ctx context.Context, instance *
 	latest := &api.RetrievalQAChain{}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(instance), latest); err != nil {
 		return err
+	}
+	if reflect.DeepEqual(instance.Status, latest.Status) {
+		return nil
 	}
 	patch := client.MergeFrom(latest.DeepCopy())
 	latest.Status = instance.Status
