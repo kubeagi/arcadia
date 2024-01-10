@@ -7,6 +7,15 @@ data:
       kind: Datasource
       name: '{{ .Release.Name }}-minio'
       namespace: '{{ .Release.Namespace }}'
+{{- if gt (len .Values.ray.clusters) 0 }}
+    rayClusters:
+      {{- range .Values.ray.clusters }}
+      - name: {{ .name }}
+        headAddress: {{ .headAddress }}
+        pythonVersion: {{ .pythonVersion }}
+        dashboardHost: {{ .dashboardHost }}
+      {{- end }}
+{{- end }}
     gateway:
       apiServer: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:8000/v1'
       controller: 'http://{{ .Release.Name }}-fastchat.{{ .Release.Namespace }}.svc.cluster.local:21001'
@@ -18,6 +27,7 @@ data:
       kind: VectorStore
       name: '{{ .Release.Name }}-vectorstore'
       namespace: '{{ .Release.Namespace }}'
+
     #streamlit:
     #  image: 172.22.96.34/cluster_system/streamlit:v1.29.0
     #  ingressClassName: portal-ingress

@@ -8,7 +8,7 @@ global:
 # @param resources Resources to be used
 controller:
   loglevel: 3
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.1.0-20240110-0dd9a1f
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -21,7 +21,7 @@ controller:
 # @section graphql and bff server
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.1.0-20240110-0dd9a1f
   enableplayground: false
   port: 8081
   ingress:
@@ -146,3 +146,13 @@ postgresql:
   primary:
     initdb:
       scriptsConfigMap: pg-init-data
+
+# @section ray is a unified framework for scaling AI and Python applications.In kubeagi,we use ray for distributed inference
+ray:
+  # clusters provided by ray
+  # For more information on cluster configurations,please refer to http://kubeagi.k8s.com.cn/docs/Configuration/DistributedInference/run-inference-using-ray
+  clusters:
+    - name: 3090-2-GPUs
+      headAddress: raycluster-kuberay-head-svc.kuberay-system.svc:6379
+      pythonVersion: 3.9.18
+      dashboardHost: raycluster-kuberay-head-svc.kuberay-system.svc:8265
