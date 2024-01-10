@@ -158,6 +158,13 @@ function waitCRDStatusReady() {
 		message=$(kubectl -n${namespace} get ${source} ${name} --ignore-not-found=true -o json | jq -r '.status.conditions[0].message')
 		if [[ $readStatus == "True" ]]; then
 			info $message
+			if [[ ${source} == "KnowledgeBase" ]]; then
+				fileStatus=$(kubectl get knowledgebase -n $namespace $name -o json | jq -r '.status.fileGroupDetail[0].fileDetails[0].phase')
+				if [[ $fileStatus != "Succeeded" ]]; then
+					kubectl get knowledgebase -n $namespace $name -o json | jq -r '.status.fileGroupDetail[0].fileDetails'
+					exit 1
+				fi
+			fi
 			break
 		fi
 
@@ -281,7 +288,8 @@ info "7.4.2 create knowledgebase based on pgvector and wait it ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_knowledgebase_pgvector.yaml
 waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample-pgvector"
 
-info "7.5 check chroma vectorstore has data"
+info "7.5 check vectorstore has data"
+info "7.5.1 check chroma vectorstore has data"
 kubectl port-forward -n arcadia svc/arcadia-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
 info "port-forward chroma in pid: $chroma_pid"
@@ -293,6 +301,49 @@ if [[ $collection_test_count =~ ^[0-9]+$ ]]; then
 else
 	echo "$collection_test_count is not a number"
 	exit 1
+fi
+
+info "7.5.2 check pgvector vectorstore has data"
+kubectl port-forward -n arcadia svc/arcadia-postgresql 5432:5432 >/dev/null 2>&1 &
+postgres_pid=$!
+info "port-forward postgres in pid: $chroma_pid"
+sleep 3
+paasword=$(kubectl get secrets -n arcadia arcadia-postgresql -o json | jq -r '.data."postgres-password"' | base64 --decode)
+if [[ $GITHUB_ACTIONS == "true" ]]; then
+	docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h localhost -c "select document from langchain_pg_embedding;"
+	pgdata=$(docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h localhost -c "select document from langchain_pg_embedding;")
+else
+	docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h host.docker.internal -c "select document from langchain_pg_embedding;"
+	pgdata=$(docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h host.docker.internal -c "select document from langchain_pg_embedding;")
+fi
+if [[ -z $pgdata ]]; then
+	info "get no data in postgres"
+	exit 1
+fi
+
+info "7.6 update qa.csv to make sure it can be embedding"
+echo "newquestion,newanswer" >>pkg/documentloaders/testdata/qa.csv
+mc cp pkg/documentloaders/testdata/qa.csv arcadiatest/${bucket}/dataset/dataset-playground/v1/qa.csv
+mc tag set arcadiatest/${bucket}/dataset/dataset-playground/v1/qa.csv "object_type=QA"
+sleep 3
+kubectl annotate knowledgebase/knowledgebase-sample-pgvector -n arcadia "arcadia.kubeagi.k8s.com.cn/update-source-file-time=$(date)"
+sleep 3
+waitCRDStatusReady "KnowledgeBase" "arcadia" "knowledgebase-sample-pgvector"
+if [[ $GITHUB_ACTIONS == "true" ]]; then
+	docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h localhost -c "select document from langchain_pg_embedding;"
+	pgdata=$(docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h localhost -c "select document from langchain_pg_embedding;")
+else
+	docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h host.docker.internal -c "select document from langchain_pg_embedding;"
+	pgdata=$(docker run --net=host --entrypoint="" -e PGPASSWORD=$paasword kubeagi/postgresql:latest psql -U postgres -d arcadia -h host.docker.internal -c "select document from langchain_pg_embedding;")
+fi
+if [[ -z $pgdata ]]; then
+	info "get no data in postgres"
+	exit 1
+else
+	if [[ ! $pgdata =~ "newquestion" ]]; then
+		info "get no new data in postgres"
+		exit 1
+	fi
 fi
 
 info "8 validate simple app can work normally"

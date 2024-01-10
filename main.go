@@ -209,7 +209,8 @@ func main() {
 	if err = (&basecontrollers.KnowledgeBaseReconciler{
 		Client:                mgr.GetClient(),
 		Scheme:                mgr.GetScheme(),
-		HasHandledSuccessPath: make(map[string]bool, 0),
+		HasHandledSuccessPath: make(map[string]bool),
+		ReadyMap:              make(map[string]bool),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KnowledgeBase")
 		os.Exit(1)

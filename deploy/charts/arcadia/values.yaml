@@ -1,6 +1,10 @@
 global:
   oss:
     bucket: &default-oss-bucket "arcadia"
+  ## @param global.defaultVectorStoreType Defines the default vector database type, currently `chroma` and `pgvector` are available
+  ## When the option is `chroma`, it needs `chromadb.enabled` to be `true` as well to work.
+  ## When the option is `pgvector`, it needs `postgresql.enabled` to be `true` as well to work.
+  defaultVectorStoreType: pgvector
 
 # @section controller is used as the core controller for arcadia
 # @param image Image to be used

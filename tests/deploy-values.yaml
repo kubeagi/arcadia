@@ -1,3 +1,5 @@
+global:
+  defaultVectorStoreType: pgvector
 # @section controller is used as the core controller for arcadia
 # @param image Image to be used
 # @param imagePullPolcy ImagePullPolicy
