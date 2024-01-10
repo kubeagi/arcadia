@@ -33,7 +33,7 @@ import (
 
 const (
 	ZhipuaiModelAPIURL         = "https://open.bigmodel.cn/api/paas/v3/model-api"
-	ZhipuaiModelDefaultTimeout = 300 * time.Second
+	ZhipuaiModelDefaultTimeout = 30 * time.Second
 	RetryLimit                 = 3
 )
 
@@ -198,7 +198,7 @@ func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][
 			retry++
 			if retry > 1 {
 				time.Sleep(100 * time.Millisecond)
-				klog.Warning("retry embedding post quest:", retry)
+				klog.Warning("retry embedding post request:", retry)
 			}
 			postResponse, err = EmbeddingPost(url, token, EmbeddingText{
 				Prompt: text,

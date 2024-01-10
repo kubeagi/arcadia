@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"github.com/tmc/langchaingo/vectorstores/chroma"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -31,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/vectorstore"
 )
 
 // VectorStoreReconciler reconciles a VectorStore object
@@ -124,27 +124,28 @@ func (r *VectorStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore) (err error) {
 	log.V(5).Info("check vectorstore")
-	switch vs.Spec.Type() {
-	case arcadiav1alpha1.VectorStoreTypeChroma:
-		_, err = chroma.New(
-			chroma.WithOpenAiAPIKey("fake_key_just_for_chroma_heartbeat"),
-			chroma.WithChromaURL(vs.Spec.Endpoint.URL),
-			chroma.WithDistanceFunction(vs.Spec.Chroma.DistanceFunction),
-		)
-		if err != nil {
-			log.Error(err, "failed to connect to vectorstore")
-			r.setCondition(vs, vs.ErrorCondition(err.Error()))
-		} else {
-			r.setCondition(vs, vs.ReadyCondition())
+	vsRaw := vs.DeepCopy()
+	_, finish, err := vectorstore.NewVectorStore(ctx, vs, nil, "", r.Client, nil)
+	if err != nil {
+		log.Error(err, "failed to connect to vectorstore")
+		r.setCondition(vs, vs.ErrorCondition(err.Error()))
+	} else {
+		r.setCondition(vs, vs.ReadyCondition())
+		if finish != nil {
+			finish()
 		}
-	default:
-		r.setCondition(vs, vs.ErrorCondition("unsupported vectorstore type"))
 	}
 	if err := r.patchStatus(ctx, vs); err != nil {
 		return err
 	}
+	if !reflect.DeepEqual(vsRaw, vs) {
+		if err := r.Patch(ctx, vs, client.MergeFrom(vsRaw)); err != nil {
+			return err
+		}
+	}
 	return err
 }
+
 func (r *VectorStoreReconciler) setCondition(vs *arcadiav1alpha1.VectorStore, condition ...arcadiav1alpha1.Condition) *arcadiav1alpha1.VectorStore {
 	vs.Status.SetConditions(condition...)
 	return vs

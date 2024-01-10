@@ -28,20 +28,20 @@ const (
 type VectorStoreType string
 
 const (
-	VectorStoreTypeChroma  VectorStoreType = "chroma"
-	VectorStoreTypeUnknown VectorStoreType = "unknown"
+	VectorStoreTypeChroma   VectorStoreType = "chroma"
+	VectorStoreTypePGVector VectorStoreType = "pgvector"
+	VectorStoreTypeUnknown  VectorStoreType = "unknown"
 )
 
 func (vs VectorStoreSpec) Type() VectorStoreType {
-	if vs.Endpoint == nil {
+	switch {
+	case vs.Chroma != nil:
+		return VectorStoreTypeChroma
+	case vs.PGVector != nil:
+		return VectorStoreTypePGVector
+	default:
 		return VectorStoreTypeUnknown
 	}
-
-	if vs.Chroma != nil {
-		return VectorStoreTypeChroma
-	}
-
-	return VectorStoreTypeUnknown
 }
 
 func (vs *VectorStore) InitCondition() Condition {

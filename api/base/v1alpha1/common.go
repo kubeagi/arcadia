@@ -183,28 +183,36 @@ type CommonSpec struct {
 	Description string `json:"description,omitempty"`
 }
 
-func (endpoint Endpoint) AuthAPIKey(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (string, error) {
+func (endpoint Endpoint) AuthData(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (map[string][]byte, error) {
 	if endpoint.AuthSecret == nil {
-		return "", nil
+		return nil, nil
 	}
 	if err := utils.ValidateClient(c, cli); err != nil {
-		return "", err
+		return nil, err
 	}
 	authSecret := &corev1.Secret{}
 	if c != nil {
 		if err := c.Get(ctx, types.NamespacedName{Name: endpoint.AuthSecret.Name, Namespace: endpoint.AuthSecret.GetNamespace(ns)}, authSecret); err != nil {
-			return "", err
+			return nil, err
 		}
 	} else {
 		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
 			Namespace(endpoint.AuthSecret.GetNamespace(ns)).Get(ctx, endpoint.AuthSecret.Name, metav1.GetOptions{})
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), authSecret)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
-	return string(authSecret.Data["apiKey"]), nil
+	return authSecret.Data, nil
+}
+
+func (endpoint Endpoint) AuthAPIKey(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (string, error) {
+	data, err := endpoint.AuthData(ctx, ns, c, cli)
+	if err != nil {
+		return "", err
+	}
+	return string(data["apiKey"]), nil
 }

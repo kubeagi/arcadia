@@ -39,6 +39,7 @@ spec:
     authSecret:
       kind: Secret
       name: {{ .Release.Name }}-postgresql-datasource-authsecret
+      namespace: {{ .Release.Namespace }}
   postgresql:
     PGDATABASE: {{ .Values.postgresql.global.postgresql.auth.database }}
 ---
@@ -49,6 +50,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
-  PGUSER: {{ .Values.postgresql.global.postgresql.auth.username  | b64enc | quote }}
+  PGUSER: {{ "postgres"  | b64enc | quote }}
   PGPASSWORD: {{ .Values.postgresql.global.postgresql.auth.password  | b64enc | quote }}
 {{- end }}

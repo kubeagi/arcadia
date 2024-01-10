@@ -93,6 +93,47 @@ spec:
                     description: URL for this endpoint
                     type: string
                 type: object
+              pgvector:
+                properties:
+                  collectionName:
+                    description: CollectionName defines the name of the collection
+                    type: string
+                  collectionTableName:
+                    description: CollectionTableName defines the name of the collection
+                      table. if empty, use `langchain_pg_collection`
+                    type: string
+                  dataSourceRef:
+                    description: DataSourceRef defines the reference of the data source
+                    properties:
+                      apiGroup:
+                        description: APIGroup is the group for the resource being
+                          referenced. If APIGroup is not specified, the specified
+                          Kind must be in the core API group. For any other third-party
+                          types, APIGroup is required.
+                        type: string
+                      kind:
+                        description: Kind is the type of resource being referenced
+                        type: string
+                      name:
+                        description: Name is the name of resource being referenced
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of resource being
+                          referenced
+                        type: string
+                    required:
+                    - kind
+                    - name
+                    type: object
+                  embeddingTableName:
+                    description: EmbeddingTableName defines the name of the embedding
+                      table. if empty, use `langchain_pg_embedding`
+                    type: string
+                  preDeleteCollection:
+                    description: PreDeleteCollection defines if the collection should
+                      be deleted before creating.
+                    type: boolean
+                type: object
             type: object
           status:
             description: VectorStoreStatus defines the observed state of VectorStore

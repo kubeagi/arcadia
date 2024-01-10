@@ -26,7 +26,6 @@ import (
 	"github.com/tmc/langchaingo/chains"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
-	"github.com/tmc/langchaingo/vectorstores/chroma"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -37,6 +36,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/application/base"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
+	pkgvectorstore "github.com/kubeagi/arcadia/pkg/vectorstore"
 )
 
 type Reference struct {
@@ -133,21 +133,12 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface,
 	if err != nil {
 		return nil, fmt.Errorf("can't convert the vectorstore in cluster: %w", err)
 	}
-	switch vectorStore.Spec.Type() { // nolint: gocritic
-	case v1alpha1.VectorStoreTypeChroma:
-		s, err := chroma.New(
-			chroma.WithChromaURL(vectorStore.Spec.Endpoint.URL),
-			chroma.WithDistanceFunction(vectorStore.Spec.Chroma.DistanceFunction),
-			chroma.WithNameSpace(knowledgebase.VectorStoreCollectionName()),
-			chroma.WithEmbedder(em),
-		)
-		if err != nil {
-			return nil, err
-		}
-		l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
-	default:
-		return nil, fmt.Errorf("unknown vectorstore type: %s", vectorStore.Spec.Type())
+	var s vectorstores.VectorStore
+	s, _, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), nil, cli)
+	if err != nil {
+		return nil, err
 	}
+	l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
 	args["retriever"] = l
 	return args, nil
 }
