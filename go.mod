@@ -177,4 +177,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/tmc/langchaingo => github.com/Abirdcfly/langchaingo v0.0.0-20240109164330-070ff5dffed1
+replace github.com/tmc/langchaingo => github.com/Abirdcfly/langchaingo v0.0.0-20240110125843-3feb6668f787 // branch arcadia
