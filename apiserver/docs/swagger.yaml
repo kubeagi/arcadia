@@ -751,6 +751,51 @@ paths:
       summary: Download files in chunks
       tags:
       - MinioAPI
+  /model/files/downloadlink:
+    get:
+      consumes:
+      - application/json
+      description: Get a download link
+      parameters:
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: Path of the bucket
+        in: query
+        name: bucketPath
+        required: true
+        type: string
+      - description: Name of the file
+        in: query
+        name: fileName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a download link
+      tags:
+      - MinioAPI
   /model/files/stat:
     get:
       consumes:
