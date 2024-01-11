@@ -54,6 +54,7 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds.Field = &dataset.Spec.Field
 	first := true
 	for _, cond := range dataset.Status.Conditions {
+		cond := cond
 		if !cond.LastSuccessfulTime.IsZero() {
 			if first || ds.UpdateTimestamp.Before(cond.LastTransitionTime.Time) {
 				ds.UpdateTimestamp = &cond.LastTransitionTime.Time

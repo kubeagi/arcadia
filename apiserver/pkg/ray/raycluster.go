@@ -34,6 +34,7 @@ func ListRayClusters(ctx context.Context, c dynamic.Interface, input generated.L
 
 	var results = make([]generated.PageNode, 0, len(clusters))
 	for index, cluster := range clusters {
+		cluster := cluster
 		// skip if keyword not in cluster name
 		if input.Keyword != nil {
 			if !strings.Contains(cluster.Name, *input.Keyword) {
