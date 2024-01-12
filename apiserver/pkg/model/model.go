@@ -285,9 +285,10 @@ func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace s
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
+			lastModified := obj.LastModified
 			tf := generated.F{
 				Path: strings.TrimPrefix(obj.Key, prefix),
-				Time: &obj.LastModified,
+				Time: &lastModified,
 			}
 			size := utils.BytesToSizedStr(obj.Size)
 			tf.Size = &size
