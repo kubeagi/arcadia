@@ -11,6 +11,7 @@
         status character varying(32) COLLATE pg_catalog."default",
         pre_data_set_name character varying(32) COLLATE pg_catalog."default",
         pre_data_set_version character varying(32) COLLATE pg_catalog."default",
+        pre_version_data_set_name character varying(64) COLLATE pg_catalog."default",
         file_names jsonb,
         post_data_set_name character varying(32) COLLATE pg_catalog."default",
         post_data_set_version character varying(32) COLLATE pg_catalog."default",
@@ -29,6 +30,9 @@
         CONSTRAINT data_process_task_pkey PRIMARY KEY (id)
     );
 
+    COMMENT ON COLUMN public.data_process_task.bucket_name IS 'bucket name';
+    COMMENT ON COLUMN public.data_process_task.current_log_id IS '当前日志Id';
+    COMMENT ON COLUMN public.data_process_task.pre_version_data_set_name IS '处理前数据集版本信息';
 
     CREATE TABLE IF NOT EXISTS public.data_process_task_detail
     (

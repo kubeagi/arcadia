@@ -199,12 +199,14 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessQuery struct {
-		AllDataProcessListByCount func(childComplexity int, input *AllDataProcessListByCountInput) int
-		AllDataProcessListByPage  func(childComplexity int, input *AllDataProcessListByPageInput) int
-		CheckDataProcessTaskName  func(childComplexity int, input *CheckDataProcessTaskNameInput) int
-		DataProcessDetails        func(childComplexity int, input *DataProcessDetailsInput) int
-		DataProcessSupportType    func(childComplexity int) int
-		GetLogInfo                func(childComplexity int, input *DataProcessDetailsInput) int
+		AllDataProcessListByCount    func(childComplexity int, input *AllDataProcessListByCountInput) int
+		AllDataProcessListByPage     func(childComplexity int, input *AllDataProcessListByPageInput) int
+		CheckDataProcessTaskName     func(childComplexity int, input *CheckDataProcessTaskNameInput) int
+		DataProcessDetails           func(childComplexity int, input *DataProcessDetailsInput) int
+		DataProcessLogInfoByFileName func(childComplexity int, input *DataProcessFileLogInput) int
+		DataProcessRetry             func(childComplexity int, input *DataProcessRetryInput) int
+		DataProcessSupportType       func(childComplexity int) int
+		GetLogInfo                   func(childComplexity int, input *DataProcessDetailsInput) int
 	}
 
 	DataProcessResponse struct {
@@ -644,6 +646,8 @@ type DataProcessQueryResolver interface {
 	DataProcessDetails(ctx context.Context, obj *DataProcessQuery, input *DataProcessDetailsInput) (*DataProcessDetails, error)
 	CheckDataProcessTaskName(ctx context.Context, obj *DataProcessQuery, input *CheckDataProcessTaskNameInput) (*DataProcessResponse, error)
 	GetLogInfo(ctx context.Context, obj *DataProcessQuery, input *DataProcessDetailsInput) (*DataProcessResponse, error)
+	DataProcessLogInfoByFileName(ctx context.Context, obj *DataProcessQuery, input *DataProcessFileLogInput) (*DataProcessResponse, error)
+	DataProcessRetry(ctx context.Context, obj *DataProcessQuery, input *DataProcessRetryInput) (*DataProcessResponse, error)
 }
 type DatasetResolver interface {
 	Versions(ctx context.Context, obj *Dataset, input ListVersionedDatasetInput) (*PaginatedResult, error)
@@ -1465,6 +1469,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessQuery.DataProcessDetails(childComplexity, args["input"].(*DataProcessDetailsInput)), true
+
+	case "DataProcessQuery.dataProcessLogInfoByFileName":
+		if e.complexity.DataProcessQuery.DataProcessLogInfoByFileName == nil {
+			break
+		}
+
+		args, err := ec.field_DataProcessQuery_dataProcessLogInfoByFileName_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DataProcessQuery.DataProcessLogInfoByFileName(childComplexity, args["input"].(*DataProcessFileLogInput)), true
+
+	case "DataProcessQuery.dataProcessRetry":
+		if e.complexity.DataProcessQuery.DataProcessRetry == nil {
+			break
+		}
+
+		args, err := ec.field_DataProcessQuery_dataProcessRetry_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.DataProcessQuery.DataProcessRetry(childComplexity, args["input"].(*DataProcessRetryInput)), true
 
 	case "DataProcessQuery.dataProcessSupportType":
 		if e.complexity.DataProcessQuery.DataProcessSupportType == nil {
@@ -3698,6 +3726,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateWorkerInput,
 		ec.unmarshalInputDataProcessConfigItem,
 		ec.unmarshalInputDataProcessDetailsInput,
+		ec.unmarshalInputDataProcessFileLogInput,
+		ec.unmarshalInputDataProcessRetryInput,
 		ec.unmarshalInputDeleteCommonInput,
 		ec.unmarshalInputDeleteDataProcessInput,
 		ec.unmarshalInputDeleteVersionedDatasetInput,
@@ -4163,6 +4193,10 @@ type DataProcessQuery {
   checkDataProcessTaskName(input: CheckDataProcessTaskNameInput): DataProcessResponse
   # 日志信息
   getLogInfo(input: DataProcessDetailsInput): DataProcessResponse
+  # 获取文件处理的日志
+  dataProcessLogInfoByFileName(input: DataProcessFileLogInput): DataProcessResponse
+  # 任务重试
+  dataProcessRetry(input: DataProcessRetryInput): DataProcessResponse
 }
 
 
@@ -4213,6 +4247,7 @@ input LLMConfigItem {
   top_p: String
   max_tokens: String
   prompt_template: String
+  provider: String
 }
 
 input DeleteDataProcessInput {
@@ -4226,6 +4261,17 @@ input DataProcessDetailsInput {
 input CheckDataProcessTaskNameInput {
   name: String!
   namespace: String!
+}
+
+input DataProcessFileLogInput {
+  id: String!
+  file_name: String!
+  type: String!
+}
+
+input DataProcessRetryInput {
+  id: String!
+  creator: String!
 }
 
 # 数据处理列表分页
@@ -6379,6 +6425,36 @@ func (ec *executionContext) field_DataProcessQuery_dataProcessDetails_args(ctx c
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalODataProcessDetailsInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessDetailsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_DataProcessQuery_dataProcessLogInfoByFileName_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *DataProcessFileLogInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalODataProcessFileLogInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessFileLogInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_DataProcessQuery_dataProcessRetry_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *DataProcessRetryInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalODataProcessRetryInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessRetryInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11583,6 +11659,126 @@ func (ec *executionContext) fieldContext_DataProcessQuery_getLogInfo(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_DataProcessQuery_getLogInfo_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessQuery_dataProcessLogInfoByFileName(ctx context.Context, field graphql.CollectedField, obj *DataProcessQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessQuery_dataProcessLogInfoByFileName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.DataProcessQuery().DataProcessLogInfoByFileName(rctx, obj, fc.Args["input"].(*DataProcessFileLogInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataProcessResponse)
+	fc.Result = res
+	return ec.marshalODataProcessResponse2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessQuery_dataProcessLogInfoByFileName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_DataProcessResponse_status(ctx, field)
+			case "data":
+				return ec.fieldContext_DataProcessResponse_data(ctx, field)
+			case "message":
+				return ec.fieldContext_DataProcessResponse_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DataProcessQuery_dataProcessLogInfoByFileName_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessQuery_dataProcessRetry(ctx context.Context, field graphql.CollectedField, obj *DataProcessQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessQuery_dataProcessRetry(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.DataProcessQuery().DataProcessRetry(rctx, obj, fc.Args["input"].(*DataProcessRetryInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataProcessResponse)
+	fc.Result = res
+	return ec.marshalODataProcessResponse2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessQuery_dataProcessRetry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_DataProcessResponse_status(ctx, field)
+			case "data":
+				return ec.fieldContext_DataProcessResponse_data(ctx, field)
+			case "message":
+				return ec.fieldContext_DataProcessResponse_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_DataProcessQuery_dataProcessRetry_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -21311,6 +21507,10 @@ func (ec *executionContext) fieldContext_Query_dataProcess(ctx context.Context, 
 				return ec.fieldContext_DataProcessQuery_checkDataProcessTaskName(ctx, field)
 			case "getLogInfo":
 				return ec.fieldContext_DataProcessQuery_getLogInfo(ctx, field)
+			case "dataProcessLogInfoByFileName":
+				return ec.fieldContext_DataProcessQuery_dataProcessLogInfoByFileName(ctx, field)
+			case "dataProcessRetry":
+				return ec.fieldContext_DataProcessQuery_dataProcessRetry(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessQuery", field.Name)
 		},
@@ -28381,6 +28581,91 @@ func (ec *executionContext) unmarshalInputDataProcessDetailsInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDataProcessFileLogInput(ctx context.Context, obj interface{}) (DataProcessFileLogInput, error) {
+	var it DataProcessFileLogInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "file_name", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "file_name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file_name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FileName = data
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDataProcessRetryInput(ctx context.Context, obj interface{}) (DataProcessRetryInput, error) {
+	var it DataProcessRetryInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "creator"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "creator":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creator"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Creator = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeleteCommonInput(ctx context.Context, obj interface{}) (DeleteCommonInput, error) {
 	var it DeleteCommonInput
 	asMap := map[string]interface{}{}
@@ -28699,7 +28984,7 @@ func (ec *executionContext) unmarshalInputLLMConfigItem(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "model", "temperature", "top_p", "max_tokens", "prompt_template"}
+	fieldsInOrder := [...]string{"name", "namespace", "model", "temperature", "top_p", "max_tokens", "prompt_template", "provider"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28769,6 +29054,15 @@ func (ec *executionContext) unmarshalInputLLMConfigItem(ctx context.Context, obj
 				return it, err
 			}
 			it.PromptTemplate = data
+		case "provider":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
 		}
 	}
 
@@ -31976,6 +32270,72 @@ func (ec *executionContext) _DataProcessQuery(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._DataProcessQuery_getLogInfo(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "dataProcessLogInfoByFileName":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataProcessQuery_dataProcessLogInfoByFileName(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "dataProcessRetry":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataProcessQuery_dataProcessRetry(ctx, field, obj)
 				return res
 			}
 
@@ -37592,6 +37952,14 @@ func (ec *executionContext) unmarshalODataProcessDetailsInput2ᚖgithubᚗcomᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalODataProcessFileLogInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessFileLogInput(ctx context.Context, v interface{}) (*DataProcessFileLogInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDataProcessFileLogInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalODataProcessItem2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*DataProcessItem) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -37658,6 +38026,14 @@ func (ec *executionContext) marshalODataProcessResponse2ᚖgithubᚗcomᚋkubeag
 		return graphql.Null
 	}
 	return ec._DataProcessResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODataProcessRetryInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessRetryInput(ctx context.Context, v interface{}) (*DataProcessRetryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDataProcessRetryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalODataProcessSupportType2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessSupportType(ctx context.Context, sel ast.SelectionSet, v *DataProcessSupportType) graphql.Marshaler {

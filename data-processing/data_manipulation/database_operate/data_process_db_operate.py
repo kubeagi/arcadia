@@ -123,6 +123,7 @@ def add(
         'bucket_name': req_json['bucket_name'],
         'pre_data_set_name': req_json['pre_data_set_name'],
         'pre_data_set_version': req_json['pre_data_set_version'],
+        'pre_version_data_set_name': req_json['version_data_set_name'],
         'file_names': ujson.dumps(req_json['file_names']),
         'post_data_set_name': req_json['post_data_set_name'],
         'post_data_set_version': req_json['post_data_set_version'],
@@ -151,6 +152,7 @@ def add(
           post_data_set_version,
           data_process_config_info,
           start_datetime,
+          pre_version_data_set_name,
           create_datetime,
           create_program,
           create_user,
@@ -172,6 +174,7 @@ def add(
           %(post_data_set_version)s,
           %(data_process_config_info)s,
           %(start_datetime)s,
+          %(pre_version_data_set_name)s,
           %(create_datetime)s,
           %(create_program)s,
           %(create_user)s,
@@ -243,6 +246,9 @@ def info_by_id(
           dpt.data_process_config_info,
           dpt.start_datetime,
           dpt.end_datetime,
+          dpt.bucket_name,
+          dpt.namespace,
+          dpt.pre_version_data_set_name,
           dpt.create_user,
           dpt.update_datetime,
           dptl.error_msg
@@ -280,5 +286,39 @@ def count_by_name(
     """.strip()
 
     res = postgresql_pool_client.execute_count_query(pool, sql, params)
+    return res
+
+
+def update_status_and_log_id(
+    req_json, 
+    pool
+):
+    """Update the status and current log id with task id"""
+    user = req_json['user']
+    program = '修改任务状态'
+
+    params = {
+        'id': req_json.get('id'),
+        'status': req_json.get('status'),
+        'current_log_id': req_json.get('current_log_id'),
+        'end_datetime': req_json.get('end_datetime'),
+        'update_datetime': req_json.get('end_datetime'),
+        'update_program': program,
+        'update_user': user
+    }
+
+    sql = """
+        update public.data_process_task set
+          status = %(status)s,
+          current_log_id = %(current_log_id)s,
+          end_datetime = %(end_datetime)s,
+          update_datetime = %(update_datetime)s,
+          update_program = %(update_program)s,
+          update_user = %(update_user)s
+        where
+          id = %(id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 

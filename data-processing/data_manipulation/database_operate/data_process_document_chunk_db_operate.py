@@ -164,3 +164,36 @@ def delete_by_task_id(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
+def list_by_status(
+    req_json,
+    pool
+):
+    """Retrieve a list of statuses marked as in progress and failed."""
+    params = {
+      'document_id': req_json.get('document_id')
+    }
+
+    sql = """
+      select 
+        id,
+        document_id,
+        status,
+        task_id,
+        content,
+        meta_info,
+        page_number,
+        create_datetime,
+        create_user,
+        create_program,
+        update_datetime,
+        update_user,
+        update_program
+      from
+        public.data_process_task_document_chunk
+      where 
+        document_id = %(document_id)s and
+        status != 'success'
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res

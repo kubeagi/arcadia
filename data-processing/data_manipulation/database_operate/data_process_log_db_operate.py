@@ -28,11 +28,11 @@ def add(
     program = '数据处理任务日志-新增'
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'type': req_json['type'],
+        'id': req_json.get('id'),
+        'task_id': req_json.get('task_id'),
+        'type': req_json.get('type'),
         'status': 'processing',
-        'error_msg': req_json['error_msg'],
+        'error_msg': req_json.get('error_msg'),
         'start_datetime': now,
         'create_datetime': now,
         'create_user': user,

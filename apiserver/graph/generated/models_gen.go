@@ -424,6 +424,12 @@ type DataProcessDetailsItem struct {
 	Config             []*DataProcessConfig `json:"config,omitempty"`
 }
 
+type DataProcessFileLogInput struct {
+	ID       string `json:"id"`
+	FileName string `json:"file_name"`
+	Type     string `json:"type"`
+}
+
 type DataProcessItem struct {
 	ID                 string  `json:"id"`
 	Name               string  `json:"name"`
@@ -442,18 +448,25 @@ type DataProcessMutation struct {
 }
 
 type DataProcessQuery struct {
-	AllDataProcessListByPage  *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
-	AllDataProcessListByCount *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
-	DataProcessSupportType    *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
-	DataProcessDetails        *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
-	CheckDataProcessTaskName  *DataProcessResponse      `json:"checkDataProcessTaskName,omitempty"`
-	GetLogInfo                *DataProcessResponse      `json:"getLogInfo,omitempty"`
+	AllDataProcessListByPage     *PaginatedDataProcessItem `json:"allDataProcessListByPage,omitempty"`
+	AllDataProcessListByCount    *CountDataProcessItem     `json:"allDataProcessListByCount,omitempty"`
+	DataProcessSupportType       *DataProcessSupportType   `json:"dataProcessSupportType,omitempty"`
+	DataProcessDetails           *DataProcessDetails       `json:"dataProcessDetails,omitempty"`
+	CheckDataProcessTaskName     *DataProcessResponse      `json:"checkDataProcessTaskName,omitempty"`
+	GetLogInfo                   *DataProcessResponse      `json:"getLogInfo,omitempty"`
+	DataProcessLogInfoByFileName *DataProcessResponse      `json:"dataProcessLogInfoByFileName,omitempty"`
+	DataProcessRetry             *DataProcessResponse      `json:"dataProcessRetry,omitempty"`
 }
 
 type DataProcessResponse struct {
 	Status  int    `json:"status"`
 	Data    string `json:"data"`
 	Message string `json:"message"`
+}
+
+type DataProcessRetryInput struct {
+	ID      string `json:"id"`
+	Creator string `json:"creator"`
 }
 
 type DataProcessSupportType struct {
@@ -815,6 +828,7 @@ type LLMConfigItem struct {
 	TopP           *string `json:"top_p,omitempty"`
 	MaxTokens      *string `json:"max_tokens,omitempty"`
 	PromptTemplate *string `json:"prompt_template,omitempty"`
+	Provider       *string `json:"provider,omitempty"`
 }
 
 type LLMQuery struct {

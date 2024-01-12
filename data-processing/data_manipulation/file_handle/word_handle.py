@@ -15,6 +15,7 @@
 
 import logging
 import traceback
+import ulid
 
 from common import log_tag_const
 from common.config import config
@@ -33,8 +34,8 @@ def docx_text_manipulate(
     conn_pool,
     task_id,
     create_user,
-    chunk_size,
-    chunk_overlap
+    chunk_size=None,
+    chunk_overlap=None
 ):
     """Manipulate the text content from a word file.
     
@@ -122,6 +123,6 @@ def _get_documents_by_langchain(
         chunk_size=int(chunk_size),
         chunk_overlap=int(chunk_overlap)
     )
-    documents = text_splitter.split_text(data)
+    documents = text_splitter.split_text(content)
 
     return documents

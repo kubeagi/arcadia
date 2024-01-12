@@ -140,3 +140,36 @@ def delete_by_task_id(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
+
+
+def info_by_stage_and_file_name(
+    req_json,
+    pool
+):
+    params = {
+        'task_id': req_json.get('id'),
+        'stage_name': req_json.get('type'),
+        'file_name': req_json.get('file_name')
+    }
+
+    sql = """
+        select
+          id,
+          task_id,
+          log_id,
+          log_datetime,
+          stage_name,
+          stage_status,
+          stage_detail,
+          error_msg
+        from
+          public.data_process_task_stage_log
+        where
+          task_id = %(task_id)s and
+          stage_name = %(stage_name)s and
+          file_name = %(file_name)s
+        order by log_datetime desc
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res

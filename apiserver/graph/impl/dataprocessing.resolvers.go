@@ -83,6 +83,24 @@ func (r *dataProcessQueryResolver) GetLogInfo(ctx context.Context, obj *generate
 	return dataprocessing.GetLogInfo(ctx, c, obj, input)
 }
 
+// DataProcessLogInfoByFileName is the resolver for the dataProcessLogInfoByFileName field.
+func (r *dataProcessQueryResolver) DataProcessLogInfoByFileName(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessFileLogInput) (*generated.DataProcessResponse, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.DataProcessLogInfoByFileName(ctx, c, obj, input)
+}
+
+// DataProcessRetry is the resolver for the dataProcessRetry field.
+func (r *dataProcessQueryResolver) DataProcessRetry(ctx context.Context, obj *generated.DataProcessQuery, input *generated.DataProcessRetryInput) (*generated.DataProcessResponse, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dataprocessing.DataProcessRetry(ctx, c, obj, input)
+}
+
 // DataProcess is the resolver for the dataProcess field.
 func (r *mutationResolver) DataProcess(ctx context.Context) (*generated.DataProcessMutation, error) {
 	return &generated.DataProcessMutation{}, nil

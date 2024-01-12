@@ -259,3 +259,59 @@ func GetLogInfo(ctx context.Context, c dynamic.Interface, obj *generated.DataPro
 	}
 	return data, nil
 }
+
+func DataProcessLogInfoByFileName(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessFileLogInput) (*generated.DataProcessResponse, error) {
+	// prepare http request
+	jsonParams, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", url+"/get-log-by-file-name", bytes.NewBuffer(jsonParams))
+	if err != nil {
+		return nil, err
+	}
+
+	// call dataprocessing server
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// parse http response
+	data := &generated.DataProcessResponse{}
+	err = json.NewDecoder(resp.Body).Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func DataProcessRetry(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessRetryInput) (*generated.DataProcessResponse, error) {
+	// prepare http request
+	jsonParams, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", url+"/retry", bytes.NewBuffer(jsonParams))
+	if err != nil {
+		return nil, err
+	}
+
+	// call dataprocessing server
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// parse http response
+	data := &generated.DataProcessResponse{}
+	err = json.NewDecoder(resp.Body).Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}

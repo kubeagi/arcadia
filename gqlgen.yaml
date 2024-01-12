@@ -164,6 +164,10 @@ models:
         resolver: true
       getLogInfo:
         resolver: true
+      dataProcessLogInfoByFileName:
+        resolver: true
+      dataProcessRetry:
+        resolver: true
   DataProcessMutation:
     fields:
       createDataProcessTask:

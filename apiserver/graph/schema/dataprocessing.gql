@@ -128,6 +128,26 @@ query getLogInfo($input: DataProcessDetailsInput){
   }
 }
 
+query dataProcessLogInfoByFileName($input: DataProcessFileLogInput){
+  dataProcess {
+    dataProcessLogInfoByFileName(input: $input) {
+      status
+      data 
+      message
+    }
+  }
+}
+
+query dataProcessRetry($input: DataProcessRetryInput){
+  dataProcess {
+    dataProcessRetry(input: $input) {
+      status
+      data 
+      message
+    }
+  }
+}
+
 mutation createDataProcessTask($input: AddDataProcessInput) {
   dataProcess {
     createDataProcessTask(input: $input) {

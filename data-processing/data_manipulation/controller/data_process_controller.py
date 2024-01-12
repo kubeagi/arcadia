@@ -153,3 +153,36 @@ async def get_log_info(request):
     )
     return json(res) 
 
+@data_process.route('get-log-by-file-name', methods=['POST'])
+async def get_log_by_file_name(request):
+    """check task name by name and namespace.
+    
+    example for request.json
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "file_name": "xx.pdf",
+        "type": "qa_split"
+    }
+    """
+    res = data_process_service.get_log_by_file_name(
+        request.json,
+        pool=request.app.config['conn_pool']
+    )
+    return json(res) 
+
+
+@data_process.route('retry', methods=['POST'])
+async def retry(request):
+    """check task name by name and namespace.
+    
+    example for request.json
+    {
+        "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    """
+    res = data_process_service.retry(
+        request.json,
+        pool=request.app.config['conn_pool']
+    )
+    return json(res) 
+
