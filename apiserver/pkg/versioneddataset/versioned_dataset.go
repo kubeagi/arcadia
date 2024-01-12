@@ -378,10 +378,19 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 				return nil, err
 			}
 			if v.Spec.Version == *input.InheritedFrom {
+				isReady := false
+				var errMessage error
 				for _, cond := range v.Status.Conditions {
-					if !(cond.Type == v1alpha1.TypeReady && cond.Status == v1.ConditionTrue) {
-						return nil, fmt.Errorf("inherit from a version with an incorrect synchronization state will not be created. reason: %s, errMsg: %s", cond.Reason, cond.Message)
+					if cond.Type == v1alpha1.TypeReady && cond.Status == v1.ConditionTrue {
+						isReady = true
+						break
 					}
+					if cond.Type == v1alpha1.TypeReady && cond.Status != v1.ConditionTrue {
+						errMessage = fmt.Errorf("inherit from a version with an incorrect synchronization state will not be created. reason: %s, errMsg: %s", cond.Reason, cond.Message)
+					}
+				}
+				if !isReady {
+					return nil, errMessage
 				}
 			}
 		}
