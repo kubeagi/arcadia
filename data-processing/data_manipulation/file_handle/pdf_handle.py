@@ -36,8 +36,8 @@ def text_manipulate(
     conn_pool,
     task_id,
     create_user,
-    chunk_size,
-    chunk_overlap
+    chunk_size=None,
+    chunk_overlap=None
 ):
     """Manipulate the text content from a pdf file.
     
@@ -69,14 +69,15 @@ def text_manipulate(
             chunck_id = ulid.ulid()
             page = document.metadata.get('page') + 1
             content = document.page_content.replace("\n", "")
-            meta_info = ujson.dumps(document.metadata, ensure_ascii=False)
+            meta_info = document.metadata
+            meta_info['source'] = file_name
             chunk_insert_item = {
                 'id': chunck_id,
                 'document_id': document_id,
                 'task_id': task_id,
                 'status': 'not_start',
                 'content': content,
-                'meta_info': meta_info,
+                'meta_info': ujson.dumps(meta_info, ensure_ascii=False),
                 'page_number': page,
                 'creator': create_user
             }

@@ -22,6 +22,7 @@ DATABASE_POSTGRESQL = "DataBase PostgreSQL"
 MINIO = "Minio"
 MINIO_STORE_PROCESS = "Minio Store Process"
 
+DATA_PROCESS_SERVICE = "Data Process Service"
 DATA_PROCESS_DETAIL = "Data Process Detail"
 
 COMMON_HANDLE = "Common Handle"

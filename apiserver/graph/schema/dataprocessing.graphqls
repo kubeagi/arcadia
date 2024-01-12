@@ -21,6 +21,10 @@ type DataProcessQuery {
   checkDataProcessTaskName(input: CheckDataProcessTaskNameInput): DataProcessResponse
   # 日志信息
   getLogInfo(input: DataProcessDetailsInput): DataProcessResponse
+  # 获取文件处理的日志
+  dataProcessLogInfoByFileName(input: DataProcessFileLogInput): DataProcessResponse
+  # 任务重试
+  dataProcessRetry(input: DataProcessRetryInput): DataProcessResponse
 }
 
 
@@ -71,6 +75,7 @@ input LLMConfigItem {
   top_p: String
   max_tokens: String
   prompt_template: String
+  provider: String
 }
 
 input DeleteDataProcessInput {
@@ -84,6 +89,17 @@ input DataProcessDetailsInput {
 input CheckDataProcessTaskNameInput {
   name: String!
   namespace: String!
+}
+
+input DataProcessFileLogInput {
+  id: String!
+  file_name: String!
+  type: String!
+}
+
+input DataProcessRetryInput {
+  id: String!
+  creator: String!
 }
 
 # 数据处理列表分页

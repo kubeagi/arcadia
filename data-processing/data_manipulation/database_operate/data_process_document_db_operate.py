@@ -218,3 +218,36 @@ def delete_by_task_id(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
+
+
+def list_by_task_id_and_status(
+    req_json,
+    pool
+):
+    """info with task id and status"""
+    params = {
+        'task_id': req_json.get('id')
+    }
+
+    sql = """
+        select
+          id,
+          file_name,
+          status,
+          start_time,
+          end_time,
+          progress,
+          chunk_size,
+          task_id,
+          from_source_type,
+          from_source_path,
+          document_type
+        from
+          public.data_process_task_document
+        where
+          task_id = %(task_id)s and
+          status != 'success'
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res

@@ -242,6 +242,70 @@ def get_log_info(
     }
 
 
+def get_log_by_file_name(
+    req_json,
+    pool
+):
+    try:
+        stage_log_info = data_process_stage_log_db_operate.info_by_stage_and_file_name(
+            req_json,
+            pool=pool
+        )
+
+        if stage_log_info.get('status') != 200:
+            return stage_log_info
+
+        stage_detail = stage_log_info.get('data')[0].get('stage_detail')
+        
+        return {
+            'status': 200,
+            'message': '',
+            'data': stage_detail
+        }
+    except Exception as ex:
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+
+def retry(
+    req_json,
+    pool
+):
+    """When a task fails, attempt a retry."""
+    try:
+        logger.debug(f"{log_tag_const.DATA_PROCESS_SERVICE} The task retry start")
+
+        async def async_text_manipulate_retry(
+            req_json,
+            pool
+        ):
+            minio_store_process.text_manipulate_retry(req_json, pool=pool)
+
+        def execute_text_manipulate_task_retry(loop):
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(async_text_manipulate_retry(req_json, pool=pool))
+
+        thread_parallel.run_async_background_task(
+            execute_text_manipulate_task_retry,
+            'execute text manipuate task retry'
+        )
+
+        return {
+            'status': 200,
+            'message': '任务开始重试!',
+            'data': ''
+        }
+    except Exception as ex:
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+
 def _get_default_data_for_detail():
     """Get the data for the detail"""
     return {
@@ -418,9 +482,7 @@ def _set_children_info_for_config_map_for_result(
             'enable': 'true',
             'zh_name': 'QA拆分',
             'description': '根据文件中的文档内容，自动将文件做 QA 拆分处理。',
-            'llm_config': _get_llm_config(
-                qa_split_config = process_cofig_map.get('qa_split')
-            ),
+            'llm_config': process_cofig_map.get('qa_split').get('llm_config'),
             'preview': _get_qa_list_preview(
                 task_id=task_id,
                 conn_pool=conn_pool
@@ -719,23 +781,6 @@ def _get_qa_split_status(
 
     return status
 
-def _get_llm_config(
-    qa_split_config
-):
-    llm_config = qa_split_config.get('llm_config')
-
-    # llms cr 中模型相关信息
-    llm_spec_info = model_cr.get_spec_for_llms_k8s_cr(
-        name=llm_config.get('name'),
-        namespace=llm_config.get('namespace')
-    )
-
-    if llm_spec_info.get('data').get('provider').get('worker'):
-        llm_config['provider'] = 'worker'
-    else:
-        llm_config['provider'] = '3rd_party'
-
-    return llm_config
 
 def _get_qa_process_file_num(
     task_id,

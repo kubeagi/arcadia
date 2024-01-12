@@ -39,13 +39,15 @@ def remove_invisible_characters(text):
     try:
         pattern = r'[\x00-\x1F\x7F-\x9F\xAD\r\t\b\x0B\x1C\x1D\x1E]'
         find_pattern = r'[^，。！？,.!?]*[\x00-\x1F\x7F-\x9F\xAD\r\t\b\x0B\x1C\x1D\x1E][^，。！？,.!?]*'
+        replace_text = ''
 
-        clean_text = re.sub(pattern, '', text)
+        clean_text = re.sub(pattern, replace_text, text)
 
         clean_data = _find_clean_data(
             text=text,
             pattern=pattern,
-            find_pattern=find_pattern
+            find_pattern=find_pattern,
+            replace_text=replace_text
         )
         return {
             'status': 200,
@@ -83,13 +85,15 @@ def space_standardization(text):
         various_whitespaces = special_characters.VARIOUS_WHITESPACES
         pattern = '|'.join(re.escape(value) for value in various_whitespaces)
         find_pattern = '|'.join(f'[^，。！？,.!?]*{re.escape(value)}[^，。！？,.!?]*' for value in various_whitespaces)
+        replace_text = ' '
 
-        clean_text = re.sub(pattern, ' ', text)
+        clean_text = re.sub(pattern, replace_text, text)
 
         clean_data = _find_clean_data(
             text=text,
             pattern=pattern,
-            find_pattern=find_pattern
+            find_pattern=find_pattern,
+            replace_text=replace_text
         )
 
         return {
@@ -243,13 +247,15 @@ def remove_emojis(text):
         emojis = special_characters.EMOJI
         pattern = '|'.join(re.escape(value) for value in emojis)
         find_pattern = '|'.join(f'[^，。！？,.!?]*{re.escape(value)}[^，。！？,.!?]*' for value in emojis)
+        replace_text = ''
 
-        clean_text = re.sub(pattern, '', text)
+        clean_text = re.sub(pattern, replace_text, text)
 
         clean_data = _find_clean_data(
             text=text,
             pattern=pattern,
-            find_pattern=find_pattern
+            find_pattern=find_pattern,
+            replace_text=replace_text
         )
         
         return {
@@ -277,7 +283,8 @@ def remove_emojis(text):
 def _find_clean_data(
     text,
     pattern,
-    find_pattern
+    find_pattern,
+    replace_text
 ):
     """find clean data for pre_content and post_content.
     
@@ -290,7 +297,7 @@ def _find_clean_data(
 
     sentences = re.findall(find_pattern, text)
     for sentence in sentences:
-        post_content = re.sub(pattern, '', sentence)
+        post_content = re.sub(pattern, replace_text, sentence)
         clean_data.append({
             'pre_content': sentence,
             'post_content': post_content

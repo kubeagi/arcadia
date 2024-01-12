@@ -212,6 +212,17 @@ def _data_clean(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -256,6 +267,17 @@ def _data_clean(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -298,6 +320,17 @@ def _data_clean(
         )
         if result['status'] == 200:
             if result['data']['found'] > 0:
+                # 避免重试的时候，新增重复性数据
+                delete_transform_item = {
+                    'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id
+                }
+                data_process_detail_db_operate.delete_transform_by_document_chunk(
+                    delete_transform_item,
+                    pool=conn_pool
+                )
+
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
@@ -340,6 +373,17 @@ def _data_clean(
         )
         if result['status'] == 200:
             if result['data']['found'] > 0:
+                # 避免重试的时候，新增重复性数据
+                delete_transform_item = {
+                    'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id
+                }
+                data_process_detail_db_operate.delete_transform_by_document_chunk(
+                    delete_transform_item,
+                    pool=conn_pool
+                )
+
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
@@ -382,6 +426,17 @@ def _data_clean(
         )
         if result['status'] == 200:
             if result['data']['found'] > 0:
+                # 避免重试的时候，新增重复性数据
+                delete_transform_item = {
+                    'task_id': task_id,
+                    'document_id': document_id,
+                    'document_chunk_id': document_chunk_id
+                }
+                data_process_detail_db_operate.delete_transform_by_document_chunk(
+                    delete_transform_item,
+                    pool=conn_pool
+                )
+
                 task_detail_item = {
                     'id': ulid.ulid(),
                     'task_id': task_id,
@@ -426,6 +481,17 @@ def _data_clean(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -510,6 +576,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -554,6 +631,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -598,6 +686,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -640,6 +739,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -682,6 +792,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,
@@ -724,6 +845,17 @@ def _remove_privacy_info(
             clean_data = result['data']['clean_data']
             if len(clean_data) > 0:
                 for item in clean_data:
+                    # 避免重试的时候，新增重复性数据
+                    delete_transform_item = {
+                        'task_id': task_id,
+                        'document_id': document_id,
+                        'document_chunk_id': document_chunk_id
+                    }
+                    data_process_detail_db_operate.delete_transform_by_document_chunk(
+                        delete_transform_item,
+                        pool=conn_pool
+                    )
+
                     task_detail_item = {
                         'id': ulid.ulid(),
                         'task_id': task_id,

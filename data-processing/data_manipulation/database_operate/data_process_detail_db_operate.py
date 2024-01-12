@@ -559,3 +559,35 @@ def list_for_transform_type(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
+
+def delete_transform_by_document_chunk(
+    req_json,
+    pool
+):
+    """delete transform by task id and document id and chunk id.
+    
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "document_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "document_chunk_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {
+      'task_id': req_json.get('task_id'),
+      'document_id': req_json.get('document_id'),
+      'document_chunk_id': req_json.get('document_chunk_id')
+    }
+
+    sql = """
+        delete from public.data_process_task_detail
+        where
+          task_id = %(task_id)s and
+          document_id = %(document_id)s and
+          document_chunk_id = %(document_chunk_id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+

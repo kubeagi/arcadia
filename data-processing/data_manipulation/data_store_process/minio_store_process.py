@@ -29,8 +29,12 @@ from database_operate import (data_process_db_operate,
                               data_process_detail_db_operate,
                               data_process_detail_preview_db_operate,
                               data_process_log_db_operate,
-                              data_process_stage_log_db_operate)
-from file_handle import csv_handle, pdf_handle, word_handle
+                              data_process_stage_log_db_operate,
+                              data_process_document_chunk_db_operate)
+from file_handle import (csv_handle,
+                         pdf_handle,
+                         word_handle,
+                         common_handle)
 from kube import dataset_cr
 from utils import file_utils, date_time_utils, json_utils
 from pathlib import Path
@@ -73,7 +77,8 @@ def text_manipulate(
         reason='processing',
         task_id=id,
         log_id=log_id,
-        creator=req_json.get('creator')
+        creator=req_json.get('creator'),
+        pool=pool
     )
     if update_dataset['status'] != 200:
         return update_dataset
@@ -195,7 +200,7 @@ def text_manipulate(
             error_msg = f"{file_extension} file type is not currently supported."
             break
 
-                # 新增阶段性日志-clean
+        # 新增阶段性日志-clean
         clean_stage_detail=_get_stage_detail(
             req_json,
             pool=pool,
@@ -336,7 +341,8 @@ def text_manipulate(
         reason=task_status,
         task_id=id,
         log_id=log_id,
-        creator=req_json.get('creator')
+        creator=req_json.get('creator'),
+        pool=pool
     )
     if update_dataset['status'] != 200:
         return update_dataset
@@ -372,6 +378,203 @@ def text_manipulate(
     }
 
 
+def text_manipulate_retry(
+    req_json,
+    pool
+):
+    try:
+        task_id = req_json.get('id')
+        creator = req_json.get('creator')
+        
+        # 更新任务状态
+        update_status_res = _update_status_and_log_id(
+            id=task_id,
+            current_log_id='',
+            status='processing',
+            end_datetime='',
+            creator=creator,
+            pool=pool
+        )
+        if update_status_res.get('status') != 200:
+            return update_status_res
+        
+        # 新增数据处理任务日志
+        log_id = ulid.ulid()
+        log_info = _insert_log_info(
+            id=log_id,
+            task_id=task_id,
+            execute_type='RETRY',
+            creator=creator,
+            pool=pool
+        )
+
+        # 根据id获取任务信息
+        task_info = data_process_db_operate.info_by_id(
+            req_json,
+            pool=pool
+        )
+        task_info_dict = task_info.get('data')[0]
+        
+        # 更新数据集状态
+        update_dataset = _update_dateset_status(
+            bucket_name=task_info_dict.get('namespace'),
+            version_data_set_name=task_info_dict.get('pre_version_data_set_name'),
+            reason='processing',
+            task_id=task_id,
+            log_id=log_id,
+            creator=creator,
+            pool=pool
+        )
+        if update_dataset['status'] != 200:
+            return update_dataset
+
+        # 根据task_id查询处理未成功的文件
+        document_list = data_process_document_db_operate.list_by_task_id_and_status(
+            req_json,
+            pool=pool
+        )
+
+        task_status = 'process_complete'
+        error_msg = ''
+        if len(document_list.get('data')) > 0:
+            # 文件处理
+            # 存放每个文件对应的数据量
+            data_volumes_file = []
+
+            for document in document_list.get('data'):
+                logger.debug(''.join([
+                    f"{log_tag_const.MINIO_STORE_PROCESS} document retry \n",
+                    f"file_name: {document.get('file_name')}"
+                ]))
+                result = _text_manipulate_retry_for_document(
+                    document=document,
+                    task_info=task_info_dict,
+                    log_id=log_id,
+                    creator=creator,
+                    pool=pool
+                )
+
+                if result.get('status') != 200:
+                    # 任务失败
+                    logger.error(''.join([
+                        f"{log_tag_const.MINIO_STORE_PROCESS} Data process fail \n",
+                        f"The file name: {document.get('file_name')}\n",
+                        f"The error is: {result.get('message')}\n"
+                    ]))
+                    task_status = 'process_fail'
+                    error_msg = result.get('message')
+                    break
+
+                data_volumes_file.append(result['data'])
+
+            # 新增阶段性日志-finish
+            finish_stage_detail=f"{date_time_utils.now_str()} Task Finished!!!"
+            insert_stage_log_params = {
+                'task_id': task_id,
+                'log_id': log_id,
+                'file_name': '',
+                'stage_name': 'finish',
+                'stage_status': 'success',
+                'stage_detail': finish_stage_detail,
+                'creator': creator
+            }
+            data_process_stage_log_db_operate.insert(
+                insert_stage_log_params,
+                pool=pool
+            )
+
+            # insert QA list to detail preview
+            logger.debug(f"{log_tag_const.MINIO_STORE_PROCESS} Insert QA list for detail preview.")
+            list_qa_params = {
+                'task_id': task_id
+            }
+            list_qa_res = data_process_detail_db_operate.top_n_list_qa_for_preview(
+                list_qa_params,
+                pool=pool
+            )
+
+            for item in list_qa_res.get('data'):
+                item['transform_type']='qa_split'
+                item['pre_content']=item['question']
+                item['post_content']=item['answer']
+                data_process_detail_preview_db_operate.insert(
+                    item,
+                    pool=pool
+                )
+
+            # 将清洗后的文件上传到MinIO中
+            # 上传final文件夹下的文件，并添加tag
+            file_path = file_utils.get_temp_file_path()
+            minio_dataset_prefix = config.minio_dataset_prefix
+            folder_prefix = '/'.join([
+                minio_dataset_prefix,
+                task_info_dict['pre_data_set_name'],
+                task_info_dict['pre_data_set_version']
+            ])
+            minio_client = minio_store_client.get_minio_client()
+            minio_store_client.upload_files_to_minio_with_tags(
+                minio_client=minio_client,
+                local_folder=file_path + 'final',
+                minio_bucket=task_info_dict.get('bucket_name'),
+                minio_prefix=folder_prefix,
+                support_type=task_info_dict.get('data_process_config_info'),
+                data_volumes_file=data_volumes_file
+            )
+
+        # 更新数据集状态
+        update_dataset = _update_dateset_status(
+            bucket_name=task_info_dict.get('namespace'),
+            version_data_set_name=task_info_dict.get('pre_version_data_set_name'),
+            reason=task_status,
+            task_id=task_id,
+            log_id=log_id,
+            creator=creator,
+            pool=pool
+        )
+        if update_dataset['status'] != 200:
+            return update_dataset
+
+        # 更新数据处理任务日志
+        update_log_item = {
+            'id': log_id,
+            'status': task_status,
+            'error_msg': error_msg,
+            'creator': creator
+        }
+        data_process_log_db_operate.update_status_by_id(
+            update_log_item,
+            pool=pool
+        )
+
+        # 数据库更新任务状态
+        update_params = {
+            'id': task_id,
+            'current_log_id': log_id,
+            'status': task_status,
+            'user': creator
+        }
+        data_process_db_operate.update_status_by_id(
+            update_params,
+            pool=pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} Data process fail \n",
+            f"{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+
 def _remove_local_file(file_name):
     try:
         remove_file_path = file_utils.get_temp_file_path()
@@ -399,8 +602,16 @@ def _update_dateset_status(
     reason,
     task_id,
     log_id,
-    creator
+    creator,
+    pool
 ):
+    logger.debug(''.join([
+        f"{log_tag_const.MINIO_STORE_PROCESS} update dataset status \n",
+        f"task_id: {task_id}\n",
+        f"bucket_name: {bucket_name}\n",
+        f"version_data_set_name: {version_data_set_name}\n",
+        f"reason: {reason}"
+    ]))
     update_dataset = dataset_cr.update_dataset_k8s_cr(
         bucket_name=bucket_name,
         version_data_set_name=version_data_set_name,
@@ -408,6 +619,13 @@ def _update_dateset_status(
     )
 
     if update_dataset['status'] != 200:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} update dataset status \n",
+            f"task_id: {task_id}\n",
+            f"bucket_name: {bucket_name}\n",
+            f"version_data_set_name: {version_data_set_name}\n",
+            f"reason: {reason}"
+        ]))
         # 更新数据处理任务日志
         update_log_item = {
             'id': log_id,
@@ -651,3 +869,293 @@ def _list_for_transform_type(
         params,
         pool=pool
     )
+
+
+def _update_status_and_log_id(
+    id,
+    current_log_id,
+    status,
+    end_datetime,
+    creator,
+    pool
+):
+    try:
+        """update task status and current log id with task id"""
+        logger.debug(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} update task status \n",
+            f"task_id: {id}\n",
+            f"status: {status}\n"
+        ]))
+        update_task_params = {
+            'id': id,
+            'current_log_id': current_log_id,
+            'status': status,
+            'end_datetime': end_datetime,
+            'user': creator
+        }
+        data_process_db_operate.update_status_and_log_id(
+            update_task_params,
+            pool=pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} update task fail \n",
+            f"{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+
+def _insert_log_info(
+    id,
+    task_id,
+    execute_type,
+    creator,
+    pool
+):
+    try:
+        """insert task log info"""
+        logger.debug(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} insert task log \n",
+            f"task_id: {task_id}\n",
+            f"execute_type: {execute_type}\n"
+        ]))
+        insert_log_item = {
+            'id': id,
+            'task_id': task_id,
+            'type': execute_type,
+            'creator': creator
+        }
+        data_process_log_db_operate.add(
+            insert_log_item,
+            pool=pool
+        )
+
+        return {
+            'status': 200,
+            'message': '',
+            'data': ''
+        }
+    except Exception as ex:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} insert task log info \n",
+            f"{traceback.format_exc()}"
+        ]))
+        return {
+            'status': 400,
+            'message': str(ex),
+            'data': traceback.format_exc()
+        }
+
+
+def _text_manipulate_retry_for_document(
+    document,
+    task_info,
+    log_id,
+    pool,
+    creator
+):
+    file_name = document.get('file_name')
+    task_id = task_info.get('id')
+    document_id = document.get('id')
+    support_type = task_info.get('data_process_config_info')
+    
+
+    # 新增阶段性日志-开始
+    received_task={
+        'task_id': task_id,
+        'pre_dataset_name': document.get('pre_data_set_name'),
+        'pre_dataset_version': document.get('pre_data_set_version'),
+        'file_names': document.get('file_names')
+    }
+
+    start_stage_detail = '\n'.join([
+        f"{date_time_utils.now_str()} Data Processing Task Retry Starts!!!",
+        f"Received Task: {json_utils.dumps(received_task)}",
+        f"Operations: {json_utils.dumps(support_type)}"
+    ])
+    insert_stage_log_params = {
+        'task_id': task_id,
+        'log_id': log_id,
+        'file_name': file_name,
+        'stage_name': 'start',
+        'stage_status': 'success',
+        'stage_detail': start_stage_detail,
+        'creator': creator
+    }
+    data_process_stage_log_db_operate.insert(
+        insert_stage_log_params,
+        pool=pool
+    )
+
+    logger.debug(''.join([
+        f"{log_tag_const.MINIO_STORE_PROCESS} text manipulate retry \n",
+        f"document status: {document.get('status')}"
+    ]))
+    result = None
+    # 判断文件状态
+    if document.get('status') == 'not_start':
+        # 针对未开始的文件进行重试
+
+        # minio 数据集统一前缀
+        minio_dataset_prefix = config.minio_dataset_prefix
+        folder_prefix = '/'.join([
+            minio_dataset_prefix,
+            task_info.get('pre_data_set_name'),
+            task_info.get('pre_data_set_version')
+        ])
+
+        # get a minio client
+        minio_client = minio_store_client.get_minio_client()
+        # 将文件下载到本地
+        minio_store_client.download(
+            minio_client,
+            bucket_name=task_info.get('bucket_name'),
+            folder_prefix=folder_prefix,
+            file_name=file_name
+        )
+
+        document_type = document.get('document_type')
+        if document_type in ['pdf']:
+            # 处理PDF文件
+            result = pdf_handle.text_manipulate(
+                file_name=file_name,
+                document_id=document.get('id'),
+                support_type=support_type,
+                conn_pool=pool,
+                task_id=task_id,
+                create_user=creator
+            )
+        
+        elif document_type in ['docx']:
+            # 处理.docx文件
+            result = word_handle.docx_text_manipulate(
+                file_name=file_name,
+                document_id=document.get('id'),
+                support_type=support_type,
+                conn_pool=pool,
+                task_id=task_id,
+                create_user=creator
+            )
+        
+        # 将下载的本地文件删除
+        _remove_local_file(file_name)
+
+    else:
+        # 针对进行中和失败的文件进行重试
+
+        # 获取未成功的chunk列表
+        query_chunk_params = {
+            'document_id': document.get('id')
+        }
+        document_chunk_dict = data_process_document_chunk_db_operate.list_by_status(
+            query_chunk_params,
+            pool=pool
+        )
+        if len(document_chunk_dict.get('data')) > 0:
+            result = common_handle.text_manipulate(
+                file_name=file_name,
+                all_document_for_process=document_chunk_dict.get('data'),
+                support_type=support_type,
+                conn_pool=pool,
+                create_user=creator
+            )
+
+    # 判断是否存在qa拆分
+    has_qa_split = any(item.get('type') == 'qa_split' for item in support_type)
+
+    if result is None:
+        logger.error(''.join([
+            f"{log_tag_const.MINIO_STORE_PROCESS} The file type is not supported \n",
+            f"The current file type is: {document_type}"
+        ]))
+        # 任务失败
+        error_msg = f"{document_type} file type is not currently supported."
+        return {
+            'status': 400,
+            'message': error_msg,
+            'data': ''
+        }
+    
+    # 新增阶段性日志-clean
+    clean_stage_detail=_get_stage_detail(
+        task_info,
+        pool=pool,
+        task_id=task_id,
+        document_id=document_id,
+        stage='clean',
+        file_name=file_name
+    )
+    if clean_stage_detail.get('status') == 200:
+        insert_stage_log_params = {
+            'task_id': task_id,
+            'log_id': log_id,
+            'file_name': file_name,
+            'stage_name': 'clean',
+            'stage_status': 'success',
+            'stage_detail': clean_stage_detail.get('data'),
+            'creator': creator
+        }
+        data_process_stage_log_db_operate.insert(
+            insert_stage_log_params,
+            pool=pool
+        )
+
+    # 新增阶段性日志-privacy
+    privacy_stage_detail=_get_stage_detail(
+        task_info,
+        pool=pool,
+        task_id=task_id,
+        document_id=document_id,
+        stage='privacy',
+        file_name=file_name
+    )
+    if privacy_stage_detail.get('status') == 200:
+        insert_stage_log_params = {
+            'task_id': task_id,
+            'log_id': log_id,
+            'file_name': file_name,
+            'stage_name': 'privacy',
+            'stage_status': 'success',
+            'stage_detail': privacy_stage_detail.get('data'),
+            'creator': creator
+        }
+        data_process_stage_log_db_operate.insert(
+            insert_stage_log_params,
+            pool=pool
+        )
+    
+    # 新增阶段性日志-qa_split
+    if has_qa_split:
+        if result.get('status') != 200:
+            _get_qa_stage_detail(
+                task_id=task_id,
+                log_id=log_id,
+                status='fail',
+                file_name=file_name,
+                creator=creator,
+                result=result,
+                pool=pool
+            )
+        else:
+            _get_qa_stage_detail(
+                task_id=task_id,
+                log_id=log_id,
+                status='success',
+                file_name=file_name,
+                creator=creator,
+                result=result,
+                pool=pool
+            )
+
+    return result
+
