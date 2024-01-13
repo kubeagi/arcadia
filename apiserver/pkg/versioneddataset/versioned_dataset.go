@@ -133,7 +133,6 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	})
 
 	result := make([]generated.PageNode, 0)
-	var lastModifiedTime time.Time
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
 			lastModifiedTime = obj.LastModified
