@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"sort"
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -106,6 +105,10 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	}
 	addDefaultValue(gApp, app)
 	return gApp, nil
+}
+
+func app2metadataConverter(objApp *unstructured.Unstructured) (generated.PageNode, error) {
+	return app2metadata(objApp)
 }
 
 func app2metadata(objApp *unstructured.Unstructured) (*generated.ApplicationMetadata, error) {
@@ -289,33 +292,11 @@ func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input g
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(res.Items, func(i, j int) bool {
-		return res.Items[i].GetCreationTimestamp().After(res.Items[j].GetCreationTimestamp().Time)
-	})
-
-	filtered := make([]generated.PageNode, 0)
-	for _, u := range res.Items {
-		if keyword != "" {
-			displayName, _, _ := unstructured.NestedString(u.Object, "spec", "displayName")
-			if !strings.Contains(u.GetName(), keyword) && !strings.Contains(displayName, keyword) {
-				continue
-			}
-		}
-		m, err := app2metadata(&u)
-		if err != nil {
-			return nil, err
-		}
-		filtered = append(filtered, m)
+	filter := make([]common.ResourceFilter, 0)
+	if keyword != "" {
+		filter = append(filter, common.FilterApplicationByKeyword(keyword))
 	}
-	totalCount := len(filtered)
-	start, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       filtered[start:end],
-		Page:        &page,
-		PageSize:    &pageSize,
-	}, nil
+	return common.ListReources(res, page, pageSize, app2metadataConverter, filter...)
 }
 
 func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {

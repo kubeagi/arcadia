@@ -19,9 +19,7 @@ package worker
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -45,11 +43,17 @@ const (
 	NvidiaGPU = "nvidia.com/gpu"
 )
 
+func worker2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
+	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
+		return Worker2model(ctx, c, u)
+	}
+}
+
 // Worker2model convert unstructured `CR Worker` to graphql model
-func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Worker {
+func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Worker, error) {
 	worker := &v1alpha1.Worker{}
 	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
-		return &generated.Worker{}
+		return nil, err
 	}
 
 	id := string(worker.GetUID())
@@ -145,7 +149,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		}
 	}
 
-	return &w
+	return &w, nil
 }
 
 func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.CreateWorkerInput) (*generated.Worker, error) {
@@ -243,7 +247,7 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	if err != nil {
 		return nil, err
 	}
-	return Worker2model(ctx, c, obj), nil
+	return Worker2model(ctx, c, obj)
 }
 
 func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
@@ -341,7 +345,7 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		return nil, err
 	}
 
-	return Worker2model(ctx, c, updatedObject), nil
+	return Worker2model(ctx, c, updatedObject)
 }
 
 func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -381,13 +385,14 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 		optFunc(opts)
 	}
 
-	keyword, modelTypes, labelSelector, fieldSelector := "", "", "", ""
+	filter := make([]common.ResourceFilter, 0)
+	labelSelector, fieldSelector := "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
-		keyword = *input.Keyword
+		filter = append(filter, common.FilterWorkerByKeyword(*input.Keyword))
 	}
 	if input.ModelTypes != nil {
-		modelTypes = *input.ModelTypes
+		filter = append(filter, common.FilterWorkerByType(c, input.Namespace, *input.ModelTypes))
 	}
 	if input.FieldSelector != nil {
 		fieldSelector = *input.FieldSelector
@@ -410,31 +415,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	if err != nil {
 		return nil, err
 	}
-	// sort by creation time
-	sort.Slice(us.Items, func(i, j int) bool {
-		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
-	})
-
-	result := make([]generated.PageNode, 0, len(us.Items))
-	for _, u := range us.Items {
-		m := Worker2model(ctx, c, &u)
-		// filter based on `keyword`
-		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-			continue
-		}
-		// filter based on `modelTypes`
-		if modelTypes != "" && !strings.Contains(m.ModelTypes, modelTypes) {
-			continue
-		}
-		result = append(result, opts.ConvertFunc(m))
-	}
-	totalCount := len(result)
-	start, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       result[start:end],
-	}, nil
+	return common.ListReources(us, page, pageSize, worker2modelConverter(ctx, c), filter...)
 }
 
 func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Worker, error) {
@@ -447,5 +428,5 @@ func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string
 	if err != nil {
 		return nil, err
 	}
-	return Worker2model(ctx, c, u), nil
+	return Worker2model(ctx, c, u)
 }

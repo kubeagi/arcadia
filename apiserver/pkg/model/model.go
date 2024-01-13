@@ -39,10 +39,13 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func obj2model(obj *unstructured.Unstructured) *generated.Model {
+func obj2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
+	return obj2model(obj)
+}
+func obj2model(obj *unstructured.Unstructured) (*generated.Model, error) {
 	model := &v1alpha1.Model{}
 	if err := utils.UnstructuredToStructured(obj, model); err != nil {
-		return &generated.Model{}
+		return nil, err
 	}
 
 	id := string(model.GetUID())
@@ -75,7 +78,7 @@ func obj2model(obj *unstructured.Unstructured) *generated.Model {
 		Status:            &status,
 		Message:           &message,
 	}
-	return &md
+	return &md, nil
 }
 
 func CreateModel(ctx context.Context, c dynamic.Interface, input generated.CreateModelInput) (*generated.Model, error) {
@@ -117,8 +120,7 @@ func CreateModel(ctx context.Context, c dynamic.Interface, input generated.Creat
 	if err != nil {
 		return nil, err
 	}
-	md := obj2model(obj)
-	return md, nil
+	return obj2model(obj)
 }
 
 func UpdateModel(ctx context.Context, c dynamic.Interface, input *generated.UpdateModelInput) (*generated.Model, error) {
@@ -148,8 +150,7 @@ func UpdateModel(ctx context.Context, c dynamic.Interface, input *generated.Upda
 	if err != nil {
 		return nil, err
 	}
-	md := obj2model(updatedObject)
-	return md, nil
+	return obj2model(updatedObject)
 }
 
 func DeleteModels(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -183,11 +184,14 @@ func DeleteModels(ctx context.Context, c dynamic.Interface, input *generated.Del
 }
 
 func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListModelInput) (*generated.PaginatedResult, error) {
-	keyword, labelSelector, fieldSelector := "", "", ""
+	filter := make([]common.ResourceFilter, 0)
+	labelSelector, fieldSelector := "", ""
+
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
-		keyword = *input.Keyword
+		filter = append(filter, common.FilterModelByKeyword(*input.Keyword))
 	}
+
 	if input.FieldSelector != nil {
 		fieldSelector = *input.FieldSelector
 	}
@@ -210,40 +214,16 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListMo
 		return nil, err
 	}
 
-	// sort by creation time
-	sort.Slice(models.Items, func(i, j int) bool {
-		return models.Items[i].GetCreationTimestamp().After(models.Items[j].GetCreationTimestamp().Time)
-	})
-
 	// list models in kubeagi system namespace
 	if input.SystemModel != nil && *input.SystemModel && input.Namespace != config.GetConfig().SystemNamespace {
 		systemModels, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(config.GetConfig().SystemNamespace).List(ctx, listOptions)
 		if err != nil {
 			return nil, err
 		}
-		// sort by creation time
-		sort.Slice(systemModels.Items, func(i, j int) bool {
-			return systemModels.Items[i].GetCreationTimestamp().After(systemModels.Items[j].GetCreationTimestamp().Time)
-		})
 		models.Items = append(systemModels.Items, models.Items...)
 	}
 
-	result := make([]generated.PageNode, 0, len(models.Items))
-	for _, u := range models.Items {
-		m := obj2model(&u)
-		// filter based on `keyword`
-		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-			continue
-		}
-		result = append(result, m)
-	}
-	totalCount := len(result)
-	pageStart, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       result[pageStart:end],
-	}, nil
+	return common.ListReources(models, page, pageSize, obj2modelConverter, filter...)
 }
 
 func ReadModel(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Model, error) {
@@ -252,7 +232,7 @@ func ReadModel(ctx context.Context, c dynamic.Interface, name, namespace string)
 	if err != nil {
 		return nil, err
 	}
-	return obj2model(u), nil
+	return obj2model(u)
 }
 
 func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {

@@ -20,8 +20,6 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
-	"sort"
-	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -41,10 +39,14 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
+func datasource2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
+	return datasource2model(obj)
+}
+
+func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, error) {
 	datasource := &v1alpha1.Datasource{}
 	if err := utils.UnstructuredToStructured(obj, datasource); err != nil {
-		return &generated.Datasource{}
+		return nil, err
 	}
 
 	id := string(datasource.GetUID())
@@ -93,7 +95,7 @@ func datasource2model(obj *unstructured.Unstructured) *generated.Datasource {
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &updateTime,
 	}
-	return &md
+	return &md, nil
 }
 
 func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
@@ -169,8 +171,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 			return nil, err
 		}
 	}
-	ds := datasource2model(obj)
-	return ds, nil
+	return datasource2model(obj)
 }
 
 func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
@@ -237,8 +238,7 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 	if err != nil {
 		return nil, err
 	}
-	ds := datasource2model(updatedObject)
-	return ds, nil
+	return datasource2model(updatedObject)
 }
 
 func DeleteDatasources(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -298,26 +298,11 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.L
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(datasList.Items, func(i, j int) bool {
-		return datasList.Items[i].GetCreationTimestamp().After(datasList.Items[j].GetCreationTimestamp().Time)
-	})
-
-	result := make([]generated.PageNode, 0, len(datasList.Items))
-	for _, u := range datasList.Items {
-		m := datasource2model(&u)
-		// filter based on `keyword`
-		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-			continue
-		}
-		result = append(result, m)
+	filter := make([]common.ResourceFilter, 0)
+	if keyword != "" {
+		filter = append(filter, common.FilterDatasourceByKeyword(keyword))
 	}
-	totalCount := len(result)
-	start, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       result[start:end],
-	}, nil
+	return common.ListReources(datasList, page, pageSize, datasource2modelConverter, filter...)
 }
 
 func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Datasource, error) {
@@ -330,7 +315,7 @@ func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace st
 	if err != nil {
 		return nil, err
 	}
-	return datasource2model(u), nil
+	return datasource2model(u)
 }
 
 // CheckDatasource
