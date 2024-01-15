@@ -231,6 +231,9 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		case "retrievalqachain":
 			logger.V(3).Info("initnode retrievalqachain")
 			return chain.NewRetrievalQAChain(baseNode), nil
+		case "apichain":
+			logger.V(3).Info("initnode llmchain")
+			return chain.NewAPIChain(baseNode), nil
 		default:
 			return nil, err
 		}

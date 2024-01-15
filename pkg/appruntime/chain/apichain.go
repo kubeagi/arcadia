@@ -1,12 +1,9 @@
 /*
-Copyright 2023 KubeAGI.
-
+Copyright 2024 KubeAGI.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
@@ -35,19 +33,19 @@ import (
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
-type LLMChain struct {
-	chains.LLMChain
+type APIChain struct {
+	chains.APIChain
 	base.BaseNode
 }
 
-func NewLLMChain(baseNode base.BaseNode) *LLMChain {
-	return &LLMChain{
-		chains.LLMChain{},
+func NewAPIChain(baseNode base.BaseNode) *APIChain {
+	return &APIChain{
+		chains.APIChain{},
 		baseNode,
 	}
 }
 
-func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (l *APIChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -64,19 +62,23 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
-	// _history is optional
-	// if set ,only ChatMessageHistory allowed
-	var history langchaingoschema.ChatMessageHistory
-	if v3, ok := args["_history"]; ok && v3 != nil {
-		history, ok = v3.(langchaingoschema.ChatMessageHistory)
-		if !ok {
-			return args, errors.New("history not memory.ChatMessageHistory")
-		}
+	p, err := prompt.FormatPrompt(args)
+	if err != nil {
+		return args, fmt.Errorf("can't format prompt: %w", err)
+	}
+	args["input"] = p.String()
+	v3, ok := args["_history"]
+	if !ok {
+		return args, errors.New("no history")
+	}
+	history, ok := v3.(langchaingoschema.ChatMessageHistory)
+	if !ok {
+		return args, errors.New("history not memory.ChatMessageHistory")
 	}
 
 	ns := base.GetAppNamespace(ctx)
-	instance := &v1alpha1.LLMChain{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llmchains"}).
+	instance := &v1alpha1.APIChain{}
+	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "apichains"}).
 		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
 	if err != nil {
 		return args, fmt.Errorf("can't find the chain in cluster: %w", err)
@@ -87,26 +89,30 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	}
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
-	chain := chains.NewLLMChain(llm, prompt)
-	if history != nil {
-		chain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
+	chain := chains.NewAPIChain(llm, http.DefaultClient)
+	chain.RequestChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
+	chain.AnswerChain.Memory = getMemory(llm, instance.Spec.Memory, history, "input", "")
+	l.APIChain = chain
+	apiDoc := instance.Spec.APIDoc
+	if apiDoc == "" {
+		return args, errors.New("no apidoc in apichain")
 	}
-	l.LLMChain = *chain
+	args["api_docs"] = apiDoc
 	var out string
 	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
-		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+		out, err = chains.Predict(ctx, l.APIChain, args, options...)
 	} else {
 		if len(options) > 0 {
-			out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+			out, err = chains.Predict(ctx, l.APIChain, args, options...)
 		} else {
-			out, err = chains.Predict(ctx, l.LLMChain, args)
+			out, err = chains.Predict(ctx, l.APIChain, args)
 		}
 	}
-	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
+	klog.FromContext(ctx).V(5).Info("use apichain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out
 		return args, nil
 	}
-	return args, fmt.Errorf("llmchain run error: %w", err)
+	return args, fmt.Errorf("apichain run error: %w", err)
 }

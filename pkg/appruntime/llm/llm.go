@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -62,7 +63,10 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	return nil
 }
 
-func (z *LLM) Run(_ context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (z *LLM) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
 	args["llm"] = z
+	logger := klog.FromContext(ctx)
+	ns := base.GetAppNamespace(ctx)
+	logger.Info("use llm", "name", z.Ref.Name, "namespace", z.Ref.GetNamespace(ns))
 	return args, nil
 }

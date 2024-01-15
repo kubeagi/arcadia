@@ -104,7 +104,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	} else {
 		baseChain = chains.NewStuffDocuments(llmChain)
 	}
-	chain := chains.NewConversationalRetrievalQA(baseChain, chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history))
+	chain := chains.NewConversationalRetrievalQA(baseChain, chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history, "", ""))
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
