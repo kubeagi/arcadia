@@ -25,10 +25,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/arctl/printer"
 )
@@ -41,21 +41,21 @@ var (
 	description string
 )
 
-func NewDatasourceCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
+func NewDatasourceCmd(namespace *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "datasource [usage]",
 		Short: "Manage datasources",
 	}
 
-	cmd.AddCommand(DatasourceCreateCmd(kubeClient, namespace))
-	cmd.AddCommand(DatasourceGetCmd(kubeClient, namespace))
-	cmd.AddCommand(DatasourceDeleteCmd(kubeClient, namespace))
-	cmd.AddCommand(DatasourceListCmd(kubeClient, namespace))
+	cmd.AddCommand(DatasourceCreateCmd(namespace))
+	cmd.AddCommand(DatasourceGetCmd(namespace))
+	cmd.AddCommand(DatasourceDeleteCmd(namespace))
+	cmd.AddCommand(DatasourceListCmd(namespace))
 
 	return cmd
 }
 
-func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
+func DatasourceCreateCmd(namespace *string) *cobra.Command {
 	var empytDatasource bool
 	// endpoint flags
 	var endpointURL, endpointAuthUser, endpointAuthPwd string
@@ -79,7 +79,7 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 
 			input := generated.CreateDatasourceInput{
 				Name:        name,
-				Namespace:   namespace,
+				Namespace:   *namespace,
 				DisplayName: &displayName,
 				Description: &description,
 				Endpointinput: generated.EndpointInput{
@@ -100,7 +100,11 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				input.Ossinput = &generated.OssInput{Bucket: ossBucket}
 			}
 
-			_, err := datasource.CreateDatasource(cmd.Context(), kubeClient, input)
+			kubeClient, err := client.GetClient(nil)
+			if err != nil {
+				return err
+			}
+			_, err = datasource.CreateDatasource(cmd.Context(), kubeClient, input)
 			if err != nil {
 				return err
 			}
@@ -132,7 +136,7 @@ func DatasourceCreateCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 	return cmd
 }
 
-func DatasourceGetCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
+func DatasourceGetCmd(namespace *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get [name]",
 		Short: "Get datasource",
@@ -142,7 +146,11 @@ func DatasourceGetCmd(kubeClient dynamic.Interface, namespace string) *cobra.Com
 			}
 			name := os.Args[3]
 
-			ds, err := datasource.ReadDatasource(cmd.Context(), kubeClient, name, namespace)
+			kubeClient, err := client.GetClient(nil)
+			if err != nil {
+				return err
+			}
+			ds, err := datasource.ReadDatasource(cmd.Context(), kubeClient, name, *namespace)
 			if err != nil {
 				return fmt.Errorf("failed to find datasource: %w", err)
 			}
@@ -154,13 +162,17 @@ func DatasourceGetCmd(kubeClient dynamic.Interface, namespace string) *cobra.Com
 	return cmd
 }
 
-func DatasourceListCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
+func DatasourceListCmd(namespace *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list [usage]",
 		Short: "List datasources",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			kubeClient, err := client.GetClient(nil)
+			if err != nil {
+				return err
+			}
 			list, err := datasource.ListDatasources(cmd.Context(), kubeClient, generated.ListCommonInput{
-				Namespace: namespace,
+				Namespace: *namespace,
 			})
 			if err != nil {
 				return err
@@ -177,7 +189,7 @@ func DatasourceListCmd(kubeClient dynamic.Interface, namespace string) *cobra.Co
 	return cmd
 }
 
-func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.Command {
+func DatasourceDeleteCmd(namespace *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete [name]",
 		Short: "Delete a datasource",
@@ -186,7 +198,12 @@ func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 				return errors.New("missing datasource name")
 			}
 			name := os.Args[3]
-			ds, err := datasource.ReadDatasource(cmd.Context(), kubeClient, name, namespace)
+
+			kubeClient, err := client.GetClient(nil)
+			if err != nil {
+				return err
+			}
+			ds, err := datasource.ReadDatasource(cmd.Context(), kubeClient, name, *namespace)
 			if err != nil {
 				return fmt.Errorf("failed to get datasource: %w", err)
 			}
@@ -196,7 +213,7 @@ func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 					Group:    corev1.SchemeGroupVersion.Group,
 					Version:  corev1.SchemeGroupVersion.Version,
 					Resource: "secrets",
-				}).Namespace(namespace).Delete(cmd.Context(), ds.Endpoint.AuthSecret.Name, metav1.DeleteOptions{})
+				}).Namespace(*namespace).Delete(cmd.Context(), ds.Endpoint.AuthSecret.Name, metav1.DeleteOptions{})
 				if err != nil {
 					return fmt.Errorf("failed to delete auth secret: %w", err)
 				}
@@ -204,7 +221,7 @@ func DatasourceDeleteCmd(kubeClient dynamic.Interface, namespace string) *cobra.
 			}
 			_, err = datasource.DeleteDatasources(cmd.Context(), kubeClient, &generated.DeleteCommonInput{
 				Name:      &name,
-				Namespace: namespace,
+				Namespace: *namespace,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to delete datasource: %w", err)

@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/client-go/dynamic"
 
-	"github.com/kubeagi/arcadia/pkg/application/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
 type Knowledgebase struct {

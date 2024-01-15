@@ -25,7 +25,11 @@ const (
 )
 
 func GetAppNamespace(ctx context.Context) string {
-	return ctx.Value(AppNamespaceContextKey).(string)
+	ns := ctx.Value(AppNamespaceContextKey)
+	if ns == nil {
+		return ""
+	}
+	return ns.(string)
 }
 
 func SetAppNamespace(ctx context.Context, ns string) context.Context {

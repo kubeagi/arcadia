@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package application
+package appruntime
 
 import (
 	"container/list"
@@ -28,12 +28,12 @@ import (
 	"k8s.io/utils/strings/slices"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/application/base"
-	"github.com/kubeagi/arcadia/pkg/application/chain"
-	"github.com/kubeagi/arcadia/pkg/application/knowledgebase"
-	"github.com/kubeagi/arcadia/pkg/application/llm"
-	"github.com/kubeagi/arcadia/pkg/application/prompt"
-	"github.com/kubeagi/arcadia/pkg/application/retriever"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/chain"
+	"github.com/kubeagi/arcadia/pkg/appruntime/knowledgebase"
+	"github.com/kubeagi/arcadia/pkg/appruntime/llm"
+	"github.com/kubeagi/arcadia/pkg/appruntime/prompt"
+	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 type Input struct {
@@ -62,9 +62,13 @@ type Application struct {
 //	return app.Namespace + "/" + app.Name
 //}
 
-func NewAppOrGetFromCache(ctx context.Context, app *arcadiav1alpha1.Application, cli dynamic.Interface) (*Application, error) {
+func NewAppOrGetFromCache(ctx context.Context, cli dynamic.Interface, app *arcadiav1alpha1.Application) (*Application, error) {
 	if app == nil || app.Name == "" || app.Namespace == "" {
 		return nil, errors.New("app has no name or namespace")
+	}
+	// make sure namespace value exists in context
+	if base.GetAppNamespace(ctx) == "" {
+		ctx = base.SetAppNamespace(ctx, app.Namespace)
 	}
 	// TODO: disable cache for now.
 	// https://github.com/kubeagi/arcadia/issues/391
@@ -150,6 +154,11 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 }
 
 func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream chan string, input Input) (output Output, err error) {
+	// make sure ns value set
+	if base.GetAppNamespace(ctx) == "" {
+		ctx = base.SetAppNamespace(ctx, a.Namespace)
+	}
+
 	out := map[string]any{
 		"question":       input.Question,
 		"_answer_stream": respStream,

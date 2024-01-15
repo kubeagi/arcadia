@@ -21,9 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/dynamic"
 
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	arctlPkg "github.com/kubeagi/arcadia/pkg/arctl"
 )
 
@@ -32,8 +30,6 @@ var (
 	home string
 
 	namespace string
-
-	kubeClient dynamic.Interface
 )
 
 func NewCLI() *cobra.Command {
@@ -41,18 +37,11 @@ func NewCLI() *cobra.Command {
 		Use:   "arctl [usage]",
 		Short: "Command line tools for Arcadia",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if _, err := os.Stat(home); os.IsNotExist(err) {
+			if _, err = os.Stat(home); os.IsNotExist(err) {
 				if err := os.MkdirAll(home, 0700); err != nil {
 					return err
 				}
 			}
-
-			// initialize a kube client
-			kubeClient, err = client.GetClient(nil)
-			if err != nil {
-				return err
-			}
-
 			return nil
 		},
 	}
@@ -60,9 +49,8 @@ func NewCLI() *cobra.Command {
 	arctl.PersistentFlags().StringVar(&home, "home", filepath.Join(os.Getenv("HOME"), ".arcadia"), "home directory to use")
 	arctl.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "namespace to use")
 
-	arctl.AddCommand(arctlPkg.NewDatasourceCmd(kubeClient, namespace))
-	arctl.AddCommand(arctlPkg.NewDatasetCmd(home))
-	arctl.AddCommand(arctlPkg.NewChatCmd(home))
+	arctl.AddCommand(arctlPkg.NewDatasourceCmd(&namespace))
+	arctl.AddCommand(arctlPkg.NewEvalCmd(&home, &namespace))
 
 	return arctl
 }

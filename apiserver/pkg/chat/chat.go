@@ -33,9 +33,9 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
-	"github.com/kubeagi/arcadia/pkg/application"
-	"github.com/kubeagi/arcadia/pkg/application/base"
-	"github.com/kubeagi/arcadia/pkg/application/retriever"
+	"github.com/kubeagi/arcadia/pkg/appruntime"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 var (
@@ -99,12 +99,12 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 		Answer: "",
 	})
 	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
-	appRun, err := application.NewAppOrGetFromCache(ctx, app, c)
+	appRun, err := appruntime.NewAppOrGetFromCache(ctx, c, app)
 	if err != nil {
 		return nil, err
 	}
 	klog.FromContext(ctx).Info("begin to run application", "appName", req.APPName, "appNamespace", req.AppNamespace)
-	out, err := appRun.Run(ctx, c, respStream, application.Input{Question: req.Query, NeedStream: req.ResponseMode.IsStreaming(), History: conversation.History})
+	out, err := appRun.Run(ctx, c, respStream, appruntime.Input{Question: req.Query, NeedStream: req.ResponseMode.IsStreaming(), History: conversation.History})
 	if err != nil {
 		return nil, err
 	}
