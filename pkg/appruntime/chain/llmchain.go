@@ -32,7 +32,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/application/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
 type LLMChain struct {
@@ -64,13 +64,14 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
-	v3, ok := args["_history"]
-	if !ok {
-		return args, errors.New("no history")
-	}
-	history, ok := v3.(langchaingoschema.ChatMessageHistory)
-	if !ok {
-		return args, errors.New("history not memory.ChatMessageHistory")
+	// _history is optional
+	// if set ,only ChatMessageHistory allowed
+	var history langchaingoschema.ChatMessageHistory
+	if v3, ok := args["_history"]; ok && v3 != nil {
+		history, ok = v3.(langchaingoschema.ChatMessageHistory)
+		if !ok {
+			return args, errors.New("history not memory.ChatMessageHistory")
+		}
 	}
 
 	ns := base.GetAppNamespace(ctx)
@@ -87,7 +88,9 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
 	chain := chains.NewLLMChain(llm, prompt)
-	chain.Memory = getMemory(llm, instance.Spec.Memory, history)
+	if history != nil {
+		chain.Memory = getMemory(llm, instance.Spec.Memory, history)
+	}
 	l.LLMChain = *chain
 	var out string
 	if needStream, ok := args["_need_stream"].(bool); ok && needStream {

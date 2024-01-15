@@ -21,7 +21,7 @@ import (
 
 	"github.com/tmc/langchaingo/memory"
 
-	"github.com/kubeagi/arcadia/pkg/application/retriever"
+	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 type ResponseMode string

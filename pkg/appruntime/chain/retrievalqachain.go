@@ -32,8 +32,8 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/application/base"
-	appretriever "github.com/kubeagi/arcadia/pkg/application/retriever"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	appretriever "github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 type RetrievalQAChain struct {

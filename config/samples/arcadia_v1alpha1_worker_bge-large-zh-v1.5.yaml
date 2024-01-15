@@ -1,8 +1,8 @@
-\apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Worker
 metadata:
   name: bge-large-zh
-  namespace: arcadia
+  namespace: kubeagi-system
 spec:
   displayName: BGE模型服务
   description: "这是一个Embedding模型服务,由BGE提供"

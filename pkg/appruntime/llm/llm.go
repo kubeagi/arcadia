@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/application/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 )
 

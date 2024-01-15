@@ -18,6 +18,7 @@ package retriever
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -34,7 +35,7 @@ import (
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/application/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	pkgvectorstore "github.com/kubeagi/arcadia/pkg/vectorstore"
 )
@@ -50,6 +51,14 @@ type Reference struct {
 	FilePath string `json:"file_path" example:"dataset/dataset-playground/v1/qa.csv"`
 	// line number in the file
 	LineNumber int `json:"line_number" example:"7"`
+}
+
+func (reference Reference) String() string {
+	bytes, err := json.Marshal(&reference)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
 }
 
 type KnowledgeBaseRetriever struct {

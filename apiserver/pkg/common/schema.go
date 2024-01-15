@@ -29,6 +29,7 @@ import (
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evalv1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 )
 
 var (
@@ -101,6 +102,11 @@ var (
 			Group:    v1alpha1.GroupVersion.Group,
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "embedders",
+		},
+		"rag": {
+			Group:    evalv1alpha1.GroupVersion.Group,
+			Version:  evalv1alpha1.GroupVersion.Version,
+			Resource: "rags",
 		},
 	}
 )
