@@ -73,14 +73,18 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 
 	vds.Version = versioneddataset.Spec.Version
 	vds.SyncStatus = new(string)
+	vds.SyncMsg = new(string)
 	vds.DataProcessStatus = new(string)
+	vds.DataProcessMsg = new(string)
 	first := true
 	for _, cond := range versioneddataset.Status.Conditions {
 		if cond.Type == v1alpha1.TypeReady {
 			*vds.SyncStatus = string(cond.Reason)
+			*vds.SyncMsg = cond.Message
 		}
 		if cond.Type == v1alpha1.TypeDataProcessing {
 			*vds.DataProcessStatus = string(cond.Reason)
+			*vds.DataProcessMsg = cond.Message
 		}
 		if !cond.LastTransitionTime.IsZero() {
 			if first || vds.UpdateTimestamp.Before(cond.LastSuccessfulTime.Time) {
