@@ -44,7 +44,9 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
       creationTimestamp
       released
       syncStatus
+      syncMsg
       dataProcessStatus
+      dataProcessMsg
       files(input: $fileInput){
         totalCount
         hasNextPage
@@ -81,7 +83,9 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
             creationTimestamp
             released
             syncStatus
+            syncMsg
             dataProcessStatus
+            dataProcessMsg
             files(input: $fileInput){
               totalCount
               hasNextPage

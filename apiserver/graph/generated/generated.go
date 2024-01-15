@@ -545,6 +545,7 @@ type ComplexityRoot struct {
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
+		DataProcessMsg    func(childComplexity int) int
 		DataProcessStatus func(childComplexity int) int
 		Dataset           func(childComplexity int) int
 		Description       func(childComplexity int) int
@@ -555,6 +556,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Released          func(childComplexity int) int
+		SyncMsg           func(childComplexity int) int
 		SyncStatus        func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
 		Version           func(childComplexity int) int
@@ -3276,6 +3278,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VersionedDataset.Creator(childComplexity), true
 
+	case "VersionedDataset.dataProcessMsg":
+		if e.complexity.VersionedDataset.DataProcessMsg == nil {
+			break
+		}
+
+		return e.complexity.VersionedDataset.DataProcessMsg(childComplexity), true
+
 	case "VersionedDataset.dataProcessStatus":
 		if e.complexity.VersionedDataset.DataProcessStatus == nil {
 			break
@@ -3350,6 +3359,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.VersionedDataset.Released(childComplexity), true
+
+	case "VersionedDataset.syncMsg":
+		if e.complexity.VersionedDataset.SyncMsg == nil {
+			break
+		}
+
+		return e.complexity.VersionedDataset.SyncMsg(childComplexity), true
 
 	case "VersionedDataset.syncStatus":
 		if e.complexity.VersionedDataset.SyncStatus == nil {
@@ -5795,9 +5811,13 @@ type VersionedDataset {
     
     """文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败"""
     syncStatus: String
+    """文件同步状态信息，表示同步的错误信息"""
+    syncMsg: String
 
     """数据处理状态，如果为空，表示还没有开始，processing 处理中，process_fail处理失败，process_complete处理完成"""
     dataProcessStatus: String
+    """数据处理信息，如果版本数据处理状态失败时，显示失败原因"""
+    dataProcessMsg: String
 }
 
 """
@@ -23359,6 +23379,47 @@ func (ec *executionContext) fieldContext_VersionedDataset_syncStatus(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _VersionedDataset_syncMsg(ctx context.Context, field graphql.CollectedField, obj *VersionedDataset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VersionedDataset_syncMsg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SyncMsg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VersionedDataset_syncMsg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VersionedDataset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _VersionedDataset_dataProcessStatus(ctx context.Context, field graphql.CollectedField, obj *VersionedDataset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
 	if err != nil {
@@ -23388,6 +23449,47 @@ func (ec *executionContext) _VersionedDataset_dataProcessStatus(ctx context.Cont
 }
 
 func (ec *executionContext) fieldContext_VersionedDataset_dataProcessStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VersionedDataset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VersionedDataset_dataProcessMsg(ctx context.Context, field graphql.CollectedField, obj *VersionedDataset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VersionedDataset_dataProcessMsg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataProcessMsg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VersionedDataset_dataProcessMsg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "VersionedDataset",
 		Field:      field,
@@ -23469,8 +23571,12 @@ func (ec *executionContext) fieldContext_VersionedDatasetMutation_createVersione
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
 			case "syncStatus":
 				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "syncMsg":
+				return ec.fieldContext_VersionedDataset_syncMsg(ctx, field)
 			case "dataProcessStatus":
 				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
+			case "dataProcessMsg":
+				return ec.fieldContext_VersionedDataset_dataProcessMsg(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -23558,8 +23664,12 @@ func (ec *executionContext) fieldContext_VersionedDatasetMutation_updateVersione
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
 			case "syncStatus":
 				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "syncMsg":
+				return ec.fieldContext_VersionedDataset_syncMsg(ctx, field)
 			case "dataProcessStatus":
 				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
+			case "dataProcessMsg":
+				return ec.fieldContext_VersionedDataset_dataProcessMsg(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -23699,8 +23809,12 @@ func (ec *executionContext) fieldContext_VersionedDatasetQuery_getVersionedDatas
 				return ec.fieldContext_VersionedDataset_released(ctx, field)
 			case "syncStatus":
 				return ec.fieldContext_VersionedDataset_syncStatus(ctx, field)
+			case "syncMsg":
+				return ec.fieldContext_VersionedDataset_syncMsg(ctx, field)
 			case "dataProcessStatus":
 				return ec.fieldContext_VersionedDataset_dataProcessStatus(ctx, field)
+			case "dataProcessMsg":
+				return ec.fieldContext_VersionedDataset_dataProcessMsg(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type VersionedDataset", field.Name)
 		},
@@ -35817,8 +35931,12 @@ func (ec *executionContext) _VersionedDataset(ctx context.Context, sel ast.Selec
 			}
 		case "syncStatus":
 			out.Values[i] = ec._VersionedDataset_syncStatus(ctx, field, obj)
+		case "syncMsg":
+			out.Values[i] = ec._VersionedDataset_syncMsg(ctx, field, obj)
 		case "dataProcessStatus":
 			out.Values[i] = ec._VersionedDataset_dataProcessStatus(ctx, field, obj)
+		case "dataProcessMsg":
+			out.Values[i] = ec._VersionedDataset_dataProcessMsg(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

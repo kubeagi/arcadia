@@ -1465,8 +1465,12 @@ type VersionedDataset struct {
 	Released int `json:"released"`
 	// 文件的同步状态, Processing或者'' 表示文件正在同步，Succeede 文件同步成功，Failed 存在文件同步失败
 	SyncStatus *string `json:"syncStatus,omitempty"`
+	// 文件同步状态信息，表示同步的错误信息
+	SyncMsg *string `json:"syncMsg,omitempty"`
 	// 数据处理状态，如果为空，表示还没有开始，processing 处理中，process_fail处理失败，process_complete处理完成
 	DataProcessStatus *string `json:"dataProcessStatus,omitempty"`
+	// 数据处理信息，如果版本数据处理状态失败时，显示失败原因
+	DataProcessMsg *string `json:"dataProcessMsg,omitempty"`
 }
 
 func (VersionedDataset) IsPageNode() {}
