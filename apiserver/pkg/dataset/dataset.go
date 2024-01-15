@@ -19,8 +19,6 @@ package dataset
 import (
 	"context"
 	"fmt"
-	"sort"
-	"strings"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,6 +30,10 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 )
+
+func dataset2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
+	return dataset2model(obj)
+}
 
 func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	ds := &generated.Dataset{}
@@ -116,9 +118,6 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(datastList.Items, func(i, j int) bool {
-		return datastList.Items[i].GetCreationTimestamp().After(datastList.Items[j].GetCreationTimestamp().Time)
-	})
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -126,47 +125,14 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	if input.PageSize != nil && *input.PageSize > 0 {
 		size = *input.PageSize
 	}
-	result := make([]generated.PageNode, 0)
-	for _, u := range datastList.Items {
-		uu, _ := dataset2model(&u)
-		if input.DisplayName != nil && *uu.DisplayName != *input.DisplayName {
-			continue
-		}
-		if input.Keyword != nil {
-			ok := false
-			if strings.Contains(uu.Name, *input.Keyword) {
-				ok = true
-			}
-			if strings.Contains(uu.Namespace, *input.Keyword) {
-				ok = true
-			}
-			if strings.Contains(*uu.DisplayName, *input.Keyword) {
-				ok = true
-			}
-			if strings.Contains(uu.ContentType, *input.Keyword) {
-				ok = true
-			}
-			for _, v := range uu.Annotations {
-				if strings.Contains(v.(string), *input.Keyword) {
-					ok = true
-					break
-				}
-			}
-			if !ok {
-				continue
-			}
-		}
-		result = append(result, uu)
+	filters := make([]common.ResourceFilter, 0)
+	if input.DisplayName != nil {
+		filters = append(filters, common.FilterDatasetByDisplayName(*input.DisplayName))
 	}
-	total := len(result)
-	start, end := common.PagePosition(page, size, total)
-	return &generated.PaginatedResult{
-		TotalCount:  total,
-		HasNextPage: end < total,
-		Nodes:       result[start:end],
-		Page:        &page,
-		PageSize:    &size,
-	}, nil
+	if input.Keyword != nil {
+		filters = append(filters, common.FilterDatasetByKeyword(*input.Keyword))
+	}
+	return common.ListReources(datastList, page, size, dataset2modelConverter, filters...)
 }
 
 func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasetInput) (*generated.Dataset, error) {

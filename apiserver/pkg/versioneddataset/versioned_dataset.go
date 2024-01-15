@@ -47,6 +47,10 @@ var (
 	}
 )
 
+func versionedDataset2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
+	return versionedDataset2model(obj)
+}
+
 func versionedDataset2model(obj *unstructured.Unstructured) (*generated.VersionedDataset, error) {
 	vds := &generated.VersionedDataset{}
 	id := string(obj.GetUID())
@@ -196,19 +200,6 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 			listOptions.FieldSelector = *input.FieldSelector
 		}
 	}
-	ns := "default"
-	if input.Namespace != nil {
-		ns = *input.Namespace
-	}
-	list, err := c.Resource(versioneddatasetSchem).Namespace(ns).List(ctx, listOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Slice(list.Items, func(i, j int) bool {
-		return list.Items[i].GetCreationTimestamp().After(list.Items[j].GetCreationTimestamp().Time)
-	})
-
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -216,41 +207,22 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 	if input.PageSize != nil && *input.PageSize > 0 {
 		size = *input.PageSize
 	}
-	result := make([]generated.PageNode, 0)
-	for _, u := range list.Items {
-		uu, _ := versionedDataset2model(&u)
-		if input.DisplayName != nil && *uu.DisplayName != *input.DisplayName {
-			continue
-		}
-		if input.Keyword != nil {
-			if strings.Contains(uu.Name, *input.Keyword) {
-				goto add
-			}
-			if strings.Contains(uu.Namespace, *input.Keyword) {
-				goto add
-			}
-			if strings.Contains(*uu.DisplayName, *input.Keyword) {
-				goto add
-			}
-			for _, v := range uu.Annotations {
-				if strings.Contains(v.(string), *input.Keyword) {
-					goto add
-				}
-			}
-			continue
-		}
-	add:
-		result = append(result, uu)
+	ns := "default"
+	if input.Namespace != nil {
+		ns = *input.Namespace
 	}
-	total := len(result)
-	start, end := common.PagePosition(page, size, total)
-	return &generated.PaginatedResult{
-		TotalCount:  total,
-		HasNextPage: end < total,
-		Nodes:       result[start:end],
-		Page:        &page,
-		PageSize:    &size,
-	}, nil
+	filter := make([]common.ResourceFilter, 0)
+	if input.DisplayName != nil {
+		filter = append(filter, common.FilterVersionedDatasetByDisplayName(*input.DisplayName))
+	}
+	if input.Keyword != nil {
+		filter = append(filter, common.FilterVersionedDatasetByKeyword(*input.Keyword))
+	}
+	list, err := c.Resource(versioneddatasetSchem).Namespace(ns).List(ctx, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	return common.ListReources(list, page, size, versionedDataset2modelConverter, filter...)
 }
 
 func GetVersionedDataset(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.VersionedDataset, error) {

@@ -18,8 +18,6 @@ package embedder
 
 import (
 	"context"
-	"sort"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -37,11 +35,17 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
+func embedder2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
+	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
+		return Embedder2model(ctx, c, u)
+	}
+}
+
 // Embedder2model convert unstructured `CR Embedder` to graphql model `Embedder`
-func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Embedder {
+func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Embedder, error) {
 	embedder := &v1alpha1.Embedder{}
 	if err := utils.UnstructuredToStructured(obj, embedder); err != nil {
-		return &generated.Embedder{}
+		return nil, err
 	}
 
 	id := string(embedder.GetUID())
@@ -91,7 +95,7 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 		Message:           &message,
 		UpdateTimestamp:   &updateTime,
 	}
-	return &md
+	return &md, nil
 }
 
 func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.CreateEmbedderInput) (*generated.Embedder, error) {
@@ -174,8 +178,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 		}
 	}
 
-	ds := Embedder2model(ctx, c, obj)
-	return ds, nil
+	return Embedder2model(ctx, c, obj)
 }
 
 func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.UpdateEmbedderInput) (*generated.Embedder, error) {
@@ -235,8 +238,7 @@ func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.U
 	if err != nil {
 		return nil, err
 	}
-	ds := Embedder2model(ctx, c, updatedObject)
-	return ds, nil
+	return Embedder2model(ctx, c, updatedObject)
 }
 
 func DeleteEmbedders(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -304,26 +306,19 @@ func ListEmbedders(ctx context.Context, c dynamic.Interface, input generated.Lis
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(us.Items, func(i, j int) bool {
-		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
-	})
-
-	result := make([]generated.PageNode, 0, len(us.Items))
-	for _, u := range us.Items {
-		m := Embedder2model(ctx, c, &u)
-		// filter based on `keyword`
-		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-			continue
-		}
-		result = append(result, opts.ConvertFunc(m))
+	filter := make([]common.ResourceFilter, 0)
+	if keyword != "" {
+		filter = append(filter, common.FilterEmbedderByKeyword(keyword))
 	}
-	totalCount := len(result)
-	start, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       result[start:end],
-	}, nil
+	result, err := common.ListReources(us, page, pageSize, embedder2modelConverter(ctx, c), filter...)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range result.Nodes {
+		result.Nodes[i] = opts.ConvertFunc(result.Nodes[i])
+	}
+	return result, nil
 }
 
 func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Embedder, error) {
@@ -332,5 +327,5 @@ func ReadEmbedder(ctx context.Context, c dynamic.Interface, name, namespace stri
 	if err != nil {
 		return nil, err
 	}
-	return Embedder2model(ctx, c, u), nil
+	return Embedder2model(ctx, c, u)
 }

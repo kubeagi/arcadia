@@ -18,8 +18,6 @@ package knowledgebase
 
 import (
 	"context"
-	"sort"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,10 +32,14 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBase {
+func knowledgebase2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
+	return knowledgebase2model(obj)
+}
+
+func knowledgebase2model(obj *unstructured.Unstructured) (*generated.KnowledgeBase, error) {
 	knowledgebase := &v1alpha1.KnowledgeBase{}
 	if err := utils.UnstructuredToStructured(obj, knowledgebase); err != nil {
-		return &generated.KnowledgeBase{}
+		return nil, err
 	}
 
 	id := string(knowledgebase.GetUID())
@@ -114,7 +116,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) *generated.KnowledgeBas
 		Reason:  &reason,
 		Message: &message,
 	}
-	return &md
+	return &md, nil
 }
 
 func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, description, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
@@ -152,7 +154,10 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	if err != nil {
 		return nil, err
 	}
-	kb := knowledgebase2model(obj)
+	kb, err := knowledgebase2model(obj)
+	if err != nil {
+		return nil, err
+	}
 	if kb.FileGroupDetails == nil {
 		// fill in file group without any details
 		details := make([]*generated.Filegroupdetail, len(filegroups))
@@ -212,7 +217,7 @@ func UpdateKnowledgeBase(ctx context.Context, c dynamic.Interface, input *genera
 		return nil, err
 	}
 
-	return knowledgebase2model(updatedObject), nil
+	return knowledgebase2model(updatedObject)
 }
 
 func DeleteKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
@@ -240,17 +245,18 @@ func ReadKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace
 	if err != nil {
 		return nil, err
 	}
-	return knowledgebase2model(u), nil
+	return knowledgebase2model(u)
 }
 
 func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
-	name, displayName, labelSelector, fieldSelector := "", "", "", ""
+	labelSelector, fieldSelector := "", ""
 	page, pageSize := 1, 10
+	filter := make([]common.ResourceFilter, 0)
 	if input.Name != nil {
-		name = *input.Name
+		filter = append(filter, common.FilterKnowledgeByName(*input.Name))
 	}
 	if input.DisplayName != nil {
-		displayName = *input.DisplayName
+		filter = append(filter, common.FilterKnowledgeByDisplayName(*input.DisplayName))
 	}
 	if input.FieldSelector != nil {
 		fieldSelector = *input.FieldSelector
@@ -274,26 +280,6 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generate
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(us.Items, func(i, j int) bool {
-		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
-	})
-	result := make([]*generated.KnowledgeBase, len(us.Items))
-	for idx, u := range us.Items {
-		result[idx] = knowledgebase2model(&u)
-	}
 
-	var filteredResult []generated.PageNode
-	for idx, u := range result {
-		if (name == "" || strings.Contains(u.Name, name)) && (displayName == "" || strings.Contains(*u.DisplayName, displayName)) {
-			filteredResult = append(filteredResult, result[idx])
-		}
-	}
-
-	totalCount := len(filteredResult)
-	start, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       filteredResult[start:end],
-	}, nil
+	return common.ListReources(us, page, pageSize, knowledgebase2modelConverter, filter...)
 }

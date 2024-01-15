@@ -18,8 +18,6 @@ package llm
 
 import (
 	"context"
-	"sort"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -36,11 +34,17 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
+func LLM2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
+	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
+		return LLM2model(ctx, c, u)
+	}
+}
+
 // LLM2model convert unstructured `CR LLM` to graphql model `Llm`
-func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) *generated.Llm {
+func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Llm, error) {
 	llm := &v1alpha1.LLM{}
 	if err := utils.UnstructuredToStructured(obj, llm); err != nil {
-		return &generated.Llm{}
+		return nil, err
 	}
 
 	id := string(llm.GetUID())
@@ -94,7 +98,7 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 		Models:            llm.GetModelList(),
 		UpdateTimestamp:   &updateTime,
 	}
-	return &md
+	return &md, nil
 }
 
 // ListLLMs return a list of LLMs based on input params
@@ -104,10 +108,11 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 		optFunc(opts)
 	}
 
-	keyword, labelSelector, fieldSelector := "", "", ""
+	labelSelector, fieldSelector := "", ""
 	page, pageSize := 1, 10
+	filter := make([]common.ResourceFilter, 0)
 	if input.Keyword != nil {
-		keyword = *input.Keyword
+		filter = append(filter, common.FilterLLMByKeyword(*input.Keyword))
 	}
 	if input.FieldSelector != nil {
 		fieldSelector = *input.FieldSelector
@@ -129,26 +134,15 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 	if err != nil {
 		return nil, err
 	}
-
-	sort.Slice(us.Items, func(i, j int) bool {
-		return us.Items[i].GetCreationTimestamp().After(us.Items[j].GetCreationTimestamp().Time)
-	})
-
-	result := make([]generated.PageNode, 0, len(us.Items))
-	for _, u := range us.Items {
-		m := LLM2model(ctx, c, &u)
-		if keyword != "" && !strings.Contains(m.Name, keyword) && !strings.Contains(*m.DisplayName, keyword) {
-			continue
-		}
-		result = append(result, opts.ConvertFunc(m))
+	result, err := common.ListReources(us, page, pageSize, LLM2modelConverter(ctx, c), filter...)
+	if err != nil {
+		return nil, err
 	}
-	totalCount := len(result)
-	pageStart, end := common.PagePosition(page, pageSize, totalCount)
-	return &generated.PaginatedResult{
-		TotalCount:  totalCount,
-		HasNextPage: end < totalCount,
-		Nodes:       result[pageStart:end],
-	}, nil
+
+	for i := range result.Nodes {
+		result.Nodes[i] = opts.ConvertFunc(result.Nodes[i])
+	}
+	return result, nil
 }
 
 // ReadLLM
@@ -157,7 +151,7 @@ func ReadLLM(ctx context.Context, c dynamic.Interface, name, namespace string) (
 	if err != nil {
 		return nil, err
 	}
-	return LLM2model(ctx, c, resource), nil
+	return LLM2model(ctx, c, resource)
 }
 
 func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateLLMInput) (*generated.Llm, error) {
@@ -240,8 +234,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 	}
 
 	// create *generated.Llm
-	genLLM := LLM2model(ctx, c, obj)
-	return genLLM, nil
+	return LLM2model(ctx, c, obj)
 }
 
 func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.UpdateLLMInput) (*generated.Llm, error) {
@@ -301,8 +294,7 @@ func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.Update
 	if err != nil {
 		return nil, err
 	}
-	ds := LLM2model(ctx, c, updatedObject)
-	return ds, nil
+	return LLM2model(ctx, c, updatedObject)
 }
 
 func DeleteLLMs(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
