@@ -24,6 +24,13 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type Image struct {
+	Image string `json:"image,omitempty"`
+
+	// +kubebuilder:default=IfNotPresent
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+}
+
 // WorkerSpec defines the desired state of Worker
 type WorkerSpec struct {
 	CommonSpec `json:",inline"`
@@ -52,6 +59,9 @@ type WorkerSpec struct {
 
 	// Storage claimed to store model files
 	Storage *corev1.PersistentVolumeClaimSpec `json:"storage,omitempty"`
+
+	Loader Image `json:"loader,omitempty"`
+	Runner Image `json:"runner,omitempty"`
 }
 
 // WorkerStatus defines the observed state of Worker

@@ -30,6 +30,11 @@ import (
 	"github.com/kubeagi/arcadia/pkg/config"
 )
 
+const (
+	defaultFastChatImage     = "kubeagi/arcadia-fastchat-worker:v0.2.0"
+	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.2.0"
+)
+
 // ModelRunner run a model service
 type ModelRunner interface {
 	// Device used when running model
@@ -72,11 +77,15 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
+	img := defaultFastChatImage
+	if runner.w.Spec.Runner.Image != "" {
+		img = runner.w.Spec.Runner.Image
+	}
 	// read worker address
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubeagi/arcadia-fastchat-worker:v0.2.0",
-		ImagePullPolicy: "IfNotPresent",
+		Image:           img,
+		ImagePullPolicy: runner.w.Spec.Runner.ImagePullPolicy,
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAME", Value: "fastchat.serve.model_worker"},
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
@@ -166,10 +175,14 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
 	}
 
+	img := defaultFastchatVLLMImage
+	if runner.w.Spec.Runner.Image != "" {
+		img = runner.w.Spec.Runner.Image
+	}
 	container := &corev1.Container{
 		Name:            "runner",
-		Image:           "kubeagi/arcadia-fastchat-worker:vllm-v0.2.0",
-		ImagePullPolicy: "IfNotPresent",
+		Image:           img,
+		ImagePullPolicy: runner.w.Spec.Runner.ImagePullPolicy,
 		Env: []corev1.EnvVar{
 			{Name: "FASTCHAT_WORKER_NAME", Value: "fastchat.serve.vllm_worker"},
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},

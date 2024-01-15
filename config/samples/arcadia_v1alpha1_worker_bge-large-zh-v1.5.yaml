@@ -8,6 +8,12 @@ spec:
   description: "这是一个Embedding模型服务,由BGE提供"
   type: "fastchat"
   replicas: 1
+  loader: 
+    image: kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z
+    imagePullPolicy: IfNotPresent
+  runner: 
+    image: kubeagi/arcadia-fastchat-worker:v0.2.0
+    imagePullPolicy: IfNotPresent
   model:
     kind: "Models"
     name: "bge-large-zh-v1.5"

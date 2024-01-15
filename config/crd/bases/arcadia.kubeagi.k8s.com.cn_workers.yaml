@@ -160,6 +160,16 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              loader:
+                properties:
+                  image:
+                    type: string
+                  imagePullPolicy:
+                    default: IfNotPresent
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
+                type: object
               matchExpressions:
                 description: NodeSelectorRequirement to schedule this worker
                 items:
@@ -242,6 +252,16 @@ spec:
                       it defaults to Limits if that is explicitly specified, otherwise
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
+                type: object
+              runner:
+                properties:
+                  image:
+                    type: string
+                  imagePullPolicy:
+                    default: IfNotPresent
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
                 type: object
               storage:
                 description: Storage claimed to store model files
