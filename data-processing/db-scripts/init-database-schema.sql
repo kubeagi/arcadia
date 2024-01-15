@@ -25,12 +25,10 @@
         update_user character varying(32) COLLATE pg_catalog."default",
         update_program character varying(64) COLLATE pg_catalog."default",
         namespace character varying(64) COLLATE pg_catalog."default",
-        bucket_name character varying(64) COLLATE pg_catalog."default",
         current_log_id character varying(32) COLLATE pg_catalog."default",
         CONSTRAINT data_process_task_pkey PRIMARY KEY (id)
     );
 
-    COMMENT ON COLUMN public.data_process_task.bucket_name IS 'bucket name';
     COMMENT ON COLUMN public.data_process_task.current_log_id IS '当前日志Id';
     COMMENT ON COLUMN public.data_process_task.pre_version_data_set_name IS '处理前数据集版本信息';
 

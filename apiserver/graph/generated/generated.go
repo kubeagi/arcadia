@@ -4237,7 +4237,6 @@ input AddDataProcessInput {
   post_data_set_name: String!
   post_data_set_version: String!
   data_process_config_info: [DataProcessConfigItem!]
-  bucket_name: String!
   version_data_set_name: String!
   namespace: String!
   creator: String!
@@ -27410,7 +27409,7 @@ func (ec *executionContext) unmarshalInputAddDataProcessInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "file_type", "pre_data_set_name", "pre_data_set_version", "file_names", "post_data_set_name", "post_data_set_version", "data_process_config_info", "bucket_name", "version_data_set_name", "namespace", "creator"}
+	fieldsInOrder := [...]string{"name", "file_type", "pre_data_set_name", "pre_data_set_version", "file_names", "post_data_set_name", "post_data_set_version", "data_process_config_info", "version_data_set_name", "namespace", "creator"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27489,15 +27488,6 @@ func (ec *executionContext) unmarshalInputAddDataProcessInput(ctx context.Contex
 				return it, err
 			}
 			it.DataProcessConfigInfo = data
-		case "bucket_name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bucket_name"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BucketName = data
 		case "version_data_set_name":
 			var err error
 

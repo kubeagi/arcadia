@@ -54,13 +54,14 @@ async def add(request):
         "post_data_set_name": "dataset1",
         "post_data_set_version": "v2",
         "version_data_set_name": "dataset1-v2",
-        "bucket_name": "system-tce",
         "file_names": [
             {
                 "name": "数据处理文件_小T.pdf"
             }
         ],
-        "data_process_config_info": []
+        "data_process_config_info": [],
+        "creator": "",
+        "namespace": "abc"
     }    
     """
     res = data_process_service.add(

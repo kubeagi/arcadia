@@ -49,7 +49,6 @@ input AddDataProcessInput {
   post_data_set_name: String!
   post_data_set_version: String!
   data_process_config_info: [DataProcessConfigItem!]
-  bucket_name: String!
   version_data_set_name: String!
   namespace: String!
   creator: String!

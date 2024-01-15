@@ -21,13 +21,14 @@ from . import client
 logger = logging.getLogger(__name__)
 
 def update_dataset_k8s_cr(
-    bucket_name,
+    namespace,
     version_data_set_name,
-    reason
+    reason,
+    message
 ):
     """ Update the condition info for the dataset.
     
-    bucket_name: bucket name;
+    namespace: namespace;
     version_data_set_name: version dataset name;
     reason: the update reason;
     """
@@ -35,7 +36,7 @@ def update_dataset_k8s_cr(
         kube = client.KubeEnv()
 
         one_cr_datasets = kube.get_versioneddatasets_status(
-                                bucket_name, 
+                                namespace, 
                                 version_data_set_name
                             )
 
@@ -56,18 +57,20 @@ def update_dataset_k8s_cr(
                 'lastTransitionTime': now_utc_str,
                 'reason': reason,
                 'status': "True",
-                "type": "DataProcessing"
+                "type": "DataProcessing",
+                "message": message
             })
         else:
             conditions[found_index] = {
                 'lastTransitionTime': now_utc_str,
                 'reason': reason,
                 'status': "True",
-                "type": "DataProcessing"
+                "type": "DataProcessing",
+                "message": message
             }
 
         kube.patch_versioneddatasets_status(
-            bucket_name, 
+            namespace, 
             version_data_set_name,
             {
                 'status': {
@@ -90,12 +93,12 @@ def update_dataset_k8s_cr(
         }
 
 def get_dataset_status_k8s_cr(
-    bucket_name,
+    namespace,
     version_data_set_name
 ):
     """ get the condition info for the dataset.
     
-    bucket_name: bucket name;
+    namespace: namespace;
     version_data_set_name: version dataset name;
     """
     try:
@@ -103,7 +106,7 @@ def get_dataset_status_k8s_cr(
         kube = client.KubeEnv()
 
         one_cr_datasets = kube.get_versioneddatasets_status(
-                                bucket_name, 
+                                namespace, 
                                 version_data_set_name
                             )
 
