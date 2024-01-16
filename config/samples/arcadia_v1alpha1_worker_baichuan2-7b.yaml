@@ -21,6 +21,12 @@ spec:
     kind: "Models"
     name: "baichuan2-7b-chat"
   replicas: 1
+  loader: 
+    image: kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z
+    imagePullPolicy: IfNotPresent
+  runner: 
+    image: kubeagi/arcadia-fastchat-worker:v0.2.0
+    imagePullPolicy: IfNotPresent
   resources:
     limits:
       nvidia.com/gpu: "1" # request 1 GPU

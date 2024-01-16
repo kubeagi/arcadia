@@ -215,13 +215,13 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 			endpoint.AuthSecret.WithNameSpace(d.Namespace)
 		}
-		l, err := NewLoaderOSS(ctx, c, endpoint)
+		l, err := NewLoaderOSS(ctx, c, endpoint, w)
 		if err != nil {
 			return nil, fmt.Errorf("failed to new a loader with %w", err)
 		}
 		podWorker.l = l
 	case arcadiav1alpha1.DatasourceTypeRDMA:
-		l := NewRDMALoader(c, w.Spec.Model.Name, string(w.GetUID()), d)
+		l := NewRDMALoader(c, w.Spec.Model.Name, string(w.GetUID()), d, w)
 		podWorker.l = l
 	default:
 		return nil, fmt.Errorf("datasource %s with type %s not supported in worker", d.Name, d.Spec.Type())

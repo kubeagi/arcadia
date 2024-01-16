@@ -29,6 +29,11 @@ import (
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
+const (
+	defaultOSSLoaderImage  = "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z"
+	defaultRDMALoaderImage = "wetman2023/floo:23.12"
+)
+
 // ModelLoader load models for worker
 type ModelLoader interface {
 	Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error)
@@ -42,9 +47,10 @@ type LoaderOSS struct {
 
 	endpoint *arcadiav1alpha1.Endpoint
 	oss      *datasource.OSS
+	worker   *arcadiav1alpha1.Worker
 }
 
-func NewLoaderOSS(ctx context.Context, c client.Client, endpoint *arcadiav1alpha1.Endpoint) (ModelLoader, error) {
+func NewLoaderOSS(ctx context.Context, c client.Client, endpoint *arcadiav1alpha1.Endpoint, worker *arcadiav1alpha1.Worker) (ModelLoader, error) {
 	if endpoint == nil {
 		return nil, errors.New("nil oss endpoint")
 	}
@@ -58,6 +64,7 @@ func NewLoaderOSS(ctx context.Context, c client.Client, endpoint *arcadiav1alpha
 		c:        c,
 		endpoint: endpoint,
 		oss:      oss,
+		worker:   worker,
 	}, nil
 }
 
@@ -98,10 +105,14 @@ func (loader *LoaderOSS) Build(ctx context.Context, model *arcadiav1alpha1.Typed
 		url = loader.endpoint.SchemeInternalURL()
 	}
 
+	img := defaultOSSLoaderImage
+	if loader.worker.Spec.Loader.Image != "" {
+		img = loader.worker.Spec.Loader.Image
+	}
 	container := &corev1.Container{
 		Name:            "loader",
-		Image:           "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z",
-		ImagePullPolicy: "IfNotPresent",
+		Image:           img,
+		ImagePullPolicy: loader.worker.Spec.Loader.ImagePullPolicy,
 		Command: []string{
 			"/bin/bash",
 			"-c",
@@ -145,20 +156,25 @@ type RDMALoader struct {
 	workerUID string
 
 	datasource *arcadiav1alpha1.Datasource
+	worker     *arcadiav1alpha1.Worker
 }
 
-func NewRDMALoader(c client.Client, modelName, workerUID string, source *arcadiav1alpha1.Datasource) *RDMALoader {
-	return &RDMALoader{c: c, modelName: modelName, workerUID: workerUID, datasource: source}
+func NewRDMALoader(c client.Client, modelName, workerUID string, source *arcadiav1alpha1.Datasource, worker *arcadiav1alpha1.Worker) *RDMALoader {
+	return &RDMALoader{c: c, modelName: modelName, workerUID: workerUID, datasource: source, worker: worker}
 }
 
 func (r *RDMALoader) Build(ctx context.Context, _ *arcadiav1alpha1.TypedObjectReference) (any, error) {
 	rdmaEndpoint := r.datasource.Spec.Endpoint.URL
 	remoteBaseSavePath := r.datasource.Spec.RDMA.Path
 
+	img := defaultRDMALoaderImage
+	if r.worker.Spec.Loader.Image != "" {
+		img = r.worker.Spec.Loader.Image
+	}
 	container := &corev1.Container{
 		Name:            "rdma-loader",
-		Image:           "wetman2023/floo:23.12",
-		ImagePullPolicy: "IfNotPresent",
+		Image:           img,
+		ImagePullPolicy: r.worker.Spec.Loader.ImagePullPolicy,
 		Command: []string{
 			"/bin/bash",
 			"-c",
