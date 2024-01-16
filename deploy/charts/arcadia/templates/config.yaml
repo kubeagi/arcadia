@@ -1,4 +1,3 @@
-{{- if .Values.postgresql.enabled }}
 apiVersion: v1
 data:
   config: |
@@ -25,7 +24,12 @@ data:
     vectorStore:
       apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
       kind: VectorStore
+{{- if and (.Values.chromadb.enabled) (eq .Values.global.defaultVectorStoreType "chroma") }}
       name: '{{ .Release.Name }}-vectorstore'
+{{- end }}
+{{- if and (.Values.postgresql.enabled) (eq .Values.global.defaultVectorStoreType "pgvector") }}
+      name: '{{ .Release.Name }}-pgvector-vectorstore'
+{{- end }}
       namespace: '{{ .Release.Namespace }}'
 
     #streamlit:
@@ -36,16 +40,17 @@ data:
   dataprocess: |
     llm:
       qa_retry_count: {{ .Values.dataprocess.config.llm.qa_retry_count }}
+{{- if .Values.postgresql.enabled }}
     postgresql:
       host: {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local
       port: {{ .Values.postgresql.containerPorts.postgresql }}
       user: {{ .Values.postgresql.global.postgresql.auth.username }}
       password: {{ .Values.postgresql.global.postgresql.auth.password }}
       database: {{ .Values.postgresql.global.postgresql.auth.database }}
+{{- end }}
 kind: ConfigMap
 metadata:
   labels:
     control-plane: {{ .Release.Name }}-arcadia
   name: {{ .Release.Name }}-config
   namespace: {{ .Release.Namespace }}
-{{- end }}

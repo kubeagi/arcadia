@@ -5,6 +5,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// UpdateSourceFileAnnotationKey is the key of the update source file annotation
+	UpdateSourceFileAnnotationKey = Group + "/update-source-file-time"
+)
+
 func (kb *KnowledgeBase) VectorStoreCollectionName() string {
 	return kb.Namespace + "_" + kb.Name
 }

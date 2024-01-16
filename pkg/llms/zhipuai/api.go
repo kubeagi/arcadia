@@ -209,7 +209,9 @@ func (z *ZhiPuAI) CreateEmbedding(ctx context.Context, inputTexts []string) ([][
 				success = true
 			}
 		}
-
+		if postResponse == nil {
+			return nil, errors.New("max retry reached, embedding post failed")
+		}
 		if !postResponse.Success {
 			return nil, fmt.Errorf("embedding post failed:\n%s", postResponse.String())
 		}
