@@ -119,7 +119,7 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 	}
 
 	// load csv to langchain documents
-	loader := pkgdocumentloaders.NewQACSV(csvData, "", eval.options.questionColumn, eval.options.groundTruthsColumn)
+	loader := pkgdocumentloaders.NewQACSV(csvData, "", pkgdocumentloaders.WithQuestionColumn(eval.options.questionColumn), pkgdocumentloaders.WithAnswerColumn(eval.options.groundTruthsColumn))
 	langchainDocuments, err := loader.Load(ctx)
 	if err != nil {
 		return err

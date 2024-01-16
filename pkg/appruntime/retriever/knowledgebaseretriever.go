@@ -36,6 +36,7 @@ import (
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	pkgvectorstore "github.com/kubeagi/arcadia/pkg/vectorstore"
 )
@@ -47,10 +48,16 @@ type Reference struct {
 	Answer string `json:"answer" example:"旷工最小计算单位为 0.5 天。"`
 	// vector search score
 	Score float32 `json:"score" example:"0.34"`
-	// file fullpath
-	FilePath string `json:"file_path" example:"dataset/dataset-playground/v1/qa.csv"`
-	// line number in the file
-	LineNumber int `json:"line_number" example:"7"`
+	// the qa file fullpath
+	QAFilePath string `json:"qa_file_path" example:"dataset/dataset-playground/v1/qa.csv"`
+	// line number in the qa file
+	QALineNumber int `json:"qa_line_number" example:"7"`
+	// source file name, only file name, not full path
+	FileName string `json:"file_name" example:"员工考勤管理制度-2023.pdf"`
+	// page number in the source file
+	PageNumber int `json:"page_number" example:"1"`
+	// related content in the source file
+	Content string `json:"content" example:"旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。"`
 }
 
 func (reference Reference) String() string {
@@ -177,23 +184,62 @@ func (c *KnowledgeBaseStuffDocuments) joinDocuments(ctx context.Context, docs []
 				logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v))
 			}
 		}
-		answer, _ := doc.Metadata["a"].([]byte)
+		// chroma will get []byte, pgvector will get string...
+		answer, ok := doc.Metadata[documentloaders.AnswerCol].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.AnswerCol].([]byte); ok {
+				answer = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
+
 		text += doc.PageContent
 		if len(answer) != 0 {
-			text = text + "\na: " + strings.TrimPrefix(strings.TrimSuffix(string(answer), "\""), "\"")
+			text = text + "\na: " + answer
 		}
 		if k != docLen-1 {
 			text += c.Separator
 		}
-		filepath, _ := doc.Metadata["fileName"].([]byte)
-		lineNumber, _ := doc.Metadata["lineNumber"].([]byte)
-		line, _ := strconv.Atoi(string(lineNumber))
+		qafilepath, ok := doc.Metadata[documentloaders.QAFileName].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.QAFileName].([]byte); ok {
+				qafilepath = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
+		lineNumber, ok := doc.Metadata[documentloaders.LineNumber].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.LineNumber].([]byte); ok {
+				lineNumber = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
+		line, _ := strconv.Atoi(lineNumber)
+		filename, ok := doc.Metadata[documentloaders.FileNameCol].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.FileNameCol].([]byte); ok {
+				filename = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
+		pageNumber, ok := doc.Metadata[documentloaders.PageNumberCol].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.PageNumberCol].([]byte); ok {
+				pageNumber = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
+		page, _ := strconv.Atoi(pageNumber)
+		content, ok := doc.Metadata[documentloaders.ChunkContentCol].(string)
+		if !ok {
+			if a, ok := doc.Metadata[documentloaders.ChunkContentCol].([]byte); ok {
+				content = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
+			}
+		}
 		c.References = append(c.References, Reference{
-			Question:   doc.PageContent,
-			Answer:     strings.TrimPrefix(strings.TrimSuffix(string(answer), "\""), "\""),
-			Score:      doc.Score,
-			FilePath:   strings.TrimPrefix(strings.TrimSuffix(string(filepath), "\""), "\""),
-			LineNumber: line,
+			Question:     doc.PageContent,
+			Answer:       answer,
+			Score:        doc.Score,
+			QAFilePath:   qafilepath,
+			QALineNumber: line,
+			FileName:     filename,
+			PageNumber:   page,
+			Content:      content,
 		})
 	}
 	logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: finally get related text: %s\n", text))

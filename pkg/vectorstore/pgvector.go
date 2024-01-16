@@ -173,11 +173,6 @@ func (s *PGVectorStore) RemoveExist(ctx context.Context, log logr.Logger, docume
 	for _, d := range document {
 		has, ok := res[d.PageContent]
 		if ok {
-			// The value returned from the database is of type float64,
-			// but the original document is of type int
-			if v, ok := has.Metadata["lineNumber"]; ok {
-				has.Metadata["lineNumber"] = int(v.(float64))
-			}
 			if reflect.DeepEqual(has.Metadata, d.Metadata) {
 				continue
 			}
