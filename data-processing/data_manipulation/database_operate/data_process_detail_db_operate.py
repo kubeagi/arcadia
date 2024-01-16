@@ -457,16 +457,21 @@ def query_question_answer_list(
 
     sql = """
       select
-        id,
-        task_id,
-        document_id,
-        document_chunk_id,
-        file_name,
-        question,
-        answer
-      from public.data_process_task_question_answer_clean
+        dptqa.id,
+        dptqa.task_id,
+        dptqa.document_id,
+        dptqa.document_chunk_id,
+        dptqa.file_name,
+        dptqa.question,
+        dptqa.answer,
+        dptdc.content,
+        dptdc.page_number
+      from public.data_process_task_question_answer dptqa
+      left join public.data_process_task_document_chunk dptdc
+      on
+        dptdc.id = dptqa.document_chunk_id
       where 
-        document_id = %(document_id)s
+        dptqa.document_id = %(document_id)s
     """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)

@@ -52,7 +52,7 @@ def text_manipulate(
     req_json is a dictionary object. 
     """
     
-    bucket_name = req_json['bucket_name']
+    namespace = req_json['namespace']
     support_type = req_json['data_process_config_info']
     file_names = req_json['file_names']
 
@@ -72,9 +72,10 @@ def text_manipulate(
 
     # update the dataset status
     update_dataset = _update_dateset_status(
-        bucket_name=req_json['bucket_name'],
+        namespace=req_json['namespace'],
         version_data_set_name=req_json['version_data_set_name'],
         reason='processing',
+        message='Data processing in progress',
         task_id=id,
         log_id=log_id,
         creator=req_json.get('creator'),
@@ -130,7 +131,7 @@ def text_manipulate(
         # 将文件下载到本地
         minio_store_client.download(
             minio_client,
-            bucket_name=bucket_name,
+            bucket_name=namespace,
             folder_prefix=folder_prefix,
             file_name=file_name
         )
@@ -328,7 +329,7 @@ def text_manipulate(
     minio_store_client.upload_files_to_minio_with_tags(
         minio_client=minio_client,
         local_folder=file_path + 'final',
-        minio_bucket=bucket_name,
+        minio_bucket=namespace,
         minio_prefix=folder_prefix,
         support_type=support_type,
         data_volumes_file=data_volumes_file
@@ -336,9 +337,10 @@ def text_manipulate(
 
     # update the dataset status
     update_dataset = _update_dateset_status(
-        bucket_name=req_json['bucket_name'],
+        namespace=req_json['namespace'],
         version_data_set_name=req_json['version_data_set_name'],
         reason=task_status,
+        message=error_msg,
         task_id=id,
         log_id=log_id,
         creator=req_json.get('creator'),
@@ -417,9 +419,10 @@ def text_manipulate_retry(
         
         # 更新数据集状态
         update_dataset = _update_dateset_status(
-            bucket_name=task_info_dict.get('namespace'),
+            namespace=task_info_dict.get('namespace'),
             version_data_set_name=task_info_dict.get('pre_version_data_set_name'),
             reason='processing',
+            message='Data processing in progress',
             task_id=task_id,
             log_id=log_id,
             creator=creator,
@@ -515,7 +518,7 @@ def text_manipulate_retry(
             minio_store_client.upload_files_to_minio_with_tags(
                 minio_client=minio_client,
                 local_folder=file_path + 'final',
-                minio_bucket=task_info_dict.get('bucket_name'),
+                minio_bucket=task_info_dict.get('namespace'),
                 minio_prefix=folder_prefix,
                 support_type=task_info_dict.get('data_process_config_info'),
                 data_volumes_file=data_volumes_file
@@ -523,9 +526,10 @@ def text_manipulate_retry(
 
         # 更新数据集状态
         update_dataset = _update_dateset_status(
-            bucket_name=task_info_dict.get('namespace'),
+            namespace=task_info_dict.get('namespace'),
             version_data_set_name=task_info_dict.get('pre_version_data_set_name'),
             reason=task_status,
+            message=error_msg,
             task_id=task_id,
             log_id=log_id,
             creator=creator,
@@ -597,9 +601,10 @@ def _remove_local_file(file_name):
         }
 
 def _update_dateset_status(
-    bucket_name,
+    namespace,
     version_data_set_name,
     reason,
+    message,
     task_id,
     log_id,
     creator,
@@ -608,21 +613,22 @@ def _update_dateset_status(
     logger.debug(''.join([
         f"{log_tag_const.MINIO_STORE_PROCESS} update dataset status \n",
         f"task_id: {task_id}\n",
-        f"bucket_name: {bucket_name}\n",
+        f"namespace: {namespace}\n",
         f"version_data_set_name: {version_data_set_name}\n",
         f"reason: {reason}"
     ]))
     update_dataset = dataset_cr.update_dataset_k8s_cr(
-        bucket_name=bucket_name,
+        namespace=namespace,
         version_data_set_name=version_data_set_name,
-        reason=reason
+        reason=reason,
+        message=message
     )
 
     if update_dataset['status'] != 200:
         logger.error(''.join([
             f"{log_tag_const.MINIO_STORE_PROCESS} update dataset status \n",
             f"task_id: {task_id}\n",
-            f"bucket_name: {bucket_name}\n",
+            f"namespace: {namespace}\n",
             f"version_data_set_name: {version_data_set_name}\n",
             f"reason: {reason}"
         ]))
@@ -1019,7 +1025,7 @@ def _text_manipulate_retry_for_document(
         # 将文件下载到本地
         minio_store_client.download(
             minio_client,
-            bucket_name=task_info.get('bucket_name'),
+            bucket_name=task_info.get('namespace'),
             folder_prefix=folder_prefix,
             file_name=file_name
         )

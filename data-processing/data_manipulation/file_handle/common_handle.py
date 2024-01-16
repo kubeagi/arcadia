@@ -132,11 +132,14 @@ def text_manipulate(
             pool=conn_pool
         )
 
-        qa_data_dict = [['q', 'a']]
+        qa_data_dict = [['q', 'a', 'file_name', 'page_number', 'chunk_content']]
         for item in qa_list.get('data'):
             qa_data_dict.append([
                 item.get('question'),
-                item.get('answer')
+                item.get('answer'),
+                item.get('file_name'),
+                item.get('page_number'),
+                item.get('content')
             ])
 
         # Save the csv file.        

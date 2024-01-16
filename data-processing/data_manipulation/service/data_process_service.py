@@ -65,7 +65,7 @@ def add(
         "post_data_set_name": "dataset1",
         "post_data_set_version": "v2",
         "version_data_set_name": "dataset1-v2",
-        "bucket_name": "system-tce",
+        "namespace": "system-tce",
         "file_names": [
             {
                 "name": "数据处理文件_小T.pdf"
