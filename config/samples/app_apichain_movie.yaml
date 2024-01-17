@@ -1,0 +1,82 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: movie-bot
+  namespace: arcadia
+spec:
+  displayName: "搜索电影的Bot"
+  description: ""
+  prologue: "Hello, I am KubeAGI Bot🤖, Tell me something?"
+  nodes:
+    - name: Input
+      displayName: "用户输入"
+      description: "用户输入节点，必须"
+      ref:
+        kind: Input
+        name: Input
+      nextNodeName: ["prompt-node"]
+    - name: prompt-node
+      displayName: "prompt"
+      description: "设定prompt，template中可以使用{{xx}}来替换变量"
+      ref:
+        apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+        kind: Prompt
+        name: movie-bot
+      nextNodeName: ["chain-node"]
+    - name: llm-node
+      displayName: "zhipu大模型服务"
+      description: "设定大模型的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: LLM
+        name: app-shared-llm-service
+      nextNodeName: ["chain-node"]
+    - name: chain-node
+      displayName: "apichain"
+      description: "chain是langchain的核心概念，apiChain用于从特定的api文档中构建api请求，并将结果传递给LLM来回答问题"
+      ref:
+        apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+        kind: APIChain
+        name: movie-bot
+      nextNodeName: ["Output"]
+    - name: Output
+      displayName: "最终输出"
+      description: "最终输出节点，必须"
+      ref:
+        kind: Output
+        name: Output
+---
+apiVersion: prompt.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Prompt
+metadata:
+  name: movie-bot
+  namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
+spec:
+  displayName: "设定对话的prompt"
+  description: "设定对话的prompt"
+  userMessage: | 
+    请回答我的问题：{{.question}}
+---
+apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: APIChain
+metadata:
+  name: movie-bot
+  namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"LLM","group":"arcadia.kubeagi.k8s.com.cn","length":1},{"kind":"prompt","group":"prompt.arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"Output","length":1}]'
+spec:
+  displayName: "api chain"
+  description: "api chain"
+  memory:
+    conversionWindowSize: 2
+  model: chatglm_pro # notice: default model chatglm_lite or chatglm_turbo gets poor results in most cases, openai's gpt-3.5-turbo is also good enough
+  apiDoc: |
+    提供如下API接口：
+    https://api.wmdb.tv/api/v1/movie/search?q=英雄本色&limit=10&lang=Cn
+    其中，q为搜索项，必填。如果是中文，请使用urlencode对这个字段进行编码，英文则不需要
+    limit为搜索条数，可选，默认填10
+    lang为搜索语言，可选，默认填Cn

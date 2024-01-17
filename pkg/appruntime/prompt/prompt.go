@@ -53,10 +53,14 @@ func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string
 	if err != nil {
 		return args, fmt.Errorf("can't convert the prompt in cluster: %w", err)
 	}
-	template := prompts.NewChatPromptTemplate([]prompts.MessageFormatter{
-		prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}),
-		prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}),
-	})
+	ps := make([]prompts.MessageFormatter, 0)
+	if instance.Spec.SystemMessage != "" {
+		ps = append(ps, prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}))
+	}
+	if instance.Spec.UserMessage != "" {
+		ps = append(ps, prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}))
+	}
+	template := prompts.NewChatPromptTemplate(ps)
 	// todo format
 	p.ChatPromptTemplate = template
 	args["prompt"] = p

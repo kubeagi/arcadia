@@ -428,6 +428,32 @@ rules:
 - apiGroups:
   - chain.arcadia.kubeagi.k8s.com.cn
   resources:
+  - apichains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - apichains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - apichains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
   - llmchains
   verbs:
   - create

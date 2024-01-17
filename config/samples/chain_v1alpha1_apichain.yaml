@@ -1,0 +1,6 @@
+apiVersion: chain.kubeagi.k8s.com.cn/v1alpha1
+kind: APIChain
+metadata:
+  name: apichain-sample
+spec:
+  # TODO(user): Add fields here

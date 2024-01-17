@@ -151,4 +151,13 @@ resources:
   kind: RAG
   path: github.com/kubeagi/arcadia/api/evaluation/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
+  group: chain
+  kind: APIChain
+  path: github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1
+  version: v1alpha1
 version: "3"

@@ -83,12 +83,18 @@ func getChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	return options
 }
 
-func getMemory(llm llms.LLM, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory) langchaingoschema.Memory {
+func getMemory(llm llms.LLM, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
+	if inputKey == "" {
+		inputKey = "question"
+	}
+	if outputKey == "" {
+		outputKey = "text"
+	}
 	if config.MaxTokenLimit > 0 {
-		return memory.NewConversationTokenBuffer(llm, config.MaxTokenLimit, memory.WithInputKey("question"), memory.WithOutputKey("text"), memory.WithChatHistory(history))
+		return memory.NewConversationTokenBuffer(llm, config.MaxTokenLimit, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
 	}
 	if config.ConversionWindowSize > 0 {
-		return memory.NewConversationWindowBuffer(config.ConversionWindowSize, memory.WithInputKey("question"), memory.WithOutputKey("text"), memory.WithChatHistory(history))
+		return memory.NewConversationWindowBuffer(config.ConversionWindowSize, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
 	}
 	return memory.NewSimple()
 }

@@ -1,0 +1,166 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: apichains.chain.arcadia.kubeagi.k8s.com.cn
+spec:
+  group: chain.arcadia.kubeagi.k8s.com.cn
+  names:
+    kind: APIChain
+    listKind: APIChainList
+    plural: apichains
+    singular: apichain
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: APIChain is a chain that makes API calls and summarizes the responses
+          to answer a question.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: APIChainSpec defines the desired state of APIChain
+            properties:
+              apiDoc:
+                description: APIDoc is the api doc for this chain, "api_docs"
+                type: string
+              creator:
+                description: Creator defines datasource creator (AUTO-FILLED by webhook)
+                type: string
+              description:
+                description: Description defines datasource description
+                type: string
+              displayName:
+                description: DisplayName defines datasource display name
+                type: string
+              maxLength:
+                default: 1024
+                description: MaxLength is the maximum length of the generated text
+                  in a llm call.
+                maximum: 4096
+                minimum: 10
+                type: integer
+              maxTokens:
+                description: MaxTokens is the maximum number of tokens to generate
+                  to use in a llm call.
+                type: integer
+              memory:
+                description: for memory
+                properties:
+                  conversionWindowSize:
+                    default: 5
+                    description: ConversionWindowSize is the maximum number of conversation
+                      rounds in memory.Can only use MaxTokenLimit or ConversionWindowSize.
+                    maximum: 30
+                    minimum: 0
+                    type: integer
+                  maxTokenLimit:
+                    description: MaxTokenLimit is the maximum number of tokens to
+                      keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
+                    type: integer
+                type: object
+              minLength:
+                description: MinLength is the minimum length of the generated text
+                  in a llm call.
+                type: integer
+              model:
+                description: Model is the model to use in an llm call.like `gpt-3.5-turbo`
+                  or `chatglm_turbo` Usually this value is just empty
+                type: string
+              repetitionPenalty:
+                description: RepetitionPenalty is the repetition penalty for sampling
+                  in a llm call.
+                type: number
+              seed:
+                description: Seed is a seed for deterministic sampling in a llm call.
+                type: integer
+              stopWords:
+                description: StopWords is a list of words to stop on to use in a llm
+                  call.
+                items:
+                  type: string
+                type: array
+              temperature:
+                default: 0.7
+                description: Temperature is the temperature for sampling to use in
+                  a llm call, between 0 and 1.
+                maximum: 1
+                minimum: 0
+                type: number
+              topK:
+                description: TopK is the number of tokens to consider for top-k sampling
+                  in a llm call.
+                type: integer
+              topP:
+                description: TopP is the cumulative probability for top-p sampling
+                  in a llm call.
+                type: number
+            required:
+            - apiDoc
+            type: object
+          status:
+            description: APIChainStatus defines the observed state of APIChain
+            properties:
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastSuccessfulTime:
+                      description: LastSuccessfulTime is repository Last Successful
+                        Update Time
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                description: ObservedGeneration is the last observed generation.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
