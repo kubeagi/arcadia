@@ -238,7 +238,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 }
 
 func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.UpdateLLMInput) (*generated.Llm, error) {
-	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+	obj, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "LLM",
 		Name:      input.Name,

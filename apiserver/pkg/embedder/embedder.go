@@ -182,7 +182,7 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 }
 
 func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.UpdateEmbedderInput) (*generated.Embedder, error) {
-	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+	obj, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Embedder",
 		Name:      input.Name,

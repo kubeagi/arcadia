@@ -175,7 +175,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 }
 
 func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
-	obj, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+	obj, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Datasource",
 		Name:      input.Name,
@@ -306,7 +306,7 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.L
 }
 
 func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Datasource, error) {
-	u, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+	u, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Datasource",
 		Name:      name,

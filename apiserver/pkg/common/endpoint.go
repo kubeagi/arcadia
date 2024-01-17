@@ -53,7 +53,7 @@ func MakeEndpoint(ctx context.Context, c dynamic.Interface, owner generated.Type
 		// retrieve owner to metav1.Object
 		// object is not nil if `Get` succeeded
 		var ownerObject metav1.Object
-		resource, err := ResouceGet(ctx, c, owner, metav1.GetOptions{})
+		resource, err := ResourceGet(ctx, c, owner, metav1.GetOptions{})
 		if err == nil {
 			ownerObject = resource
 		}
@@ -116,7 +116,7 @@ func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.T
 		return err
 	}
 
-	_, err = ResouceGet(ctx, c, secret, metav1.GetOptions{})
+	_, err = ResourceGet(ctx, c, secret, metav1.GetOptions{})
 	if err != nil {
 		// Create is not found
 		if apierrors.IsNotFound(err) {
