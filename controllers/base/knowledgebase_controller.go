@@ -457,7 +457,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		loader = documentloaders.NewText(dataReader)
 	case ".csv":
 		if v == arcadiav1alpha1.ObjectTypeQA {
-			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName, "q", "a")
+			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName)
 			documents, err = loader.Load(ctx)
 			if err != nil {
 				return err

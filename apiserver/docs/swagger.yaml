@@ -182,12 +182,24 @@ definitions:
         description: Answer row
         example: 旷工最小计算单位为 0.5 天。
         type: string
-      file_path:
-        description: file fullpath
+      content:
+        description: related content in the source file
+        example: 旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。
+        type: string
+      file_name:
+        description: source file name, only file name, not full path
+        example: 员工考勤管理制度-2023.pdf
+        type: string
+      page_number:
+        description: page number in the source file
+        example: 1
+        type: integer
+      qa_file_path:
+        description: the qa file fullpath
         example: dataset/dataset-playground/v1/qa.csv
         type: string
-      line_number:
-        description: line number in the file
+      qa_line_number:
+        description: line number in the qa file
         example: 7
         type: integer
       question:

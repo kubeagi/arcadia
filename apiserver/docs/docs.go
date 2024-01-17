@@ -1173,13 +1173,28 @@ const docTemplate = `{
                     "type": "string",
                     "example": "旷工最小计算单位为 0.5 天。"
                 },
-                "file_path": {
-                    "description": "file fullpath",
+                "content": {
+                    "description": "related content in the source file",
+                    "type": "string",
+                    "example": "旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。"
+                },
+                "file_name": {
+                    "description": "source file name, only file name, not full path",
+                    "type": "string",
+                    "example": "员工考勤管理制度-2023.pdf"
+                },
+                "page_number": {
+                    "description": "page number in the source file",
+                    "type": "integer",
+                    "example": 1
+                },
+                "qa_file_path": {
+                    "description": "the qa file fullpath",
                     "type": "string",
                     "example": "dataset/dataset-playground/v1/qa.csv"
                 },
-                "line_number": {
-                    "description": "line number in the file",
+                "qa_line_number": {
+                    "description": "line number in the qa file",
                     "type": "integer",
                     "example": 7
                 },

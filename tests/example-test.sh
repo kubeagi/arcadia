@@ -322,7 +322,7 @@ if [[ -z $pgdata ]]; then
 fi
 
 info "7.6 update qa.csv to make sure it can be embedding"
-echo "newquestion,newanswer" >>pkg/documentloaders/testdata/qa.csv
+echo "newquestion,newanswer,,," >>pkg/documentloaders/testdata/qa.csv
 mc cp pkg/documentloaders/testdata/qa.csv arcadiatest/${bucket}/dataset/dataset-playground/v1/qa.csv
 mc tag set arcadiatest/${bucket}/dataset/dataset-playground/v1/qa.csv "object_type=QA"
 sleep 3
