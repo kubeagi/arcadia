@@ -77,6 +77,7 @@ type ComplexityRoot struct {
 		Knowledgebase        func(childComplexity int) int
 		Llm                  func(childComplexity int) int
 		MaxLength            func(childComplexity int) int
+		MaxTokens            func(childComplexity int) int
 		Metadata             func(childComplexity int) int
 		Model                func(childComplexity int) int
 		NumDocuments         func(childComplexity int) int
@@ -823,6 +824,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.MaxLength(childComplexity), true
+
+	case "Application.maxTokens":
+		if e.complexity.Application.MaxTokens == nil {
+			break
+		}
+
+		return e.complexity.Application.MaxTokens(childComplexity), true
 
 	case "Application.metadata":
 		if e.complexity.Application.Metadata == nil {
@@ -3924,6 +3932,11 @@ type Application {
     maxLength: Int
 
     """
+    maxTokens 最大输出token
+    """
+    maxTokens: Int
+
+    """
     conversionWindowSize 对话轮次
     """
     conversionWindowSize: Int
@@ -4150,6 +4163,11 @@ input UpdateApplicationConfigInput {
     maxLength 最大响应长度
     """
     maxLength: Int
+
+    """
+    maxTokens 最大输出token
+    """
+    maxTokens: Int
 
     """
     conversionWindowSize 对话轮次
@@ -7658,6 +7676,47 @@ func (ec *executionContext) fieldContext_Application_maxLength(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_maxTokens(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_maxTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_maxTokens(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Application_conversionWindowSize(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Application_conversionWindowSize(ctx, field)
 	if err != nil {
@@ -8753,6 +8812,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_temperature(ctx, field)
 			case "maxLength":
 				return ec.fieldContext_Application_maxLength(ctx, field)
+			case "maxTokens":
+				return ec.fieldContext_Application_maxTokens(ctx, field)
 			case "conversionWindowSize":
 				return ec.fieldContext_Application_conversionWindowSize(ctx, field)
 			case "knowledgebase":
@@ -8836,6 +8897,8 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_temperature(ctx, field)
 			case "maxLength":
 				return ec.fieldContext_Application_maxLength(ctx, field)
+			case "maxTokens":
+				return ec.fieldContext_Application_maxTokens(ctx, field)
 			case "conversionWindowSize":
 				return ec.fieldContext_Application_conversionWindowSize(ctx, field)
 			case "knowledgebase":
@@ -29967,7 +30030,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showNextGuid"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showNextGuid"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30037,6 +30100,15 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.MaxLength = data
+		case "maxTokens":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxTokens"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxTokens = data
 		case "conversionWindowSize":
 			var err error
 
@@ -31209,6 +31281,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_temperature(ctx, field, obj)
 		case "maxLength":
 			out.Values[i] = ec._Application_maxLength(ctx, field, obj)
+		case "maxTokens":
+			out.Values[i] = ec._Application_maxTokens(ctx, field, obj)
 		case "conversionWindowSize":
 			out.Values[i] = ec._Application_conversionWindowSize(ctx, field, obj)
 		case "knowledgebase":

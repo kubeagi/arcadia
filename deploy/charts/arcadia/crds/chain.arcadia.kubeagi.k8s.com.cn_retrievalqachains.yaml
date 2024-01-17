@@ -55,6 +55,7 @@ spec:
                 minimum: 10
                 type: integer
               maxTokens:
+                default: 1024
                 description: MaxTokens is the maximum number of tokens to generate
                   to use in a llm call.
                 type: integer

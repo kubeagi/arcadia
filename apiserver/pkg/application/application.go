@@ -48,6 +48,7 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	gApp.ScoreThreshold = pointer.Float64(0.3)
 	gApp.Temperature = pointer.Float64(0.7)
 	gApp.MaxLength = pointer.Int(1024)
+	gApp.MaxTokens = pointer.Int(1024)
 	gApp.ConversionWindowSize = pointer.Int(5)
 }
 
@@ -85,6 +86,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		gApp.Model = pointer.String(chainConfig.Model)
 		gApp.Temperature = pointer.Float64(chainConfig.Temperature)
 		gApp.MaxLength = pointer.Int(chainConfig.MaxLength)
+		gApp.MaxTokens = pointer.Int(chainConfig.MaxTokens)
 		gApp.ConversionWindowSize = pointer.Int(chainConfig.Memory.ConversionWindowSize)
 	}
 	for _, node := range app.Spec.Nodes {
@@ -367,6 +369,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					},
 					Model:       pointer.StringDeref(input.Model, ""),
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
+					MaxTokens:   pointer.IntDeref(input.MaxTokens, 0),
 					Temperature: pointer.Float64Deref(input.Temperature, 0),
 				},
 			},
@@ -374,6 +377,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
 			qachain.Spec.Model = pointer.StringDeref(input.Model, qachain.Spec.Model)
 			qachain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, qachain.Spec.MaxLength)
+			qachain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, qachain.Spec.MaxTokens)
 			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
 			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
 		}, qachain); err != nil {
@@ -401,6 +405,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					},
 					Model:       pointer.StringDeref(input.Model, ""),
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
+					MaxTokens:   pointer.IntDeref(input.MaxTokens, 0),
 					Temperature: pointer.Float64Deref(input.Temperature, 0),
 				},
 			},
@@ -408,6 +413,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
 			llmchain.Spec.Model = pointer.StringDeref(input.Model, llmchain.Spec.Model)
 			llmchain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, llmchain.Spec.MaxLength)
+			llmchain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, llmchain.Spec.MaxTokens)
 			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
 			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
 		}, llmchain); err != nil {

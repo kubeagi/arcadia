@@ -50,6 +50,8 @@ type Application struct {
 	Temperature *float64 `json:"temperature,omitempty"`
 	// maxLength 最大响应长度
 	MaxLength *int `json:"maxLength,omitempty"`
+	// maxTokens 最大输出token
+	MaxTokens *int `json:"maxTokens,omitempty"`
 	// conversionWindowSize 对话轮次
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
@@ -1198,6 +1200,8 @@ type UpdateApplicationConfigInput struct {
 	Temperature *float64 `json:"temperature,omitempty"`
 	// maxLength 最大响应长度
 	MaxLength *int `json:"maxLength,omitempty"`
+	// maxTokens 最大输出token
+	MaxTokens *int `json:"maxTokens,omitempty"`
 	// conversionWindowSize 对话轮次
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
