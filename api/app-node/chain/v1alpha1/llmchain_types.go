@@ -38,6 +38,7 @@ type CommonChainConfig struct {
 	// Usually this value is just empty
 	Model string `json:"model,omitempty"`
 	// MaxTokens is the maximum number of tokens to generate to use in a llm call.
+	// +kubebuilder:default=1024
 	MaxTokens int `json:"maxTokens,omitempty"`
 	// Temperature is the temperature for sampling to use in a llm call, between 0 and 1.
 	//+kubebuilder:validation:Minimum=0

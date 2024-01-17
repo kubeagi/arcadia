@@ -57,6 +57,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             llm
             temperature
             maxLength
+            maxTokens
             conversionWindowSize
             knowledgebase
             scoreThreshold
@@ -91,6 +92,7 @@ query getApplication($name: String!, $namespace: String!){
             llm
             temperature
             maxLength
+            maxTokens
             conversionWindowSize
             knowledgebase
             scoreThreshold

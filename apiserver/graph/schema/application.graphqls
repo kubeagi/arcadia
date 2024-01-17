@@ -50,6 +50,11 @@ type Application {
     maxLength: Int
 
     """
+    maxTokens 最大输出token
+    """
+    maxTokens: Int
+
+    """
     conversionWindowSize 对话轮次
     """
     conversionWindowSize: Int
@@ -276,6 +281,11 @@ input UpdateApplicationConfigInput {
     maxLength 最大响应长度
     """
     maxLength: Int
+
+    """
+    maxTokens 最大输出token
+    """
+    maxTokens: Int
 
     """
     conversionWindowSize 对话轮次
