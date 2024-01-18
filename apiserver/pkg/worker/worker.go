@@ -419,7 +419,7 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 }
 
 func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Worker, error) {
-	u, err := common.ResouceGet(ctx, c, generated.TypedObjectReferenceInput{
+	u, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Worker",
 		Name:      name,

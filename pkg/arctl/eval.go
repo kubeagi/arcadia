@@ -127,7 +127,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 
 			// read files
 			app := &basev1alpha1.Application{}
-			obj, err := common.ResouceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
+			obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
 				APIGroup:  &common.ArcadiaAPIGroup,
 				Kind:      "Application",
 				Namespace: namespace,

@@ -51,7 +51,7 @@ var (
 // Resource operations
 
 // ResourceGet provides a common way to get a resource
-func ResouceGet(ctx context.Context, c dynamic.Interface, resource generated.TypedObjectReferenceInput, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
+func ResourceGet(ctx context.Context, c dynamic.Interface, resource generated.TypedObjectReferenceInput, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
 	if resource.Namespace == nil {
 		resource.Namespace = &DefaultNamespace
 	}
