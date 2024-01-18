@@ -135,7 +135,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
-			lastModifiedTime = obj.LastModified
+			lastModifiedTime: = obj.LastModified
 			tf := generated.F{
 				Path: strings.TrimPrefix(obj.Key, prefix),
 				Time: &lastModifiedTime,
