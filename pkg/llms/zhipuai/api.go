@@ -32,9 +32,11 @@ import (
 )
 
 const (
-	ZhipuaiModelAPIURL         = "https://open.bigmodel.cn/api/paas/v3/model-api"
-	ZhipuaiModelDefaultTimeout = 30 * time.Second
-	RetryLimit                 = 3
+	ZhipuaiModelAPIURL               = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+	ZhipuaiModelAPIAsyncURL          = "https://open.bigmodel.cn/api/paas/v4/async/chat/completions"
+	ZhipuaiModelAPIAsyncGetResultURL = "https://https://open.bigmodel.cn/api/paas/v4/async-result/"
+	ZhipuaiModelDefaultTimeout       = 300 * time.Second
+	RetryLimit                       = 3
 )
 
 type Method string
@@ -49,7 +51,7 @@ const (
 )
 
 func BuildAPIURL(model string, method Method) string {
-	return fmt.Sprintf("%s/%s/%s", ZhipuaiModelAPIURL, model, method)
+	return fmt.Sprintf("%s/%s/%s", ZhipuaiModelAPISSEURL, model, method)
 }
 
 var _ llms.LLM = (*ZhiPuAI)(nil)

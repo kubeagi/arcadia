@@ -69,7 +69,7 @@ func main() {
 func sampleInvoke(apiKey string) (*zhipuai.Response, error) {
 	client := zhipuai.NewZhiPuAI(apiKey)
 	params := zhipuai.DefaultModelParams()
-	params.Prompt = []zhipuai.Prompt{
+	params.Messages = []zhipuai.Message{
 		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
 	}
 	return client.Invoke(params)
@@ -78,7 +78,7 @@ func sampleInvoke(apiKey string) (*zhipuai.Response, error) {
 func sampleInvokeAsync(apiKey string) (*zhipuai.Response, error) {
 	client := zhipuai.NewZhiPuAI(apiKey)
 	params := zhipuai.DefaultModelParams()
-	params.Prompt = []zhipuai.Prompt{
+	params.Messages = []zhipuai.Message{
 		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
 	}
 	return client.AsyncInvoke(params)
@@ -94,7 +94,7 @@ func getInvokeAsyncResult(apiKey string, taskID string) (*zhipuai.Response, erro
 func sampleSSEInvoke(apiKey string) error {
 	client := zhipuai.NewZhiPuAI(apiKey)
 	params := zhipuai.DefaultModelParams()
-	params.Prompt = []zhipuai.Prompt{
+	params.Messages = []zhipuai.Message{
 		{Role: zhipuai.User, Content: "As a kubernetes expert,please answer the following questions."},
 	}
 	// you can define a customized `handler` on `Event`
