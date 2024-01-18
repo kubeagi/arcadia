@@ -42,9 +42,35 @@ var (
 	_ langchainllm.LLM = (*ZhiPuAILLM)(nil)
 )
 
+type options struct {
+	retryTimes int
+}
+
+type Option func(*options)
+
+func WithRetryTimes(retryTimes int) Option {
+	return func(o *options) {
+		o.retryTimes = retryTimes
+	}
+}
+
 type ZhiPuAILLM struct {
-	ZhiPuAI
-	RetryTimes int
+	c       *ZhiPuAI
+	options *options
+}
+
+func NewZhiPuAILLM(apiKey string, opts ...Option) *ZhiPuAILLM {
+	z := &ZhiPuAILLM{
+		c: NewZhiPuAI(apiKey),
+		options: &options{
+			// 2 times by default
+			retryTimes: 2,
+		},
+	}
+	for _, opt := range opts {
+		opt(z.options)
+	}
+	return z
 }
 
 func (z *ZhiPuAILLM) GetNumTokens(text string) int {
@@ -83,12 +109,10 @@ func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...
 	}
 	for _, prompt := range prompts {
 		params.Prompt = append(params.Prompt, Prompt{Role: User, Content: prompt})
-		klog.Infof("get prompts: %#v\n", params.Prompt)
-		client := NewZhiPuAI(z.apiKey)
 		needStream := opts.StreamingFunc != nil
 		if needStream {
 			res := bytes.NewBuffer(nil)
-			err := client.SSEInvoke(params, func(event *sse.Event) {
+			err := z.c.SSEInvoke(params, func(event *sse.Event) {
 				if string(event.Event) == "finish" {
 					return
 				}
@@ -109,7 +133,7 @@ func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...
 		i := 0
 		for {
 			i++
-			resp, err = client.Invoke(params)
+			resp, err = z.c.Invoke(params)
 			if err != nil {
 				return nil, err
 			}
@@ -117,10 +141,10 @@ func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...
 				return nil, ErrEmptyResponse
 			}
 			if resp.Data == nil {
-				klog.Errorf("zhipullm get empty response: msg:%s code:%d\n", resp.Msg, resp.Code)
-				if i <= z.RetryTimes && (resp.Code == CodeConcurrencyHigh || resp.Code == CodefrequencyHigh || resp.Code == CodeTimesHigh) {
+				klog.Errorf("empty response: msg:%s code:%d\n", resp.Msg, resp.Code)
+				if i <= z.options.retryTimes {
 					r := rand.Intn(5)
-					klog.Infof("zhipullm triggers retry[%d], sleep %d seconds, then recall...\n", i, r)
+					klog.Infof("retry[%d], sleep %d seconds, then recall...\n", i, r)
 					time.Sleep(time.Duration(r) * time.Second)
 					continue
 				}

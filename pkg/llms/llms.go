@@ -39,6 +39,12 @@ var (
 	ZhiPuAIStd   string = "chatglm_std"
 	ZhiPuAIPro   string = "chatglm_pro"
 	ZhiPuAITurbo string = "chatglm_turbo"
+	// ChatGLM3
+	ZhiPuAIGLM3Turbo string = "glm-3-turbo"
+	// ChatGLM4
+	ZhiPuAIGLM4 string = "glm-4"
+	// Character LLM
+	ZhiPuAICharGLM3 string = "charglm-3"
 )
 var ZhiPuAIModels = []string{ZhiPuAILite, ZhiPuAIStd, ZhiPuAIPro, ZhiPuAITurbo}
 
