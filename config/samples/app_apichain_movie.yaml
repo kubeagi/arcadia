@@ -73,7 +73,7 @@ spec:
   description: "api chain"
   memory:
     conversionWindowSize: 2
-  model: chatglm_pro # notice: default model chatglm_lite or chatglm_turbo gets poor results in most cases, openai's gpt-3.5-turbo is also good enough
+  model: glm-4 # notice: default model chatglm_lite or chatglm_turbo gets poor results in most cases, openai's gpt-3.5-turbo is also good enough
   apiDoc: |
     提供如下API接口：
     https://api.wmdb.tv/api/v1/movie/search?q=英雄本色&limit=10&lang=Cn
