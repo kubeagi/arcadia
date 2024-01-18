@@ -532,7 +532,19 @@ func (podWorker *PodWorker) AfterStart(ctx context.Context) error {
 	podStatus := status.(*corev1.PodStatus)
 	switch podStatus.Phase {
 	case corev1.PodRunning, corev1.PodSucceeded:
-		podWorker.Worker().Status.SetConditions(podWorker.Worker().ReadyCondition())
+		var condition arcadiav1alpha1.Condition
+		for _, container := range podStatus.ContainerStatuses {
+			// When pod phase is running or succeeded but container state is waiting,we use ErrorCondition
+			if container.State.Waiting != nil || container.State.Terminated != nil {
+				msg := fmt.Sprintf("Reason:%s Message:%s", container.State.Waiting.Reason, container.State.Waiting.Message)
+				condition = podWorker.Worker().ErrorCondition(msg)
+				break
+			}
+			if container.State.Running != nil {
+				condition = podWorker.Worker().ReadyCondition()
+			}
+		}
+		podWorker.Worker().Status.SetConditions(condition)
 	case corev1.PodPending:
 		podWorker.Worker().Status.SetConditions(podWorker.Worker().PendingCondition())
 	case corev1.PodUnknown:
@@ -542,7 +554,6 @@ func (podWorker *PodWorker) AfterStart(ctx context.Context) error {
 		} else {
 			podWorker.Worker().Status.SetConditions(podWorker.Worker().PendingCondition())
 		}
-
 	case corev1.PodFailed:
 		podWorker.Worker().Status.SetConditions(podWorker.Worker().ErrorCondition("Pod failed"))
 	}
