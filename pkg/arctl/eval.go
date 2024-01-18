@@ -28,14 +28,17 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evalv1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	downloadutil "github.com/kubeagi/arcadia/pkg/arctl/download"
 	"github.com/kubeagi/arcadia/pkg/evaluation"
 )
 
@@ -53,7 +56,49 @@ func NewEvalCmd(home *string, namespace *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(EvalGenTestDataset(home, namespace, &appName))
+	cmd.AddCommand(NewRAGDownloadCmd(namespace))
+	return cmd
+}
 
+func NewRAGDownloadCmd(namespace *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "download",
+		Short: "download all test files in the RAG selected dataset",
+		Long: `Downloading files locally from minio.
+Example:
+
+arctl -narcadia eval --rag=<rag-name>
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			kubeClient, err := client.GetClient(nil)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to connect cluster error %s\n", err)
+				os.Exit(1)
+			}
+			ragName, _ := cmd.Flags().GetString("rag")
+			rag := evalv1alpha1.RAG{}
+			gv := evalv1alpha1.GroupVersion.String()
+			u, err := common.ResouceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
+				APIGroup:  &gv,
+				Kind:      "RAG",
+				Name:      ragName,
+				Namespace: namespace,
+			}, metav1.GetOptions{})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to get rag %s error %s\n", ragName, err)
+				os.Exit(1)
+			}
+
+			if err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to convert rag %s, error %s\n", ragName, err)
+				os.Exit(1)
+			}
+
+			download(cmd.Context(), &rag, kubeClient)
+		},
+	}
+	cmd.Flags().String("rag", "", "rag name")
+	_ = cmd.MarkFlagRequired("rag")
 	return cmd
 }
 
@@ -87,7 +132,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 				Kind:      "Application",
 				Namespace: namespace,
 				Name:      *appName,
-			}, v1.GetOptions{})
+			}, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -176,4 +221,98 @@ func GenDatasetOnSingleFile(ctx context.Context, kubeClient dynamic.Interface, a
 	}
 
 	return nil
+}
+
+func parseOptions(
+	ctx context.Context,
+	kubeClient dynamic.Interface,
+	datasourceName, datasourceNamespace string) []downloadutil.DownloadOptionFunc {
+	obj, err := common.ResouceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "Datasource",
+		Namespace: &datasourceNamespace,
+		Name:      datasourceName,
+	}, metav1.GetOptions{})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get datasource %s/%s error %s\n", datasourceNamespace, datasourceName, err)
+		return nil
+	}
+	datasource := basev1alpha1.Datasource{}
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &datasource); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to convert obj to datasource error %s\n", err)
+		return nil
+	}
+	if datasource.Spec.OSS == nil {
+		fmt.Fprintf(os.Stderr, "[Warning] the datasource %s/%s is not an object store.\n", datasourceNamespace, datasourceName)
+		return nil
+	}
+
+	options := make([]downloadutil.DownloadOptionFunc, 0)
+	options = append(options, downloadutil.WithEndpoint(datasource.Spec.Endpoint.URL),
+		downloadutil.WithSecure(datasource.Spec.Endpoint.Insecure), downloadutil.WithBucket(datasource.Spec.OSS.Bucket))
+
+	if as := datasource.Spec.Endpoint.AuthSecret; as != nil {
+		secret := v1.Secret{}
+		ns := datasourceNamespace
+		if as.Namespace != nil {
+			ns = *as.Namespace
+		}
+		apiGroup := "v1"
+
+		obj, err := common.ResouceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
+			APIGroup:  &apiGroup,
+			Kind:      "Secret",
+			Namespace: &ns,
+			Name:      as.Name,
+		}, metav1.GetOptions{})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to get auth secret %s error %s\n", as.Name, err)
+			return nil
+		}
+		if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &secret); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to convert obj to secret error %s\n", err)
+			return nil
+		}
+		pwd := secret.Data["rootPassword"]
+		user := secret.Data["rootUser"]
+		options = append(options, downloadutil.WithAccessKey(string(user)), downloadutil.WithSecretKey(string(pwd)))
+	}
+
+	return options
+}
+
+func download(ctx context.Context, rag *evalv1alpha1.RAG, kubeClient dynamic.Interface) {
+	curNamespace := rag.Namespace
+	clientCache := make(map[string]*downloadutil.Download)
+	skipSource := make(map[string]struct{})
+	for _, source := range rag.Spec.Datasets {
+		if source.Source.Kind != "Datasource" {
+			continue
+		}
+		ns := curNamespace
+		if source.Source.Namespace != nil {
+			ns = *source.Source.Namespace
+		}
+
+		key := fmt.Sprintf("%s/%s", ns, source.Source.Name)
+		if _, ok := skipSource[key]; ok {
+			continue
+		}
+		downloader, ok := clientCache[key]
+		if !ok {
+			options := parseOptions(ctx, kubeClient, source.Source.Name, ns)
+			if len(options) == 0 {
+				skipSource[key] = struct{}{}
+				continue
+			}
+			downloader = downloadutil.NewDownloader(options...)
+		}
+
+		for _, f := range source.Files {
+			if err := downloader.Download(ctx, downloadutil.WithSrcFile(f), downloadutil.WithDstFile(f)); err != nil {
+				fmt.Fprintf(os.Stderr, "datasource %s failed to download file error %s\n", key, err)
+			}
+		}
+		clientCache[key] = downloader
+	}
 }
