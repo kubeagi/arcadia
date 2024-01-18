@@ -78,7 +78,7 @@ arctl -narcadia eval --rag=<rag-name>
 			ragName, _ := cmd.Flags().GetString("rag")
 			rag := evalv1alpha1.RAG{}
 			gv := evalv1alpha1.GroupVersion.String()
-			u, err := common.ResouceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
+			u, err := common.ResourceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
 				APIGroup:  &gv,
 				Kind:      "RAG",
 				Name:      ragName,
@@ -227,7 +227,7 @@ func parseOptions(
 	ctx context.Context,
 	kubeClient dynamic.Interface,
 	datasourceName, datasourceNamespace string) []downloadutil.DownloadOptionFunc {
-	obj, err := common.ResouceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
+	obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Datasource",
 		Namespace: &datasourceNamespace,
@@ -259,7 +259,7 @@ func parseOptions(
 		}
 		apiGroup := "v1"
 
-		obj, err := common.ResouceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
+		obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
 			APIGroup:  &apiGroup,
 			Kind:      "Secret",
 			Namespace: &ns,
