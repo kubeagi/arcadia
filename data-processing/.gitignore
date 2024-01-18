@@ -1,9 +1,0 @@
-# python
-__pycache__
-.ipynb_checkpoints
-
-data_manipulation/mock_data
-
-data_manipulation/log
-
-data_manipulation/file_handle/temp_file
