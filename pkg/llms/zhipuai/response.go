@@ -77,12 +77,16 @@ func (response *Response) String() string {
 }
 
 type Data struct {
-	RequestID  string `json:"request_id,omitempty"`
-	TaskID     string `json:"task_id,omitempty"`
-	TaskStatus string `json:"task_status,omitempty"`
-	Usage      Usage  `json:"usage,omitempty"`
-
+	// for async
+	RequestID string `json:"request_id,omitempty"`
+	TaskID    string `json:"id,omitempty"`
+	// The request creation time, a Unix timestamp in seconds.
+	Created int64    `json:"created"`
+	Model   string   `json:"model"`
 	Choices []Choice `json:"choices,omitempty"`
+	Usage   Usage    `json:"usage,omitempty"`
+	// for async
+	TaskStatus string `json:"task_status,omitempty"`
 }
 
 type EmbeddingData struct {
@@ -100,12 +104,19 @@ type EmbeddingText struct {
 }
 
 type Usage struct {
-	TotalTokens int `json:"total_tokens,omitempty"`
+	TotalTokens      int `json:"total_tokens,omitempty"`
+	PromptTokens     int `json:"prompt_tokens,omitempty"`
+	CompletionTokens int `json:"completion_tokens,omitempty"`
 }
 
 type Choice struct {
-	Content string `json:"content"`
-	Role    string `json:"role"`
+	Index int `json:"index"`
+	// The reason for the termination of the model's reasoning.
+	// `stop` represents the natural end of reasoning or a trigger stop word.
+	// `tool_calls` represents the model hit function.
+	// `length` represents the maximum length of tokens reached.
+	FinishReason string  `json:"finish_reason"`
+	Message      Message `json:"message"`
 }
 
 const (
