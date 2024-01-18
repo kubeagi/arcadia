@@ -19,6 +19,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -341,7 +342,11 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 				}
 			}
 		case Update:
-			// Skip update when found
+			embedder1 := podWorker.Worker().BuildEmbedder()
+			if !reflect.DeepEqual(embedder.Spec, embedder1.Spec) {
+				embedder.Spec = embedder1.Spec
+				return podWorker.c.Update(ctx, embedder)
+			}
 		case Panic:
 			return err
 		}
@@ -364,7 +369,11 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 				}
 			}
 		case Update:
-			// Skip update when found
+			llm1 := podWorker.Worker().BuildLLM()
+			if !reflect.DeepEqual(llm.Spec, llm1.Spec) {
+				llm.Spec = llm1.Spec
+				return podWorker.c.Update(ctx, llm)
+			}
 		case Panic:
 			return err
 		}
