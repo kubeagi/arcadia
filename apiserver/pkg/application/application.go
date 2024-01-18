@@ -76,8 +76,10 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 			IsPublic:          pointer.Bool(app.Spec.IsPublic),
 			Status:            pointer.String(status),
 		},
-		Prologue:     pointer.String(app.Spec.Prologue),
-		ShowNextGUID: pointer.Bool(false),
+		Prologue:          pointer.String(app.Spec.Prologue),
+		ShowNextGuide:     pointer.Bool(app.Spec.ShowNextGuide),
+		ShowRespInfo:      pointer.Bool(app.Spec.ShowRespInfo),
+		ShowRetrievalInfo: pointer.Bool(app.Spec.ShowRetrievalInfo),
 	}
 	if prompt != nil {
 		gApp.UserPrompt = pointer.String(prompt.Spec.UserMessage)
@@ -468,6 +470,9 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), input.Namespace, input.Name, func() {
 		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm)
 		app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
+		app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
+		app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
+		app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
 	}, app); err != nil {
 		return nil, err
 	}

@@ -83,7 +83,9 @@ type ComplexityRoot struct {
 		NumDocuments         func(childComplexity int) int
 		Prologue             func(childComplexity int) int
 		ScoreThreshold       func(childComplexity int) int
-		ShowNextGUID         func(childComplexity int) int
+		ShowNextGuide        func(childComplexity int) int
+		ShowRespInfo         func(childComplexity int) int
+		ShowRetrievalInfo    func(childComplexity int) int
 		Temperature          func(childComplexity int) int
 		UserPrompt           func(childComplexity int) int
 	}
@@ -867,12 +869,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.ScoreThreshold(childComplexity), true
 
-	case "Application.showNextGuid":
-		if e.complexity.Application.ShowNextGUID == nil {
+	case "Application.showNextGuide":
+		if e.complexity.Application.ShowNextGuide == nil {
 			break
 		}
 
-		return e.complexity.Application.ShowNextGUID(childComplexity), true
+		return e.complexity.Application.ShowNextGuide(childComplexity), true
+
+	case "Application.showRespInfo":
+		if e.complexity.Application.ShowRespInfo == nil {
+			break
+		}
+
+		return e.complexity.Application.ShowRespInfo(childComplexity), true
+
+	case "Application.showRetrievalInfo":
+		if e.complexity.Application.ShowRetrievalInfo == nil {
+			break
+		}
+
+		return e.complexity.Application.ShowRetrievalInfo(childComplexity), true
 
 	case "Application.temperature":
 		if e.complexity.Application.Temperature == nil {
@@ -3966,9 +3982,17 @@ type Application {
     userPrompt: String
 
     """
-    showNextGuide 下一步引导，是否显示下一步引导
+    showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
-    showNextGuid: Boolean
+    showRespInfo: Boolean
+    """
+    showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+    """
+    showRetrievalInfo: Boolean
+    """
+    showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+    """
+    showNextGuide: Boolean
 }
 
 """
@@ -4197,11 +4221,18 @@ input UpdateApplicationConfigInput {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
-
     """
-    showNextGuide 下一步引导，是否显示下一步引导
+    showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
-    showNextGuid: Boolean
+    showRespInfo: Boolean
+    """
+    showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+    """
+    showRetrievalInfo: Boolean
+    """
+    showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+    """
+    showNextGuide: Boolean
 }
 `, BuiltIn: false},
 	{Name: "../schema/dataprocessing.graphqls", Input: `# 数据处理 Mutation
@@ -7963,8 +7994,8 @@ func (ec *executionContext) fieldContext_Application_userPrompt(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Application_showNextGuid(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Application_showNextGuid(ctx, field)
+func (ec *executionContext) _Application_showRespInfo(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_showRespInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7977,7 +8008,7 @@ func (ec *executionContext) _Application_showNextGuid(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ShowNextGUID, nil
+		return obj.ShowRespInfo, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7991,7 +8022,89 @@ func (ec *executionContext) _Application_showNextGuid(ctx context.Context, field
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Application_showNextGuid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Application_showRespInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_showRetrievalInfo(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_showRetrievalInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShowRetrievalInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_showRetrievalInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_showNextGuide(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_showNextGuide(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShowNextGuide, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_showNextGuide(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Application",
 		Field:      field,
@@ -8826,8 +8939,12 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_docNullReturn(ctx, field)
 			case "userPrompt":
 				return ec.fieldContext_Application_userPrompt(ctx, field)
-			case "showNextGuid":
-				return ec.fieldContext_Application_showNextGuid(ctx, field)
+			case "showRespInfo":
+				return ec.fieldContext_Application_showRespInfo(ctx, field)
+			case "showRetrievalInfo":
+				return ec.fieldContext_Application_showRetrievalInfo(ctx, field)
+			case "showNextGuide":
+				return ec.fieldContext_Application_showNextGuide(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -8911,8 +9028,12 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_docNullReturn(ctx, field)
 			case "userPrompt":
 				return ec.fieldContext_Application_userPrompt(ctx, field)
-			case "showNextGuid":
-				return ec.fieldContext_Application_showNextGuid(ctx, field)
+			case "showRespInfo":
+				return ec.fieldContext_Application_showRespInfo(ctx, field)
+			case "showRetrievalInfo":
+				return ec.fieldContext_Application_showRetrievalInfo(ctx, field)
+			case "showNextGuide":
+				return ec.fieldContext_Application_showNextGuide(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -30030,7 +30151,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showNextGuid"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30163,15 +30284,33 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.UserPrompt = data
-		case "showNextGuid":
+		case "showRespInfo":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showNextGuid"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showRespInfo"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ShowNextGUID = data
+			it.ShowRespInfo = data
+		case "showRetrievalInfo":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showRetrievalInfo"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShowRetrievalInfo = data
+		case "showNextGuide":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showNextGuide"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShowNextGuide = data
 		}
 	}
 
@@ -31295,8 +31434,12 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_docNullReturn(ctx, field, obj)
 		case "userPrompt":
 			out.Values[i] = ec._Application_userPrompt(ctx, field, obj)
-		case "showNextGuid":
-			out.Values[i] = ec._Application_showNextGuid(ctx, field, obj)
+		case "showRespInfo":
+			out.Values[i] = ec._Application_showRespInfo(ctx, field, obj)
+		case "showRetrievalInfo":
+			out.Values[i] = ec._Application_showRetrievalInfo(ctx, field, obj)
+		case "showNextGuide":
+			out.Values[i] = ec._Application_showNextGuide(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

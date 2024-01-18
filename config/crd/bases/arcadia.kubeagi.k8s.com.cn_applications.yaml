@@ -92,6 +92,12 @@ spec:
               prologue:
                 description: prologue, show in the chat top
                 type: string
+              showNextGuide:
+                type: boolean
+              showRespInfo:
+                type: boolean
+              showRetrievalInfo:
+                type: boolean
             required:
             - nodes
             type: object

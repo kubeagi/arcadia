@@ -33,7 +33,7 @@ import (
 
 const (
 	ZhipuaiModelAPIURL         = "https://open.bigmodel.cn/api/paas/v3/model-api"
-	ZhipuaiModelDefaultTimeout = 30 * time.Second
+	ZhipuaiModelDefaultTimeout = 300 * time.Second
 	RetryLimit                 = 3
 )
 
