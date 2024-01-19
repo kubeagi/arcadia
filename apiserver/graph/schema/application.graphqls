@@ -84,9 +84,17 @@ type Application {
     userPrompt: String
 
     """
-    showNextGuide 下一步引导，是否显示下一步引导
+    showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
-    showNextGuid: Boolean
+    showRespInfo: Boolean
+    """
+    showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+    """
+    showRetrievalInfo: Boolean
+    """
+    showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+    """
+    showNextGuide: Boolean
 }
 
 """
@@ -315,9 +323,16 @@ input UpdateApplicationConfigInput {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
-
     """
-    showNextGuide 下一步引导，是否显示下一步引导
+    showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
-    showNextGuid: Boolean
+    showRespInfo: Boolean
+    """
+    showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+    """
+    showRetrievalInfo: Boolean
+    """
+    showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+    """
+    showNextGuide: Boolean
 }

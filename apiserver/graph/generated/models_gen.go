@@ -64,8 +64,12 @@ type Application struct {
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
 	// userPrompt 用户级别的 Prompt
 	UserPrompt *string `json:"userPrompt,omitempty"`
-	// showNextGuide 下一步引导，是否显示下一步引导
-	ShowNextGUID *bool `json:"showNextGuid,omitempty"`
+	// showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
+	ShowRespInfo *bool `json:"showRespInfo,omitempty"`
+	// showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+	ShowRetrievalInfo *bool `json:"showRetrievalInfo,omitempty"`
+	// showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
 }
 
 // Application
@@ -1214,8 +1218,12 @@ type UpdateApplicationConfigInput struct {
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
 	// userPrompt 用户级别的 Prompt
 	UserPrompt *string `json:"userPrompt,omitempty"`
-	// showNextGuide 下一步引导，是否显示下一步引导
-	ShowNextGUID *bool `json:"showNextGuid,omitempty"`
+	// showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
+	ShowRespInfo *bool `json:"showRespInfo,omitempty"`
+	// showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+	ShowRetrievalInfo *bool `json:"showRetrievalInfo,omitempty"`
+	// showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
 }
 
 type UpdateApplicationMetadataInput struct {

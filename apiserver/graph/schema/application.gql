@@ -64,7 +64,9 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             numDocuments
             docNullReturn
             userPrompt
-            showNextGuid
+            showRespInfo
+            showRetrievalInfo
+            showNextGuide
         }
     }
 }
@@ -99,7 +101,9 @@ query getApplication($name: String!, $namespace: String!){
             numDocuments
             docNullReturn
             userPrompt
-            showNextGuid
+            showRespInfo
+            showRetrievalInfo
+            showNextGuide
         }
     }
 }
@@ -121,7 +125,11 @@ query listApplications($input: ListCommonInput!) {
                     displayName
                     description
                     icon
+                    creator
+                    creationTimestamp
+                    updateTimestamp
                     isPublic
+                    status
                 }
             }
         }

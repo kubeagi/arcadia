@@ -34,12 +34,20 @@ type ApplicationSpec struct {
 	// Icon base64 image icon
 	Icon string `json:"icon,omitempty"`
 	// IsPublic Set whether the current application provides services to the public
-	IsPublic bool `json:"isPublic,omitempty"`
+	IsPublic  bool `json:"isPublic,omitempty"`
+	WebConfig `json:",inline"`
 	// prologue, show in the chat top
 	Prologue string `json:"prologue,omitempty"`
 	// Nodes
 	// +kubebuilder:validation:Required
 	Nodes []Node `json:"nodes"`
+}
+
+// WebConfig is the configuration for web interface
+type WebConfig struct {
+	ShowRespInfo      bool `json:"showRespInfo,omitempty"`
+	ShowRetrievalInfo bool `json:"showRetrievalInfo,omitempty"`
+	ShowNextGuide     bool `json:"showNextGuide,omitempty"`
 }
 
 type Node struct {

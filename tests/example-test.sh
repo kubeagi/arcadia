@@ -397,13 +397,11 @@ curl -XPOST http://127.0.0.1:8081/chat/messages --data "$data"
 #	exit 1
 #fi
 
-# note: The test is temporarily banned, because of the results returned by zhipuai are unstable.
-#info "8.5 apichain test"
-#kubectl apply -f config/samples/app_apichain_movie.yaml
-#waitCRDStatusReady "Application" "arcadia" "movie-bot"
-#sleep 3
-#getRespInAppChat "weather-bot" "arcadia" "Furious 7 的主演有谁？" "" "false"
-#echo $resp
+info "8.5 apichain test"
+kubectl apply -f config/samples/app_apichain_movie.yaml
+waitCRDStatusReady "Application" "arcadia" "movie-bot"
+sleep 3
+curl -s -XPOST http://127.0.0.1:8081/chat --data '{"query":"年会不能停的主演有谁？","response_mode":"blocking","conversation_id":"","app_name":"movie-bot", "app_namespace":"arcadia"}'
 #if [[ $resp != *"温度"* ]]; then
 #	echo "Because conversationWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 #	exit 1
