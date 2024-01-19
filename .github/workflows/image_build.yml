@@ -78,8 +78,8 @@ jobs:
       - name: Build data processing image
         uses: docker/build-push-action@v5
         with:
-          context: ./data-processing
-          file: ./data-processing/Dockerfile
+          context: ./pypi
+          file: ./pypi/data-processing/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
             kubeagi/data-processing:latest
