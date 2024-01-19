@@ -3,6 +3,8 @@ name: Build KubeAGI Data Processing images
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'pypi/data-processing'
   workflow_dispatch:
 
 jobs:

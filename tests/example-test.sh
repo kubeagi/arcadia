@@ -365,12 +365,26 @@ kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
+info "8.2.1.2 When no related doc is found, return retriever.spec.docNullReturn info"
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "false"
+expected=$(kubectl get knowledgebaseretrievers -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
+if [[ $ai_data != $expected ]]; then
+	echo "when no related doc is found, return retriever.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	exit 1
+fi
 
 info "8.2.2 QA app using knowledgebase base on pgvector"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "旷工最小计算单位为多少天？" "" "true"
+info "8.2.2.2 When no related doc is found, return retriever.spec.docNullReturn info"
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "false"
+expected=$(kubectl get knowledgebaseretrievers -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
+if [[ $ai_data != $expected ]]; then
+	echo "when no related doc is found, return retriever.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	exit 1
+fi
 
 info "8.3 conversation chat app"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
