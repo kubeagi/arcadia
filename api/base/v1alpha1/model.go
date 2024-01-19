@@ -19,6 +19,9 @@ package v1alpha1
 import (
 	"fmt"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -57,4 +60,41 @@ func (model Model) FullPath() string {
 // ObjectPath is the path where model stored at in a bucket
 func (model Model) ObjectPath() string {
 	return fmt.Sprintf("model/%s/", model.Name)
+}
+
+func (model Model) ReadyCondition() Condition {
+	currCon := model.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionTrue && currCon.Reason == ReasonAvailable {
+		return currCon
+	}
+	return Condition{
+		Type:               TypeReady,
+		Status:             corev1.ConditionTrue,
+		Reason:             ReasonAvailable,
+		Message:            "Check Success",
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: metav1.Now(),
+	}
+}
+
+func (model Model) ErrorCondition(msg string) Condition {
+	currCon := model.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionFalse && currCon.Reason == ReasonUnavailable && currCon.Message == msg {
+		return currCon
+	}
+	// keep original LastSuccessfulTime if have
+	lastSuccessfulTime := metav1.Now()
+	if currCon.LastSuccessfulTime.IsZero() {
+		lastSuccessfulTime = currCon.LastSuccessfulTime
+	}
+	return Condition{
+		Type:               TypeReady,
+		Status:             corev1.ConditionFalse,
+		Reason:             ReasonUnavailable,
+		Message:            msg,
+		LastSuccessfulTime: lastSuccessfulTime,
+		LastTransitionTime: metav1.Now(),
+	}
 }

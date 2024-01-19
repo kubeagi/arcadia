@@ -46,7 +46,7 @@ var (
 	// Character LLM
 	ZhiPuAICharGLM3 string = "charglm-3"
 )
-var ZhiPuAIModels = []string{ZhiPuAILite, ZhiPuAIStd, ZhiPuAIPro, ZhiPuAITurbo}
+var ZhiPuAIModels = []string{ZhiPuAILite, ZhiPuAIStd, ZhiPuAIPro, ZhiPuAITurbo, ZhiPuAIGLM3Turbo, ZhiPuAIGLM4}
 
 type LLM interface {
 	Type() LLMType
