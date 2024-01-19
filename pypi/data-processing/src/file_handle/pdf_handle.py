@@ -123,12 +123,14 @@ def _get_documents_by_langchain(
         chunk_overlap = config.knowledge_chunk_overlap
 
     source_reader = PyPDFLoader(file_path)
+    pdf_pages = source_reader.load()
+
     text_splitter = SpacyTextSplitter(
         separator="\n\n",
         pipeline="zh_core_web_sm",
         chunk_size=int(chunk_size),
         chunk_overlap=int(chunk_overlap)
     )
-    documents = source_reader.load_and_split(text_splitter)
+    documents = text_splitter.split_documents(pdf_pages)
 
     return documents
