@@ -25,8 +25,6 @@ import (
 	"github.com/go-logr/logr"
 	langchainembeddings "github.com/tmc/langchaingo/embeddings"
 	langchainopenai "github.com/tmc/langchaingo/llms/openai"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -126,16 +124,6 @@ func (r *EmbedderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				oldEmbedder := ue.ObjectOld.(*arcadiav1alpha1.Embedder)
 				newEmbedder := ue.ObjectNew.(*arcadiav1alpha1.Embedder)
 				return !reflect.DeepEqual(oldEmbedder.Spec, newEmbedder.Spec) || newEmbedder.DeletionTimestamp != nil
-			},
-			// for other event handler, we must add the function explicitly.
-			CreateFunc: func(event.CreateEvent) bool {
-				return true
-			},
-			DeleteFunc: func(event.DeleteEvent) bool {
-				return true
-			},
-			GenericFunc: func(event.GenericEvent) bool {
-				return true
 			},
 		})).
 		Watches(&source.Kind{Type: &arcadiav1alpha1.Worker{}},
@@ -257,28 +245,15 @@ func (r *EmbedderReconciler) UpdateStatus(ctx context.Context, instance *arcadia
 	instanceCopy := instance.DeepCopy()
 	var newCondition arcadiav1alpha1.Condition
 	if err != nil {
-		// Set status to unavailable
-		newCondition = arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionFalse,
-			Reason:             arcadiav1alpha1.ReasonUnavailable,
-			Message:            err.Error(),
-			LastTransitionTime: metav1.Now(),
-		}
+		// set condition to False
+		newCondition = instance.ErrorCondition(err.Error())
 	} else {
 		msg, ok := t.(string)
 		if !ok {
 			msg = _StatusNilResponse
 		}
-		// Set status to available
-		newCondition = arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionTrue,
-			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            msg,
-			LastTransitionTime: metav1.Now(),
-			LastSuccessfulTime: metav1.Now(),
-		}
+		// set condition to True
+		newCondition = instance.ReadyCondition(msg)
 	}
 	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)

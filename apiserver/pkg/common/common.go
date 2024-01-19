@@ -221,3 +221,12 @@ func PagePosition(page, size, total int) (int, int) {
 	}
 	return start, end
 }
+
+func TypedObjectReferenceToInput(ref generated.TypedObjectReference) generated.TypedObjectReferenceInput {
+	return generated.TypedObjectReferenceInput{
+		APIGroup:  ref.APIGroup,
+		Kind:      ref.Kind,
+		Namespace: ref.Namespace,
+		Name:      ref.Name,
+	}
+}

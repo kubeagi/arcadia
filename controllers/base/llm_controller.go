@@ -25,8 +25,6 @@ import (
 
 	"github.com/go-logr/logr"
 	langchainllms "github.com/tmc/langchaingo/llms"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -122,7 +120,14 @@ func (r *LLMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *LLMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&arcadiav1alpha1.LLM{}, builder.WithPredicates(LLMPredicates{})).
+		For(&arcadiav1alpha1.LLM{}, builder.WithPredicates(predicate.Funcs{
+			UpdateFunc: func(ue event.UpdateEvent) bool {
+				// Avoid to handle the event that it's not spec update or delete
+				oldLLM := ue.ObjectOld.(*arcadiav1alpha1.LLM)
+				newLLM := ue.ObjectNew.(*arcadiav1alpha1.LLM)
+				return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec) || oldLLM.DeletionTimestamp != nil
+			},
+		})).
 		Watches(&source.Kind{Type: &arcadiav1alpha1.Worker{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 				worker := o.(*arcadiav1alpha1.Worker)
@@ -228,53 +233,18 @@ func (r *LLMReconciler) checkWorkerLLM(ctx context.Context, logger logr.Logger, 
 
 func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alpha1.LLM, t interface{}, err error) error {
 	instanceCopy := instance.DeepCopy()
+	var newCondition arcadiav1alpha1.Condition
 	if err != nil {
-		// Set status to unavailable
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionFalse,
-			Reason:             arcadiav1alpha1.ReasonUnavailable,
-			Message:            err.Error(),
-			LastTransitionTime: metav1.Now(),
-		})
+		// set condition to False
+		newCondition = instance.ErrorCondition(err.Error())
 	} else {
 		msg, ok := t.(string)
 		if !ok {
 			msg = _StatusNilResponse
 		}
-		// Set status to available
-		instanceCopy.Status.SetConditions(arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionTrue,
-			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            msg,
-			LastTransitionTime: metav1.Now(),
-			LastSuccessfulTime: metav1.Now(),
-		})
+		// set condition to True
+		newCondition = instance.ReadyCondition(msg)
 	}
+	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)
-}
-
-type LLMPredicates struct {
-	predicate.Funcs
-}
-
-func (llm LLMPredicates) Create(ce event.CreateEvent) bool {
-	prompt := ce.Object.(*arcadiav1alpha1.LLM)
-	return len(prompt.Status.ConditionedStatus.Conditions) == 0
-}
-
-func (llm LLMPredicates) Update(ue event.UpdateEvent) bool {
-	oldLLM := ue.ObjectOld.(*arcadiav1alpha1.LLM)
-	newLLM := ue.ObjectNew.(*arcadiav1alpha1.LLM)
-
-	return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec) || newLLM.DeletionTimestamp != nil
-}
-
-func (llm LLMPredicates) Delete(de event.DeleteEvent) bool {
-	return true
-}
-
-func (llm LLMPredicates) Generic(ge event.GenericEvent) bool {
-	return true
 }

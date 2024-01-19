@@ -18,6 +18,7 @@ package knowledgebase
 
 import (
 	"context"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,11 +33,13 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func knowledgebase2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
-	return knowledgebase2model(obj)
+func knowledgebase2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
+	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
+		return knowledgebase2model(ctx, c, u)
+	}
 }
 
-func knowledgebase2model(obj *unstructured.Unstructured) (*generated.KnowledgeBase, error) {
+func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.KnowledgeBase, error) {
 	knowledgebase := &v1alpha1.KnowledgeBase{}
 	if err := utils.UnstructuredToStructured(obj, knowledgebase); err != nil {
 		return nil, err
@@ -85,6 +88,25 @@ func knowledgebase2model(obj *unstructured.Unstructured) (*generated.KnowledgeBa
 		filegroupdetails = append(filegroupdetails, filegroupdetail)
 	}
 
+	embedder := generated.TypedObjectReference{
+		APIGroup:  &apiversion,
+		Kind:      knowledgebase.Spec.Embedder.Kind,
+		Name:      knowledgebase.Spec.Embedder.Name,
+		Namespace: knowledgebase.Spec.Embedder.Namespace,
+	}
+	// read displayname
+	embedderUnstrctured, err := common.ResourceGet(ctx, c, common.TypedObjectReferenceToInput(embedder), metav1.GetOptions{})
+	if err != nil {
+		displayName := fmt.Sprintf("Unknown: %s", err.Error())
+		embedder.DisplayName = &displayName
+	} else {
+		embedderResource := &v1alpha1.Embedder{}
+		if err := utils.UnstructuredToStructured(embedderUnstrctured, embedderResource); err != nil {
+			return nil, err
+		}
+		embedder.DisplayName = &embedderResource.Spec.DisplayName
+	}
+
 	md := generated.KnowledgeBase{
 		ID:                &id,
 		Name:              obj.GetName(),
@@ -97,12 +119,7 @@ func knowledgebase2model(obj *unstructured.Unstructured) (*generated.KnowledgeBa
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &condition.LastTransitionTime.Time,
 		// Embedder info
-		Embedder: &generated.TypedObjectReference{
-			APIGroup:  &apiversion,
-			Kind:      knowledgebase.Spec.Embedder.Kind,
-			Name:      knowledgebase.Spec.Embedder.Name,
-			Namespace: knowledgebase.Spec.Embedder.Namespace,
-		},
+		Embedder: &embedder,
 		// Vector info
 		VectorStore: &generated.TypedObjectReference{
 			APIGroup:  &apiversion,
@@ -154,7 +171,7 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	if err != nil {
 		return nil, err
 	}
-	kb, err := knowledgebase2model(obj)
+	kb, err := knowledgebase2model(ctx, c, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +180,12 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 		details := make([]*generated.Filegroupdetail, len(filegroups))
 		for index, fg := range filegroups {
 			fgDetail := &generated.Filegroupdetail{
-				Source: (*generated.TypedObjectReference)(fg.Source),
+				Source: &generated.TypedObjectReference{
+					APIGroup:  fg.Source.APIGroup,
+					Kind:      fg.Source.Kind,
+					Name:      fg.Source.Name,
+					Namespace: fg.Source.Namespace,
+				},
 			}
 			fileDetails := make([]*generated.Filedetail, len(fg.Paths))
 			for findex, path := range fg.Paths {
@@ -217,7 +239,7 @@ func UpdateKnowledgeBase(ctx context.Context, c dynamic.Interface, input *genera
 		return nil, err
 	}
 
-	return knowledgebase2model(updatedObject)
+	return knowledgebase2model(ctx, c, updatedObject)
 }
 
 func DeleteKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
@@ -245,7 +267,7 @@ func ReadKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace
 	if err != nil {
 		return nil, err
 	}
-	return knowledgebase2model(u)
+	return knowledgebase2model(ctx, c, u)
 }
 
 func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
@@ -281,5 +303,5 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generate
 		return nil, err
 	}
 
-	return common.ListReources(us, page, pageSize, knowledgebase2modelConverter, filter...)
+	return common.ListReources(us, page, pageSize, knowledgebase2modelConverter(ctx, c), filter...)
 }

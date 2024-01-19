@@ -16,6 +16,11 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 const (
 	LabelDatasourceType = Group + "/datasource-type"
 )
@@ -39,5 +44,42 @@ func (ds DatasourceSpec) Type() DatasourceType {
 		return DatasourceTypePostgreSQL
 	default:
 		return DatasourceTypeUnknown
+	}
+}
+
+func (datasource Datasource) ReadyCondition() Condition {
+	currCon := datasource.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionTrue && currCon.Reason == ReasonAvailable {
+		return currCon
+	}
+	return Condition{
+		Type:               TypeReady,
+		Status:             corev1.ConditionTrue,
+		Reason:             ReasonAvailable,
+		Message:            "Check Success",
+		LastTransitionTime: metav1.Now(),
+		LastSuccessfulTime: metav1.Now(),
+	}
+}
+
+func (datasource Datasource) ErrorCondition(msg string) Condition {
+	currCon := datasource.Status.GetCondition(TypeReady)
+	// return current condition if condition not changed
+	if currCon.Status == corev1.ConditionFalse && currCon.Reason == ReasonUnavailable && currCon.Message == msg {
+		return currCon
+	}
+	// keep original LastSuccessfulTime if have
+	lastSuccessfulTime := metav1.Now()
+	if currCon.LastSuccessfulTime.IsZero() {
+		lastSuccessfulTime = currCon.LastSuccessfulTime
+	}
+	return Condition{
+		Type:               TypeReady,
+		Status:             corev1.ConditionFalse,
+		Reason:             ReasonUnavailable,
+		Message:            msg,
+		LastSuccessfulTime: lastSuccessfulTime,
+		LastTransitionTime: metav1.Now(),
 	}
 }

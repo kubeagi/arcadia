@@ -72,6 +72,7 @@ type TypedObjectReference {
     apiGroup: String
     kind: String!
     name: String!
+    displayName: String
     namespace: String
 }
 

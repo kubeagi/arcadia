@@ -23,8 +23,6 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -250,23 +248,9 @@ func (r *ModelReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1a
 	var newCondition arcadiav1alpha1.Condition
 	if err != nil {
 		// set condition to False
-		newCondition = arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionFalse,
-			Reason:             arcadiav1alpha1.ReasonUnavailable,
-			Message:            err.Error(),
-			LastTransitionTime: metav1.Now(),
-		}
+		newCondition = instance.ErrorCondition(err.Error())
 	} else {
-		// set condition to True
-		newCondition = arcadiav1alpha1.Condition{
-			Type:               arcadiav1alpha1.TypeReady,
-			Status:             corev1.ConditionTrue,
-			Reason:             arcadiav1alpha1.ReasonAvailable,
-			Message:            "Check Success",
-			LastTransitionTime: metav1.Now(),
-			LastSuccessfulTime: metav1.Now(),
-		}
+		newCondition = instance.ReadyCondition()
 	}
 	instanceCopy.Status.SetConditions(newCondition)
 	return r.Client.Status().Update(ctx, instanceCopy)
