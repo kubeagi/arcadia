@@ -43,14 +43,14 @@ const (
 	NvidiaGPU = "nvidia.com/gpu"
 )
 
-func worker2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
+func worker2modelConverter(ctx context.Context, c dynamic.Interface, showModel bool) func(*unstructured.Unstructured) (generated.PageNode, error) {
 	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
-		return Worker2model(ctx, c, u)
+		return Worker2model(ctx, c, u, showModel)
 	}
 }
 
 // Worker2model convert unstructured `CR Worker` to graphql model
-func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Worker, error) {
+func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured, showModel bool) (*generated.Worker, error) {
 	worker := &v1alpha1.Worker{}
 	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
 		return nil, err
@@ -107,8 +107,6 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 
 	workerType := string(worker.Type())
 
-	api, _ := common.GetAPIServer(ctx, c, true)
-
 	// wrap Worker
 	w := generated.Worker{
 		ID:                &id,
@@ -129,11 +127,14 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		MatchExpressions:  matchExpressions,
 		AdditionalEnvs:    additionalEnvs,
 		ModelTypes:        "unknown",
-		API:               &api,
+		API:               new(string),
+	}
+	if r := worker.Labels[v1alpha1.WorkerModelTypesLabel]; r != "" {
+		w.ModelTypes = r
 	}
 
 	// read worker's models
-	if worker.Spec.Model != nil {
+	if worker.Spec.Model != nil && showModel {
 		typedModel := worker.Model()
 		model, err := gqlmodel.ReadModel(ctx, c, typedModel.Name, *typedModel.Namespace)
 		if err != nil {
@@ -247,7 +248,15 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	if err != nil {
 		return nil, err
 	}
-	return Worker2model(ctx, c, obj)
+
+	api, _ := common.GetAPIServer(ctx, c, true)
+
+	w, err := Worker2model(ctx, c, obj, true)
+	if err != nil {
+		return nil, err
+	}
+	*w.API = api
+	return w, nil
 }
 
 func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
@@ -344,8 +353,14 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 	if err != nil {
 		return nil, err
 	}
+	api, _ := common.GetAPIServer(ctx, c, true)
 
-	return Worker2model(ctx, c, updatedObject)
+	w, err := Worker2model(ctx, c, updatedObject, true)
+	if err != nil {
+		return nil, err
+	}
+	*w.API = api
+	return w, nil
 }
 
 func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
@@ -379,7 +394,7 @@ func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.De
 	return nil, nil
 }
 
-func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput, showWorkerModel bool, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
 	opts := common.DefaultListOptions()
 	for _, optFunc := range listOpts {
 		optFunc(opts)
@@ -415,7 +430,17 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	if err != nil {
 		return nil, err
 	}
-	return common.ListReources(us, page, pageSize, worker2modelConverter(ctx, c), filter...)
+	list, err := common.ListReources(us, page, pageSize, worker2modelConverter(ctx, c, showWorkerModel), filter...)
+	if err != nil {
+		return nil, err
+	}
+	api, _ := common.GetAPIServer(ctx, c, true)
+
+	for i := range list.Nodes {
+		tmp := list.Nodes[i].(*generated.Worker)
+		*tmp.API = api
+	}
+	return list, nil
 }
 
 func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Worker, error) {
@@ -428,5 +453,12 @@ func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string
 	if err != nil {
 		return nil, err
 	}
-	return Worker2model(ctx, c, u)
+	api, _ := common.GetAPIServer(ctx, c, true)
+
+	w, err := Worker2model(ctx, c, u, true)
+	if err != nil {
+		return nil, err
+	}
+	*w.API = api
+	return w, nil
 }

@@ -49,6 +49,8 @@ const (
 	ProviderTypeUnknown  ProviderType = "unknown"
 	ProviderType3rdParty ProviderType = "3rd_party"
 	ProviderTypeWorker   ProviderType = "worker"
+
+	ProviderLabel = Group + "/provider"
 )
 
 // Provider defines how to prvoide the service

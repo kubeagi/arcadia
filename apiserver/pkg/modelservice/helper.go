@@ -19,6 +19,7 @@ package modelservice
 import (
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
 // Embedder2ModelService convert unstructured `CR Embedder` to graphql model `ModelService`
@@ -78,5 +79,30 @@ func LLM2ModelService(llm *generated.Llm) *generated.ModelService {
 		Status:  llm.Status,
 		Message: llm.Message,
 	}
+	return ms
+}
+
+func Worker2ModelService(worker *generated.Worker) *generated.ModelService {
+	ms := &generated.ModelService{
+		ID:                worker.ID,
+		Name:              worker.Name,
+		Namespace:         worker.Namespace,
+		CreationTimestamp: worker.CreationTimestamp,
+		UpdateTimestamp:   worker.UpdateTimestamp,
+		Creator:           worker.Creator,
+		DisplayName:       worker.DisplayName,
+		Description:       worker.Description,
+		ProviderType:      new(string),
+		Types:             new(string),
+		APIType:           new(string),
+		EmbeddingModels:   []string{*worker.ID},
+		LlmModels:         []string{*worker.ID},
+		Status:            worker.Status,
+		Message:           worker.Message,
+	}
+
+	*ms.ProviderType = "worker"
+	*ms.Types = worker.ModelTypes
+	*ms.APIType = string(llms.OpenAI)
 	return ms
 }

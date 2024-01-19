@@ -106,6 +106,18 @@ func (r *LLMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		logger.Info("Remove LLM done")
 		return ctrl.Result{}, nil
 	}
+	if instance.Labels == nil {
+		instance.Labels = make(map[string]string)
+	}
+	providerType := instance.Spec.Provider.GetType()
+	if _type, ok := instance.Labels[arcadiav1alpha1.ProviderLabel]; !ok || _type != string(providerType) {
+		instance.Labels[arcadiav1alpha1.ProviderLabel] = string(providerType)
+		err := r.Client.Update(ctx, instance)
+		if err != nil {
+			logger.Error(err, "failed to update llm labels", "providerType", providerType)
+		}
+		return ctrl.Result{Requeue: true}, err
+	}
 
 	err := r.CheckLLM(ctx, logger, instance)
 	if err != nil {

@@ -152,6 +152,26 @@ func (r *WorkerReconciler) initialize(ctx context.Context, logger logr.Logger, i
 		update = true
 	}
 
+	if instance.Spec.Model != nil {
+		ns := instance.Namespace
+		if instance.Spec.Model.Namespace != nil {
+			ns = *instance.Spec.Model.Namespace
+		}
+		m := arcadiav1alpha1.Model{}
+		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: instance.Spec.Model.Name}, &m); err != nil {
+			return true, err
+		}
+		if types, ok := instance.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; !ok || types != m.Spec.Types {
+			instance.Labels[arcadiav1alpha1.WorkerModelTypesLabel] = m.Spec.Types
+			update = true
+		}
+	} else {
+		if _, ok := instance.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; ok {
+			delete(instance.Labels, arcadiav1alpha1.WorkerModelTypesLabel)
+			update = true
+		}
+	}
+
 	if update {
 		return true, r.Client.Update(ctx, instanceDeepCopy)
 	}

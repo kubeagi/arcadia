@@ -109,6 +109,20 @@ func (r *EmbedderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		logger.Info("Remove Embedder done")
 		return ctrl.Result{}, nil
 	}
+	if instance.Labels == nil {
+		instance.Labels = make(map[string]string)
+	}
+	providerType := instance.Spec.Provider.GetType()
+
+	if _type, ok := instance.Labels[arcadiav1alpha1.ProviderLabel]; !ok || _type != string(providerType) {
+		instance.Labels[arcadiav1alpha1.ProviderLabel] = string(providerType)
+		err := r.Client.Update(ctx, instance)
+		if err != nil {
+			logger.Error(err, "failed to update embedder labels", "providerType", providerType)
+		}
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	if err := r.CheckEmbedder(ctx, logger, instance); err != nil {
 		return ctrl.Result{RequeueAfter: waitMedium}, err
 	}

@@ -66,7 +66,7 @@ func (r *workerQueryResolver) ListWorkers(ctx context.Context, obj *generated.Wo
 		return nil, err
 	}
 
-	return md.ListWorkers(ctx, c, input)
+	return md.ListWorkers(ctx, c, input, true)
 }
 
 // WorkerMutation returns generated.WorkerMutationResolver implementation.
