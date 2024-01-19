@@ -538,10 +538,11 @@ type ComplexityRoot struct {
 	}
 
 	TypedObjectReference struct {
-		APIGroup  func(childComplexity int) int
-		Kind      func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Namespace func(childComplexity int) int
+		APIGroup    func(childComplexity int) int
+		DisplayName func(childComplexity int) int
+		Kind        func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Namespace   func(childComplexity int) int
 	}
 
 	VersionedDataset struct {
@@ -3260,6 +3261,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TypedObjectReference.APIGroup(childComplexity), true
 
+	case "TypedObjectReference.displayName":
+		if e.complexity.TypedObjectReference.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.TypedObjectReference.DisplayName(childComplexity), true
+
 	case "TypedObjectReference.kind":
 		if e.complexity.TypedObjectReference.Kind == nil {
 			break
@@ -5040,6 +5048,7 @@ type TypedObjectReference {
     apiGroup: String
     kind: String!
     name: String!
+    displayName: String
     namespace: String
 }
 
@@ -15648,6 +15657,8 @@ func (ec *executionContext) fieldContext_Endpoint_authSecret(ctx context.Context
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -16408,6 +16419,8 @@ func (ec *executionContext) fieldContext_KnowledgeBase_embedder(ctx context.Cont
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -16459,6 +16472,8 @@ func (ec *executionContext) fieldContext_KnowledgeBase_vectorStore(ctx context.C
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -22852,6 +22867,47 @@ func (ec *executionContext) fieldContext_TypedObjectReference_name(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _TypedObjectReference_displayName(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TypedObjectReference_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TypedObjectReference_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypedObjectReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TypedObjectReference_namespace(ctx context.Context, field graphql.CollectedField, obj *TypedObjectReference) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 	if err != nil {
@@ -23272,6 +23328,8 @@ func (ec *executionContext) fieldContext_VersionedDataset_dataset(ctx context.Co
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -24585,6 +24643,8 @@ func (ec *executionContext) fieldContext_Worker_model(ctx context.Context, field
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -27426,6 +27486,8 @@ func (ec *executionContext) fieldContext_filegroup_source(ctx context.Context, f
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -27518,6 +27580,8 @@ func (ec *executionContext) fieldContext_filegroupdetail_source(ctx context.Cont
 				return ec.fieldContext_TypedObjectReference_kind(ctx, field)
 			case "name":
 				return ec.fieldContext_TypedObjectReference_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_TypedObjectReference_displayName(ctx, field)
 			case "namespace":
 				return ec.fieldContext_TypedObjectReference_namespace(ctx, field)
 			}
@@ -36020,6 +36084,8 @@ func (ec *executionContext) _TypedObjectReference(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "displayName":
+			out.Values[i] = ec._TypedObjectReference_displayName(ctx, field, obj)
 		case "namespace":
 			out.Values[i] = ec._TypedObjectReference_namespace(ctx, field, obj)
 		default:

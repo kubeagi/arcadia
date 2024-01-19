@@ -1174,10 +1174,11 @@ type ResourcesInput struct {
 }
 
 type TypedObjectReference struct {
-	APIGroup  *string `json:"apiGroup,omitempty"`
-	Kind      string  `json:"kind"`
-	Name      string  `json:"name"`
-	Namespace *string `json:"namespace,omitempty"`
+	APIGroup    *string `json:"apiGroup,omitempty"`
+	Kind        string  `json:"kind"`
+	Name        string  `json:"name"`
+	DisplayName *string `json:"displayName,omitempty"`
+	Namespace   *string `json:"namespace,omitempty"`
 }
 
 type TypedObjectReferenceInput struct {
