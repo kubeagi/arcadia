@@ -168,8 +168,15 @@ type KnowledgeBaseStuffDocuments struct {
 	References []Reference
 }
 
-var _ chains.Chain = &KnowledgeBaseStuffDocuments{}
-var _ callbacks.Handler = &KnowledgeBaseStuffDocuments{}
+func (c *KnowledgeBaseStuffDocuments) GetCallbackHandler() callbacks.Handler {
+	return c
+}
+
+var (
+	_ chains.Chain           = &KnowledgeBaseStuffDocuments{}
+	_ callbacks.Handler      = &KnowledgeBaseStuffDocuments{}
+	_ callbacks.HandlerHaver = &KnowledgeBaseStuffDocuments{}
+)
 
 func (c *KnowledgeBaseStuffDocuments) joinDocuments(ctx context.Context, docs []langchaingoschema.Document) string {
 	logger := klog.FromContext(ctx)
