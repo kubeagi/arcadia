@@ -28,6 +28,7 @@ import (
 	"k8s.io/utils/strings/slices"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/appruntime/agent"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	"github.com/kubeagi/arcadia/pkg/appruntime/chain"
 	"github.com/kubeagi/arcadia/pkg/appruntime/knowledgebase"
@@ -257,6 +258,9 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		case "knowledgebase":
 			logger.V(3).Info("initnode knowledgebase")
 			return knowledgebase.NewKnowledgebase(baseNode), nil
+		case "agent":
+			logger.V(3).Info("initnode agent - executor")
+			return agent.NewExecutor(baseNode), nil
 		default:
 			return nil, err
 		}

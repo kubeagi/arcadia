@@ -19,6 +19,7 @@ package langchainwrap
 import (
 	"context"
 	"fmt"
+	"os"
 
 	langchainllms "github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -34,6 +35,10 @@ import (
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/utils"
+)
+
+const (
+	GatewayUseExternalURLEnv = "GATEWAY_USE_EXTERNAL_URL"
 )
 
 func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cli dynamic.Interface) (langchainllms.LLM, error) {
@@ -85,7 +90,13 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 			return nil, fmt.Errorf("worker.spec.model not defined")
 		}
 		modelName := worker.MakeRegistrationModelName()
-		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gateway.APIServer), openai.WithToken("fake"))
+		// Configure witch gateway url to use, use apiserver by default
+		// can use external gateway URL when do local debug by setting GATEWAY_USE_EXTERNAL_URL env to true
+		gatewayURL := gateway.APIServer
+		if os.Getenv(GatewayUseExternalURLEnv) == "true" {
+			gatewayURL = gateway.ExternalAPIServer
+		}
+		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatewayURL), openai.WithToken("fake"))
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }

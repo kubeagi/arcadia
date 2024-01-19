@@ -51,7 +51,7 @@ type WorkerSpec struct {
 	// - Memory
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// NodeSelectorRequirement to schedule this worker
+	// MatchExpressions to schedule this worker
 	MatchExpressions []corev1.NodeSelectorRequirement `json:"matchExpressions,omitempty"`
 
 	// Additional env to use
