@@ -71,7 +71,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	// replicas
 	var replicas string
 	if worker.Spec.Replicas != nil {
-		replicas = fmt.Sprint(worker.Spec.Replicas)
+		replicas = fmt.Sprint(*worker.Spec.Replicas)
 	}
 
 	// resources
