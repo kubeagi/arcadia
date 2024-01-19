@@ -1,0 +1,27 @@
+[build-system]
+requires = [
+    "setuptools>=61.0"
+    "ragas"
+    "langchain==0.0.354"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+
+[project]
+name = "ragas_once"
+version = "0.0.1"
+authors = [
+    { name = "Kielo", email = "lanture1064@gmail.com" },
+]
+description = "A one-step Ragas cli tool to evaluate RAG apps"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.entry-points]
+ro = "ragas_once.cli:main"
