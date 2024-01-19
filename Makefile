@@ -312,3 +312,8 @@ codespell:
 	echo "you need: pip install codespell"
 	# please update .github/workflows/codespell.yaml as well
 	codespell -w --ignore-words ".github/.codespellignore" --check-filenames --skip "go.*,**/*.drawio,./deploy/charts/*,./config/crd/*"
+
+
+.PHONY: agentserver
+agentserver:
+	@CGO_ENABLED=0 GOOS=linux go build -o bin/agentserver cmd/agentserver/main.go
