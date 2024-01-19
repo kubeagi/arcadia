@@ -1,0 +1,13 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Agent
+metadata:
+  name: weather-agent
+  namespace: arcadia
+spec:
+  type: zeroShot
+  allowedTools:
+  - name: "Weather Query API"
+    params:
+      apiKey: <api key to use>
+  options:
+    maxIterations: 5

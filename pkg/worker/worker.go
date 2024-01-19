@@ -536,7 +536,13 @@ func (podWorker *PodWorker) AfterStart(ctx context.Context) error {
 		for _, container := range podStatus.ContainerStatuses {
 			// When pod phase is running or succeeded but container state is waiting,we use ErrorCondition
 			if container.State.Waiting != nil || container.State.Terminated != nil {
-				msg := fmt.Sprintf("Reason:%s Message:%s", container.State.Waiting.Reason, container.State.Waiting.Message)
+				msg := ""
+				if container.State.Waiting != nil {
+					msg = fmt.Sprintf("Reason:%s Message:%s", container.State.Waiting.Reason, container.State.Waiting.Message)
+				} else if container.State.Terminated != nil {
+					msg = fmt.Sprintf("Reason:%s Message:%s", container.State.Terminated.Reason, container.State.Terminated.Message)
+				}
+
 				condition = podWorker.Worker().ErrorCondition(msg)
 				break
 			}

@@ -92,20 +92,27 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 		chain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
 	}
 	l.LLMChain = *chain
-	var out string
-	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
-		options = append(options, chains.WithStreamingFunc(stream(args)))
-		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
-	} else {
-		if len(options) > 0 {
+
+	// Skip to do LLMChain again if we already has the answer, such as from agents
+	if args["_answer"] == nil {
+		var out string
+		if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+			options = append(options, chains.WithStreamingFunc(stream(args)))
 			out, err = chains.Predict(ctx, l.LLMChain, args, options...)
 		} else {
-			out, err = chains.Predict(ctx, l.LLMChain, args)
+			if len(options) > 0 {
+				out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+			} else {
+				out, err = chains.Predict(ctx, l.LLMChain, args)
+			}
 		}
-	}
-	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
-	if err == nil {
-		args["_answer"] = out
+		klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
+		if err == nil {
+			args["_answer"] = out
+			return args, nil
+		}
+	} else {
+		klog.Infoln("get answer from upstream:", args["_answer"])
 		return args, nil
 	}
 	return args, fmt.Errorf("llmchain run error: %w", err)
