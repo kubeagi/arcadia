@@ -15,11 +15,9 @@
 import docx
 
 
-def get_content(
-    file_path
-):
+def get_content(file_path):
     """Get the content from a word docx file.
-    
+
     file_path: file path;
     """
     doc = docx.Document(file_path)
@@ -29,4 +27,4 @@ def get_content(
         text = para.text
         content += text
 
-    return content 
+    return content

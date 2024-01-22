@@ -1,6 +1,5 @@
 import asyncio
 import binascii
-from collections import defaultdict
 import contextlib
 import errno
 import functools
@@ -18,33 +17,22 @@ import sys
 import tempfile
 import threading
 import time
-from urllib.parse import urlencode, unquote, urlparse, parse_qsl, urlunparse
 import warnings
+from collections import defaultdict
 from inspect import signature
 from pathlib import Path
 from subprocess import list2cmdline
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    Coroutine,
-    List,
-    Mapping,
-)
+from typing import (TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping,
+                    Optional, Sequence, Tuple, Union)
+from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
 # Import psutil after ray so the packaged version is used.
 import psutil
-from google.protobuf import json_format
-
 import ray
 import ray._private.ray_constants as ray_constants
-from ray.core.generated.runtime_env_common_pb2 import (
-    RuntimeEnvInfo as ProtoRuntimeEnvInfo,
-)
+from google.protobuf import json_format
+from ray.core.generated.runtime_env_common_pb2 import \
+    RuntimeEnvInfo as ProtoRuntimeEnvInfo
 
 if TYPE_CHECKING:
     from ray.runtime_env import RuntimeEnv
@@ -281,9 +269,8 @@ def get_visible_accelerator_ids() -> Mapping[str, Optional[List[str]]]:
     to the visible ids."""
 
     from ray._private.accelerators import (
-        get_all_accelerator_resource_names,
         get_accelerator_manager_for_resource,
-    )
+        get_all_accelerator_resource_names)
 
     return {
         accelerator_resource_name: get_accelerator_manager_for_resource(
@@ -1535,10 +1522,10 @@ def check_version_info(cluster_metadata):
     # but for now, we don't have the same python version of fastchat and ray
     # so allow to use environment variable to overwrite them
     # make sure the overwritten version will be compatible
-    if os.getenv('RAY_VERSION') is not None:
-        version_info = (os.getenv('RAY_VERSION'), version_info[1])
-    if  os.getenv('PYTHON_VERSION') is not None:
-        version_info = (version_info[0], os.getenv('PYTHON_VERSION'))
+    if os.getenv("RAY_VERSION") is not None:
+        version_info = (os.getenv("RAY_VERSION"), version_info[1])
+    if os.getenv("PYTHON_VERSION") is not None:
+        version_info = (version_info[0], os.getenv("PYTHON_VERSION"))
     # ---------------------------- KubeAGI end --------------------------------
 
     if version_info != cluster_version_info:

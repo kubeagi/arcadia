@@ -22,13 +22,9 @@ from utils import file_utils
 logger = logging.getLogger(__name__)
 
 
-def save_csv(
-    file_name,
-    phase_value,
-    data
-):
+def save_csv(file_name, phase_value, data):
     """Save the csv file.
-    
+
     file_name: file name;
     phase_value: phase value
     """
@@ -39,16 +35,19 @@ def save_csv(
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
 
-    file_path = directory_path + '/' + file_name
+    file_path = directory_path + "/" + file_name
 
-    logger.debug(''.join([
-        f"{log_tag_const.CSV_HANDLE} Save a csv file.\n",
-        f"file path: {file_path}"
-    ]))
+    logger.debug(
+        "".join(
+            [
+                f"{log_tag_const.CSV_HANDLE} Save a csv file.\n",
+                f"file path: {file_path}",
+            ]
+        )
+    )
 
-    with open(file_path, 'w', newline='') as file:
+    with open(file_path, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(data)
 
     return file_path
-

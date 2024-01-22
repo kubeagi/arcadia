@@ -16,9 +16,10 @@ import string
 
 import emoji
 
+# referenced from https://github.com/alibaba/data-juicer/blob/main/data_juicer/ops/common/special_characters.py#L26
+
 # special characters
-MAIN_SPECIAL_CHARACTERS = string.punctuation + string.digits \
-                          + string.whitespace
+MAIN_SPECIAL_CHARACTERS = string.punctuation + string.digits + string.whitespace
 OTHER_SPECIAL_CHARACTERS = (
     "    　    ￼’“”–ー一▬…✦�­£​•€«»°·═"
     "×士＾˘⇓↓↑←→（）§″′´¿−±∈﻿¢ø‚„½¼¾¹²³―⁃，ˌ¸‹›ʺˈʻ¦‐⠀‰‑≤≥‖"
@@ -34,6 +35,26 @@ SPECIAL_CHARACTERS.update(EMOJI)
 # whitespaces in unicode can be found here:
 # https://en.wikipedia.org/wiki/Whitespace_character
 VARIOUS_WHITESPACES = {
-    '	', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-    ' ', ' ', ' ', '　', '​', '‌', '‍', '⁠', '￼', ''
+    "	",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    "　",
+    "​",
+    "‌",
+    "‍",
+    "⁠",
+    "￼",
+    "",
 }

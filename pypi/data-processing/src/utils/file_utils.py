@@ -17,25 +17,21 @@ import os
 from pathlib import Path
 
 
-def get_file_name(
-    file_name,
-    handle_name
-):
+def get_file_name(file_name, handle_name):
     """Get file name."""
-    file_extension = file_name.split('.')[-1].lower()
-    file_name_without_extension = file_name.rsplit('.', 1)[0]
+    file_extension = file_name.split(".")[-1].lower()
+    file_name_without_extension = file_name.rsplit(".", 1)[0]
 
-    return file_name_without_extension + '_' + handle_name + '.' + file_extension
+    return file_name_without_extension + "_" + handle_name + "." + file_extension
 
 
 def get_temp_file_path():
     """Get temp file path"""
     current_directory = os.getcwd()
 
-    csv_file_path = os.path.join(current_directory, 'file_handle/temp_file/')
+    csv_file_path = os.path.join(current_directory, "file_handle/temp_file/")
 
     return csv_file_path
-
 
 
 def delete_file(file_path):
@@ -50,6 +46,7 @@ def get_file_extension(file_name):
     file_extension = extension[1:].lower()
 
     return file_extension
+
 
 def get_file_name_without_extension(file_name):
     """Get file name without extension"""

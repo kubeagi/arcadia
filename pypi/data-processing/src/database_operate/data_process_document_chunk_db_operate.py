@@ -12,35 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ulid
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def add(
-    req_json,
-    pool
-):
+def add(req_json, pool):
     """Add a new record"""
     now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '数据处理文件拆分-新增'
+    user = req_json["creator"]
+    program = "数据处理文件拆分-新增"
 
     params = {
-        'id': req_json.get('id'),
-        'document_id': req_json.get('document_id'),
-        'status': req_json.get('status'),
-        'task_id': req_json.get('task_id'),
-        'content': req_json.get('content'),
-        'meta_info': req_json.get('meta_info'),
-        'page_number': req_json.get('page_number'),
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": req_json.get("id"),
+        "document_id": req_json.get("document_id"),
+        "status": req_json.get("status"),
+        "task_id": req_json.get("task_id"),
+        "content": req_json.get("content"),
+        "meta_info": req_json.get("meta_info"),
+        "page_number": req_json.get("page_number"),
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -79,21 +74,19 @@ def add(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def update_document_chunk_status_and_start_time(
-    req_json,
-    pool
-):
+
+def update_document_chunk_status_and_start_time(req_json, pool):
     """Update the status and start time with id"""
-    now = req_json['start_time']
-    program = '开始处理chunk后的内容'
+    now = req_json["start_time"]
+    program = "开始处理chunk后的内容"
 
     params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'start_time': now,
-        'update_datetime': now,
-        'update_user': req_json['update_user'],
-        'update_program': program
+        "id": req_json["id"],
+        "status": req_json["status"],
+        "start_time": now,
+        "update_datetime": now,
+        "update_user": req_json["update_user"],
+        "update_program": program,
     }
 
     sql = """
@@ -110,21 +103,19 @@ def update_document_chunk_status_and_start_time(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def update_document_chunk_status_and_end_time(
-    req_json,
-    pool
-):
+
+def update_document_chunk_status_and_end_time(req_json, pool):
     """Update the status and end time with id"""
-    now = req_json['end_time']
-    program = 'chunk后的内容处理完成'
+    now = req_json["end_time"]
+    program = "chunk后的内容处理完成"
 
     params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'end_time': now,
-        'update_datetime': now,
-        'update_user': req_json['update_user'],
-        'update_program': program
+        "id": req_json["id"],
+        "status": req_json["status"],
+        "end_time": now,
+        "update_datetime": now,
+        "update_user": req_json["update_user"],
+        "update_program": program,
     }
 
     sql = """
@@ -141,21 +132,17 @@ def update_document_chunk_status_and_end_time(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def delete_by_task_id(
-    req_json,
-    pool
-):
+
+def delete_by_task_id(req_json, pool):
     """delete info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_document_chunk
@@ -166,14 +153,10 @@ def delete_by_task_id(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def list_by_status(
-    req_json,
-    pool
-):
+
+def list_by_status(req_json, pool):
     """Retrieve a list of statuses marked as in progress and failed."""
-    params = {
-      'document_id': req_json.get('document_id')
-    }
+    params = {"document_id": req_json.get("document_id")}
 
     sql = """
       select 

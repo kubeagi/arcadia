@@ -16,27 +16,32 @@
 import logging
 import traceback
 
+from common import log_tag_const
 from sanic.handlers import ErrorHandler
 from sanic.response import json
-
-from common import log_tag_const
 
 logger = logging.getLogger(__name__)
 
 
 class CustomErrorHandler(ErrorHandler):
     """Custom the error handler for the sanic app"""
+
     def default(self, request, exception):
         status_code = getattr(exception, "status_code", 500)
-        logger.error(''.join([
-            f"{log_tag_const.WEB_SERVER_ERROR} The url has a error.\n",
-            f"url: {request.url}\n",
-            f"status code: {status_code} \n",
-            f"error trace: \n{traceback.format_exc()}"
-        ]))
-        return json({
-            'status': status_code,
-            'message': str(exception),
-            'data': traceback.format_exc()
-        })
-
+        logger.error(
+            "".join(
+                [
+                    f"{log_tag_const.WEB_SERVER_ERROR} The url has a error.\n",
+                    f"url: {request.url}\n",
+                    f"status code: {status_code} \n",
+                    f"error trace: \n{traceback.format_exc()}",
+                ]
+            )
+        )
+        return json(
+            {
+                "status": status_code,
+                "message": str(exception),
+                "data": traceback.format_exc(),
+            }
+        )

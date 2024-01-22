@@ -19,7 +19,6 @@ import time
 import traceback
 
 import zhipuai
-
 from common import const, log_tag_const
 from common.config import config
 from llm_prompt_template import llm_prompt
@@ -35,17 +34,11 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
     def __init__(self, api_key=None):
         zhipuai.api_key = api_key
 
-
     def generate_qa_list(
-        self, 
-        text,
-        model,
-        prompt_template=None,
-        top_p=None,
-        temperature=None
+        self, text, model, prompt_template=None, top_p=None, temperature=None
     ):
         """Generate the QA list.
-        
+
         Parameters
         ----------
         text
@@ -60,27 +53,28 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         if temperature is None:
             temperature = "0.8"
 
-        content = prompt_template.format(
-            text=text
-        )
-        
+        content = prompt_template.format(text=text)
+
         result = []
         status = 200
-        message = ''
+        message = ""
 
         invoke_count = 0
-        wait_seconds = const.llm_wait_seconds
+        wait_seconds = const.LLM_WAIT_SECONDS
         while True:
-            logger.debug(''.join([
-                f"{log_tag_const.ZHI_PU_AI} content.\n",
-                f"{content}\n"
-            ]))
+            logger.debug(
+                "".join([f"{log_tag_const.ZHI_PU_AI} content.\n", f"{content}\n"])
+            )
             try:
                 if invoke_count >= int(config.llm_qa_retry_count):
-                    logger.error(''.join([
-                        f"{log_tag_const.ZHI_PU_AI} Cannot access the open ai service.\n",
-                        f"The tracing error is: \n{traceback.format_exc()}\n"
-                    ]))
+                    logger.error(
+                        "".join(
+                            [
+                                f"{log_tag_const.ZHI_PU_AI} Cannot access the open ai service.\n",
+                                f"The tracing error is: \n{traceback.format_exc()}\n",
+                            ]
+                        )
+                    )
 
                     status = 1000
                     break
@@ -91,45 +85,50 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
                         top_p=float(top_p),
                         temperature=float(temperature),
                     )
-                    if response['success']:
+                    if response["success"]:
                         result = self.__format_response_to_qa_list(response)
                         if len(result) > 0:
                             break
                         else:
-                            logger.warn(f"failed to get QA list, wait for {wait_seconds} seconds and retry")
-                            time.sleep(wait_seconds) # sleep 120 seconds
+                            logger.warn(
+                                f"failed to get QA list, wait for {wait_seconds} seconds and retry"
+                            )
+                            time.sleep(wait_seconds)  # sleep 120 seconds
                             invoke_count += 1
-                            message = '模型调用成功，生成的QA格式不对，请更换prompt'
+                            message = "模型调用成功，生成的QA格式不对，请更换prompt"
                     else:
-                        logger.error(''.join([
-                            f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
-                            f"The error is: \n{response['msg']}\n"
-                        ]))
-                        logger.warn(f"zhipuai request failed, wait for {wait_seconds} seconds and retry")
-                        time.sleep(wait_seconds) # sleep 120 seconds
+                        logger.error(
+                            "".join(
+                                [
+                                    f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
+                                    f"The error is: \n{response['msg']}\n",
+                                ]
+                            )
+                        )
+                        logger.warn(
+                            f"zhipuai request failed, wait for {wait_seconds} seconds and retry"
+                        )
+                        time.sleep(wait_seconds)  # sleep 120 seconds
                         invoke_count += 1
-                        message = '模型调用失败，失败原因: ' + response['msg']
+                        message = "模型调用失败，失败原因: " + response["msg"]
             except Exception as ex:
-                logger.warn(f"zhipuai request exception, wait for {wait_seconds} seconds and retry")
+                logger.warn(
+                    f"zhipuai request exception, wait for {wait_seconds} seconds and retry"
+                )
                 time.sleep(wait_seconds)
                 invoke_count += 1
-                message = '模型调用失败，请检查模型是否可用！'
+                message = "模型调用失败，请检查模型是否可用！"
 
-        return {
-            'status': status,
-            'message': message,
-            'data': result
-        }
-
+        return {"status": status, "message": message, "data": result}
 
     def __format_response_to_qa_list(self, response):
         """Format the response to the QA list."""
-        text = response['data']['choices'][0]['content']
+        text = response["data"]["choices"][0]["content"]
         result = []
         try:
-            pattern = re.compile(r'Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)')
+            pattern = re.compile(r"Q\d+:(\s*)(.*?)(\s*)A\d+:(\s*)([\s\S]*?)(?=Q|$)")
             # 移除换行符
-            text = text.replace('\\n', '')
+            text = text.replace("\\n", "")
             matches = pattern.findall(text)
 
             for match in matches:
@@ -138,10 +137,13 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
                 if q and a:
                     result.append([q, a])
         except Exception as ex:
-            logger.error(''.join([
-                f"{log_tag_const.ZHI_PU_AI} 从结果中提取QA失败\n",
-                f"The tracing error is: \n{traceback.format_exc()}\n"
-            ]))
+            logger.error(
+                "".join(
+                    [
+                        f"{log_tag_const.ZHI_PU_AI} 从结果中提取QA失败\n",
+                        f"The tracing error is: \n{traceback.format_exc()}\n",
+                    ]
+                )
+            )
 
         return result
-    

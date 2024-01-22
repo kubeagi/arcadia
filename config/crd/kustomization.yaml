@@ -15,10 +15,10 @@ resources:
 - bases/arcadia.kubeagi.k8s.com.cn_applications.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_llmchains.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_retrievalqachains.yaml
+- bases/chain.arcadia.kubeagi.k8s.com.cn_apichains.yaml
 - bases/prompt.arcadia.kubeagi.k8s.com.cn_prompts.yaml
 - bases/retriever.arcadia.kubeagi.k8s.com.cn_knowledgebaseretrievers.yaml
 - bases/evaluation.arcadia.kubeagi.k8s.com.cn_rags.yaml
-- bases/chain.kubeagi.k8s.com.cn_apichains.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

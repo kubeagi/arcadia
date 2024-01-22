@@ -15,8 +15,6 @@
 
 from sanic import Blueprint
 from sanic.response import json
-
-from file_handle import pdf_handle
 from service import data_process_service
 from transform.text import support_type
 
@@ -24,28 +22,26 @@ from transform.text import support_type
 data_process = Blueprint("data_process", url_prefix="/")
 
 
-@data_process.route('list-by-page', methods=['POST'])
+@data_process.route("list-by-page", methods=["POST"])
 async def list_by_page(request):
     res = data_process_service.list_by_page(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
     return json(res)
 
 
-@data_process.route('list-by-count', methods=['POST'])
+@data_process.route("list-by-count", methods=["POST"])
 async def list_by_count(request):
     res = data_process_service.list_by_count(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
     return json(res)
 
 
-@data_process.route('add', methods=['POST'])
+@data_process.route("add", methods=["POST"])
 async def add(request):
     """Add a new data process task.
-    
+
     example for request.json
     {
         "name": "小T_test_0201",
@@ -63,71 +59,47 @@ async def add(request):
         "data_process_config_info": [],
         "creator": "",
         "namespace": "abc"
-    }    
+    }
     """
-    res = data_process_service.add(
-        request.json,
-        pool=request.app.config['conn_pool']
-    )
+    res = data_process_service.add(request.json, pool=request.app.config["conn_pool"])
     return json(res)
 
 
-@data_process.route('delete-by-id', methods=['POST'])
+@data_process.route("delete-by-id", methods=["POST"])
 async def delete_by_id(request):
     res = data_process_service.delete_by_id(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
     return json(res)
 
 
-@data_process.route('info-by-id', methods=['POST'])
+@data_process.route("info-by-id", methods=["POST"])
 async def info_by_id(request):
     """Get the detail info by id.
-    
+
     example for request.json
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     """
     res = data_process_service.info_by_id(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
-    return json(res) 
+    return json(res)
 
 
-@data_process.route('text-process-type', methods=['POST'])
-async def text_process_type(request):
+@data_process.route("text-process-type", methods=["POST"])
+async def text_process_type(_request):
     """Get the support type for transforming the text content."""
-    return json({
-        'status': 200,
-        'message': '',
-        'data': support_type.get_default_support_types()
-    })
+    return json(
+        {"status": 200, "message": "", "data": support_type.get_default_support_types()}
+    )
 
-@data_process.route('test', methods=['POST'])
-async def test(request):
-    """Get the support type for transforming the text content."""
-    res = pdf_handle.test({
-        'support_type_map': {
-            'remove_invisible_characters': 1
-        },
-        'data': '“一户一表、水表出户、抄表到户”是指一个家庭用户安装一个计量水表，计量水表安装在住宅的公共部位，供水企业抄表到户，按户计量收费。',
-        'file_name': '222',
-        'task_id': '111',
-        'conn_pool': request.app.config['conn_pool']
-    })
-    return json({
-        'status': 200,
-        'message': '',
-        'data': res
-    })    
 
-@data_process.route('check-task-name', methods=['POST'])
+@data_process.route("check-task-name", methods=["POST"])
 async def check_task_name(request):
     """check task name by name and namespace.
-    
+
     example for request.json
     {
         "name": "test",
@@ -135,30 +107,30 @@ async def check_task_name(request):
     }
     """
     res = data_process_service.check_task_name(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
-    return json(res) 
+    return json(res)
 
-@data_process.route('get-log-info', methods=['POST'])
+
+@data_process.route("get-log-info", methods=["POST"])
 async def get_log_info(request):
     """check task name by name and namespace.
-    
+
     example for request.json
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     """
     res = data_process_service.get_log_info(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
-    return json(res) 
+    return json(res)
 
-@data_process.route('get-log-by-file-name', methods=['POST'])
+
+@data_process.route("get-log-by-file-name", methods=["POST"])
 async def get_log_by_file_name(request):
     """check task name by name and namespace.
-    
+
     example for request.json
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -167,24 +139,19 @@ async def get_log_by_file_name(request):
     }
     """
     res = data_process_service.get_log_by_file_name(
-        request.json,
-        pool=request.app.config['conn_pool']
+        request.json, pool=request.app.config["conn_pool"]
     )
-    return json(res) 
+    return json(res)
 
 
-@data_process.route('retry', methods=['POST'])
+@data_process.route("retry", methods=["POST"])
 async def retry(request):
     """check task name by name and namespace.
-    
+
     example for request.json
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     """
-    res = data_process_service.retry(
-        request.json,
-        pool=request.app.config['conn_pool']
-    )
-    return json(res) 
-
+    res = data_process_service.retry(request.json, pool=request.app.config["conn_pool"])
+    return json(res)

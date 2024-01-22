@@ -14,36 +14,32 @@
 
 
 import ulid
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def insert(
-    req_json,
-    pool
-):
+def insert(req_json, pool):
     """Add a new record"""
     now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '数据处理任务阶段日志-新增'
+    user = req_json["creator"]
+    program = "数据处理任务阶段日志-新增"
 
     params = {
-        'id': ulid.ulid(),
-        'task_id': req_json.get('task_id'),
-        'log_id': req_json.get('log_id'),
-        'log_datetime': now,
-        'file_name': req_json.get('file_name'),
-        'stage_name': req_json.get('stage_name'),
-        'stage_status': req_json.get('stage_status'),
-        'stage_detail': req_json.get('stage_detail'),
-        'error_msg': req_json.get('error_msg'),
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": ulid.ulid(),
+        "task_id": req_json.get("task_id"),
+        "log_id": req_json.get("log_id"),
+        "log_datetime": now,
+        "file_name": req_json.get("file_name"),
+        "stage_name": req_json.get("stage_name"),
+        "stage_status": req_json.get("stage_status"),
+        "stage_detail": req_json.get("stage_detail"),
+        "error_msg": req_json.get("error_msg"),
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -87,14 +83,9 @@ def insert(
     return res
 
 
-def list_by_task_id(
-    req_json,
-    pool
-):
+def list_by_task_id(req_json, pool):
     """Get the list data for data processing log by task id"""
-    params = {
-        'task_id': req_json.get('id')
-    }
+    params = {"task_id": req_json.get("id")}
 
     sql = """
         select
@@ -117,21 +108,16 @@ def list_by_task_id(
     return res
 
 
-def delete_by_task_id(
-    req_json,
-    pool
-):
+def delete_by_task_id(req_json, pool):
     """delete info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_stage_log
@@ -143,14 +129,11 @@ def delete_by_task_id(
     return res
 
 
-def info_by_stage_and_file_name(
-    req_json,
-    pool
-):
+def info_by_stage_and_file_name(req_json, pool):
     params = {
-        'task_id': req_json.get('id'),
-        'stage_name': req_json.get('type'),
-        'file_name': req_json.get('file_name')
+        "task_id": req_json.get("id"),
+        "stage_name": req_json.get("type"),
+        "file_name": req_json.get("file_name"),
     }
 
     sql = """

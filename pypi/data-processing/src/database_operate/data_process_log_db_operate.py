@@ -12,35 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import ujson
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def add(
-    req_json,
-    pool
-):
+def add(req_json, pool):
     """Add a new record"""
     now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '数据处理任务日志-新增'
+    user = req_json["creator"]
+    program = "数据处理任务日志-新增"
 
     params = {
-        'id': req_json.get('id'),
-        'task_id': req_json.get('task_id'),
-        'type': req_json.get('type'),
-        'status': 'processing',
-        'error_msg': req_json.get('error_msg'),
-        'start_datetime': now,
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": req_json.get("id"),
+        "task_id": req_json.get("task_id"),
+        "type": req_json.get("type"),
+        "status": "processing",
+        "error_msg": req_json.get("error_msg"),
+        "start_datetime": now,
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -78,23 +72,20 @@ def add(
     return res
 
 
-def update_status_by_id(
-    req_json, 
-    pool
-):
+def update_status_by_id(req_json, pool):
     """Update the status with id"""
     now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '添加错误日志信息'
+    user = req_json["creator"]
+    program = "添加错误日志信息"
 
     params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'error_msg': req_json['error_msg'],
-        'end_datetime': now,
-        'update_datetime': now,
-        'update_program': program,
-        'update_user': user
+        "id": req_json["id"],
+        "status": req_json["status"],
+        "error_msg": req_json["error_msg"],
+        "end_datetime": now,
+        "update_datetime": now,
+        "update_program": program,
+        "update_user": user,
     }
 
     sql = """
@@ -113,21 +104,16 @@ def update_status_by_id(
     return res
 
 
-def delete_by_task_id(
-    req_json,
-    pool
-):
+def delete_by_task_id(req_json, pool):
     """delete info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_log
@@ -137,4 +123,3 @@ def delete_by_task_id(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
-
