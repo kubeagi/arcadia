@@ -171,7 +171,7 @@ spec:
                     type: string
                 type: object
               matchExpressions:
-                description: NodeSelectorRequirement to schedule this worker
+                description: MatchExpressions to schedule this worker
                 items:
                   description: A node selector requirement is a selector that contains
                     values, a key, and an operator that relates the key and values.

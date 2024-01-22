@@ -28,8 +28,7 @@ import (
 func ListReources(list *unstructured.UnstructuredList, page, pageSize int, converter ResourceConverter, options ...ResourceFilter) (*generated.PaginatedResult, error) {
 	index, optIndex := 0, 0
 	for i := range list.Items {
-		optIndex = 0
-		for ; optIndex < len(options); optIndex++ {
+		for optIndex = 0; optIndex < len(options); optIndex++ {
 			if !options[optIndex](&list.Items[i]) {
 				break
 			}

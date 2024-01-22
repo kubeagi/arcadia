@@ -27,10 +27,13 @@ import (
 	"github.com/tmc/langchaingo/llms"
 	"k8s.io/client-go/dynamic"
 
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/apiserver/pkg/embedder"
 	"github.com/kubeagi/arcadia/apiserver/pkg/llm"
+	"github.com/kubeagi/arcadia/apiserver/pkg/worker"
+	llmspkg "github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/openai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
 )
@@ -248,57 +251,91 @@ func ReadModelService(ctx context.Context, c dynamic.Interface, name string, nam
 // ListModelServices based on input
 func ListModelServices(ctx context.Context, c dynamic.Interface, input *generated.ListModelServiceInput) (*generated.PaginatedResult, error) {
 	// use `UnlimitedPageSize` so we can get all llms and embeddings
-	query := generated.ListCommonInput{Page: input.Page, PageSize: &common.UnlimitedPageSize, Namespace: input.Namespace, Keyword: input.Keyword}
+	notWorkerSelector := fmt.Sprintf("%s=%s", v1alpha1.ProviderLabel, v1alpha1.ProviderType3rdParty)
 
-	// list all llms
-	llmList, err := llm.ListLLMs(ctx, c, query, common.WithPageNodeConvertFunc(func(a any) generated.PageNode {
-		llm, ok := a.(*generated.Llm)
-		if !ok {
-			return nil
+	query := generated.ListCommonInput{
+		Page:          input.Page,
+		PageSize:      &common.UnlimitedPageSize,
+		Namespace:     input.Namespace,
+		Keyword:       input.Keyword,
+		LabelSelector: &notWorkerSelector,
+	}
+
+	newNodeList := make([]generated.PageNode, 0)
+
+	if input.ProviderType == nil || *input.ProviderType == string(v1alpha1.ProviderType3rdParty) {
+		exist := make(map[string]int)
+		if input.Types == nil || (*input.Types == common.ModelTypeAll || *input.Types == common.ModelTypeLLM) {
+			llmList, err := llm.ListLLMs(ctx, c, query, common.WithPageNodeConvertFunc(func(a any) generated.PageNode {
+				llm, ok := a.(*generated.Llm)
+				if !ok {
+					return nil
+				}
+				return LLM2ModelService(llm)
+			}))
+			if err != nil {
+				return nil, err
+			}
+			for _, n := range llmList.Nodes {
+				tmp := n.(*generated.ModelService)
+				if input.APIType != nil && *input.APIType != *tmp.APIType {
+					continue
+				}
+				newNodeList = append(newNodeList, tmp)
+				exist[tmp.Name] = len(newNodeList) - 1
+			}
 		}
-		// convert llm to modelserivce
-		return LLM2ModelService(llm)
-	}))
-	if err != nil {
-		return nil, err
-	}
 
-	// list all embedders
-	embedderList, err := embedder.ListEmbedders(ctx, c, query, common.WithPageNodeConvertFunc(func(a any) generated.PageNode {
-		embedder, ok := a.(*generated.Embedder)
-		if !ok {
-			return nil
+		if input.Types == nil || (*input.Types == common.ModelTypeAll || *input.Types == common.ModelTypeEmbedding) {
+			embedderList, err := embedder.ListEmbedders(ctx, c, query, common.WithPageNodeConvertFunc(func(a any) generated.PageNode {
+				embedder, ok := a.(*generated.Embedder)
+				if !ok {
+					return nil
+				}
+				return Embedder2ModelService(embedder)
+			}))
+			if err != nil {
+				return nil, err
+			}
+			for _, n := range embedderList.Nodes {
+				tmp := n.(*generated.ModelService)
+				if input.APIType != nil && *input.APIType != *tmp.APIType {
+					continue
+				}
+				if idx, ok := exist[tmp.Name]; ok {
+					t := newNodeList[idx].(*generated.ModelService)
+					t.Types = &common.ModelTypeAll
+					t.EmbeddingModels = tmp.EmbeddingModels
+					continue
+				}
+				newNodeList = append(newNodeList, tmp)
+			}
 		}
-		// convert embedder to modelserivce
-		return Embedder2ModelService(embedder)
-	}))
-	if err != nil {
-		return nil, err
 	}
 
-	// serviceList keeps all model services with combined
-	serviceMapList := make(map[string]*generated.ModelService)
-	for _, node := range append(llmList.Nodes, embedderList.Nodes...) {
-		ms, _ := node.(*generated.ModelService)
-		curr, ok := serviceMapList[ms.Name]
-		// if llm & embedder has same name,we treat it as `ModelTypeAll(llm,embedding)`
-		if ok {
-			ms.Types = &common.ModelTypeAll
-			// combine models provided by this model service
-			ms.LlmModels = append(ms.LlmModels, curr.LlmModels...)
-			ms.EmbeddingModels = append(ms.EmbeddingModels, curr.EmbeddingModels...)
+	if input.ProviderType == nil || *input.ProviderType == string(v1alpha1.ProviderTypeWorker) {
+		if input.APIType == nil || *input.APIType == string(llmspkg.OpenAI) {
+			workerQuery := generated.ListWorkerInput{
+				Page:      query.Page,
+				PageSize:  &common.UnlimitedPageSize,
+				Namespace: input.Namespace,
+				Keyword:   input.Keyword,
+			}
+			workerList, err := worker.ListWorkers(ctx, c, workerQuery, false)
+			if err != nil {
+				return nil, err
+			}
+			for _, n := range workerList.Nodes {
+				tmp := n.(*generated.Worker)
+				newNodeList = append(newNodeList, Worker2ModelService(tmp))
+			}
 		}
-		serviceMapList[ms.Name] = ms
 	}
 
-	// newNodeList
-	newNodeList := make([]*generated.ModelService, 0, len(serviceMapList))
-	for _, node := range serviceMapList {
-		newNodeList = append(newNodeList, node)
-	}
-	// sort by creation timestamp
 	sort.Slice(newNodeList, func(i, j int) bool {
-		return newNodeList[i].CreationTimestamp.After(*newNodeList[j].CreationTimestamp)
+		a := newNodeList[i].(*generated.ModelService)
+		b := newNodeList[j].(*generated.ModelService)
+		return a.CreationTimestamp.After(*b.CreationTimestamp)
 	})
 
 	// return ModelService with the actual Page and PageSize
@@ -310,54 +347,13 @@ func ListModelServices(ctx context.Context, c dynamic.Interface, input *generate
 		pageSize = *input.PageSize
 	}
 
-	var totalCount int
-
-	result := make([]generated.PageNode, 0, pageSize)
-	pageStart := (page - 1) * pageSize
-
-	// index is the actual result length
-	var index int
-	for _, service := range newNodeList {
-		// Add filter conditions here
-		// 1. filter service types: llm or embedding or both
-		if input.Types != nil && *input.Types != "" {
-			if !strings.Contains(*service.Types, *input.Types) {
-				continue
-			}
-		}
-		// 2. filter provider type: worker or 3rd_party
-		if input.ProviderType != nil && *input.ProviderType != "" {
-			if service.ProviderType == nil || *service.ProviderType != *input.ProviderType {
-				continue
-			}
-		}
-		// 3. filter api type: openai or zhipuai
-		if input.APIType != nil && *input.APIType != "" {
-			if service.APIType == nil || *service.APIType != *input.APIType {
-				continue
-			}
-		}
-
-		// increase totalCount when service meets the filter conditions
-		totalCount++
-
-		// append result
-		if index >= pageStart && len(result) < pageSize {
-			result = append(result, service)
-		}
-
-		index++
-	}
-
-	end := page * pageSize
-	if end > totalCount {
-		end = totalCount
-	}
+	totalCount := len(newNodeList)
+	start, end := common.PagePosition(page, pageSize, totalCount)
 
 	return &generated.PaginatedResult{
 		TotalCount:  totalCount,
 		HasNextPage: end < totalCount,
-		Nodes:       result,
+		Nodes:       newNodeList[start:end],
 	}, nil
 }
 

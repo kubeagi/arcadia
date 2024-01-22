@@ -38,6 +38,7 @@ const (
 	// Labels for worker's Pod
 	WorkerPodSelectorLabel = "app.kubernetes.io/name"
 	WorkerPodLabel         = Group + "/worker"
+	WorkerModelTypesLabel  = Group + "/modeltypes"
 )
 
 func DefaultWorkerType() WorkerType {
