@@ -48,18 +48,9 @@ var (
 	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
 )
 
-func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c, cli)
-	if err != nil {
-		return nil, err
-	}
-	name := config.SystemDatasource.Name
-	var namespace string
-	if config.SystemDatasource.Namespace != nil {
-		namespace = *config.SystemDatasource.Namespace
-	} else {
-		namespace = utils.GetCurrentNamespace()
-	}
+func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client, cli dynamic.Interface) (ds *arcadiav1alpha1.Datasource, err error) {
+	name := ref.Name
+	namespace := ref.GetNamespace(utils.GetCurrentNamespace())
 	source := &arcadiav1alpha1.Datasource{}
 	if c != nil {
 		if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
@@ -77,6 +68,22 @@ func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Inter
 		}
 	}
 	return source, err
+}
+
+func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfig(ctx, c, cli)
+	if err != nil {
+		return nil, err
+	}
+	return getDatasource(ctx, config.SystemDatasource, c, cli)
+}
+
+func GetRelationalDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfig(ctx, c, cli)
+	if err != nil {
+		return nil, err
+	}
+	return getDatasource(ctx, config.RelationalDatasource, c, cli)
 }
 
 func GetGateway(ctx context.Context, c client.Client, cli dynamic.Interface) (*Gateway, error) {

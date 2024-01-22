@@ -6,6 +6,13 @@ data:
       kind: Datasource
       name: '{{ .Release.Name }}-minio'
       namespace: '{{ .Release.Namespace }}'
+{{- if .Values.postgresql.enabled }}
+    relationalDatasource:
+      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+      kind: Datasource
+      name:  {{ .Release.Name }}-postgresql
+      namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- if gt (len .Values.ray.clusters) 0 }}
     rayClusters:
       {{- range .Values.ray.clusters }}

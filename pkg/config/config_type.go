@@ -25,6 +25,9 @@ type Config struct {
 	// SystemDatasource specifies the built-in datasource for Arcadia to host data files and model files
 	SystemDatasource arcadiav1alpha1.TypedObjectReference `json:"systemDatasource,omitempty"`
 
+	// RelationalDatasource specifies the built-in datasource(common:postgres) for Arcadia to host relational data
+	RelationalDatasource arcadiav1alpha1.TypedObjectReference `json:"relationalDatasource,omitempty"`
+
 	// Gateway to access LLM api services
 	Gateway *Gateway `json:"gateway,omitempty"`
 

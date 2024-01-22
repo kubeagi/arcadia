@@ -67,28 +67,6 @@ definitions:
           $ref: '#/definitions/retriever.Reference'
         type: array
     type: object
-  chat.Conversation:
-    properties:
-      app_name:
-        example: chat-with-llm
-        type: string
-      app_namespace:
-        example: arcadia
-        type: string
-      id:
-        example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
-        type: string
-      messages:
-        items:
-          $ref: '#/definitions/chat.Message'
-        type: array
-      started_at:
-        example: "2023-12-21T10:21:06.389359092+08:00"
-        type: string
-      updated_at:
-        example: "2023-12-22T10:21:06.389359092+08:00"
-        type: string
-    type: object
   chat.ConversationReqBody:
     properties:
       app_name:
@@ -112,22 +90,6 @@ definitions:
       error:
         example: conversation is not found
         type: string
-    type: object
-  chat.Message:
-    properties:
-      answer:
-        example: 旷工最小计算单位为0.5天。
-        type: string
-      id:
-        example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
-        type: string
-      query:
-        example: 旷工最小计算单位为多少天？
-        type: string
-      references:
-        items:
-          $ref: '#/definitions/retriever.Reference'
-        type: array
     type: object
   chat.MessageReqBody:
     properties:
@@ -306,6 +268,44 @@ definitions:
       uploadID:
         type: string
     type: object
+  storage.Conversation:
+    properties:
+      app_name:
+        example: chat-with-llm
+        type: string
+      app_namespace:
+        example: arcadia
+        type: string
+      id:
+        example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/storage.Message'
+        type: array
+      started_at:
+        example: "2023-12-21T10:21:06.389359092+08:00"
+        type: string
+      updated_at:
+        example: "2023-12-22T10:21:06.389359092+08:00"
+        type: string
+    type: object
+  storage.Message:
+    properties:
+      answer:
+        example: 旷工最小计算单位为0.5天。
+        type: string
+      id:
+        example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
+        type: string
+      query:
+        example: 旷工最小计算单位为多少天？
+        type: string
+      references:
+        items:
+          $ref: '#/definitions/retriever.Reference'
+        type: array
+    type: object
 info:
   contact: {}
 paths:
@@ -363,7 +363,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/chat.Conversation'
+              $ref: '#/definitions/storage.Conversation'
             type: array
         "400":
           description: Bad Request
@@ -423,7 +423,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/chat.Conversation'
+            $ref: '#/definitions/storage.Conversation'
         "400":
           description: Bad Request
           schema:

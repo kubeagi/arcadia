@@ -31,7 +31,7 @@ import (
 
 var (
 	_          Datasource = (*PostgreSQL)(nil)
-	locker     sync.Mutex
+	pgEnvMutex sync.Mutex
 	poolsMutex sync.Mutex
 	pools      = make(map[string]*PostgreSQL)
 )
@@ -88,8 +88,8 @@ func newPostgreSQL(ctx context.Context, c client.Client, dc dynamic.Interface, c
 		pgPassFile = string(data[v1alpha1.PGPASSFILE])
 		pgSSLPassword = string(data[v1alpha1.PGSSLPASSWORD])
 	}
-	locker.Lock()
-	defer locker.Unlock()
+	pgEnvMutex.Lock()
+	defer pgEnvMutex.Unlock()
 	if pgUser != "" {
 		if err := os.Setenv("PGUSER", pgUser); err != nil {
 			return nil, err
