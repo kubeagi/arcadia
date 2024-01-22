@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -130,7 +131,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		API:               new(string),
 	}
 	if r := worker.Labels[v1alpha1.WorkerModelTypesLabel]; r != "" {
-		w.ModelTypes = r
+		w.ModelTypes = strings.ReplaceAll(r, "_", ",")
 	}
 
 	// read worker's models
