@@ -162,14 +162,14 @@ func (r *WorkerReconciler) initialize(ctx context.Context, logger logr.Logger, i
 		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: instance.Spec.Model.Name}, &m); err != nil {
 			return true, err
 		}
-		if types, ok := instanceDeepCopy.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; !ok || types != m.Spec.Types {
+		if types, ok := instanceDeepCopy.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; !ok || strings.ReplaceAll(types, "_", ",") != m.Spec.Types {
 			// label do not accept `,`,so replace it with `_`
 			instanceDeepCopy.Labels[arcadiav1alpha1.WorkerModelTypesLabel] = strings.ReplaceAll(m.Spec.Types, ",", "_")
 			update = true
 		}
 	} else {
-		if _, ok := instance.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; ok {
-			delete(instance.Labels, arcadiav1alpha1.WorkerModelTypesLabel)
+		if _, ok := instanceDeepCopy.Labels[arcadiav1alpha1.WorkerModelTypesLabel]; ok {
+			delete(instanceDeepCopy.Labels, arcadiav1alpha1.WorkerModelTypesLabel)
 			update = true
 		}
 	}
