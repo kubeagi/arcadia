@@ -37,7 +37,7 @@ spec:
           command:
             - "/bin/sh"
             - "-c"
-            - "python /arcadia_app/data_manipulation/server.py"
+            - "python /arcadia_app/src/server.py"
 ---
 apiVersion: v1
 kind: Service

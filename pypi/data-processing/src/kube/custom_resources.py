@@ -43,5 +43,4 @@ arcadia_resource_datasets = CustomResource(arcadia_group, "datasets")
 # CRD LLM
 arcadia_resource_models = CustomResource(arcadia_group, "llms")
 # CRD Versioneddataset
-arcadia_resource_versioneddatasets = CustomResource(
-    arcadia_group, "versioneddatasets")
+arcadia_resource_versioneddatasets = CustomResource(arcadia_group, "versioneddatasets")

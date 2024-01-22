@@ -1,6 +1,6 @@
 # make a setup.py for ragacli package
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
@@ -22,12 +22,8 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        'ragas',
-        'langchain==0.0.354',
+        "ragas",
+        "langchain==0.0.354",
     ],
-    entry_points={
-        'console_scripts': [
-            'ro = ragas_once.cli:main'
-        ]
-    }
+    entry_points={"console_scripts": ["ro = ragas_once.cli:main"]},
 )

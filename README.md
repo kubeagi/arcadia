@@ -8,6 +8,12 @@
     <a href="https://goreportcard.com/report/github.com/kubeagi/arcadia">
       <img alt="Go Report Card" src="https://goreportcard.com/badge/kubeagi/arcadia?style=flat-square" />
     </a>
+    <a href="https://github.com/pylint-dev/pylint">
+      <img alt="Pylint Card" src="https://github.com/kubeagi/arcadia/actions/workflows/pypi_lint/badge.svg" />
+    </a>
+    <a href="https://github.com/psf/black">
+      <img alt="CodeStyle" src="https://img.shields.io/badge/code%20style-black-000000.svg" />
+    </a>
   </p>
 </div>
 

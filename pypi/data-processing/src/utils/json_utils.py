@@ -18,40 +18,25 @@ from pathlib import Path
 import ujson
 
 
-def get_str_empty(
-    json_item,
-    json_key
-):
-    if json_item.get(json_key, '') is None:
-        return ''
+def get_str_empty(json_item, json_key):
+    if json_item.get(json_key, "") is None:
+        return ""
 
-    return json_item.get(json_key, '')
+    return json_item.get(json_key, "")
 
 
 def write_json_file(
-    file_name,
-    data,
-    indent=None,
-    ensure_ascii=None,
-    escape_forward_slashes=None
+    file_name, data, indent=None, ensure_ascii=None, escape_forward_slashes=None
 ):
     file_name = Path(file_name)
-    with open(file_name, 'w', encoding='utf-8') as outfile:
-        dump(
-            data,
-            outfile,
-            indent,
-            ensure_ascii,
-            escape_forward_slashes
-        )
+    with open(file_name, "w", encoding="utf-8") as outfile:
+        dump(data, outfile, indent, ensure_ascii, escape_forward_slashes)
 
 
-def read_json_file(
-    file_name
-):
+def read_json_file(file_name):
     file_name = Path(file_name)
     json_result = None
-    with open(file_name, 'r', encoding='utf-8') as f:
+    with open(file_name, "r", encoding="utf-8") as f:
         json_result = ujson.load(f)
 
     return json_result
@@ -62,7 +47,7 @@ def dumps(
     indent=None,
     ensure_ascii=None,
     sort_keys=None,
-    escape_forward_slashes=None
+    escape_forward_slashes=None,
 ):
     if indent is None:
         indent = 2
@@ -73,30 +58,27 @@ def dumps(
     if escape_forward_slashes is None:
         escape_forward_slashes = False
 
-    return ujson.dumps(json_data,
-                indent=indent,
-                ensure_ascii=ensure_ascii,
-                sort_keys=sort_keys,
-                escape_forward_slashes=escape_forward_slashes)
+    return ujson.dumps(
+        json_data,
+        indent=indent,
+        ensure_ascii=ensure_ascii,
+        sort_keys=sort_keys,
+        escape_forward_slashes=escape_forward_slashes,
+    )
 
 
-def dump(
-    json_data,
-    file,
-    indent=None,
-    ensure_ascii=None,
-    escape_forward_slashes=None
-):
+def dump(json_data, file, indent=None, ensure_ascii=None, escape_forward_slashes=None):
     if indent is None:
-        indent=2
+        indent = 2
     if ensure_ascii is None:
-        ensure_ascii=False
+        ensure_ascii = False
     if escape_forward_slashes is None:
-        escape_forward_slashes=False
+        escape_forward_slashes = False
 
-    ujson.dump(json_data,
-               file,
-               indent=indent,
-               ensure_ascii=ensure_ascii,
-               escape_forward_slashes=escape_forward_slashes)
-
+    ujson.dump(
+        json_data,
+        file,
+        indent=indent,
+        ensure_ascii=ensure_ascii,
+        escape_forward_slashes=escape_forward_slashes,
+    )

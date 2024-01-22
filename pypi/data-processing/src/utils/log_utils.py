@@ -18,10 +18,7 @@ import os
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
 
-def init_config(
-    source_type,
-    log_dir
-):
+def init_config(source_type, log_dir):
     """Initialize the log config"""
     # Disable debug logs for the Kubernetes Python client
     logging.getLogger("kubernetes").setLevel(logging.WARNING)
@@ -34,7 +31,7 @@ def init_config(
         f'{log_dir}/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.log',
         when="midnight",
         interval=1,
-        backupCount=30
+        backupCount=30,
     )  # 按天生成日志文件，最多保存30天的日志文件
 
     file_handler.setLevel(logging.DEBUG)
@@ -44,7 +41,7 @@ def init_config(
         f'log/{source_type}_{datetime.datetime.now().strftime("%Y-%m-%d")}.err.log',
         when="midnight",
         interval=1,
-        backupCount=30
+        backupCount=30,
     )  # 按天生成日志文件，最多保存30天的日志文件
 
     error_file_handler.suffix = "%Y-%m-%d"  # 文件名的时间格式
@@ -52,10 +49,6 @@ def init_config(
 
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s [%(levelname)s] - %(message)s',
-        handlers=[
-            file_handler,
-            error_file_handler,
-            logging.StreamHandler()
-        ]
+        format="%(asctime)s [%(levelname)s] - %(message)s",
+        handlers=[file_handler, error_file_handler, logging.StreamHandler()],
     )

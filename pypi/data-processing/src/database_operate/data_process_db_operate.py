@@ -14,23 +14,17 @@
 
 
 import ujson
-import ulid
-from sanic.response import json
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def list_by_page(
-    req_json,
-    pool
-):
+def list_by_page(req_json, pool):
     """Get the list data for data processing by page"""
     params = {
-        'keyword': '%' + req_json['keyword'] + '%',
-        'namespace': req_json['namespace'],
-        'pageIndex': int(req_json['pageIndex']),
-        'pageSize': int(req_json['pageSize'])
+        "keyword": "%" + req_json["keyword"] + "%",
+        "namespace": req_json["namespace"],
+        "pageIndex": int(req_json["pageIndex"]),
+        "pageSize": int(req_json["pageSize"]),
     }
 
     sql = """
@@ -62,14 +56,11 @@ def list_by_page(
     return res
 
 
-def list_by_count(
-    req_json,
-    pool
-):
+def list_by_count(req_json, pool):
     """Get count for the list data processing with page"""
     params = {
-        'keyword': '%' + req_json['keyword'] + '%',
-        'namespace': req_json['namespace']
+        "keyword": "%" + req_json["keyword"] + "%",
+        "namespace": req_json["namespace"],
     }
 
     sql = """
@@ -86,14 +77,9 @@ def list_by_count(
     return res
 
 
-def delete_by_id(
-    req_json,
-    pool
-):
+def delete_by_id(req_json, pool):
     """Delete a record with id"""
-    params = {
-        'id': req_json['id']
-    }
+    params = {"id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task 
@@ -105,36 +91,32 @@ def delete_by_id(
     return res
 
 
-def add(
-    req_json,
-    pool,
-    id
-):
+def add(req_json, pool, id):
     """Add a new record"""
     now = date_time_utils.now_str()
-    user = req_json['creator']
-    program = '数据处理任务-新增'
+    user = req_json["creator"]
+    program = "数据处理任务-新增"
 
     params = {
-        'id': id,
-        'name': req_json['name'],
-        'file_type': req_json['file_type'],
-        'status': 'processing',
-        'namespace': req_json['namespace'],
-        'pre_data_set_name': req_json['pre_data_set_name'],
-        'pre_data_set_version': req_json['pre_data_set_version'],
-        'pre_version_data_set_name': req_json['version_data_set_name'],
-        'file_names': ujson.dumps(req_json['file_names']),
-        'post_data_set_name': req_json['post_data_set_name'],
-        'post_data_set_version': req_json['post_data_set_version'],
-        'data_process_config_info': ujson.dumps(req_json['data_process_config_info']),
-        'start_datetime': now,
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": id,
+        "name": req_json["name"],
+        "file_type": req_json["file_type"],
+        "status": "processing",
+        "namespace": req_json["namespace"],
+        "pre_data_set_name": req_json["pre_data_set_name"],
+        "pre_data_set_version": req_json["pre_data_set_version"],
+        "pre_version_data_set_name": req_json["version_data_set_name"],
+        "file_names": ujson.dumps(req_json["file_names"]),
+        "post_data_set_name": req_json["post_data_set_name"],
+        "post_data_set_version": req_json["post_data_set_version"],
+        "data_process_config_info": ujson.dumps(req_json["data_process_config_info"]),
+        "start_datetime": now,
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -186,23 +168,20 @@ def add(
     return res
 
 
-def update_status_by_id(
-    req_json, 
-    pool
-):
+def update_status_by_id(req_json, pool):
     """Update the status with id"""
     now = date_time_utils.now_str()
-    user = req_json['user']
-    program = '修改任务状态'
+    user = req_json["user"]
+    program = "修改任务状态"
 
     params = {
-        'id': req_json['id'],
-        'status': req_json['status'],
-        'current_log_id': req_json['current_log_id'],
-        'end_datetime': now,
-        'update_datetime': now,
-        'update_program': program,
-        'update_user': user
+        "id": req_json["id"],
+        "status": req_json["status"],
+        "current_log_id": req_json["current_log_id"],
+        "end_datetime": now,
+        "update_datetime": now,
+        "update_program": program,
+        "update_user": user,
     }
 
     sql = """
@@ -221,14 +200,9 @@ def update_status_by_id(
     return res
 
 
-def info_by_id(
-    req_json,
-    pool
-):
+def info_by_id(req_json, pool):
     """info with id"""
-    params = {
-        'id': req_json['id']
-    }
+    params = {"id": req_json["id"]}
 
     sql = """
         select
@@ -262,15 +236,10 @@ def info_by_id(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
-def count_by_name(
-    req_json,
-    pool
-):
+
+def count_by_name(req_json, pool):
     """Check for duplicate names."""
-    params = {
-        'name': req_json['name'],
-        'namespace': req_json['namespace']
-    }
+    params = {"name": req_json["name"], "namespace": req_json["namespace"]}
 
     sql = """
         select
@@ -286,22 +255,19 @@ def count_by_name(
     return res
 
 
-def update_status_and_log_id(
-    req_json, 
-    pool
-):
+def update_status_and_log_id(req_json, pool):
     """Update the status and current log id with task id"""
-    user = req_json['user']
-    program = '修改任务状态'
+    user = req_json["user"]
+    program = "修改任务状态"
 
     params = {
-        'id': req_json.get('id'),
-        'status': req_json.get('status'),
-        'current_log_id': req_json.get('current_log_id'),
-        'end_datetime': req_json.get('end_datetime'),
-        'update_datetime': req_json.get('end_datetime'),
-        'update_program': program,
-        'update_user': user
+        "id": req_json.get("id"),
+        "status": req_json.get("status"),
+        "current_log_id": req_json.get("current_log_id"),
+        "end_datetime": req_json.get("end_datetime"),
+        "update_datetime": req_json.get("end_datetime"),
+        "update_program": program,
+        "update_user": user,
     }
 
     sql = """
@@ -318,4 +284,3 @@ def update_status_and_log_id(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
-

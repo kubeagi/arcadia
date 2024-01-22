@@ -16,11 +16,9 @@
 from pypdf import PdfReader
 
 
-def get_content(
-    file_path
-):
+def get_content(file_path):
     """Get the content from a pdf file.
-    
+
     file_path: file path;
     """
     reader = PdfReader(file_path)
@@ -29,6 +27,4 @@ def get_content(
     for page in reader.pages:
         content += page.extract_text()
 
-    return content 
-
-
+    return content

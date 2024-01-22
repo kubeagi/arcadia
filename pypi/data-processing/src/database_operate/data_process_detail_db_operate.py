@@ -17,32 +17,29 @@ from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
 
-def insert_transform_info(
-    req_json,
-    pool
-):
+def insert_transform_info(req_json, pool):
     """Insert a transform info"""
     now = date_time_utils.now_str()
-    user = req_json['create_user']
-    program = '数据处理任务详情-新增'
+    user = req_json["create_user"]
+    program = "数据处理任务详情-新增"
 
     params = {
-        'id': req_json.get('id'),
-        'task_id': req_json.get('task_id'),
-        'document_id': req_json.get('document_id'),
-        'document_chunk_id': req_json.get('document_chunk_id'),
-        'file_name': req_json.get('file_name'),
-        'transform_type': req_json.get('transform_type'),
-        'pre_content': req_json.get('pre_content'),
-        'post_content': req_json.get('post_content'),
-        'status': req_json.get('status'),
-        'error_message': req_json.get('error_message'),
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": req_json.get("id"),
+        "task_id": req_json.get("task_id"),
+        "document_id": req_json.get("document_id"),
+        "document_chunk_id": req_json.get("document_chunk_id"),
+        "file_name": req_json.get("file_name"),
+        "transform_type": req_json.get("transform_type"),
+        "pre_content": req_json.get("pre_content"),
+        "post_content": req_json.get("post_content"),
+        "status": req_json.get("status"),
+        "error_message": req_json.get("error_message"),
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -88,29 +85,26 @@ def insert_transform_info(
     return res
 
 
-def insert_question_answer_info(
-    req_json,
-    pool
-):
+def insert_question_answer_info(req_json, pool):
     """Insert a question answer info"""
     now = date_time_utils.now_str()
-    user = req_json['create_user']
-    program = '数据处理任务问题和答案-新增'
+    user = req_json["create_user"]
+    program = "数据处理任务问题和答案-新增"
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'document_id': req_json['document_id'],
-        'document_chunk_id': req_json['document_chunk_id'],
-        'file_name': req_json['file_name'],
-        'question': req_json['question'],
-        'answer': req_json['answer'],
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": req_json["id"],
+        "task_id": req_json["task_id"],
+        "document_id": req_json["document_id"],
+        "document_chunk_id": req_json["document_chunk_id"],
+        "file_name": req_json["file_name"],
+        "question": req_json["question"],
+        "answer": req_json["answer"],
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -150,22 +144,19 @@ def insert_question_answer_info(
     return res
 
 
-def list_file_name_for_transform(
-    req_json,
-    pool
-):
+def list_file_name_for_transform(req_json, pool):
     """List file name for transform in the task detail.
-  
-      req_json is a dictionary object. for example:
-      {
-          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
-          "transform_type": "remove_invisible_characters"
-      }
-      pool: databasec connection pool;
+
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "transform_type": "remove_invisible_characters"
+    }
+    pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json['task_id'],
-      'transform_type': req_json['transform_type'],
+        "task_id": req_json["task_id"],
+        "transform_type": req_json["transform_type"],
     }
 
     sql = """
@@ -182,13 +173,10 @@ def list_file_name_for_transform(
     return res
 
 
-def top_n_list_transform_for_preview(
-    req_json,
-    pool
-):
-    """List transform info with task id, file name and 
+def top_n_list_transform_for_preview(req_json, pool):
+    """List transform info with task id, file name and
     transform type for preview.
-    
+
     req_json is a dictionary object. for example:
     {
         "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -198,9 +186,9 @@ def top_n_list_transform_for_preview(
     pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json['task_id'],
-      'file_name': req_json['file_name'],
-      'transform_type': req_json['transform_type']
+        "task_id": req_json["task_id"],
+        "file_name": req_json["file_name"],
+        "transform_type": req_json["transform_type"],
     }
 
     sql = """
@@ -224,23 +212,18 @@ def top_n_list_transform_for_preview(
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
-  
 
-def list_file_name_in_qa_by_task_id(
-    req_json,
-    pool
-):
+
+def list_file_name_in_qa_by_task_id(req_json, pool):
     """List file name in question answer with task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['task_id']
-    }
+    params = {"task_id": req_json["task_id"]}
 
     sql = """
       select 
@@ -255,12 +238,9 @@ def list_file_name_in_qa_by_task_id(
     return res
 
 
-def top_n_list_qa_for_preview(
-    req_json,
-    pool
-):
+def top_n_list_qa_for_preview(req_json, pool):
     """List question answer info with task id for preview.
-    
+
     req_json is a dictionary object. for example:
     {
         "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -268,9 +248,7 @@ def top_n_list_qa_for_preview(
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['task_id']
-    }
+    params = {"task_id": req_json["task_id"]}
 
     sql = """
         select
@@ -296,21 +274,17 @@ def top_n_list_qa_for_preview(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
-def delete_transform_by_task_id(
-    req_json,
-    pool
-):
+
+def delete_transform_by_task_id(req_json, pool):
     """delete transform info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_detail
@@ -321,21 +295,17 @@ def delete_transform_by_task_id(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def delete_qa_by_task_id(
-    req_json,
-    pool
-):
+
+def delete_qa_by_task_id(req_json, pool):
     """delete qa info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_question_answer
@@ -347,21 +317,16 @@ def delete_qa_by_task_id(
     return res
 
 
-def list_file_name_for_clean(
-    req_json,
-    pool
-):
+def list_file_name_for_clean(req_json, pool):
     """List file name for clean in the task detail.
-  
-      req_json is a dictionary object. for example:
-      {
-          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
-      }
-      pool: databasec connection pool;
-    """
-    params = {
-      'task_id': req_json['task_id']
+
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
+    pool: databasec connection pool;
+    """
+    params = {"task_id": req_json["task_id"]}
 
     sql = """
       select 
@@ -377,29 +342,26 @@ def list_file_name_for_clean(
     return res
 
 
-def insert_question_answer_clean_info(
-    req_json,
-    pool
-):
+def insert_question_answer_clean_info(req_json, pool):
     """Insert a question answer clean info"""
     now = date_time_utils.now_str()
-    user = req_json['create_user']
-    program = '数据处理任务问题和答案-新增'
+    user = req_json["create_user"]
+    program = "数据处理任务问题和答案-新增"
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'document_id': req_json['document_id'],
-        'document_chunk_id': req_json['document_chunk_id'],
-        'file_name': req_json['file_name'],
-        'question': req_json['question'],
-        'answer': req_json['answer'],
-        'create_datetime': now,
-        'create_user': user,
-        'create_program': program,
-        'update_datetime': now,
-        'update_user': user,
-        'update_program': program
+        "id": req_json["id"],
+        "task_id": req_json["task_id"],
+        "document_id": req_json["document_id"],
+        "document_chunk_id": req_json["document_chunk_id"],
+        "file_name": req_json["file_name"],
+        "question": req_json["question"],
+        "answer": req_json["answer"],
+        "create_datetime": now,
+        "create_user": user,
+        "create_program": program,
+        "update_datetime": now,
+        "update_user": user,
+        "update_program": program,
     }
 
     sql = """
@@ -439,21 +401,16 @@ def insert_question_answer_clean_info(
     return res
 
 
-def query_question_answer_list(
-    document_id,
-    pool
-):
+def query_question_answer_list(document_id, pool):
     """List question answer with document id.
-    
+
     req_json is a dictionary object. for example:
     {
         "document_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'document_id': document_id
-    }
+    params = {"document_id": document_id}
 
     sql = """
       select
@@ -477,21 +434,17 @@ def query_question_answer_list(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
-def list_file_name_for_privacy(
-    req_json,
-    pool
-):
+
+def list_file_name_for_privacy(req_json, pool):
     """List file name for privacy in the task detail.
-  
-      req_json is a dictionary object. for example:
-      {
-          "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
-      }
-      pool: databasec connection pool;
-    """
-    params = {
-      'task_id': req_json['task_id']
+
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
+    pool: databasec connection pool;
+    """
+    params = {"task_id": req_json["task_id"]}
 
     sql = """
       select 
@@ -506,21 +459,17 @@ def list_file_name_for_privacy(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
-def delete_qa_clean_by_task_id(
-    req_json,
-    pool
-):
+
+def delete_qa_clean_by_task_id(req_json, pool):
     """delete qa clean info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_question_answer_clean
@@ -532,15 +481,12 @@ def delete_qa_clean_by_task_id(
     return res
 
 
-def list_for_transform_type(
-    req_json,
-    pool
-):
+def list_for_transform_type(req_json, pool):
     """List transform for clean in the task detail."""
     params = {
-      'task_id': req_json.get('task_id'),
-      'document_id': req_json.get('document_id'),
-      'transform_type': tuple(req_json.get('transform_type'))
+        "task_id": req_json.get("task_id"),
+        "document_id": req_json.get("document_id"),
+        "transform_type": tuple(req_json.get("transform_type")),
     }
 
     sql = """
@@ -565,12 +511,9 @@ def list_for_transform_type(
     return res
 
 
-def delete_transform_by_document_chunk(
-    req_json,
-    pool
-):
+def delete_transform_by_document_chunk(req_json, pool):
     """delete transform by task id and document id and chunk id.
-    
+
     req_json is a dictionary object. for example:
     {
         "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -580,9 +523,9 @@ def delete_transform_by_document_chunk(
     pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json.get('task_id'),
-      'document_id': req_json.get('document_id'),
-      'document_chunk_id': req_json.get('document_chunk_id')
+        "task_id": req_json.get("task_id"),
+        "document_id": req_json.get("document_id"),
+        "document_chunk_id": req_json.get("document_chunk_id"),
     }
 
     sql = """
@@ -595,4 +538,3 @@ def delete_transform_by_document_chunk(
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
-

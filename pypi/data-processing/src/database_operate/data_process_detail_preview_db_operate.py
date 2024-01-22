@@ -14,28 +14,24 @@
 
 
 from database_clients import postgresql_pool_client
-from utils import date_time_utils
 
 
-def insert(
-    req_json,
-    pool
-):
+def insert(req_json, pool):
     """Insert info"""
 
     params = {
-        'id': req_json['id'],
-        'task_id': req_json['task_id'],
-        'file_name': req_json['file_name'],
-        'transform_type': req_json['transform_type'],
-        'pre_content': req_json['pre_content'],
-        'post_content': req_json['post_content'],
-        'create_datetime': req_json['create_datetime'],
-        'create_user': req_json['create_user'],
-        'create_program': req_json['create_program'],
-        'update_datetime': req_json['update_datetime'],
-        'update_user': req_json['update_user'],
-        'update_program': req_json['update_program']
+        "id": req_json["id"],
+        "task_id": req_json["task_id"],
+        "file_name": req_json["file_name"],
+        "transform_type": req_json["transform_type"],
+        "pre_content": req_json["pre_content"],
+        "post_content": req_json["post_content"],
+        "create_datetime": req_json["create_datetime"],
+        "create_user": req_json["create_user"],
+        "create_program": req_json["create_program"],
+        "update_datetime": req_json["update_datetime"],
+        "update_user": req_json["update_user"],
+        "update_program": req_json["update_program"],
     }
 
     sql = """
@@ -72,12 +68,10 @@ def insert(
     res = postgresql_pool_client.execute_update(pool, sql, params)
     return res
 
-def list_file_name_by_task_id(
-    req_json,
-    pool
-):
+
+def list_file_name_by_task_id(req_json, pool):
     """List file name with task id and transform_type.
-    
+
     req_json is a dictionary object. for example:
     {
         "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -86,8 +80,8 @@ def list_file_name_by_task_id(
     pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json['task_id'],
-      'transform_type': req_json['transform_type']
+        "task_id": req_json["task_id"],
+        "transform_type": req_json["transform_type"],
     }
 
     sql = """
@@ -103,12 +97,10 @@ def list_file_name_by_task_id(
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
 
-def list_for_preview(
-    req_json,
-    pool
-):
+
+def list_for_preview(req_json, pool):
     """List file name with task id and transform_type.
-    
+
     req_json is a dictionary object. for example:
     {
       "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
@@ -117,8 +109,8 @@ def list_for_preview(
     pool: databasec connection pool;
     """
     params = {
-      'task_id': req_json['task_id'],
-      'transform_type': req_json['transform_type']
+        "task_id": req_json["task_id"],
+        "transform_type": req_json["transform_type"],
     }
 
     sql = """
@@ -139,21 +131,16 @@ def list_for_preview(
     return res
 
 
-def delete_qa_by_task_id(
-    req_json,
-    pool
-):
+def delete_qa_by_task_id(req_json, pool):
     """delete qa info by task id.
-    
+
     req_json is a dictionary object. for example:
     {
         "id": "01HGWBE48DT3ADE9ZKA62SW4WS"
     }
     pool: databasec connection pool;
     """
-    params = {
-      'task_id': req_json['id']
-    }
+    params = {"task_id": req_json["id"]}
 
     sql = """
         delete from public.data_process_task_detail_preview

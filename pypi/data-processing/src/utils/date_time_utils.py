@@ -23,7 +23,7 @@ def now_str():
 
 
 def now_utc_str():
-    return datetime.datetime.now(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def now_str_for_day():
@@ -42,13 +42,7 @@ def timestamp_to_str_second(timestamp):
     return f"{datetime.datetime.fromtimestamp(timestamp):%Y-%m-%d %H:%M:%S}"
 
 
-def chage_datetime_fromat(
-    date_time,
-    from_format
-):
-    my_date_time = datetime.datetime.strptime(
-        date_time,
-        from_format
-    )
+def chage_datetime_fromat(date_time, from_format):
+    my_date_time = datetime.datetime.strptime(date_time, from_format)
 
-    return my_date_time.strftime(opt.get('to_format', '%Y-%m-%d %H:%M:%S'))
+    return my_date_time.strftime(opt.get("to_format", "%Y-%m-%d %H:%M:%S"))

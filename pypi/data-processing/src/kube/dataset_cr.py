@@ -20,14 +20,10 @@ from . import client
 
 logger = logging.getLogger(__name__)
 
-def update_dataset_k8s_cr(
-    namespace,
-    version_data_set_name,
-    reason,
-    message
-):
-    """ Update the condition info for the dataset.
-    
+
+def update_dataset_k8s_cr(namespace, version_data_set_name, reason, message):
+    """Update the condition info for the dataset.
+
     namespace: namespace;
     version_data_set_name: version dataset name;
     reason: the update reason;
@@ -36,68 +32,52 @@ def update_dataset_k8s_cr(
         kube = client.KubeEnv()
 
         one_cr_datasets = kube.get_versioneddatasets_status(
-                                namespace, 
-                                version_data_set_name
-                            )
+            namespace, version_data_set_name
+        )
 
-        conditions = one_cr_datasets['status']['conditions']
+        conditions = one_cr_datasets["status"]["conditions"]
         now_utc_str = date_time_utils.now_utc_str()
 
         found_index = None
         for i in range(len(conditions)):
             item = conditions[i]
-            if item['type'] == 'DataProcessing':
+            if item["type"] == "DataProcessing":
                 found_index = i
                 break
 
-        
         result = None
         if found_index is None:
-            conditions.append({
-                'lastTransitionTime': now_utc_str,
-                'reason': reason,
-                'status': "True",
-                "type": "DataProcessing",
-                "message": message
-            })
+            conditions.append(
+                {
+                    "lastTransitionTime": now_utc_str,
+                    "reason": reason,
+                    "status": "True",
+                    "type": "DataProcessing",
+                    "message": message,
+                }
+            )
         else:
             conditions[found_index] = {
-                'lastTransitionTime': now_utc_str,
-                'reason': reason,
-                'status': "True",
+                "lastTransitionTime": now_utc_str,
+                "reason": reason,
+                "status": "True",
                 "type": "DataProcessing",
-                "message": message
+                "message": message,
             }
 
         kube.patch_versioneddatasets_status(
-            namespace, 
-            version_data_set_name,
-            {
-                'status': {
-                    'conditions': conditions
-                }
-            }
+            namespace, version_data_set_name, {"status": {"conditions": conditions}}
         )
 
-        return {
-            'status': 200,
-            'message': '更新数据集状态成功',
-            'data': ''
-        }
+        return {"status": 200, "message": "更新数据集状态成功", "data": ""}
     except Exception as ex:
         logger.error(str(ex))
-        return {
-            'status': 400,
-            'message': '更新数据集状态失败',
-            'data': ''
-        }
+        return {"status": 400, "message": "更新数据集状态失败", "data": ""}
 
-def get_dataset_status_k8s_cr(
-    namespace,
-    version_data_set_name
-):
-    """ get the condition info for the dataset.
-    
+
+def get_dataset_status_k8s_cr(namespace, version_data_set_name):
+    """get the condition info for the dataset.
+
     namespace: namespace;
     version_data_set_name: version dataset name;
     """
@@ -106,33 +86,23 @@ def get_dataset_status_k8s_cr(
         kube = client.KubeEnv()
 
         one_cr_datasets = kube.get_versioneddatasets_status(
-                                namespace, 
-                                version_data_set_name
-                            )
+            namespace, version_data_set_name
+        )
 
-        conditions = one_cr_datasets['status']['conditions']
+        conditions = one_cr_datasets["status"]["conditions"]
 
         found_index = None
         for i in range(len(conditions)):
             item = conditions[i]
-            if item['type'] == 'DataProcessing':
+            if item["type"] == "DataProcessing":
                 found_index = i
                 break
 
-        
         result = None
         if found_index:
-            dataset_status = conditions[found_index].get('reason')
+            dataset_status = conditions[found_index].get("reason")
 
-        return {
-            'status': 200,
-            'message': '获取数据集状态成功',
-            'data': dataset_status
-        }
+        return {"status": 200, "message": "获取数据集状态成功", "data": dataset_status}
     except Exception as ex:
         logger.error(str(ex))
-        return {
-            'status': 400,
-            'message': '获取数据集状态失败',
-            'data': ''
-        }
+        return {"status": 400, "message": "获取数据集状态失败", "data": ""}
