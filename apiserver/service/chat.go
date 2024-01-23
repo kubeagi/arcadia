@@ -66,6 +66,7 @@ func chatHandler() gin.HandlerFunc {
 		if req.NewChat {
 			req.ConversationID = string(uuid.NewUUID())
 		}
+		messageID := string(uuid.NewUUID())
 		var response *chat.ChatRespBody
 		var err error
 
@@ -84,9 +85,10 @@ func chatHandler() gin.HandlerFunc {
 						}
 					}
 				}()
-				response, err = chat.AppRun(c.Request.Context(), req, respStream)
+				response, err = chat.AppRun(c.Request.Context(), req, respStream, messageID)
 				if err != nil {
 					c.SSEvent("error", chat.ChatRespBody{
+						MessageID:      messageID,
 						ConversationID: req.ConversationID,
 						Message:        err.Error(),
 						CreatedAt:      time.Now(),
@@ -132,6 +134,7 @@ func chatHandler() gin.HandlerFunc {
 			clientDisconnected := c.Stream(func(w io.Writer) bool {
 				if msg, ok := <-respStream; ok {
 					c.SSEvent("", chat.ChatRespBody{
+						MessageID:      messageID,
 						ConversationID: req.ConversationID,
 						Message:        msg,
 						CreatedAt:      time.Now(),
@@ -148,7 +151,7 @@ func chatHandler() gin.HandlerFunc {
 			klog.FromContext(c.Request.Context()).Info("end to receive messages")
 		} else {
 			// handle chat blocking mode
-			response, err = chat.AppRun(c.Request.Context(), req, nil)
+			response, err = chat.AppRun(c.Request.Context(), req, nil, messageID)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
 				klog.FromContext(c.Request.Context()).Error(err, "error resp")

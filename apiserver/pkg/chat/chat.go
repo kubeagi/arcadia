@@ -27,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -43,7 +42,7 @@ var (
 	Conversations = map[string]Conversation{}
 )
 
-func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*ChatRespBody, error) {
+func AppRun(ctx context.Context, req ChatReqBody, respStream chan string, messageID string) (*ChatRespBody, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
@@ -92,7 +91,7 @@ func AppRun(ctx context.Context, req ChatReqBody, respStream chan string) (*Chat
 			Debug:       req.Debug,
 		}
 	}
-	messageID := string(uuid.NewUUID())
+
 	conversation.Messages = append(conversation.Messages, Message{
 		ID:     messageID,
 		Query:  req.Query,
