@@ -122,7 +122,7 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 		CreationTimestamp: &creationtimestamp,
 		UpdateTimestamp:   &condition.LastTransitionTime.Time,
 		// Embedder info
-		Embedder: &embedder,
+		Embedder:     &embedder,
 		EmbedderType: &embedderType,
 		// Vector info
 		VectorStore: &generated.TypedObjectReference{

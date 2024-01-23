@@ -58,6 +58,9 @@ func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string
 		ps = append(ps, prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}))
 	}
 	if instance.Spec.UserMessage != "" {
+		// Add the context by default, and leave it empty
+		// so we can add more contexts as needed in all agents/chains
+		instance.Spec.UserMessage = fmt.Sprintf("{{.context}}\n%s", instance.Spec.UserMessage)
 		ps = append(ps, prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}))
 	}
 	template := prompts.NewChatPromptTemplate(ps)

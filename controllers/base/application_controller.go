@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
+	chainv1alpha1 "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
@@ -151,7 +153,8 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logg
 					r.setCondition(app, app.Status.ErrorCondition("node should have ref.group setting")...)
 					return app, ctrl.Result{}, nil
 				}
-				if *group != "chain.arcadia.kubeagi.k8s.com.cn" && *group != "agent.arcadia.kubeagi.k8s.com.cn" {
+				// Only allow chain group or agent node as the ending node
+				if *group != chainv1alpha1.Group && (*group != agentv1alpha1.Group && node.Ref.Kind != "agent") {
 					r.setCondition(app, app.Status.ErrorCondition("ending node should be chain or agent")...)
 					return app, ctrl.Result{}, nil
 				}

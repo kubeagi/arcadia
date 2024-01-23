@@ -164,7 +164,11 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 		"question":       input.Question,
 		"_answer_stream": respStream,
 		"_history":       input.History,
-		"context":        "",
+		// Use an empty context before run
+		"context": "",
+	}
+	if input.NeedStream {
+		out["_need_stream"] = true
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
@@ -174,7 +178,6 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 	for e := waitRunningNodes.Front(); e != nil; e = e.Next() {
 		e := e.Value.(base.Node)
 		if !visited[e.Name()] {
-			out["_need_stream"] = false
 			reWait := false
 			for _, n := range e.GetPrevNode() {
 				if !visited[n.Name()] {
@@ -185,9 +188,6 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 			if reWait {
 				waitRunningNodes.PushBack(e)
 				continue
-			}
-			if a.EndingNode.Name() == e.Name() && input.NeedStream {
-				out["_need_stream"] = true
 			}
 			klog.FromContext(ctx).V(3).Info(fmt.Sprintf("try to run node:%s", e.Name()))
 			if out, err = e.Run(ctx, cli, out); err != nil {
