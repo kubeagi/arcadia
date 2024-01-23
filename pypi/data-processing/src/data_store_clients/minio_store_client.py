@@ -17,11 +17,12 @@ import os
 import traceback
 
 import urllib3
-from common import log_tag_const
-from common.config import config
 from minio import Minio
 from minio.commonconfig import Tags
 from minio.error import S3Error
+
+from common import log_tag_const
+from common.config import config
 from utils import file_utils
 
 logger = logging.getLogger(__name__)

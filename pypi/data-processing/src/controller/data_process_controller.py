@@ -15,6 +15,7 @@
 
 from sanic import Blueprint
 from sanic.response import json
+
 from service import data_process_service
 from transform.text import support_type
 

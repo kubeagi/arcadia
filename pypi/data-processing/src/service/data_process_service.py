@@ -18,6 +18,7 @@ import logging
 import traceback
 
 import ulid
+
 from common import log_tag_const
 from data_store_process import minio_store_process
 from database_operate import (data_process_db_operate,
@@ -27,9 +28,7 @@ from database_operate import (data_process_db_operate,
                               data_process_document_db_operate,
                               data_process_log_db_operate,
                               data_process_stage_log_db_operate)
-from kube import model_cr
 from parallel import thread_parallel
-from utils import date_time_utils
 
 logger = logging.getLogger(__name__)
 
@@ -668,15 +667,15 @@ def _get_qa_process_file_num(task_id, conn_pool):
 
     if list_file_name_res.get("status") == 200:
         return len(list_file_name_res.get("data"))
-    else:
-        logger.error(
-            "".join(
-                [
-                    f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after QA "
-                ]
-            )
+
+    logger.error(
+        "".join(
+            [
+                f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after QA "
+            ]
         )
-        return 0
+    )
+    return 0
 
 
 def _get_clean_process_file_num(task_id, conn_pool):
@@ -687,15 +686,15 @@ def _get_clean_process_file_num(task_id, conn_pool):
 
     if list_file_name_res.get("status") == 200:
         return len(list_file_name_res.get("data"))
-    else:
-        logger.error(
-            "".join(
-                [
-                    f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after cleaning "
-                ]
-            )
+
+    logger.error(
+        "".join(
+            [
+                f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after cleaning "
+            ]
         )
-        return 0
+    )
+    return 0
 
 
 def _get_privacy_process_file_num(task_id, conn_pool):
@@ -706,12 +705,12 @@ def _get_privacy_process_file_num(task_id, conn_pool):
 
     if list_file_name_res.get("status") == 200:
         return len(list_file_name_res.get("data"))
-    else:
-        logger.error(
-            "".join(
-                [
-                    f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after privacy "
-                ]
-            )
+
+    logger.error(
+        "".join(
+            [
+                f"{log_tag_const.MINIO_STORE_PROCESS} Get the number of files processed after privacy "
+            ]
         )
-        return 0
+    )
+    return 0

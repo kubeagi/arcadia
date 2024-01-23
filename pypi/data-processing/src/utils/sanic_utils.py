@@ -16,9 +16,10 @@
 import logging
 import traceback
 
-from common import log_tag_const
 from sanic.handlers import ErrorHandler
 from sanic.response import json
+
+from common import log_tag_const
 
 logger = logging.getLogger(__name__)
 

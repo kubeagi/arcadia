@@ -16,8 +16,9 @@ import logging
 import traceback
 
 import psycopg2.extras
-from common import log_tag_const
 from dbutils.pooled_db import PooledDB
+
+from common import log_tag_const
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def get_connection_from_pool(pool):
     return pool.connection()
 
 
-def execute_query(pool, sql, params={}):
+def execute_query(pool, sql, params):
     """Execute a query with the parameters."""
     error = ""
     data = []
@@ -89,7 +90,7 @@ def execute_query(pool, sql, params={}):
     return {"status": 200, "message": "", "data": data}
 
 
-def execute_count_query(pool, sql, params={}):
+def execute_count_query(pool, sql, params):
     """Execute a count query with the parameters."""
     error = ""
     data = None
@@ -117,7 +118,7 @@ def execute_count_query(pool, sql, params={}):
     return {"status": 200, "message": "", "data": data}
 
 
-def execute_update(pool, sql, params={}):
+def execute_update(pool, sql, params):
     """Execute a update with the parameters."""
     error = ""
     data = None

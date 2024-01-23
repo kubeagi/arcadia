@@ -16,7 +16,7 @@
 import logging
 import os
 
-import log_tag_const
+from common import log_tag_const
 from kube import minio_cr, model_cr, postgresql_cr
 from utils.class_utils import Singleton
 

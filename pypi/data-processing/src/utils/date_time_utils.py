@@ -24,25 +24,3 @@ def now_str():
 
 def now_utc_str():
     return datetime.datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def now_str_for_day():
-    return f"{datetime.datetime.now():%Y-%m-%d}"
-
-
-def now_str_for_file_name():
-    return f"{datetime.datetime.now():%Y_%m_%d_%H_%M_%S_%f}"
-
-
-def timestamp_to_str(timestamp):
-    return f"{datetime.datetime.fromtimestamp(timestamp):%Y-%m-%d %H:%M:%S.%f}"
-
-
-def timestamp_to_str_second(timestamp):
-    return f"{datetime.datetime.fromtimestamp(timestamp):%Y-%m-%d %H:%M:%S}"
-
-
-def chage_datetime_fromat(date_time, from_format):
-    my_date_time = datetime.datetime.strptime(date_time, from_format)
-
-    return my_date_time.strftime(opt.get("to_format", "%Y-%m-%d %H:%M:%S"))

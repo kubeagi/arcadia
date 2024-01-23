@@ -15,7 +15,7 @@
 import datetime
 import logging
 import os
-from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 
 def init_config(source_type, log_dir):

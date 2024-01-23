@@ -17,9 +17,10 @@ import logging
 import os
 import traceback
 
-from common import log_tag_const
-from kubernetes import client, config
+from kubernetes import config
 from kubernetes.client import CoreV1Api, CustomObjectsApi
+
+from common import log_tag_const
 
 from .custom_resources import (arcadia_resource_datasets,
                                arcadia_resource_datasources,
@@ -114,16 +115,6 @@ class KubeEnv:
             namespace,
             arcadia_resource_versioneddatasets.get_name(),
             name,
-        )
-
-    def patch_versioneddatasets_status(self, namespace: str, name: str, status: any):
-        CustomObjectsApi().patch_namespaced_custom_object_status(
-            arcadia_resource_versioneddatasets.get_group(),
-            arcadia_resource_versioneddatasets.get_version(),
-            namespace,
-            arcadia_resource_versioneddatasets.get_name(),
-            name,
-            status,
         )
 
     def get_versionedmodels_status(self, namespace: str, name: str):

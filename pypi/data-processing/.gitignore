@@ -2,8 +2,6 @@
 __pycache__
 .ipynb_checkpoints
 
-data-processing/src/mock_data
+src/log
 
-data-processing/src/log
-
-data-processing/src/file_handle/temp_file
+src/file_handle/temp_file
