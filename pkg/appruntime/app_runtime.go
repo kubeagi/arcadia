@@ -164,6 +164,7 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 		"question":       input.Question,
 		"_answer_stream": respStream,
 		"_history":       input.History,
+		"context":        "",
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()

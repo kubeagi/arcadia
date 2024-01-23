@@ -48,14 +48,13 @@ spec:
                 description: DisplayName defines datasource display name
                 type: string
               maxLength:
-                default: 1024
+                default: 2048
                 description: MaxLength is the maximum length of the generated text
                   in a llm call.
-                maximum: 4096
                 minimum: 10
                 type: integer
               maxTokens:
-                default: 1024
+                default: 2048
                 description: MaxTokens is the maximum number of tokens to generate
                   to use in a llm call.
                 type: integer

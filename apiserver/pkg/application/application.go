@@ -47,8 +47,8 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	gApp.NumDocuments = pointer.Int(5)
 	gApp.ScoreThreshold = pointer.Float64(0.3)
 	gApp.Temperature = pointer.Float64(0.7)
-	gApp.MaxLength = pointer.Int(1024)
-	gApp.MaxTokens = pointer.Int(1024)
+	gApp.MaxLength = pointer.Int(2048)
+	gApp.MaxTokens = pointer.Int(2048)
 	gApp.ConversionWindowSize = pointer.Int(5)
 }
 

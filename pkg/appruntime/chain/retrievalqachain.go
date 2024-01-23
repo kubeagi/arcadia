@@ -96,6 +96,9 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
 	llmChain := chains.NewLLMChain(llm, prompt)
+	if history != nil {
+		llmChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
+	}
 	var baseChain chains.Chain
 	var stuffDocuments *appretriever.KnowledgeBaseStuffDocuments
 	if knowledgeBaseRetriever, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
