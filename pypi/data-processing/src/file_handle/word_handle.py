@@ -17,11 +17,12 @@ import logging
 import traceback
 
 import ulid
+from langchain.text_splitter import SpacyTextSplitter
+
 from common import log_tag_const
 from common.config import config
 from database_operate import data_process_document_chunk_db_operate
 from file_handle import common_handle
-from langchain.text_splitter import SpacyTextSplitter
 from utils import docx_utils, file_utils
 
 logger = logging.getLogger(__name__)

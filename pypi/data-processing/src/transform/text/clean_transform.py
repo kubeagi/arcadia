@@ -19,8 +19,9 @@ import traceback
 
 import ftfy
 import opencc
-from common import log_tag_const, special_characters
 from selectolax.parser import HTMLParser
+
+from common import log_tag_const, special_characters
 
 logger = logging.getLogger(__name__)
 

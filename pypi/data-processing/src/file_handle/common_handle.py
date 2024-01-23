@@ -18,6 +18,7 @@ import logging
 import traceback
 
 import ulid
+
 from common import log_tag_const
 from common.config import config
 from database_operate import (data_process_detail_db_operate,
@@ -859,15 +860,15 @@ def _qa_split(
     else:
         # 将QA数据存入表中
         qa_data = qa_response.get("data")
-        for i in range(len(qa_data)):
+        for _, item in enumerate(qa_data):
             qa_insert_item = {
                 "id": ulid.ulid(),
                 "task_id": task_id,
                 "document_id": document_id,
                 "document_chunk_id": document_chunk_id,
                 "file_name": file_name,
-                "question": qa_data[i][0],
-                "answer": qa_data[i][1],
+                "question": item[0],
+                "answer": item[1],
                 "create_user": create_user,
             }
 
@@ -1073,7 +1074,6 @@ def _updata_document_status_and_end_time(id, status, conn_pool):
 
 def _updata_document_progress(id, progress, update_user, conn_pool):
     try:
-        now = date_time_utils.now_str()
         document_update_item = {
             "id": id,
             "update_user": update_user,

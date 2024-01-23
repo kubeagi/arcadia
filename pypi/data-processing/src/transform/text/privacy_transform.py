@@ -17,7 +17,7 @@ import logging
 import re
 import traceback
 
-from common import log_tag_const, special_characters
+from common import log_tag_const
 
 logger = logging.getLogger(__name__)
 
@@ -280,7 +280,7 @@ def remove_weixin(text, replace_string=None):
         clean_data = []
         for regex_exp in weixin_regex:
             find_pattern = "".join([r"[^，。！？,.!?]*", regex_exp, r"[^，。！？,.!?]*"])
-            sentences = re.findall(regex_exp, text)
+            sentences = re.findall(find_pattern, text)
 
             text = re.sub(pattern=regex_exp, repl=replace_string, string=text)
 

@@ -19,6 +19,7 @@ import time
 import traceback
 
 import zhipuai
+
 from common import const, log_tag_const
 from common.config import config
 from llm_prompt_template import llm_prompt
@@ -35,7 +36,7 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
         zhipuai.api_key = api_key
 
     def generate_qa_list(
-        self, text, model, prompt_template=None, top_p=None, temperature=None
+        self, text, model=None, prompt_template=None, top_p=None, temperature=None
     ):
         """Generate the QA list.
 
@@ -78,39 +79,39 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
 
                     status = 1000
                     break
-                else:
-                    response = zhipuai.model_api.invoke(
-                        model="chatglm_6b",
-                        prompt=[{"role": "user", "content": content}],
-                        top_p=float(top_p),
-                        temperature=float(temperature),
+
+                response = zhipuai.model_api.invoke(
+                    model="chatglm_6b",
+                    prompt=[{"role": "user", "content": content}],
+                    top_p=float(top_p),
+                    temperature=float(temperature),
+                )
+                if response["success"]:
+                    result = self.__format_response_to_qa_list(response)
+                    if len(result) > 0:
+                        break
+                    
+                    logger.warn(
+                        f"failed to get QA list, wait for {wait_seconds} seconds and retry"
                     )
-                    if response["success"]:
-                        result = self.__format_response_to_qa_list(response)
-                        if len(result) > 0:
-                            break
-                        else:
-                            logger.warn(
-                                f"failed to get QA list, wait for {wait_seconds} seconds and retry"
-                            )
-                            time.sleep(wait_seconds)  # sleep 120 seconds
-                            invoke_count += 1
-                            message = "模型调用成功，生成的QA格式不对，请更换prompt"
-                    else:
-                        logger.error(
-                            "".join(
-                                [
-                                    f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
-                                    f"The error is: \n{response['msg']}\n",
-                                ]
-                            )
+                    time.sleep(wait_seconds)  # sleep 120 seconds
+                    invoke_count += 1
+                    message = "模型调用成功，生成的QA格式不对，请更换prompt"
+                else:
+                    logger.error(
+                        "".join(
+                            [
+                                f"{log_tag_const.ZHI_PU_AI} Cannot access the ZhiPuAI service.\n",
+                                f"The error is: \n{response['msg']}\n",
+                            ]
                         )
-                        logger.warn(
-                            f"zhipuai request failed, wait for {wait_seconds} seconds and retry"
-                        )
-                        time.sleep(wait_seconds)  # sleep 120 seconds
-                        invoke_count += 1
-                        message = "模型调用失败，失败原因: " + response["msg"]
+                    )
+                    logger.warn(
+                        f"zhipuai request failed, wait for {wait_seconds} seconds and retry"
+                    )
+                    time.sleep(wait_seconds)  # sleep 120 seconds
+                    invoke_count += 1
+                    message = "模型调用失败，失败原因: " + response["msg"]
             except Exception as ex:
                 logger.warn(
                     f"zhipuai request exception, wait for {wait_seconds} seconds and retry"

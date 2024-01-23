@@ -16,15 +16,15 @@
 import logging
 import traceback
 
-import ujson
 import ulid
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import SpacyTextSplitter
+
 from common import log_tag_const
 from common.config import config
 from database_operate import data_process_document_chunk_db_operate
 from file_handle import common_handle
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import SpacyTextSplitter
-from utils import file_utils
+from utils import file_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def text_manipulate(
                 "task_id": task_id,
                 "status": "not_start",
                 "content": content,
-                "meta_info": ujson.dumps(meta_info, ensure_ascii=False),
+                "meta_info": json_utils.dumps(meta_info),
                 "page_number": page,
                 "creator": create_user,
             }

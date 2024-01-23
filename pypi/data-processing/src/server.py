@@ -17,12 +17,13 @@ import logging
 import time
 
 import psycopg2
+from sanic import Sanic
+from sanic_cors import CORS
+
 from common import log_tag_const
 from common.config import config
 from controller import data_process_controller
 from database_clients import postgresql_pool_client
-from sanic import Sanic
-from sanic_cors import CORS
 from utils import log_utils, sanic_utils
 
 # Initialize the log config
@@ -30,18 +31,18 @@ log_utils.init_config(source_type="manipulate_server", log_dir="log")
 
 logger = logging.getLogger("manipulate_server")
 
-app = Sanic(name="data_manipulate")
-CORS(app)
-app.error_handler = sanic_utils.CustomErrorHandler()
+sanic_app = Sanic(name="data_manipulate")
+CORS(sanic_app)
+sanic_app.error_handler = sanic_utils.CustomErrorHandler()
 
 
-@app.middleware("request")
+@sanic_app.middleware("request")
 async def request_start_time_middleware(request):
     """Middleware to record request start time and status code"""
     request.ctx.start_time = time.time()
 
 
-@app.middleware("response")
+@sanic_app.middleware("response")
 async def request_processing_time_middleware(request, response):
     """Middleware to calculate and log request processing time and status code"""
     processing_time = time.time() - request.ctx.start_time
@@ -56,7 +57,7 @@ async def request_processing_time_middleware(request, response):
     return response
 
 
-@app.listener("before_server_start")
+@sanic_app.listener("before_server_start")
 async def init_web_server(app, _):
     app.config["REQUEST_MAX_SIZE"] = 1024 * 1024 * 1024  # 1G
     app.config["REQUEST_TIMEOUT"] = 60 * 60 * 60
@@ -67,12 +68,12 @@ async def init_web_server(app, _):
     )
 
 
-@app.listener("after_server_stop")
+@sanic_app.listener("after_server_stop")
 async def shutdown_web_server(app, _):
     postgresql_pool_client.release_pool(app.config["conn_pool"])
 
 
-app.blueprint(data_process_controller.data_process)
+sanic_app.blueprint(data_process_controller.data_process)
 
 
 def _create_database_connection():
@@ -87,4 +88,4 @@ def _create_database_connection():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=28888, access_log=False, debug=False, workers=2)
+    sanic_app.run(host="0.0.0.0", port=28888, access_log=False, debug=False, workers=2)

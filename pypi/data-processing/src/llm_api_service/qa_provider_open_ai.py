@@ -18,12 +18,13 @@ import re
 import time
 import traceback
 
-from common import log_tag_const
-from common.config import config
 from langchain import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (ChatPromptTemplate,
                                     HumanMessagePromptTemplate)
+
+from common import log_tag_const
+from common.config import config
 from llm_prompt_template import llm_prompt
 
 from .base_qa_provider import BaseQAProvider
@@ -48,7 +49,7 @@ class QAProviderOpenAI(BaseQAProvider):
             max_tokens=int(max_tokens),
         )
 
-    def generate_qa_list(self, text, prompt_template=None):
+    def generate_qa_list(self, text, model=None, prompt_template=None, top_p=None, temperature=None):
         """Generate the QA list.
 
         Parameters
@@ -83,18 +84,18 @@ class QAProviderOpenAI(BaseQAProvider):
 
                     status = 1000
                     break
-                else:
-                    response = llm_chain.run(text=text)
-                    result = self.__get_qa_list_from_response(response)
-                    if len(result) > 0:
-                        break
-                    else:
-                        logger.warn(
-                            "failed to get QA list, wait for 10 seconds and retry"
-                        )
-                        time.sleep(10)  # sleep 10 seconds
-                        invoke_count += 1
-                        message = "模型调用成功，生成的QA格式不对，请更换prompt"
+
+                response = llm_chain.run(text=text)
+                result = self.__get_qa_list_from_response(response)
+                if len(result) > 0:
+                    break
+
+                logger.warn(
+                    "failed to get QA list, wait for 10 seconds and retry"
+                )
+                time.sleep(10)  # sleep 10 seconds
+                invoke_count += 1
+                message = "模型调用成功，生成的QA格式不对，请更换prompt"
             except Exception as ex:
                 time.sleep(10)
                 invoke_count += 1

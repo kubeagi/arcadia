@@ -13,9 +13,8 @@
 # limitations under the License.
 
 
-import ujson
 from database_clients import postgresql_pool_client
-from utils import date_time_utils
+from utils import date_time_utils, json_utils
 
 
 def list_by_page(req_json, pool):
@@ -106,10 +105,10 @@ def add(req_json, pool, id):
         "pre_data_set_name": req_json["pre_data_set_name"],
         "pre_data_set_version": req_json["pre_data_set_version"],
         "pre_version_data_set_name": req_json["version_data_set_name"],
-        "file_names": ujson.dumps(req_json["file_names"]),
+        "file_names": json_utils.dumps(req_json["file_names"]),
         "post_data_set_name": req_json["post_data_set_name"],
         "post_data_set_version": req_json["post_data_set_version"],
-        "data_process_config_info": ujson.dumps(req_json["data_process_config_info"]),
+        "data_process_config_info": json_utils.dumps(req_json["data_process_config_info"]),
         "start_datetime": now,
         "create_datetime": now,
         "create_user": user,
