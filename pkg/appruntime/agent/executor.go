@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/tmc/langchaingo/agents"
+	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/tools"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,8 +84,14 @@ func (p *Executor) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	}
 
 	// Initialize executor using langchaingo
-	options := agents.WithMaxIterations(instance.Spec.Options.MaxIterations)
-	executor, err := agents.Initialize(llm, allowedTools, agents.ZeroShotReactDescription, options)
+	executorOptions := func(o *agents.CreationOptions) {
+		agents.WithMaxIterations(instance.Spec.Options.MaxIterations)(o)
+		if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+			streamHandler := StreamHandler{callbacks.SimpleHandler{}, args}
+			agents.WithCallbacksHandler(streamHandler)(o)
+		}
+	}
+	executor, err := agents.Initialize(llm, allowedTools, agents.ZeroShotReactDescription, executorOptions)
 	if err != nil {
 		return args, fmt.Errorf("failed to initialize executor: %w", err)
 	}
@@ -94,6 +101,10 @@ func (p *Executor) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	if err != nil {
 		return args, fmt.Errorf("error when call agent: %w", err)
 	}
-	args["_answer"] = response["output"]
+	klog.FromContext(ctx).V(5).Info("use agent, blocking out:", response["output"])
+	if err == nil {
+		args["_answer"] = response["output"]
+		return args, nil
+	}
 	return args, nil
 }
