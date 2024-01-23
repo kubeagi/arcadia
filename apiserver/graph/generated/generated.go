@@ -344,6 +344,7 @@ type ComplexityRoot struct {
 		Description       func(childComplexity int) int
 		DisplayName       func(childComplexity int) int
 		Embedder          func(childComplexity int) int
+		EmbedderType      func(childComplexity int) int
 		FileGroupDetails  func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
@@ -2226,6 +2227,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KnowledgeBase.Embedder(childComplexity), true
+
+	case "KnowledgeBase.embedderType":
+		if e.complexity.KnowledgeBase.EmbedderType == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBase.EmbedderType(childComplexity), true
 
 	case "KnowledgeBase.fileGroupDetails":
 		if e.complexity.KnowledgeBase.FileGroupDetails == nil {
@@ -5172,6 +5180,7 @@ type KnowledgeBase {
     embedder指当前知识库使用的embedding向量化模型，即 Kind 为 Embedder
     """
     embedder: TypedObjectReference
+    embedderType: String
     """
     vectorStore指当前知识库使用的向量数据库服务，即 Kind 为 VectorStore
     """
@@ -16430,6 +16439,47 @@ func (ec *executionContext) fieldContext_KnowledgeBase_embedder(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _KnowledgeBase_embedderType(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_embedderType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbedderType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBase_embedderType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBase",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBase_vectorStore(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 	if err != nil {
@@ -16714,6 +16764,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_createKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			case "embedder":
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
+			case "embedderType":
+				return ec.fieldContext_KnowledgeBase_embedderType(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
@@ -16803,6 +16855,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_updateKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			case "embedder":
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
+			case "embedderType":
+				return ec.fieldContext_KnowledgeBase_embedderType(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
@@ -16944,6 +16998,8 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_getKnowledgeBase(ctx
 				return ec.fieldContext_KnowledgeBase_updateTimestamp(ctx, field)
 			case "embedder":
 				return ec.fieldContext_KnowledgeBase_embedder(ctx, field)
+			case "embedderType":
+				return ec.fieldContext_KnowledgeBase_embedderType(ctx, field)
 			case "vectorStore":
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
@@ -34108,6 +34164,8 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._KnowledgeBase_updateTimestamp(ctx, field, obj)
 		case "embedder":
 			out.Values[i] = ec._KnowledgeBase_embedder(ctx, field, obj)
+		case "embedderType":
+			out.Values[i] = ec._KnowledgeBase_embedderType(ctx, field, obj)
 		case "vectorStore":
 			out.Values[i] = ec._KnowledgeBase_vectorStore(ctx, field, obj)
 		case "fileGroupDetails":

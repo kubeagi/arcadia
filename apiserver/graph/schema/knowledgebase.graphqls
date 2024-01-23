@@ -116,6 +116,7 @@ type KnowledgeBase {
     embedder指当前知识库使用的embedding向量化模型，即 Kind 为 Embedder
     """
     embedder: TypedObjectReference
+    embedderType: String
     """
     vectorStore指当前知识库使用的向量数据库服务，即 Kind 为 VectorStore
     """

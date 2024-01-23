@@ -96,15 +96,18 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 	}
 	// read displayname
 	embedderUnstrctured, err := common.ResourceGet(ctx, c, common.TypedObjectReferenceToInput(embedder), metav1.GetOptions{})
+	var embedderType string
 	if err != nil {
 		displayName := fmt.Sprintf("Unknown: %s", err.Error())
 		embedder.DisplayName = &displayName
+		embedderType = "Unknown"
 	} else {
 		embedderResource := &v1alpha1.Embedder{}
 		if err := utils.UnstructuredToStructured(embedderUnstrctured, embedderResource); err != nil {
 			return nil, err
 		}
 		embedder.DisplayName = &embedderResource.Spec.DisplayName
+		embedderType = string(embedderResource.Spec.Provider.GetType())
 	}
 
 	md := generated.KnowledgeBase{
@@ -120,6 +123,7 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 		UpdateTimestamp:   &condition.LastTransitionTime.Time,
 		// Embedder info
 		Embedder: &embedder,
+		EmbedderType: &embedderType,
 		// Vector info
 		VectorStore: &generated.TypedObjectReference{
 			APIGroup:  &apiversion,
