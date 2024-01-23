@@ -76,6 +76,7 @@ arctl -narcadia eval --rag=<rag-name>
 				os.Exit(1)
 			}
 			ragName, _ := cmd.Flags().GetString("rag")
+			dir, _ := cmd.Flags().GetString("dir")
 			rag := evalv1alpha1.RAG{}
 			gv := evalv1alpha1.GroupVersion.String()
 			u, err := common.ResourceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
@@ -94,10 +95,11 @@ arctl -narcadia eval --rag=<rag-name>
 				os.Exit(1)
 			}
 
-			download(cmd.Context(), &rag, kubeClient)
+			download(cmd.Context(), &rag, kubeClient, dir)
 		},
 	}
 	cmd.Flags().String("rag", "", "rag name")
+	cmd.Flags().String("dir", ".", "specify the file download directory")
 	_ = cmd.MarkFlagRequired("rag")
 	return cmd
 }
@@ -281,7 +283,7 @@ func parseOptions(
 	return options
 }
 
-func download(ctx context.Context, rag *evalv1alpha1.RAG, kubeClient dynamic.Interface) {
+func download(ctx context.Context, rag *evalv1alpha1.RAG, kubeClient dynamic.Interface, baseDir string) {
 	curNamespace := rag.Namespace
 	clientCache := make(map[string]*downloadutil.Download)
 	skipSource := make(map[string]struct{})
@@ -309,7 +311,7 @@ func download(ctx context.Context, rag *evalv1alpha1.RAG, kubeClient dynamic.Int
 		}
 
 		for _, f := range source.Files {
-			if err := downloader.Download(ctx, downloadutil.WithSrcFile(f), downloadutil.WithDstFile(f)); err != nil {
+			if err := downloader.Download(ctx, downloadutil.WithSrcFile(f), downloadutil.WithDstFile(filepath.Join(baseDir, f))); err != nil {
 				fmt.Fprintf(os.Stderr, "datasource %s failed to download file error %s\n", key, err)
 			}
 		}
