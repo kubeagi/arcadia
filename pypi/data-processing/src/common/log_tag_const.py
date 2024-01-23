@@ -40,3 +40,5 @@ ZHI_PU_AI = "Zhi Pu AI"
 OPEN_AI = "Open AI"
 
 CONFIG = "Config"
+
+WEB_CRAWLING = "Web Url Utils"
