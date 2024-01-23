@@ -81,7 +81,7 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
                     break
 
                 response = zhipuai.model_api.invoke(
-                    model="chatglm_6b",
+                    model=model,
                     prompt=[{"role": "user", "content": content}],
                     top_p=float(top_p),
                     temperature=float(temperature),

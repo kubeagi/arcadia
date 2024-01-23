@@ -137,7 +137,7 @@ func (r *LLMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				// Avoid to handle the event that it's not spec update or delete
 				oldLLM := ue.ObjectOld.(*arcadiav1alpha1.LLM)
 				newLLM := ue.ObjectNew.(*arcadiav1alpha1.LLM)
-				return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec) || oldLLM.DeletionTimestamp != nil
+				return !reflect.DeepEqual(oldLLM.Spec, newLLM.Spec) || newLLM.DeletionTimestamp != nil
 			},
 		})).
 		Watches(&source.Kind{Type: &arcadiav1alpha1.Worker{}},
