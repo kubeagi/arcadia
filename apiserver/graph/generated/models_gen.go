@@ -761,7 +761,8 @@ type KnowledgeBase struct {
 	// 更新时间
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
 	// embedder指当前知识库使用的embedding向量化模型，即 Kind 为 Embedder
-	Embedder *TypedObjectReference `json:"embedder,omitempty"`
+	Embedder     *TypedObjectReference `json:"embedder,omitempty"`
+	EmbedderType *string               `json:"embedderType,omitempty"`
 	// vectorStore指当前知识库使用的向量数据库服务，即 Kind 为 VectorStore
 	VectorStore *TypedObjectReference `json:"vectorStore,omitempty"`
 	// fileGroupDetails为知识库中所处理的文件组的详细内容和状态

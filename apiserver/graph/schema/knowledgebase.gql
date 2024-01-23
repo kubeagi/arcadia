@@ -22,7 +22,10 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
           embedder {
             kind
             name
+            namespace
+            displayName
           }
+          embedderType
           vectorStore{
             kind
             name
@@ -67,7 +70,10 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
           embedder {
             kind
             name
+            namespace
+            displayName
           }
+          embedderType
           vectorStore{
             kind
             name
@@ -110,7 +116,10 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
           embedder {
             kind
             name
+            namespace
+            displayName
           }
+          embedderType
           vectorStore{
             kind
             name
@@ -153,7 +162,10 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
           embedder {
             kind
             name
+            namespace
+            displayName
           }
+          embedderType
           vectorStore{
             kind
             name
