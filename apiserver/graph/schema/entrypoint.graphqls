@@ -76,4 +76,32 @@ type TypedObjectReference {
     namespace: String
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG
+"""
+ToolInput 应用和Agent中用到的工具
+"""
+input ToolInput {
+    """
+    名称(必填)，目前只有bing可选
+    """
+    name: String!
+    """
+    params 参数，可选
+    """
+    params: Map
+}
+
+"""
+Tool 应用和Agent中用到的工具
+"""
+type Tool {
+    """
+    名称，目前只有bing可选
+    """
+    name: String
+    """
+    params 参数
+    """
+    params: Map
+}
+
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster

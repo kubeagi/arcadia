@@ -32,6 +32,8 @@ spec:
                   fieldPath: metadata.namespace
             - name: DEFAULT_CONFIG
               value: {{ .Release.Name }}-config
+            - name: BING_KEY
+              value: {{ .Values.apiserver.bingKey }}
           command:
             - "./apiserver"
           args:

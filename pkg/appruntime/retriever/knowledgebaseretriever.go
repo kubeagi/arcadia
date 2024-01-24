@@ -56,8 +56,12 @@ type Reference struct {
 	FileName string `json:"file_name" example:"员工考勤管理制度-2023.pdf"`
 	// page number in the source file
 	PageNumber int `json:"page_number" example:"1"`
-	// related content in the source file
+	// related content in the source file or in webpage
 	Content string `json:"content" example:"旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。"`
+	// Title of the webpage
+	Title string `json:"title,omitempty" example:"开始使用 Microsoft 帐户 – Microsoft"`
+	// URL of the webpage
+	URL string `json:"url,omitempty" example:"https://www.microsoft.com/zh-cn/welcome"`
 }
 
 func (reference Reference) String() string {
@@ -66,6 +70,20 @@ func (reference Reference) String() string {
 		return ""
 	}
 	return string(bytes)
+}
+
+func AddReferencesToArgs(args map[string]any, refs []Reference) map[string]any {
+	if len(refs) == 0 {
+		return args
+	}
+	old, exist := args["_references"]
+	if exist {
+		oldRefs := old.([]Reference)
+		args["_references"] = append(oldRefs, refs...)
+		return args
+	}
+	args["_references"] = refs
+	return args
 }
 
 type KnowledgeBaseRetriever struct {
