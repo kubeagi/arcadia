@@ -22,7 +22,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -142,18 +142,17 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 			}
 
 			// read files from input directory
-			files, err := os.ReadDir(inputDir)
-			if err != nil {
-				log.Fatal(err)
-			}
-			for _, file := range files {
-				if file.IsDir() || filepath.Ext(file.Name()) != ".csv" || strings.HasPrefix(file.Name(), "ragas-") {
-					continue
+			err = filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if d.IsDir() || filepath.Ext(d.Name()) != ".csv" || strings.HasPrefix(d.Name(), "ragas-") {
+					return nil
 				}
 				var output evaluation.Output
 				switch outputMethod {
 				case "csv":
-					outputCSVFile, err := os.Create(filepath.Join(inputDir, fmt.Sprintf("ragas-%s", file.Name())))
+					outputCSVFile, err := os.Create(strings.Replace(path, d.Name(), fmt.Sprintf("ragas-%s", d.Name()), 1))
 					if err != nil {
 						return err
 					}
@@ -167,18 +166,14 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 					output = &evaluation.PrintOutput{}
 				}
 				// read file from dataset
-				err = GenDatasetOnSingleFile(ctx, kubeClient, app,
-					filepath.Join(inputDir, file.Name()),
+				return GenDatasetOnSingleFile(ctx, kubeClient, app,
+					path,
 					evaluation.WithQuestionColumn(questionColumn),
 					evaluation.WithGroundTruthsColumn(groundTruthsColumn),
 					evaluation.WithOutput(output),
 				)
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
+			})
+			return err
 		},
 	}
 
