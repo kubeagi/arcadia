@@ -16,9 +16,13 @@ mutation createDatasource($input: CreateDatasourceInput!) {
           }
           insecure
         }
+        type
         oss {
           bucket
           object
+        }
+        web {
+          recommendIntervalTime
         }
         creationTimestamp
         updateTimestamp
@@ -46,9 +50,13 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
           }
           insecure
         }
+        type
         oss {
           bucket
           object
+        }
+        web {
+          recommendIntervalTime
         }
         creationTimestamp
         updateTimestamp
@@ -88,9 +96,13 @@ query listDatasources($input: ListCommonInput!) {
           }
           insecure
         }
+        type
         oss {
           bucket
           object
+        }
+        web {
+          recommendIntervalTime
         }
         creationTimestamp
         updateTimestamp
@@ -120,9 +132,13 @@ query getDatasource($name: String!, $namespace: String!) {
           }
           insecure
         }
+        type
         oss {
           bucket
           object
+        }
+        web {
+          recommendIntervalTime
         }
         creationTimestamp
         updateTimestamp

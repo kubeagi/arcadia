@@ -35,6 +35,9 @@ type DatasourceSpec struct {
 
 	// PostgreSQL defines info for PostgreSQL
 	PostgreSQL *PostgreSQL `json:"postgresql,omitempty"`
+
+	// Web defines info for web resources
+	Web *Web `json:"web,omitempty"`
 }
 
 type RDMA struct {
@@ -84,6 +87,12 @@ const (
 	PGPASSFILE    = "PGPASSFILE"
 	PGSSLPASSWORD = "PGSSLPASSWORD"
 )
+
+// Web defines info for web resources
+type Web struct {
+	// RecommendIntervalTime is the recommended interval time for this crawler
+	RecommendIntervalTime int `json:"recommendIntervalTime,omitempty"`
+}
 
 // DatasourceStatus defines the observed state of Datasource
 type DatasourceStatus struct {

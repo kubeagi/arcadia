@@ -16,6 +16,10 @@ type Oss {
     object: String
 }
 
+type Web {
+    recommendIntervalTime: Int
+}
+
 """
 数据源: 定义了对某一个具备数据存储能力服务的访问信息，供后续向该数据源获取数据使用
 """
@@ -53,11 +57,20 @@ type Datasource {
     """终端访问信息"""
     endpoint: Endpoint
 
+    """数据源类型"""
+    type: String!
+
     """
     对象存储访问信息
     规则: 非空代表当前数据源为对象存储数据源
     """
     oss: Oss
+
+    """
+    Web数据访问信息
+    规则: 非空代表当前数据源为web在线数据
+    """
+    web: Web
 
     """数据源连接状态"""
     status: String
@@ -74,6 +87,10 @@ type Datasource {
 input OssInput {
     bucket: String!
     object: String
+}
+
+input WebInput {
+    recommendIntervalTime: Int!
 }
 
 """新增数据源时输入条件"""
@@ -106,6 +123,9 @@ input CreateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Web数据时的输入"""
+    webinput: WebInput
 }
 
 """更新数据源的输入"""
@@ -136,6 +156,9 @@ input UpdateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Web数据时的输入"""
+    webinput: WebInput
 }
 
 

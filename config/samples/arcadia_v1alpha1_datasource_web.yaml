@@ -1,0 +1,12 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Datasource
+metadata:
+  name: datasource-web-sample
+spec:
+  displayName: "数据源示例"
+  endpoint:
+    url: arcadia-minio.arcadia.svc.cluster.local:9000
+  web:
+    # 1000ms by default
+    recommendIntervalTime: 1000
+  

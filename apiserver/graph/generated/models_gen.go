@@ -197,6 +197,8 @@ type CreateDatasourceInput struct {
 	Endpointinput EndpointInput `json:"endpointinput"`
 	// 数据源为对象存储类型时的输入
 	Ossinput *OssInput `json:"ossinput,omitempty"`
+	// 数据源为Web数据时的输入
+	Webinput *WebInput `json:"webinput,omitempty"`
 }
 
 type CreateEmbedderInput struct {
@@ -594,9 +596,14 @@ type Datasource struct {
 	Description *string `json:"description,omitempty"`
 	// 终端访问信息
 	Endpoint *Endpoint `json:"endpoint,omitempty"`
+	// 数据源类型
+	Type string `json:"type"`
 	// 对象存储访问信息
 	// 规则: 非空代表当前数据源为对象存储数据源
 	Oss *Oss `json:"oss,omitempty"`
+	// Web数据访问信息
+	// 规则: 非空代表当前数据源为web在线数据
+	Web *Web `json:"web,omitempty"`
 	// 数据源连接状态
 	Status  *string `json:"status,omitempty"`
 	Message *string `json:"message,omitempty"`
@@ -1291,6 +1298,8 @@ type UpdateDatasourceInput struct {
 	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
 	// 数据源为对象存储类型时的输入
 	Ossinput *OssInput `json:"ossinput,omitempty"`
+	// 数据源为Web数据时的输入
+	Webinput *WebInput `json:"webinput,omitempty"`
 }
 
 type UpdateEmbedderInput struct {
@@ -1505,6 +1514,14 @@ type VersionedDatasetMutation struct {
 type VersionedDatasetQuery struct {
 	GetVersionedDataset   VersionedDataset `json:"getVersionedDataset"`
 	ListVersionedDatasets PaginatedResult  `json:"listVersionedDatasets"`
+}
+
+type Web struct {
+	RecommendIntervalTime *int `json:"recommendIntervalTime,omitempty"`
+}
+
+type WebInput struct {
+	RecommendIntervalTime int `json:"recommendIntervalTime"`
 }
 
 // 本地模型服务节点
