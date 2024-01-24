@@ -4895,7 +4895,7 @@ extend type Query{
     baseUrl: String!
 
     """
-    此LLM支持调用的模型列表
+    此Embedder支持调用的模型列表
     """
     models: [String!]
     
@@ -4935,6 +4935,11 @@ input CreateEmbedderInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此Embedder支持调用的模型列表
+    """
+    models: [String!]
 }
 
 input UpdateEmbedderInput {
@@ -4961,6 +4966,11 @@ input UpdateEmbedderInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此Embedder支持调用的模型列表
+    """
+    models: [String!]
 }
 
 type EmbedderQuery {
@@ -5365,6 +5375,11 @@ input CreateLLMInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+        """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
 }
 
 input UpdateLLMInput {
@@ -5390,6 +5405,11 @@ input UpdateLLMInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
 }
 
 type LLMQuery {
@@ -28240,7 +28260,7 @@ func (ec *executionContext) unmarshalInputCreateEmbedderInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type", "models"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28319,6 +28339,15 @@ func (ec *executionContext) unmarshalInputCreateEmbedderInput(ctx context.Contex
 				return it, err
 			}
 			it.Type = data
+		case "models":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("models"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Models = data
 		}
 	}
 
@@ -28433,7 +28462,7 @@ func (ec *executionContext) unmarshalInputCreateLLMInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type", "models"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28512,6 +28541,15 @@ func (ec *executionContext) unmarshalInputCreateLLMInput(ctx context.Context, ob
 				return it, err
 			}
 			it.Type = data
+		case "models":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("models"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Models = data
 		}
 	}
 
@@ -30702,7 +30740,7 @@ func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type", "models"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30781,6 +30819,15 @@ func (ec *executionContext) unmarshalInputUpdateEmbedderInput(ctx context.Contex
 				return it, err
 			}
 			it.Type = data
+		case "models":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("models"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Models = data
 		}
 	}
 
@@ -30877,7 +30924,7 @@ func (ec *executionContext) unmarshalInputUpdateLLMInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "type", "models"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30956,6 +31003,15 @@ func (ec *executionContext) unmarshalInputUpdateLLMInput(ctx context.Context, ob
 				return it, err
 			}
 			it.Type = data
+		case "models":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("models"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Models = data
 		}
 	}
 

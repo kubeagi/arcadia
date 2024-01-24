@@ -14,7 +14,7 @@ type Embedder {
     baseUrl: String!
 
     """
-    此LLM支持调用的模型列表
+    此Embedder支持调用的模型列表
     """
     models: [String!]
     
@@ -54,6 +54,11 @@ input CreateEmbedderInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此Embedder支持调用的模型列表
+    """
+    models: [String!]
 }
 
 input UpdateEmbedderInput {
@@ -80,6 +85,11 @@ input UpdateEmbedderInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此Embedder支持调用的模型列表
+    """
+    models: [String!]
 }
 
 type EmbedderQuery {

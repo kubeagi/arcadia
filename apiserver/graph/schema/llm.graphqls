@@ -54,6 +54,11 @@ input CreateLLMInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+        """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
 }
 
 input UpdateLLMInput {
@@ -79,6 +84,11 @@ input UpdateLLMInput {
     规则:  目前支持 zhipuai,openai两种接口类型
     """
     type: String
+
+    """
+    此LLM支持调用的模型列表
+    """
+    models: [String!]
 }
 
 type LLMQuery {

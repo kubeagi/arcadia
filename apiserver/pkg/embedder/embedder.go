@@ -59,7 +59,7 @@ func Embedder2model(ctx context.Context, c dynamic.Interface, obj *unstructured.
 	updateTime := condition.LastTransitionTime.Time
 	status := common.GetObjStatus(embedder)
 	message := string(condition.Message)
-	// Use worker's status&message if LLM's provider is `Worker`
+	// Use worker's status&message if Embedder's provider is `Worker`
 	if embedder.Spec.Provider.GetType() == v1alpha1.ProviderTypeWorker {
 		w, err := worker.ReadWorker(ctx, c, embedder.Name, embedder.Namespace)
 		if err == nil {
@@ -130,7 +130,8 @@ func CreateEmbedder(ctx context.Context, c dynamic.Interface, input generated.Cr
 					URL: input.Endpointinput.URL,
 				},
 			},
-			Type: embeddings.EmbeddingType(servicetype),
+			Type:   embeddings.EmbeddingType(servicetype),
+			Models: input.Models,
 		},
 	}
 
@@ -208,6 +209,11 @@ func UpdateEmbedder(ctx context.Context, c dynamic.Interface, input *generated.U
 	}
 	if input.Type != nil {
 		updatedEmbedder.Spec.Type = embeddings.EmbeddingType(*input.Type)
+	}
+
+	// update Embedder's models if specified
+	if input.Models != nil {
+		updatedEmbedder.Spec.Models = input.Models
 	}
 
 	// Update endpoint
