@@ -57,6 +57,12 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
   - pods
   - services
   verbs:
@@ -425,6 +431,12 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - '*'
 - apiGroups:
   - chain.arcadia.kubeagi.k8s.com.cn
   resources:
