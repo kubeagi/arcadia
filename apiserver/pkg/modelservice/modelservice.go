@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/tmc/langchaingo/llms"
 	"k8s.io/client-go/dynamic"
@@ -59,7 +58,7 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 	}
 
 	var modelSerivce = &generated.ModelService{}
-
+	var llmModels, embeddingModels []string
 	// Create LLM if serviceType contains llm
 	if strings.Contains(serviceType, "llm") {
 		llm, err := llm.CreateLLM(ctx, c, generated.CreateLLMInput{
@@ -71,10 +70,12 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 			Annotations:   input.Annotations,
 			Type:          &APIType,
 			Endpointinput: input.Endpoint,
+			Models:        input.LlmModels,
 		})
 		if err != nil {
 			return nil, err
 		}
+		llmModels = llm.Models
 		modelSerivce = LLM2ModelService(llm)
 	}
 
@@ -89,15 +90,19 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 			Annotations:   input.Annotations,
 			Type:          &APIType,
 			Endpointinput: input.Endpoint,
+			Models:        input.EmbeddingModels,
 		})
 		if err != nil {
 			return nil, err
 		}
-
+		embeddingModels = embedder.Models
 		modelSerivce = Embedder2ModelService(embedder)
 	}
 
+	// merge llm&embedder
 	modelSerivce.Types = &serviceType
+	modelSerivce.LlmModels = llmModels
+	modelSerivce.EmbeddingModels = embeddingModels
 
 	return modelSerivce, nil
 }
@@ -150,6 +155,7 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generat
 		Annotations:   newAnnotations,
 		Type:          &newAPIType,
 		Endpointinput: &input.Endpoint,
+		Models:        input.LlmModels,
 	}
 
 	updateEmbedderInput := generated.UpdateEmbedderInput{
@@ -161,15 +167,19 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generat
 		Annotations:   newAnnotations,
 		Type:          &newAPIType,
 		Endpointinput: &input.Endpoint,
+		Models:        input.EmbeddingModels,
 	}
 
 	// TODO: codes to delete/create llm/embedding resource if input.Types is changed. For now it will not work.
-
+	var updatedModelSerivce = &generated.ModelService{}
+	var llmModels, embeddingModels []string
 	if strings.Contains(*ms.Types, "llm") {
 		updatedLLM, err = llm.UpdateLLM(ctx, c, &updateLLMInput)
 		if err != nil {
 			return nil, errors.New("update LLM failed: " + err.Error())
 		}
+		llmModels = updatedLLM.Models
+		updatedModelSerivce = LLM2ModelService(updatedLLM)
 	}
 
 	if strings.Contains(*ms.Types, "embedding") {
@@ -177,31 +187,16 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generat
 		if err != nil {
 			return nil, errors.New("update embedding failed: " + err.Error())
 		}
+		embeddingModels = updatedEmbedder.Models
+		updatedModelSerivce = Embedder2ModelService(updatedEmbedder)
 	}
 
-	var creationTimestamp, updateTimestamp *time.Time
+	// merge llm&embedder
+	updatedModelSerivce.Types = ms.Types
+	updatedModelSerivce.LlmModels = llmModels
+	updatedModelSerivce.EmbeddingModels = embeddingModels
 
-	if updatedLLM != nil {
-		creationTimestamp = updatedLLM.CreationTimestamp
-		updateTimestamp = updatedLLM.UpdateTimestamp
-	} else if updatedEmbedder != nil {
-		creationTimestamp = updatedLLM.CreationTimestamp
-		updateTimestamp = updatedLLM.UpdateTimestamp
-	}
-
-	ds := &generated.ModelService{
-		Name:              input.Name,
-		Namespace:         input.Namespace,
-		DisplayName:       &newDisplayName,
-		Description:       &newDescription,
-		Labels:            newLabels,
-		Annotations:       newAnnotations,
-		Types:             ms.Types,
-		APIType:           &newAPIType,
-		CreationTimestamp: creationTimestamp,
-		UpdateTimestamp:   updateTimestamp,
-	}
-	return ds, nil
+	return updatedModelSerivce, nil
 }
 
 // DeleteModelService deletes a 3rd_party model service
@@ -232,19 +227,26 @@ func DeleteModelService(ctx context.Context, c dynamic.Interface, input *generat
 // ReadModelService get a 3rd_party model service
 func ReadModelService(ctx context.Context, c dynamic.Interface, name string, namespace string) (*generated.ModelService, error) {
 	var modelService = &generated.ModelService{}
-
+	var serviceTypes []string
+	var llmModels, embeddingModels []string
 	llm, err := llm.ReadLLM(ctx, c, name, namespace)
 	if err == nil {
+		llmModels = llm.Models
+		serviceTypes = append(serviceTypes, common.ModelTypeLLM)
 		modelService = LLM2ModelService(llm)
 	}
 	embedder, err := embedder.ReadEmbedder(ctx, c, name, namespace)
 	if err == nil {
+		embeddingModels = embedder.Models
+		serviceTypes = append(serviceTypes, common.ModelTypeEmbedding)
 		modelService = Embedder2ModelService(embedder)
 	}
 
-	if llm != nil && embedder != nil {
-		modelService.Types = &common.ModelTypeAll
-	}
+	serviceTypeStr := strings.Join(serviceTypes, ",")
+	modelService.Types = &serviceTypeStr
+	modelService.LlmModels = llmModels
+	modelService.EmbeddingModels = embeddingModels
+
 	return modelService, nil
 }
 

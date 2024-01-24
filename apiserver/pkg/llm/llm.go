@@ -185,7 +185,8 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 					URL: input.Endpointinput.URL,
 				},
 			},
-			Type: llms.LLMType(APIType),
+			Type:   llms.LLMType(APIType),
+			Models: input.Models,
 		},
 	}
 	common.SetCreator(ctx, &llm.Spec.CommonSpec)
@@ -264,6 +265,11 @@ func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.Update
 	}
 	if input.Type != nil {
 		updatedLLM.Spec.Type = llms.LLMType(*input.Type)
+	}
+
+	// update LLM's models if specified
+	if input.Models != nil {
+		updatedLLM.Spec.Models = input.Models
 	}
 
 	// Update endpoint

@@ -217,6 +217,8 @@ type CreateEmbedderInput struct {
 	// 向量化模型服务接口类型
 	// 规则:  目前支持 zhipuai,openai两种接口类型
 	Type *string `json:"type,omitempty"`
+	// 此Embedder支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 }
 
 // 创建知识库的输入
@@ -259,6 +261,8 @@ type CreateLLMInput struct {
 	// 模型服务接口类型
 	// 规则:  目前支持 zhipuai,openai两种接口类型
 	Type *string `json:"type,omitempty"`
+	// 此LLM支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 }
 
 // 创建模型的输入
@@ -647,7 +651,7 @@ type Embedder struct {
 	Description *string                `json:"description,omitempty"`
 	// 服务地址
 	BaseURL string `json:"baseUrl"`
-	// 此LLM支持调用的模型列表
+	// 此Embedder支持调用的模型列表
 	Models []string `json:"models,omitempty"`
 	// Embedder供应商类型：
 	// 规则: 分为两类: worker 或者 3rd_party
@@ -1307,6 +1311,8 @@ type UpdateEmbedderInput struct {
 	// 向量化模型服务接口类型
 	// 规则:  目前支持 zhipuai,openai两种接口类型
 	Type *string `json:"type,omitempty"`
+	// 此Embedder支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 }
 
 // 知识库更新的输入
@@ -1345,6 +1351,8 @@ type UpdateLLMInput struct {
 	// 模型服务接口类型
 	// 规则:  目前支持 zhipuai,openai两种接口类型
 	Type *string `json:"type,omitempty"`
+	// 此LLM支持调用的模型列表
+	Models []string `json:"models,omitempty"`
 }
 
 // 模型更新的输入
