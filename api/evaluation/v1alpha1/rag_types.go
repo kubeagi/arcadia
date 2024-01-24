@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -35,6 +37,9 @@ type Dataset struct {
 
 // RAGSpec defines the desired state of RAG
 type RAGSpec struct {
+	// CommonSpec
+	basev1alpha1.CommonSpec `json:",inline"`
+
 	// Application(required) defines the target of this RAG evaluation
 	Application *basev1alpha1.TypedObjectReference `json:"application"`
 
@@ -49,12 +54,30 @@ type RAGSpec struct {
 
 	// Report defines the evaluation report configurations
 	Report Report `json:"report,omitempty"`
+
+	// Storage storage must be provided and data needs to be saved throughout the evaluation phase.
+	Storage *corev1.PersistentVolumeClaimSpec `json:"storage"`
+
+	// ServiceAccountName define the user when the job is run
+	// +kubebuilder:default=default
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Suspend suspension of the evaluation process
+	// +kubebuilder:default=false
+	Suspend bool `json:"suspend,omitempty"`
 }
 
 // RAGStatus defines the observed state of RAG
 type RAGStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// CompletionTime Evaluation completion time
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
+	// Phase evaluation current stage,
+	// init,download,generate,judge,upload,complete
+	Phase RAGPhase `json:"phase,omitempty"`
+
+	// Conditions show the status of the job in the current stage
+	Conditions []v1.JobCondition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

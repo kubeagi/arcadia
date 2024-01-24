@@ -77,3 +77,28 @@ type Parameter struct {
 type Report struct {
 	// TODO
 }
+
+// Define RAG common structure and variables
+const (
+	EvaluationJobLabels        = Group + "/rag"
+	EvaluationApplicationLabel = Group + "/application"
+)
+
+func RagStatusChanged(a, b RAGStatus) bool {
+	if !a.CompletionTime.Equal(b.CompletionTime) {
+		return true
+	}
+	if a.Phase != b.Phase {
+		return true
+	}
+	ac, bc := a.Conditions, b.Conditions
+	la, lb := len(ac), len(bc)
+	if la != lb {
+		return true
+	}
+	if la == 0 {
+		return false
+	}
+	return ac[0].Type != bc[0].Type || ac[0].Status != bc[0].Status ||
+		ac[0].Reason != bc[0].Reason || ac[0].Message != bc[0].Message
+}
