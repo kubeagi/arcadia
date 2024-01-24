@@ -321,3 +321,48 @@
     COMMENT ON COLUMN public.data_process_task_stage_log.update_datetime IS '更新时间';
     COMMENT ON COLUMN public.data_process_task_stage_log.update_user IS '更新人';
     COMMENT ON COLUMN public.data_process_task_stage_log.update_program IS '更新程序';
+
+    CREATE TABLE IF NOT EXISTS data_process_task_document_web_url
+    (
+        id varchar(32) not null
+            constraint data_process_task_document_web_url_pkey
+                primary key,
+        task_id varchar(32),
+        document_id varchar(32),
+        level varchar(32),
+        web_url varchar(4096),
+        title varchar(1024),
+        description text,
+        content text,
+        content_clean text,
+        language varchar(32),
+        status varchar(4),
+        error_message text,
+        create_datetime varchar(32),
+        create_user varchar(32),
+        create_program varchar(64),
+        update_datetime varchar(32),
+        update_user varchar(32),
+        update_program varchar(32)
+    );
+
+    CREATE TABLE IF NOT EXISTS data_process_task_document_image
+    (
+        id varchar(32) not null
+            constraint data_process_task_document_image_pkey
+                primary key,
+        task_id varchar(32),
+        document_id varchar(512),
+        url varchar(1024),
+        image_path varchar(4096),
+        ocr_content text,
+        image_info text,
+        create_datetime varchar(32),
+        create_user varchar(32),
+        create_program varchar(64),
+        update_datetime varchar(32),
+        update_user varchar(32),
+        update_program varchar(32),
+        meta_info text
+    );
+

@@ -28,6 +28,7 @@ WORKDIR /arcadia_app
 RUN chmod 777 /arcadia_app/entrypoint.sh
 
 RUN pip install -r requirements.txt
+RUN playwright install &&  playwright install-deps
 
 ENTRYPOINT ["./entrypoint.sh"]
 
