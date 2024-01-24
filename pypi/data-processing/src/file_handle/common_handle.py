@@ -992,6 +992,25 @@ def _generate_qa_list(content, llm_config):
                 return data
 
             qa_list.extend(data.get("data"))
+
+        elif llm_type == "openai":
+            # generate QA list
+            qa_provider = QAProviderOpenAI(
+                api_key="fake",
+                base_url=base_url,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+            data = qa_provider.generate_qa_list(
+                text=content, prompt_template=prompt_template
+            )
+
+            if data.get("status") != 200:
+                return data
+
+            qa_list.extend(data.get("data"))
         else:
             return {"status": 1000, "message": "暂时不支持该类型的模型", "data": ""}
 
