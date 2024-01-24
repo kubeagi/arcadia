@@ -31,6 +31,7 @@ const (
 	DatasourceTypeOSS        DatasourceType = "oss"
 	DatasourceTypeRDMA       DatasourceType = "RDMA"
 	DatasourceTypePostgreSQL DatasourceType = "postgresql"
+	DatasourceTypeWeb        DatasourceType = "web"
 	DatasourceTypeUnknown    DatasourceType = "unknown"
 )
 
@@ -42,6 +43,8 @@ func (ds DatasourceSpec) Type() DatasourceType {
 		return DatasourceTypeRDMA
 	case ds.PostgreSQL != nil:
 		return DatasourceTypePostgreSQL
+	case ds.Web != nil:
+		return DatasourceTypeWeb
 	default:
 		return DatasourceTypeUnknown
 	}

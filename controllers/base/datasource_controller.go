@@ -174,6 +174,12 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
+	case arcadiav1alpha1.DatasourceTypeWeb:
+		info = instance.Spec.Web.DeepCopy()
+		ds, err = datasource.NewWeb(ctx, endpoint.URL)
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, err)
+		}
 	default:
 		ds, err = datasource.NewUnknown(ctx, r.Client)
 		if err != nil {

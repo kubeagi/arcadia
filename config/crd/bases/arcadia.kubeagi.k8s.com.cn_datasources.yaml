@@ -147,6 +147,14 @@ spec:
                 required:
                 - path
                 type: object
+              web:
+                description: Web defines info for web resources
+                properties:
+                  recommendIntervalTime:
+                    description: RecommendIntervalTime is the recommended interval
+                      time for this crawler
+                    type: integer
+                type: object
             required:
             - endpoint
             type: object

@@ -277,7 +277,9 @@ type ComplexityRoot struct {
 		Namespace         func(childComplexity int) int
 		Oss               func(childComplexity int) int
 		Status            func(childComplexity int) int
+		Type              func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
+		Web               func(childComplexity int) int
 	}
 
 	DatasourceMutation struct {
@@ -576,6 +578,10 @@ type ComplexityRoot struct {
 	VersionedDatasetQuery struct {
 		GetVersionedDataset   func(childComplexity int, name string, namespace string) int
 		ListVersionedDatasets func(childComplexity int, input ListVersionedDatasetInput) int
+	}
+
+	Web struct {
+		RecommendIntervalTime func(childComplexity int) int
 	}
 
 	Worker struct {
@@ -1872,12 +1878,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datasource.Status(childComplexity), true
 
+	case "Datasource.type":
+		if e.complexity.Datasource.Type == nil {
+			break
+		}
+
+		return e.complexity.Datasource.Type(childComplexity), true
+
 	case "Datasource.updateTimestamp":
 		if e.complexity.Datasource.UpdateTimestamp == nil {
 			break
 		}
 
 		return e.complexity.Datasource.UpdateTimestamp(childComplexity), true
+
+	case "Datasource.web":
+		if e.complexity.Datasource.Web == nil {
+			break
+		}
+
+		return e.complexity.Datasource.Web(childComplexity), true
 
 	case "DatasourceMutation.createDatasource":
 		if e.complexity.DatasourceMutation.CreateDatasource == nil {
@@ -3488,6 +3508,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VersionedDatasetQuery.ListVersionedDatasets(childComplexity, args["input"].(ListVersionedDatasetInput)), true
 
+	case "Web.recommendIntervalTime":
+		if e.complexity.Web.RecommendIntervalTime == nil {
+			break
+		}
+
+		return e.complexity.Web.RecommendIntervalTime(childComplexity), true
+
 	case "Worker.api":
 		if e.complexity.Worker.API == nil {
 			break
@@ -3814,6 +3841,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateModelServiceInput,
 		ec.unmarshalInputUpdateVersionedDatasetInput,
 		ec.unmarshalInputUpdateWorkerInput,
+		ec.unmarshalInputWebInput,
 		ec.unmarshalInputfilegroupinput,
 	)
 	first := true
@@ -4736,6 +4764,10 @@ type Oss {
     object: String
 }
 
+type Web {
+    recommendIntervalTime: Int
+}
+
 """
 数据源: 定义了对某一个具备数据存储能力服务的访问信息，供后续向该数据源获取数据使用
 """
@@ -4773,11 +4805,20 @@ type Datasource {
     """终端访问信息"""
     endpoint: Endpoint
 
+    """数据源类型"""
+    type: String!
+
     """
     对象存储访问信息
     规则: 非空代表当前数据源为对象存储数据源
     """
     oss: Oss
+
+    """
+    Web数据访问信息
+    规则: 非空代表当前数据源为web在线数据
+    """
+    web: Web
 
     """数据源连接状态"""
     status: String
@@ -4794,6 +4835,10 @@ type Datasource {
 input OssInput {
     bucket: String!
     object: String
+}
+
+input WebInput {
+    recommendIntervalTime: Int!
 }
 
 """新增数据源时输入条件"""
@@ -4826,6 +4871,9 @@ input CreateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Web数据时的输入"""
+    webinput: WebInput
 }
 
 """更新数据源的输入"""
@@ -4856,6 +4904,9 @@ input UpdateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Web数据时的输入"""
+    webinput: WebInput
 }
 
 
@@ -13882,6 +13933,50 @@ func (ec *executionContext) fieldContext_Datasource_endpoint(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_type(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Datasource_oss(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Datasource_oss(ctx, field)
 	if err != nil {
@@ -13924,6 +14019,51 @@ func (ec *executionContext) fieldContext_Datasource_oss(ctx context.Context, fie
 				return ec.fieldContext_Oss_object(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Oss", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Datasource_web(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_web(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Web, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Web)
+	fc.Result = res
+	return ec.marshalOWeb2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWeb(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_web(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "recommendIntervalTime":
+				return ec.fieldContext_Web_recommendIntervalTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Web", field.Name)
 		},
 	}
 	return fc, nil
@@ -14150,8 +14290,12 @@ func (ec *executionContext) fieldContext_DatasourceMutation_createDatasource(ctx
 				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "type":
+				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "web":
+				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "message":
@@ -14235,8 +14379,12 @@ func (ec *executionContext) fieldContext_DatasourceMutation_updateDatasource(ctx
 				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "type":
+				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "web":
+				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "message":
@@ -14372,8 +14520,12 @@ func (ec *executionContext) fieldContext_DatasourceQuery_getDatasource(ctx conte
 				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "type":
+				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "web":
+				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "message":
@@ -14457,8 +14609,12 @@ func (ec *executionContext) fieldContext_DatasourceQuery_checkDatasource(ctx con
 				return ec.fieldContext_Datasource_description(ctx, field)
 			case "endpoint":
 				return ec.fieldContext_Datasource_endpoint(ctx, field)
+			case "type":
+				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "web":
+				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
 				return ec.fieldContext_Datasource_status(ctx, field)
 			case "message":
@@ -24217,6 +24373,47 @@ func (ec *executionContext) fieldContext_VersionedDatasetQuery_listVersionedData
 	return fc, nil
 }
 
+func (ec *executionContext) _Web_recommendIntervalTime(ctx context.Context, field graphql.CollectedField, obj *Web) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Web_recommendIntervalTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecommendIntervalTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Web_recommendIntervalTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Web",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Worker_id(ctx context.Context, field graphql.CollectedField, obj *Worker) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Worker_id(ctx, field)
 	if err != nil {
@@ -28168,7 +28365,7 @@ func (ec *executionContext) unmarshalInputCreateDatasourceInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "webinput"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28247,6 +28444,15 @@ func (ec *executionContext) unmarshalInputCreateDatasourceInput(ctx context.Cont
 				return it, err
 			}
 			it.Ossinput = data
+		case "webinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webinput"))
+			data, err := ec.unmarshalOWebInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWebInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Webinput = data
 		}
 	}
 
@@ -30648,7 +30854,7 @@ func (ec *executionContext) unmarshalInputUpdateDatasourceInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "webinput"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30727,6 +30933,15 @@ func (ec *executionContext) unmarshalInputUpdateDatasourceInput(ctx context.Cont
 				return it, err
 			}
 			it.Ossinput = data
+		case "webinput":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webinput"))
+			data, err := ec.unmarshalOWebInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWebInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Webinput = data
 		}
 	}
 
@@ -31425,6 +31640,35 @@ func (ec *executionContext) unmarshalInputUpdateWorkerInput(ctx context.Context,
 				return it, err
 			}
 			it.AdditionalEnvs = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputWebInput(ctx context.Context, obj interface{}) (WebInput, error) {
+	var it WebInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"recommendIntervalTime"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "recommendIntervalTime":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recommendIntervalTime"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecommendIntervalTime = data
 		}
 	}
 
@@ -33455,8 +33699,15 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._Datasource_description(ctx, field, obj)
 		case "endpoint":
 			out.Values[i] = ec._Datasource_endpoint(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._Datasource_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "oss":
 			out.Values[i] = ec._Datasource_oss(ctx, field, obj)
+		case "web":
+			out.Values[i] = ec._Datasource_web(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._Datasource_status(ctx, field, obj)
 		case "message":
@@ -36592,6 +36843,42 @@ func (ec *executionContext) _VersionedDatasetQuery(ctx context.Context, sel ast.
 	return out
 }
 
+var webImplementors = []string{"Web"}
+
+func (ec *executionContext) _Web(ctx context.Context, sel ast.SelectionSet, obj *Web) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, webImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Web")
+		case "recommendIntervalTime":
+			out.Values[i] = ec._Web_recommendIntervalTime(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var workerImplementors = []string{"Worker", "PageNode"}
 
 func (ec *executionContext) _Worker(ctx context.Context, sel ast.SelectionSet, obj *Worker) graphql.Marshaler {
@@ -39248,6 +39535,21 @@ func (ec *executionContext) marshalOVoid2ᚖstring(ctx context.Context, sel ast.
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOWeb2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWeb(ctx context.Context, sel ast.SelectionSet, v *Web) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Web(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOWebInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWebInput(ctx context.Context, v interface{}) (*WebInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputWebInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOWorkerMutation2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWorkerMutation(ctx context.Context, sel ast.SelectionSet, v *WorkerMutation) graphql.Marshaler {

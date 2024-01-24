@@ -78,6 +78,10 @@ func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, er
 		oss.Bucket = &datasource.Spec.OSS.Bucket
 		oss.Object = &datasource.Spec.OSS.Object
 	}
+	web := generated.Web{}
+	if datasource.Spec.Web != nil {
+		web.RecommendIntervalTime = &datasource.Spec.Web.RecommendIntervalTime
+	}
 
 	md := generated.Datasource{
 		ID:                &id,
@@ -89,7 +93,9 @@ func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, er
 		DisplayName:       &datasource.Spec.DisplayName,
 		Description:       &datasource.Spec.Description,
 		Endpoint:          &endpoint,
+		Type:              string(datasource.Spec.Type()),
 		Oss:               &oss,
+		Web:               &web,
 		Status:            &status,
 		Message:           &message,
 		CreationTimestamp: &creationtimestamp,
@@ -145,6 +151,12 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 		}
 		if input.Ossinput.Object != nil {
 			datasource.Spec.OSS.Object = *input.Ossinput.Object
+		}
+	}
+
+	if input.Webinput != nil {
+		datasource.Spec.Web = &v1alpha1.Web{
+			RecommendIntervalTime: input.Webinput.RecommendIntervalTime,
 		}
 	}
 
@@ -222,6 +234,13 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 			oss.Object = *input.Ossinput.Object
 		}
 		datasource.Spec.OSS = oss
+	}
+
+	// Update webinput
+	if input.Webinput != nil {
+		datasource.Spec.Web = &v1alpha1.Web{
+			RecommendIntervalTime: input.Webinput.RecommendIntervalTime,
+		}
 	}
 
 	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&datasource)
