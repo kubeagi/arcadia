@@ -19,6 +19,7 @@ package prompt
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/tmc/langchaingo/prompts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,10 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+)
+
+const (
+	promptContextPlaceholder = "{{.context}}"
 )
 
 type Prompt struct {
@@ -58,9 +63,11 @@ func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string
 		ps = append(ps, prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}))
 	}
 	if instance.Spec.UserMessage != "" {
-		// Add the context by default, and leave it empty
-		// so we can add more contexts as needed in all agents/chains
-		instance.Spec.UserMessage = fmt.Sprintf("{{.context}}\n%s", instance.Spec.UserMessage)
+		if !strings.Contains(instance.Spec.UserMessage, promptContextPlaceholder) {
+			// Add the context by default if it does not exist, and leave it empty
+			// so we can add more contexts as needed in all agents/chains
+			instance.Spec.UserMessage = fmt.Sprintf("%s\n%s", promptContextPlaceholder, instance.Spec.UserMessage)
+		}
 		ps = append(ps, prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}))
 	}
 	template := prompts.NewChatPromptTemplate(ps)

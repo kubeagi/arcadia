@@ -89,7 +89,7 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	// Add the answer to the context if it's not empty
 	if args["_answer"] != nil {
 		klog.Infoln("get answer from upstream:", args["_answer"])
-		args["context"] = args["_answer"]
+		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args["_answer"])
 	}
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
