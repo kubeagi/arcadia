@@ -266,3 +266,27 @@ models:
     fields:
       listRayClusters:
         resolver: true
+  RAG:
+    fields:
+      application:
+        resolver: true
+      datasets:
+        resolver: true
+      judgeLLM:
+        resolver: true
+      metrics:
+        resolver: true
+  RAGMutation:
+    fields:
+      createRAG:
+        resolver: true
+      updateRAG:
+        resolver: true
+      deleteRAG:
+        resolver: true
+  RAGQuery:
+    fields:
+      getRAG:
+        resolver: true
+      listRAG:
+        resolver: true

@@ -312,6 +312,23 @@ type CreateModelServiceInput struct {
 	EmbeddingModels []string `json:"embeddingModels,omitempty"`
 }
 
+type CreateRAGInput struct {
+	Name               string                         `json:"name"`
+	Namespace          string                         `json:"namespace"`
+	Labels             map[string]interface{}         `json:"labels,omitempty"`
+	Annotations        map[string]interface{}         `json:"annotations,omitempty"`
+	Creator            *string                        `json:"creator,omitempty"`
+	DisplayName        *string                        `json:"displayName,omitempty"`
+	Description        *string                        `json:"description,omitempty"`
+	Application        TypedObjectReferenceInput      `json:"application"`
+	Datasets           []*RAGDatasetInput             `json:"datasets"`
+	JudgeLlm           TypedObjectReferenceInput      `json:"judgeLLM"`
+	Metrics            []*RAGMetricInput              `json:"metrics"`
+	Storage            PersistentVolumeClaimSpecInput `json:"storage"`
+	ServiceAccountName *string                        `json:"serviceAccountName,omitempty"`
+	Suspend            *bool                          `json:"suspend,omitempty"`
+}
+
 type CreateVersionedDatasetInput struct {
 	// 数据集的CR名字，要满足k8s的名称规则
 	Name      string `json:"name"`
@@ -640,6 +657,12 @@ type DeleteDataProcessInput struct {
 	ID string `json:"id"`
 }
 
+type DeleteRAGInput struct {
+	Name          string  `json:"name"`
+	Namespace     string  `json:"namespace"`
+	LabelSelector *string `json:"labelSelector,omitempty"`
+}
+
 type DeleteVersionedDatasetInput struct {
 	Name          *string `json:"name,omitempty"`
 	Namespace     string  `json:"namespace"`
@@ -853,6 +876,18 @@ type LLMQuery struct {
 	ListLLMs PaginatedResult `json:"listLLMs"`
 }
 
+type LabelSelectorRequirement struct {
+	Key      *string   `json:"key,omitempty"`
+	Values   []*string `json:"values,omitempty"`
+	Operator *string   `json:"operator,omitempty"`
+}
+
+type LabelSelectorRequirementInput struct {
+	Key      *string   `json:"key,omitempty"`
+	Values   []*string `json:"values,omitempty"`
+	Operator *string   `json:"operator,omitempty"`
+}
+
 type ListCommonInput struct {
 	Namespace string `json:"namespace"`
 	// 关键词: 模糊匹配
@@ -958,6 +993,15 @@ type ListModelServiceInput struct {
 	//     - openai 则仅返回接口类型类型为openai的模型服务
 	//     - zhipuai 则仅返回接口类型类型为zhipuai的模型服务
 	APIType *string `json:"apiType,omitempty"`
+}
+
+type ListRAGInput struct {
+	AppName   string `json:"appName"`
+	Namespace string `json:"namespace"`
+	// 根据状态过滤
+	Status *string `json:"status,omitempty"`
+	// 根据名字，displayName字段获取
+	Keyword *string `json:"keyword,omitempty"`
 }
 
 type ListVersionedDatasetInput struct {
@@ -1144,6 +1188,127 @@ type PaginatedResult struct {
 	TotalCount  int        `json:"totalCount"`
 }
 
+type Parameter struct {
+	Key   *string `json:"key,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+type ParameterInput struct {
+	Key   *string `json:"key,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+type PersistentVolumeClaimSpec struct {
+	AccessModes      []string              `json:"accessModes,omitempty"`
+	Selector         *Selector             `json:"selector,omitempty"`
+	Resources        *Resource             `json:"resources,omitempty"`
+	VolumeName       string                `json:"volumeName"`
+	StorageClassName *string               `json:"storageClassName,omitempty"`
+	VolumeMode       *string               `json:"volumeMode,omitempty"`
+	Datasource       *TypedObjectReference `json:"datasource,omitempty"`
+	DataSourceRef    *TypedObjectReference `json:"dataSourceRef,omitempty"`
+}
+
+type PersistentVolumeClaimSpecInput struct {
+	AccessModes      []string                   `json:"accessModes,omitempty"`
+	Selector         *SelectorInput             `json:"selector,omitempty"`
+	Resources        *ResourceInput             `json:"resources,omitempty"`
+	VolumeName       string                     `json:"volumeName"`
+	StorageClassName *string                    `json:"storageClassName,omitempty"`
+	VolumeMode       *string                    `json:"volumeMode,omitempty"`
+	Datasource       *TypedObjectReferenceInput `json:"datasource,omitempty"`
+	DataSourceRef    *TypedObjectReferenceInput `json:"dataSourceRef,omitempty"`
+}
+
+// RAG评估结构
+type Rag struct {
+	// 名称
+	// 规则: 遵循k8s命名
+	Name string `json:"name"`
+	// 规则: 获取当前项目对应的命名空间
+	// 规则: 非空
+	Namespace string `json:"namespace"`
+	// 一些用于标记，选择的的标签
+	Labels map[string]interface{} `json:"labels,omitempty"`
+	// 添加一些辅助性记录信息
+	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	// 创建者，为当前用户的用户名
+	// 规则: webhook启用后自动添加，默认为空
+	Creator *string `json:"creator,omitempty"`
+	// 展示名
+	DisplayName *string `json:"displayName,omitempty"`
+	// 描述信息
+	Description *string `json:"description,omitempty"`
+	// 创建时间
+	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	// 评估完成时间, 如果没有完成这，这个字段没有值
+	CompleteTimestamp *time.Time `json:"completeTimestamp,omitempty"`
+	// 获取评估流程选择的应用
+	Application Application `json:"application"`
+	// 目前数据只允许来自于数据集版本
+	Datasets []*RAGDataset `json:"datasets"`
+	// judgeLLM
+	// 选用的评测大模型的具体信息
+	JudgeLlm Llm `json:"judgeLLM"`
+	// 评估个报告的指标
+	Metrics []*RAGMetric `json:"metrics"`
+	// 评测的多个阶段之间需要通过pvc传递数据
+	Storage PersistentVolumeClaimSpec `json:"storage"`
+	// 评测过程中用到的serviceAccount, 默认是default
+	ServiceAccountName string `json:"serviceAccountName"`
+	// 评估过程是否暂停，true表示已经暂停，fals表示没有暂停
+	Suspend bool `json:"suspend"`
+	// rag的状态有4中
+	// complete(评估完成)， failed(评估失败), suspend(任务停止,暂停操作), ing(评估中)
+	Status string `json:"status"`
+	// 当前评估进行到哪一步了
+	// "": 开始
+	// "init": 创建pvc中
+	// "download": 下载数据集文件
+	// "generated": 生成测试数据
+	// "judge": 大模型评测中
+	// "upload": 上传评测结果
+	// "complete": 评测过程结束
+	Phase *string `json:"phase,omitempty"`
+	// 当前阶段产生的辅助信息
+	PhaseMessage *string `json:"phaseMessage,omitempty"`
+}
+
+func (Rag) IsPageNode() {}
+
+type RAGDataset struct {
+	Source *TypedObjectReference `json:"source,omitempty"`
+	Files  []*F                  `json:"files,omitempty"`
+}
+
+type RAGDatasetInput struct {
+	Source *TypedObjectReferenceInput `json:"source,omitempty"`
+	Files  []string                   `json:"files,omitempty"`
+}
+
+type RAGMetric struct {
+	MetricKind          *string      `json:"metricKind,omitempty"`
+	Parameters          []*Parameter `json:"parameters,omitempty"`
+	ToleranceThreshbold *int         `json:"toleranceThreshbold,omitempty"`
+}
+
+type RAGMetricInput struct {
+	MetricKind          *string           `json:"metricKind,omitempty"`
+	Parameters          []*ParameterInput `json:"parameters,omitempty"`
+	ToleranceThreshbold *int              `json:"toleranceThreshbold,omitempty"`
+}
+
+type RAGMutation struct {
+	CreateRag Rag     `json:"createRAG"`
+	UpdateRag Rag     `json:"updateRAG"`
+	DeleteRag *string `json:"deleteRAG,omitempty"`
+}
+
+type RAGQuery struct {
+	GetRag  Rag             `json:"getRAG"`
+	ListRag PaginatedResult `json:"listRAG"`
+}
+
 // RayCluster集群
 type RayCluster struct {
 	// Ray集群的索引
@@ -1166,6 +1331,16 @@ type RayClusterQuery struct {
 	ListRayClusters PaginatedResult `json:"listRayClusters"`
 }
 
+type Resource struct {
+	Limits   map[string]interface{} `json:"limits,omitempty"`
+	Requests map[string]interface{} `json:"requests,omitempty"`
+}
+
+type ResourceInput struct {
+	Limits   map[string]interface{} `json:"limits,omitempty"`
+	Requests map[string]interface{} `json:"requests,omitempty"`
+}
+
 // 模型服务worker节点的资源(limits)
 type Resources struct {
 	CPU       *string `json:"cpu,omitempty"`
@@ -1183,6 +1358,16 @@ type ResourcesInput struct {
 	Memory string `json:"memory"`
 	// gpu配置
 	NvidiaGpu *string `json:"nvidiaGPU,omitempty"`
+}
+
+type Selector struct {
+	MatchLabels      map[string]interface{}      `json:"matchLabels,omitempty"`
+	MatchExpressions []*LabelSelectorRequirement `json:"matchExpressions,omitempty"`
+}
+
+type SelectorInput struct {
+	MatchLabels      map[string]interface{}           `json:"matchLabels,omitempty"`
+	MatchExpressions []*LabelSelectorRequirementInput `json:"matchExpressions,omitempty"`
 }
 
 type TypedObjectReference struct {
@@ -1411,6 +1596,22 @@ type UpdateModelServiceInput struct {
 	// 模型服务的Embedding模型列表
 	// 规则；如果不填或者为空，则按照模型的API类型获取默认的模型列表
 	EmbeddingModels []string `json:"embeddingModels,omitempty"`
+}
+
+type UpdateRAGInput struct {
+	Name               string                          `json:"name"`
+	Namespace          string                          `json:"namespace"`
+	Labels             map[string]interface{}          `json:"labels,omitempty"`
+	Annotations        map[string]interface{}          `json:"annotations,omitempty"`
+	DisplayName        *string                         `json:"displayName,omitempty"`
+	Description        *string                         `json:"description,omitempty"`
+	Application        TypedObjectReferenceInput       `json:"application"`
+	Datasets           []*RAGDatasetInput              `json:"datasets,omitempty"`
+	JudgeLlm           *TypedObjectReferenceInput      `json:"judgeLLM,omitempty"`
+	Metrics            []*RAGMetricInput               `json:"metrics,omitempty"`
+	Storage            *PersistentVolumeClaimSpecInput `json:"storage,omitempty"`
+	ServiceAccountName *string                         `json:"serviceAccountName,omitempty"`
+	Suspend            *bool                           `json:"suspend,omitempty"`
 }
 
 type UpdateVersionedDatasetInput struct {

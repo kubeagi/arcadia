@@ -1,0 +1,52 @@
+type LabelSelectorRequirement {
+    key: String
+    values: [String]
+    operator: String
+}
+input LabelSelectorRequirementInput {
+    key: String
+    values: [String]
+    operator: String
+}
+
+type Selector {
+    matchLabels: Map
+    matchExpressions: [LabelSelectorRequirement]
+}
+input SelectorInput {
+    matchLabels: Map
+    matchExpressions: [LabelSelectorRequirementInput]
+}
+
+
+type Resource {
+    limits: Map
+    requests: Map
+}
+
+input ResourceInput {
+    limits: Map
+    requests: Map
+}
+
+type PersistentVolumeClaimSpec {
+    accessModes: [String!]
+    selector: Selector
+    resources:  Resource
+    volumeName: String!
+    storageClassName: String
+    volumeMode: String
+    datasource: TypedObjectReference
+    dataSourceRef: TypedObjectReference
+}
+
+input PersistentVolumeClaimSpecInput {
+    accessModes: [String!]
+    selector: SelectorInput
+    resources:  ResourceInput
+    volumeName: String!
+    storageClassName: String
+    volumeMode: String
+    datasource: TypedObjectReferenceInput
+    dataSourceRef: TypedObjectReferenceInput
+}
