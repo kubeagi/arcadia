@@ -24,7 +24,7 @@ spec:
     arXiv: https://arxiv.org/abs/2309.10305
 
     百川智能成立于2023年4月10日,由前搜狗公司CEO王小川创立。公司以帮助大众轻松、普惠地获取世界知识和专业服务为使命,致力于通过语言AI的突破,构建中国最优秀的大模型底座。
-  types: "llm,embedding"
+  types: "llm"
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -55,7 +55,7 @@ spec:
     ModelScope: https://modelscope.cn/models/ZhipuAI/chatglm2-6b
 
     北京智谱华章科技有限公司由清华大学计算机系技术成果转化而来,致力于打造新一代认知智能大模型,专注于做大模型的中国创新。
-  types: "llm,embedding"
+  types: "llm"
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -87,7 +87,7 @@ spec:
     arXiv: https://arxiv.org/abs/2309.16609
 
     通义为阿里云大模型的统一品牌,覆盖语言、听觉、多模态等领域,致力于实现类人智慧的通用智能。
-  types: "llm,embedding"
+  types: "llm"
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
