@@ -13,51 +13,55 @@ spec:
           app.kubernetes.io/instance: raycluster
           app.kubernetes.io/name: kuberay
       spec:
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          fsGroup: 0
         containers:
-        - image: kubeagi/ray-ml:2.9.0-py39-vllm
-          name: ray-head
-          resources:
-            limits:
-              cpu: "1"
-              memory: 2G
-              nvidia.com/gpu: 1
-            requests:
-              cpu: "1"
-              memory: 2G
-              nvidia.com/gpu: 1
-          volumeMounts:
-          - mountPath: /tmp/ray
-            name: log-volume
+          - image: kubeagi/ray-ml:2.9.0-py39-vllm
+            name: ray-head
+            resources:
+              limits:
+                cpu: "1"
+                memory: 2G
+                nvidia.com/gpu: 1
+              requests:
+                cpu: "1"
+                memory: 2G
+                nvidia.com/gpu: 1
+            volumeMounts:
+              - mountPath: /tmp/ray
+                name: log-volume
         volumes:
-        - emptyDir: {}
-          name: log-volume
+          - emptyDir: {}
+            name: log-volume
   workerGroupSpecs:
-  - groupName: workergroup
-    replicas: 0
-    minReplicas: 0
-    maxReplicas: 5
-    rayStartParams: {}
-    template:
-      metadata:
-        labels:
-          app.kubernetes.io/instance: raycluster
-          app.kubernetes.io/name: kuberay
-      spec:
-        containers:
-        - image: kubeagi/ray-ml:2.9.0-py39-vllm
-          name: ray-worker
-          resources:
-            limits:
-              cpu: "1"
-              memory: 1G
-              nvidia.com/gpu: 1
-            requests:
-              cpu: "1"
-              memory: 1G
-              nvidia.com/gpu: 1
-          volumeMounts:
-          - mountPath: /tmp/ray
-            name: log-volume
-        volumes:
-        - emptyDir: {}
-          name: log-volume
+    - groupName: workergroup
+      replicas: 0
+      minReplicas: 0
+      maxReplicas: 5
+      rayStartParams: {}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: raycluster
+            app.kubernetes.io/name: kuberay
+        spec:
+          containers:
+            - image: kubeagi/ray-ml:2.9.0-py39-vllm
+              name: ray-worker
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 1G
+                  nvidia.com/gpu: 1
+                requests:
+                  cpu: "1"
+                  memory: 1G
+                  nvidia.com/gpu: 1
+              volumeMounts:
+                - mountPath: /tmp/ray
+                  name: log-volume
+          volumes:
+            - emptyDir: {}
+              name: log-volume
