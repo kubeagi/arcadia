@@ -40,6 +40,21 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 )
 
+func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
+	if len(category) == 0 {
+		return app
+	}
+	if app.Annotations == nil {
+		app.Annotations = make(map[string]string, 1)
+	}
+	c := make([]string, len(category))
+	for i := range category {
+		c[i] = *category[i]
+	}
+	app.Annotations[v1alpha1.AppCategoryAnnotationKey] = strings.Join(c, ",")
+	return app
+}
+
 func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	if len(app.Spec.Nodes) > 0 {
 		return
@@ -145,6 +160,7 @@ func app2metadata(objApp *unstructured.Unstructured) (*generated.ApplicationMeta
 		Icon:              pointer.String(app.Spec.Icon),
 		IsPublic:          pointer.Bool(app.Spec.IsPublic),
 		Status:            pointer.String(status),
+		Category:          common.GetAppCategory(app),
 	}, nil
 }
 
@@ -171,6 +187,7 @@ func CreateApplication(ctx context.Context, c dynamic.Interface, input generated
 			Nodes:    []v1alpha1.Node{},
 		},
 	}
+	app = addCategory(app, input.Category)
 	common.SetCreator(ctx, &app.Spec.CommonSpec)
 	object, err := runtime.DefaultUnstructuredConverter.ToUnstructured(app)
 	if err != nil {
@@ -195,6 +212,7 @@ func UpdateApplication(ctx context.Context, c dynamic.Interface, input generated
 	oldApp := app.DeepCopy()
 	app.Labels = utils.MapAny2Str(input.Labels)
 	app.Annotations = utils.MapAny2Str(input.Annotations)
+	app = addCategory(app, input.Category)
 	app.Spec.DisplayName = input.DisplayName
 	app.Spec.Description = pointer.StringDeref(input.Description, app.Spec.Description)
 	app.Spec.Icon = input.Icon

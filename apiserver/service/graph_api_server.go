@@ -63,5 +63,5 @@ func RegisterGraphQL(g *gin.Engine, bg *gin.RouterGroup, conf config.ServerConfi
 		g.GET("/", gin.WrapH(playground.Handler("Arcadia-apiserver", endpoint)))
 	}
 
-	bg.POST("", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "", ""), graphqlHandler())
+	bg.POST("", auth.AuthInterceptorInGraphql(conf.EnableOIDC, oidc.Verifier), graphqlHandler())
 }

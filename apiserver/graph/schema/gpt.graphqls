@@ -1,0 +1,81 @@
+type GPTQuery {
+    getGPT(name: String!): GPT!
+    listGPT(input: ListGPTInput!): PaginatedResult!
+}
+
+extend type Query{
+    GPT: GPTQuery
+}
+
+input ListGPTInput {
+
+    """
+    category: gpt所属分类
+    规则：分类和关键词同时使用时是and的关系；不填时会默认返回推荐分类的结果
+    """
+    category: String
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10，值为-1返回全部
+    """
+    pageSize: Int
+}
+
+"""
+GPT
+GPT应用需要的信息
+"""
+type GPT {
+
+    """
+    name: 集群内唯一名称，实际是app的 namespace/name
+    """
+    name: String
+
+    """
+    displayName: 展示名称
+    """
+    displayName: String
+
+    """
+    description: 描述信息
+    """
+    description: String
+
+    """
+    hot: 热度
+    """
+    hot: Int
+
+    """
+    creator: 创造者
+    """
+    creator: String
+
+    """
+    category：gpt所属分类
+    """
+    category: [String]
+
+    """
+    icon: base64的图标
+    """
+    icon: String
+
+    """
+    对话开场白
+    """
+    prologue: String
+}

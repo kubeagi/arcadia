@@ -185,6 +185,18 @@ func (r *ApplicationReconciler) reconcile(ctx context.Context, log logr.Logger, 
 			return app, ctrl.Result{Requeue: true}, updateStatusErr
 		}
 	}
+	appRaw := app.DeepCopy()
+	if app.Spec.IsPublic {
+		if app.Labels == nil {
+			app.Labels = make(map[string]string, 1)
+		}
+		app.Labels[arcadiav1alpha1.AppPublicLabelKey] = ""
+	} else {
+		delete(app.Labels, arcadiav1alpha1.AppPublicLabelKey)
+	}
+	if !reflect.DeepEqual(app, appRaw) {
+		return app, ctrl.Result{Requeue: true}, r.Patch(ctx, app, client.MergeFrom(appRaw))
+	}
 	if app.Status.IsReady() {
 		return app, ctrl.Result{}, nil
 	}

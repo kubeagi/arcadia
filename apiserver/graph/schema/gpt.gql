@@ -1,0 +1,37 @@
+query getGPT($name: String!){
+    GPT{
+        getGPT(name: $name) {
+            name
+            displayName
+            description
+            hot
+            creator
+            category
+            icon
+            prologue
+        }
+    }
+}
+
+query listGPTs($input: ListGPTInput!) {
+    GPT{
+        listGPT(input: $input) {
+            page
+            pageSize
+            totalCount
+            hasNextPage
+            nodes {
+                ... on GPT {
+                    name
+                    displayName
+                    description
+                    hot
+                    creator
+                    category
+                    icon
+                    prologue
+                }
+            }
+        }
+    }
+}

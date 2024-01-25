@@ -290,3 +290,9 @@ models:
         resolver: true
       listRAG:
         resolver: true
+  GPTQuery:
+    fields:
+      getGPT:
+        resolver: true
+      listGPT:
+        resolver: true

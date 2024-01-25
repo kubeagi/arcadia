@@ -106,6 +106,8 @@ type ApplicationMetadata struct {
 	IsPublic *bool `json:"isPublic,omitempty"`
 	// 应用状态
 	Status *string `json:"status,omitempty"`
+	// category：所属分类
+	Category []*string `json:"category,omitempty"`
 }
 
 func (ApplicationMetadata) IsPageNode() {}
@@ -152,6 +154,8 @@ type CreateApplicationMetadataInput struct {
 	Icon string `json:"icon"`
 	// IsPublic, 是否发布，即是否公开提供服务
 	IsPublic *bool `json:"isPublic,omitempty"`
+	// category：所属分类
+	Category []*string `json:"category,omitempty"`
 }
 
 // 数据集创建的输入
@@ -770,6 +774,34 @@ type FileItem struct {
 	Name string `json:"name"`
 }
 
+// GPT
+// GPT应用需要的信息
+type Gpt struct {
+	// name: 集群内唯一名称，实际是app的 namespace/name
+	Name *string `json:"name,omitempty"`
+	// displayName: 展示名称
+	DisplayName *string `json:"displayName,omitempty"`
+	// description: 描述信息
+	Description *string `json:"description,omitempty"`
+	// hot: 热度
+	Hot *int `json:"hot,omitempty"`
+	// creator: 创造者
+	Creator *string `json:"creator,omitempty"`
+	// category：gpt所属分类
+	Category []*string `json:"category,omitempty"`
+	// icon: base64的图标
+	Icon *string `json:"icon,omitempty"`
+	// 对话开场白
+	Prologue *string `json:"prologue,omitempty"`
+}
+
+func (Gpt) IsPageNode() {}
+
+type GPTQuery struct {
+	GetGpt  Gpt             `json:"getGPT"`
+	ListGpt PaginatedResult `json:"listGPT"`
+}
+
 // 知识库
 type KnowledgeBase struct {
 	// 知识库id,为CR资源中的metadata.uid
@@ -928,6 +960,20 @@ type ListDatasetInput struct {
 	// 关键词: 模糊匹配
 	// 规则: namespace,name,displayName,contentType,annotations中如果包含该字段则返回
 	Keyword *string `json:"keyword,omitempty"`
+}
+
+type ListGPTInput struct {
+	// category: gpt所属分类
+	// 规则：分类和关键词同时使用时是and的关系；不填时会默认返回推荐分类的结果
+	Category *string `json:"category,omitempty"`
+	// 关键词: 模糊匹配
+	Keyword *string `json:"keyword,omitempty"`
+	// 分页页码，
+	// 规则: 从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，
+	// 规则: 默认10，值为-1返回全部
+	PageSize *int `json:"pageSize,omitempty"`
 }
 
 // 知识库分页列表查询的输入
@@ -1276,6 +1322,8 @@ type Rag struct {
 	PhaseMessage *string `json:"phaseMessage,omitempty"`
 }
 
+func (Rag) IsPageNode() {}
+
 type RAGDataset struct {
 	Source *TypedObjectReference `json:"source,omitempty"`
 	Files  []*F                  `json:"files,omitempty"`
@@ -1461,6 +1509,8 @@ type UpdateApplicationMetadataInput struct {
 	Icon string `json:"icon"`
 	// IsPublic, 是否发布，即是否公开提供服务
 	IsPublic *bool `json:"isPublic,omitempty"`
+	// category：所属分类
+	Category []*string `json:"category,omitempty"`
 }
 
 // 数据集更新的输入

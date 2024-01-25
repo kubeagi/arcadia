@@ -85,6 +85,16 @@ func FilterApplicationByKeyword(keyword string) ResourceFilter {
 	}
 }
 
+func FilterApplicationByCategory(category string) ResourceFilter {
+	return func(u *unstructured.Unstructured) bool {
+		categoryStr, ok := u.GetAnnotations()[v1alpha1.AppCategoryAnnotationKey]
+		if !ok {
+			return false
+		}
+		return strings.Contains(categoryStr, category)
+	}
+}
+
 // Datasource
 func FilterDatasourceByKeyword(keyword string) ResourceFilter {
 	return func(u *unstructured.Unstructured) bool {
