@@ -57,7 +57,7 @@ type GPT {
     """
     hot: 热度
     """
-    hot: Int
+    hot: Int64
 
     """
     creator: 创造者

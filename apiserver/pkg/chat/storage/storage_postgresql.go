@@ -63,6 +63,25 @@ type PostgreSQLStorage struct {
 	db *gorm.DB
 }
 
+func (p *PostgreSQLStorage) CountMessages(appName, appNamespace string) (int64, error) {
+	conversationQuery := Conversation{AppNamespace: appNamespace, AppName: appName}
+	conversation := make([]Conversation, 0)
+	tx := p.db.Select("id").Find(&conversation, conversationQuery)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	conversationIDs := make([]string, len(conversation))
+	for i := range conversation {
+		conversationIDs[i] = conversation[i].ID
+	}
+	var count int64
+	tx = p.db.Model(&Message{}).Where("conversation_id IN ?", conversationIDs).Count(&count)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return count, nil
+}
+
 func (p *PostgreSQLStorage) ListConversations(opts ...SearchOption) ([]Conversation, error) {
 	searchOpt := applyOptions(nil, opts...)
 	conversationQuery := Conversation{}
