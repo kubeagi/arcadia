@@ -422,6 +422,7 @@ def query_question_answer_list(document_id, pool):
         dptqa.question,
         dptqa.answer,
         dptdc.content,
+        dptdc.meta_info,
         dptdc.page_number
       from public.data_process_task_question_answer dptqa
       left join public.data_process_task_document_chunk dptdc

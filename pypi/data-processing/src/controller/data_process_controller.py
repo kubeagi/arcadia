@@ -156,3 +156,28 @@ async def retry(request):
     """
     res = data_process_service.retry(request.json, pool=request.app.config["conn_pool"])
     return json(res)
+
+@data_process.route("get-web-content", methods=["POST"])
+async def get_web_coontent(request):
+    from utils import async_url_playwright_util
+    from document_loaders.async_chromium import AsyncChromiumLoader
+    from langchain_community.document_transformers import Html2TextTransformer
+
+    res = await async_url_playwright_util.get_all_url(
+        url="https://www.tenxcloud.com",
+        max_count=5,
+        max_depth=1,
+        interval_time=0
+    )
+
+    loader = AsyncChromiumLoader(res.get("data"))
+    docs = await loader.load()
+
+    html2text = Html2TextTransformer()
+    docs_transformed = html2text.transform_documents(docs)
+
+    print('xx', 'docs_transformed', docs_transformed)
+    
+
+    return json(res)
+

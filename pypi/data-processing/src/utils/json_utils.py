@@ -40,3 +40,11 @@ def dumps(
         escape_forward_slashes=escape_forward_slashes,
     )
 
+def loads(
+    data,
+):
+
+    return ujson.loads(
+        data,
+    )
+
