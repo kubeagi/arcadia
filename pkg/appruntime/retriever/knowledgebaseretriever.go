@@ -241,7 +241,7 @@ func (c *KnowledgeBaseStuffDocuments) joinDocuments(ctx context.Context, docs []
 		c.References = append(c.References, Reference{
 			Question:     doc.PageContent,
 			Answer:       answer,
-			Score:        doc.Score,
+			Score:        1 - doc.Score, // for pgvector
 			QAFilePath:   qafilepath,
 			QALineNumber: line,
 			FileName:     filename,
