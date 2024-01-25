@@ -1,0 +1,269 @@
+query listRAG($input: ListRAGInput!){
+  RAG {
+    listRAG(input: $input) {
+      totalCount
+      hasNextPage
+      nodes {
+        ... on RAG {
+          name
+          namespace
+          creator
+          displayName
+          description
+          creationTimestamp
+          completeTimestamp
+          storage {
+            accessModes
+            selector {
+              matchLabels
+              matchExpressions {
+                key
+                values
+                operator
+              }
+            }
+            volumeName
+            storageClassName
+            volumeMode
+            datasource {
+              apiGroup
+              kind
+              name
+              namespace
+              displayName 
+            }
+            dataSourceRef {
+              apiGroup
+              kind
+              name
+              namespace
+              displayName
+            }
+          }
+          serviceAccountName
+          suspend
+          status
+          phase
+          phaseMessage
+        }
+      }
+    }
+  }
+}
+
+query getRAG($name: String!, $namespace: String!){
+  RAG {
+    getRAG(name:$name, namespace:$namespace) {
+      name
+      namespace
+      creator
+      displayName
+      description
+      creationTimestamp
+      completeTimestamp
+      storage {
+        accessModes
+        selector {
+          matchLabels
+          matchExpressions {
+            key
+            values
+            operator
+          }
+        }
+        volumeName
+        storageClassName
+        volumeMode
+        datasource {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName 
+        }
+        dataSourceRef {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName
+        }
+      }
+      serviceAccountName
+      suspend
+      status
+      phase
+      phaseMessage
+      application {
+        metadata {
+          name
+          namespace
+          id
+          labels
+          annotations
+          displayName
+          description
+          icon
+          creator
+          creationTimestamp
+          updateTimestamp
+          isPublic
+          status
+        }
+        prologue
+        model
+        llm
+        temperature
+        maxLength
+        maxTokens
+        conversionWindowSize
+        knowledgebase
+        scoreThreshold
+        numDocuments
+        docNullReturn
+        userPrompt
+        showRespInfo
+        showRetrievalInfo
+        showNextGuide
+      }
+      datasets {
+        source {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName
+        }
+        files {
+          path
+          fileType
+        }
+      }
+      judgeLLM {
+        name
+        namespace
+        labels
+        annotations
+        displayName
+        description
+        baseUrl
+        models
+        provider
+        type
+        updateTimestamp
+        status
+        message
+      }
+      metrics {
+        metricKind
+        parameters {
+          key
+          value
+        }
+        toleranceThreshbold
+      }
+    }
+  }
+}
+
+
+mutation createRAG($input: CreateRAGInput!){
+  RAG {
+    createRAG(input: $input){
+      name
+      namespace
+      creator
+      displayName
+      description
+      creationTimestamp
+      completeTimestamp
+      storage {
+        accessModes
+        selector {
+          matchLabels
+          matchExpressions {
+            key
+            values
+            operator
+          }
+        }
+        volumeName
+        storageClassName
+        volumeMode
+        datasource {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName 
+        }
+        dataSourceRef {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName
+        }
+      }
+      serviceAccountName
+      suspend
+      status
+      phase
+      phaseMessage
+    }
+  }
+}
+
+
+mutation updateRAG($input: UpdateRAGInput!){
+  RAG {
+    updateRAG(input: $input){
+      name
+      namespace
+      creator
+      displayName
+      description
+      creationTimestamp
+      completeTimestamp
+      storage {
+        accessModes
+        selector {
+          matchLabels
+          matchExpressions {
+            key
+            values
+            operator
+          }
+        }
+        volumeName
+        storageClassName
+        volumeMode
+        datasource {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName 
+        }
+        dataSourceRef {
+          apiGroup
+          kind
+          name
+          namespace
+          displayName
+        }
+      }
+      serviceAccountName
+      suspend
+      status
+      phase
+      phaseMessage
+    }
+  }
+}
+
+mutation deleteRAG($input: DeleteRAGInput!){
+  RAG {
+	deleteRAG(input: $input)
+  }
+}

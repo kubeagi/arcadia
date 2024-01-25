@@ -1,0 +1,187 @@
+type Parameter {
+    key: String
+    value: String
+}
+input ParameterInput {
+    key: String
+    value: String
+}
+
+type RAGMetric {
+    metricKind: String
+    parameters: [Parameter!]
+    toleranceThreshbold: Int
+}
+
+input RAGMetricInput {
+    metricKind: String
+    parameters: [ParameterInput!]
+    toleranceThreshbold: Int
+}
+
+type RAGDataset {
+    source: TypedObjectReference
+    files: [F!]
+}
+
+input RAGDatasetInput  {
+    source: TypedObjectReferenceInput
+    files: [String!]
+}
+
+"""RAG评估结构"""
+type RAG {
+    """
+    名称
+    规则: 遵循k8s命名
+    """
+    name: String!
+
+    """
+    规则: 获取当前项目对应的命名空间
+    规则: 非空
+    """
+    namespace: String!
+
+    """一些用于标记，选择的的标签"""
+    labels: Map
+
+    """添加一些辅助性记录信息"""
+    annotations: Map
+
+    """
+    创建者，为当前用户的用户名
+    规则: webhook启用后自动添加，默认为空
+    """
+    creator: String
+
+    """展示名"""
+    displayName: String
+
+    """描述信息"""
+    description: String
+
+    """创建时间"""
+    creationTimestamp: Time
+
+    """评估完成时间, 如果没有完成这，这个字段没有值"""
+    completeTimestamp: Time
+
+    """获取评估流程选择的应用"""
+    application: Application!
+
+    """
+    目前数据只允许来自于数据集版本
+    """
+    datasets: [RAGDataset!]!
+    """
+    judgeLLM
+    选用的评测大模型的具体信息
+    """
+    judgeLLM: LLM!
+
+    """
+    评估个报告的指标
+    """
+    metrics: [RAGMetric!]!
+
+    """
+    评测的多个阶段之间需要通过pvc传递数据
+    """
+    storage: PersistentVolumeClaimSpec!
+
+    """
+    评测过程中用到的serviceAccount, 默认是default
+    """
+    serviceAccountName: String!
+
+    """
+    评估过程是否暂停，true表示已经暂停，fals表示没有暂停
+    """
+    suspend: Boolean!
+    """
+    rag的状态有4中
+    complete(评估完成)， failed(评估失败), suspend(任务停止,暂停操作), ing(评估中)
+    """
+    status: String!
+
+    """
+    当前评估进行到哪一步了
+    "": 开始
+    "init": 创建pvc中
+    "download": 下载数据集文件
+    "generated": 生成测试数据
+    "judge": 大模型评测中
+    "upload": 上传评测结果
+    "complete": 评测过程结束
+    """
+    phase: String
+    """当前阶段产生的辅助信息"""
+    phaseMessage: String
+}
+
+input CreateRAGInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    creator: String
+    displayName: String
+    description: String
+    application: TypedObjectReferenceInput!
+    datasets: [RAGDatasetInput!]!
+    judgeLLM: TypedObjectReferenceInput!
+    metrics: [RAGMetricInput!]!
+    storage: PersistentVolumeClaimSpecInput!
+    serviceAccountName: String
+    suspend: Boolean
+}
+input UpdateRAGInput {
+    name: String!
+    namespace: String!
+    labels: Map
+    annotations: Map
+    displayName: String
+    description: String
+    application: TypedObjectReferenceInput!
+    datasets: [RAGDatasetInput!]
+    judgeLLM: TypedObjectReferenceInput
+    metrics: [RAGMetricInput!]
+    storage: PersistentVolumeClaimSpecInput
+    serviceAccountName: String
+    suspend: Boolean
+}
+
+input DeleteRAGInput {
+    name: String!
+    namespace: String!
+    labelSelector: String
+}
+
+input ListRAGInput {
+    appName: String!
+    namespace: String!
+    """根据状态过滤"""
+    status: String
+    """根据名字，displayName字段获取"""
+    keyword: String
+}
+
+type RAGMutation {
+    createRAG(input: CreateRAGInput!): RAG!
+    updateRAG(input: UpdateRAGInput): RAG!
+    deleteRAG(input: DeleteRAGInput): Void
+}
+
+type RAGQuery {
+    getRAG(name: String!, namespace: String!): RAG!
+    listRAG(input: ListRAGInput!): PaginatedResult!
+}
+
+extend type Mutation {
+    RAG: RAGMutation
+}
+
+extend type Query {
+    RAG: RAGQuery
+}
