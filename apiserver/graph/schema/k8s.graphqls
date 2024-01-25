@@ -33,7 +33,7 @@ type PersistentVolumeClaimSpec {
     accessModes: [String!]
     selector: Selector
     resources:  Resource
-    volumeName: String!
+    volumeName: String
     storageClassName: String
     volumeMode: String
     datasource: TypedObjectReference

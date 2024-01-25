@@ -121,7 +121,7 @@ type RAG {
 }
 
 input CreateRAGInput {
-    name: String!
+    name: String
     namespace: String!
     labels: Map
     annotations: Map
@@ -165,12 +165,23 @@ input ListRAGInput {
     status: String
     """根据名字，displayName字段获取"""
     keyword: String
+        """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
 }
 
 type RAGMutation {
     createRAG(input: CreateRAGInput!): RAG!
-    updateRAG(input: UpdateRAGInput): RAG!
-    deleteRAG(input: DeleteRAGInput): Void
+    updateRAG(input: UpdateRAGInput!): RAG!
+    deleteRAG(input: DeleteRAGInput!): Void
 }
 
 type RAGQuery {

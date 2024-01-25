@@ -319,7 +319,7 @@ type CreateModelServiceInput struct {
 }
 
 type CreateRAGInput struct {
-	Name               string                         `json:"name"`
+	Name               *string                        `json:"name,omitempty"`
 	Namespace          string                         `json:"namespace"`
 	Labels             map[string]interface{}         `json:"labels,omitempty"`
 	Annotations        map[string]interface{}         `json:"annotations,omitempty"`
@@ -1050,6 +1050,12 @@ type ListRAGInput struct {
 	Status *string `json:"status,omitempty"`
 	// 根据名字，displayName字段获取
 	Keyword *string `json:"keyword,omitempty"`
+	// 分页页码，
+	// 规则: 从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，
+	// 规则: 默认10
+	PageSize *int `json:"pageSize,omitempty"`
 }
 
 type ListVersionedDatasetInput struct {
@@ -1250,7 +1256,7 @@ type PersistentVolumeClaimSpec struct {
 	AccessModes      []string              `json:"accessModes,omitempty"`
 	Selector         *Selector             `json:"selector,omitempty"`
 	Resources        *Resource             `json:"resources,omitempty"`
-	VolumeName       string                `json:"volumeName"`
+	VolumeName       *string               `json:"volumeName,omitempty"`
 	StorageClassName *string               `json:"storageClassName,omitempty"`
 	VolumeMode       *string               `json:"volumeMode,omitempty"`
 	Datasource       *TypedObjectReference `json:"datasource,omitempty"`

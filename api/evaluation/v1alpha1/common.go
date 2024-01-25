@@ -16,6 +16,11 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+)
+
 type MetricsKind string
 
 const (
@@ -101,4 +106,31 @@ func RagStatusChanged(a, b RAGStatus) bool {
 	}
 	return ac[0].Type != bc[0].Type || ac[0].Status != bc[0].Status ||
 		ac[0].Reason != bc[0].Reason || ac[0].Message != bc[0].Message
+}
+
+const (
+	ING      = "ing" // evaluating
+	COMPLETE = "complete"
+	FAILED   = "failed"
+	SUSPEND  = "suspend"
+)
+
+func RagStatus(rag *RAG) (string, RAGPhase, string) {
+	phase := rag.Status.Phase
+	status, phaseMsg := ING, ""
+
+	if len(rag.Status.Conditions) > 0 {
+		cond := rag.Status.Conditions[0]
+		phaseMsg = rag.Status.Conditions[0].Message
+		if phase == CompletePhase && cond.Type == batchv1.JobComplete && cond.Status == corev1.ConditionTrue {
+			status = COMPLETE
+		}
+		if cond.Type == batchv1.JobFailed && cond.Status == corev1.ConditionTrue {
+			status = FAILED
+		}
+	}
+	if rag.Spec.Suspend {
+		status = SUSPEND
+	}
+	return status, phase, phaseMsg
 }

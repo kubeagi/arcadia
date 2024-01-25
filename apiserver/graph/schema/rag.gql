@@ -22,6 +22,10 @@ query listRAG($input: ListRAGInput!){
                 operator
               }
             }
+            resources {
+              limits
+              requests
+            }
             volumeName
             storageClassName
             volumeMode
@@ -39,6 +43,26 @@ query listRAG($input: ListRAGInput!){
               namespace
               displayName
             }
+          }
+          datasets {
+            source {
+              apiGroup
+              kind
+              name
+              namespace
+              displayName
+            }
+          }
+          judgeLLM {
+            name
+            namespace
+            baseUrl
+            models
+            provider
+            type
+            status
+            message
+            displayName
           }
           serviceAccountName
           suspend
@@ -74,6 +98,10 @@ query getRAG($name: String!, $namespace: String!){
         volumeName
         storageClassName
         volumeMode
+        resources {
+          limits
+          requests
+        }
         datasource {
           apiGroup
           kind
@@ -190,6 +218,10 @@ mutation createRAG($input: CreateRAGInput!){
         volumeName
         storageClassName
         volumeMode
+        resources {
+          limits
+          requests
+        }
         datasource {
           apiGroup
           kind
@@ -238,6 +270,10 @@ mutation updateRAG($input: UpdateRAGInput!){
         volumeName
         storageClassName
         volumeMode
+        resources {
+          limits
+          requests
+        }
         datasource {
           apiGroup
           kind

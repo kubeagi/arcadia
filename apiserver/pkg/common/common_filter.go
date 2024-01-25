@@ -25,6 +25,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 )
 
@@ -222,5 +223,30 @@ func FilterWorkerByType(c dynamic.Interface, namespace, modelType string) Resour
 		}
 		// TODO: how do we do if the model and worek have different namespace?
 		return strings.Contains(cache[w.Spec.Model.Name], modelType)
+	}
+}
+
+// RAG Filter
+
+func FilterRAGByStatus(status string) ResourceFilter {
+	return func(u *unstructured.Unstructured) bool {
+		rag := evav1alpha1.RAG{}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
+			return false
+		}
+		ragStatus, _, _ := evav1alpha1.RagStatus(&rag)
+		return ragStatus == status
+	}
+}
+
+func FilterByRAGKeyword(keyword string) ResourceFilter {
+	return func(u *unstructured.Unstructured) bool {
+		rag := evav1alpha1.RAG{}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
+			return false
+		}
+		return strings.Contains(rag.Name, keyword) ||
+			strings.Contains(rag.Spec.DisplayName, keyword) ||
+			strings.Contains(rag.Spec.Description, keyword)
 	}
 }
