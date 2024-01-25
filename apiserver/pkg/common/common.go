@@ -19,10 +19,12 @@ package common
 import (
 	"context"
 	"errors"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -229,4 +231,16 @@ func TypedObjectReferenceToInput(ref generated.TypedObjectReference) generated.T
 		Namespace: ref.Namespace,
 		Name:      ref.Name,
 	}
+}
+
+func GetAppCategory(app *v1alpha1.Application) []*string {
+	category := make([]*string, 0)
+	categoryStr, ok := app.GetAnnotations()[v1alpha1.AppCategoryAnnotationKey]
+	if ok && len(categoryStr) > 0 {
+		for _, v := range strings.Split(categoryStr, ",") {
+			v := v
+			category = append(category, pointer.String(strings.TrimSpace(v)))
+		}
+	}
+	return category
 }

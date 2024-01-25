@@ -19,4 +19,10 @@ package v1alpha1
 const (
 	InputNode  = "Input"
 	OutputNode = "Output"
+
+	// AppCategoryAnnotationKey app category, like "recommend" or "recommend,chat,role-playing". Multiple types are separated by commas
+	AppCategoryAnnotationKey = Group + "/app-category"
+
+	// AppPublicLabelKey will add to app which is public
+	AppPublicLabelKey = Group + "/app-is-public"
 )

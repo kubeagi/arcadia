@@ -166,6 +166,11 @@ type ApplicationMetadata {
     应用状态
     """
     status: String
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input CreateApplicationMetadataInput {
@@ -210,6 +215,11 @@ input CreateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input UpdateApplicationMetadataInput {
@@ -254,6 +264,11 @@ input UpdateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input UpdateApplicationConfigInput {

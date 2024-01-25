@@ -49,6 +49,7 @@ type ResolverRoot interface {
 	DatasourceQuery() DatasourceQueryResolver
 	EmbedderMutation() EmbedderMutationResolver
 	EmbedderQuery() EmbedderQueryResolver
+	GPTQuery() GPTQueryResolver
 	KnowledgeBaseMutation() KnowledgeBaseMutationResolver
 	KnowledgeBaseQuery() KnowledgeBaseQueryResolver
 	LLMQuery() LLMQueryResolver
@@ -96,6 +97,7 @@ type ComplexityRoot struct {
 
 	ApplicationMetadata struct {
 		Annotations       func(childComplexity int) int
+		Category          func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
@@ -343,6 +345,22 @@ type ComplexityRoot struct {
 		Time              func(childComplexity int) int
 	}
 
+	GPT struct {
+		Category    func(childComplexity int) int
+		Creator     func(childComplexity int) int
+		Description func(childComplexity int) int
+		DisplayName func(childComplexity int) int
+		Hot         func(childComplexity int) int
+		Icon        func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Prologue    func(childComplexity int) int
+	}
+
+	GPTQuery struct {
+		GetGpt  func(childComplexity int, name string) int
+		ListGpt func(childComplexity int, input ListGPTInput) int
+	}
+
 	KnowledgeBase struct {
 		Annotations       func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
@@ -539,6 +557,7 @@ type ComplexityRoot struct {
 		Dataset          func(childComplexity int) int
 		Datasource       func(childComplexity int) int
 		Embedder         func(childComplexity int) int
+		Gpt              func(childComplexity int) int
 		Hello            func(childComplexity int, name string) int
 		KnowledgeBase    func(childComplexity int) int
 		Llm              func(childComplexity int) int
@@ -780,6 +799,10 @@ type EmbedderQueryResolver interface {
 	GetEmbedder(ctx context.Context, obj *EmbedderQuery, name string, namespace string) (*Embedder, error)
 	ListEmbedders(ctx context.Context, obj *EmbedderQuery, input ListCommonInput) (*PaginatedResult, error)
 }
+type GPTQueryResolver interface {
+	GetGpt(ctx context.Context, obj *GPTQuery, name string) (*Gpt, error)
+	ListGpt(ctx context.Context, obj *GPTQuery, input ListGPTInput) (*PaginatedResult, error)
+}
 type KnowledgeBaseMutationResolver interface {
 	CreateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input CreateKnowledgeBaseInput) (*KnowledgeBase, error)
 	UpdateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input *UpdateKnowledgeBaseInput) (*KnowledgeBase, error)
@@ -836,6 +859,7 @@ type QueryResolver interface {
 	Dataset(ctx context.Context) (*DatasetQuery, error)
 	Datasource(ctx context.Context) (*DatasourceQuery, error)
 	Embedder(ctx context.Context) (*EmbedderQuery, error)
+	Gpt(ctx context.Context) (*GPTQuery, error)
 	KnowledgeBase(ctx context.Context) (*KnowledgeBaseQuery, error)
 	Llm(ctx context.Context) (*LLMQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
@@ -1029,6 +1053,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationMetadata.Annotations(childComplexity), true
+
+	case "ApplicationMetadata.category":
+		if e.complexity.ApplicationMetadata.Category == nil {
+			break
+		}
+
+		return e.complexity.ApplicationMetadata.Category(childComplexity), true
 
 	case "ApplicationMetadata.creationTimestamp":
 		if e.complexity.ApplicationMetadata.CreationTimestamp == nil {
@@ -2317,6 +2348,86 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.F.Time(childComplexity), true
 
+	case "GPT.category":
+		if e.complexity.GPT.Category == nil {
+			break
+		}
+
+		return e.complexity.GPT.Category(childComplexity), true
+
+	case "GPT.creator":
+		if e.complexity.GPT.Creator == nil {
+			break
+		}
+
+		return e.complexity.GPT.Creator(childComplexity), true
+
+	case "GPT.description":
+		if e.complexity.GPT.Description == nil {
+			break
+		}
+
+		return e.complexity.GPT.Description(childComplexity), true
+
+	case "GPT.displayName":
+		if e.complexity.GPT.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.GPT.DisplayName(childComplexity), true
+
+	case "GPT.hot":
+		if e.complexity.GPT.Hot == nil {
+			break
+		}
+
+		return e.complexity.GPT.Hot(childComplexity), true
+
+	case "GPT.icon":
+		if e.complexity.GPT.Icon == nil {
+			break
+		}
+
+		return e.complexity.GPT.Icon(childComplexity), true
+
+	case "GPT.name":
+		if e.complexity.GPT.Name == nil {
+			break
+		}
+
+		return e.complexity.GPT.Name(childComplexity), true
+
+	case "GPT.prologue":
+		if e.complexity.GPT.Prologue == nil {
+			break
+		}
+
+		return e.complexity.GPT.Prologue(childComplexity), true
+
+	case "GPTQuery.getGPT":
+		if e.complexity.GPTQuery.GetGpt == nil {
+			break
+		}
+
+		args, err := ec.field_GPTQuery_getGPT_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.GPTQuery.GetGpt(childComplexity, args["name"].(string)), true
+
+	case "GPTQuery.listGPT":
+		if e.complexity.GPTQuery.ListGpt == nil {
+			break
+		}
+
+		args, err := ec.field_GPTQuery_listGPT_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.GPTQuery.ListGpt(childComplexity, args["input"].(ListGPTInput)), true
+
 	case "KnowledgeBase.annotations":
 		if e.complexity.KnowledgeBase.Annotations == nil {
 			break
@@ -3362,6 +3473,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Embedder(childComplexity), true
 
+	case "Query.GPT":
+		if e.complexity.Query.Gpt == nil {
+			break
+		}
+
+		return e.complexity.Query.Gpt(childComplexity), true
+
 	case "Query.hello":
 		if e.complexity.Query.Hello == nil {
 			break
@@ -4310,6 +4428,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLabelSelectorRequirementInput,
 		ec.unmarshalInputListCommonInput,
 		ec.unmarshalInputListDatasetInput,
+		ec.unmarshalInputListGPTInput,
 		ec.unmarshalInputListKnowledgeBaseInput,
 		ec.unmarshalInputListModelInput,
 		ec.unmarshalInputListModelServiceInput,
@@ -4606,6 +4725,11 @@ type ApplicationMetadata {
     应用状态
     """
     status: String
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input CreateApplicationMetadataInput {
@@ -4650,6 +4774,11 @@ input CreateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input UpdateApplicationMetadataInput {
@@ -4694,6 +4823,11 @@ input UpdateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    category：所属分类
+    """
+    category: [String]
 }
 
 input UpdateApplicationConfigInput {
@@ -5655,7 +5789,89 @@ type Tool {
     params: Map
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG | GPT
+`, BuiltIn: false},
+	{Name: "../schema/gpt.graphqls", Input: `type GPTQuery {
+    getGPT(name: String!): GPT!
+    listGPT(input: ListGPTInput!): PaginatedResult!
+}
+
+extend type Query{
+    GPT: GPTQuery
+}
+
+input ListGPTInput {
+
+    """
+    category: gpt所属分类
+    规则：分类和关键词同时使用时是and的关系；不填时会默认返回推荐分类的结果
+    """
+    category: String
+
+    """
+    关键词: 模糊匹配
+    """
+    keyword: String
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10，值为-1返回全部
+    """
+    pageSize: Int
+}
+
+"""
+GPT
+GPT应用需要的信息
+"""
+type GPT {
+
+    """
+    name: 集群内唯一名称，实际是app的 namespace/name
+    """
+    name: String
+
+    """
+    displayName: 展示名称
+    """
+    displayName: String
+
+    """
+    description: 描述信息
+    """
+    description: String
+
+    """
+    hot: 热度
+    """
+    hot: Int
+
+    """
+    creator: 创造者
+    """
+    creator: String
+
+    """
+    category：gpt所属分类
+    """
+    category: [String]
+
+    """
+    icon: base64的图标
+    """
+    icon: String
+
+    """
+    对话开场白
+    """
+    prologue: String
+}
 `, BuiltIn: false},
 	{Name: "../schema/k8s.graphqls", Input: `type LabelSelectorRequirement {
     key: String
@@ -7691,6 +7907,36 @@ func (ec *executionContext) field_EmbedderQuery_listEmbedders_args(ctx context.C
 	return args, nil
 }
 
+func (ec *executionContext) field_GPTQuery_getGPT_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_GPTQuery_listGPT_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 ListGPTInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNListGPTInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListGPTInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_KnowledgeBaseMutation_createKnowledgeBase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -8439,6 +8685,8 @@ func (ec *executionContext) fieldContext_Application_metadata(ctx context.Contex
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
+			case "category":
+				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -9650,6 +9898,47 @@ func (ec *executionContext) fieldContext_ApplicationMetadata_status(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _ApplicationMetadata_category(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationMetadata_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationMetadata_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMutation_createApplication(ctx context.Context, field graphql.CollectedField, obj *ApplicationMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMutation_createApplication(ctx, field)
 	if err != nil {
@@ -9715,6 +10004,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_createApplication(c
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
+			case "category":
+				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -9798,6 +10089,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplication(c
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
+			case "category":
+				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -17055,6 +17348,474 @@ func (ec *executionContext) fieldContext_F_creationTimestamp(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _GPT_name(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_displayName(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_description(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_hot(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_hot(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hot, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_hot(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_creator(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_category(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_icon(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_icon(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Icon, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_icon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_prologue(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_prologue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Prologue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_prologue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTQuery_getGPT(ctx context.Context, field graphql.CollectedField, obj *GPTQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTQuery_getGPT(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.GPTQuery().GetGpt(rctx, obj, fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Gpt)
+	fc.Result = res
+	return ec.marshalNGPT2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGpt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTQuery_getGPT(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_GPT_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_GPT_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_GPT_description(ctx, field)
+			case "hot":
+				return ec.fieldContext_GPT_hot(ctx, field)
+			case "creator":
+				return ec.fieldContext_GPT_creator(ctx, field)
+			case "category":
+				return ec.fieldContext_GPT_category(ctx, field)
+			case "icon":
+				return ec.fieldContext_GPT_icon(ctx, field)
+			case "prologue":
+				return ec.fieldContext_GPT_prologue(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GPT", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_GPTQuery_getGPT_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTQuery_listGPT(ctx context.Context, field graphql.CollectedField, obj *GPTQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTQuery_listGPT(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.GPTQuery().ListGpt(rctx, obj, fc.Args["input"].(ListGPTInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTQuery_listGPT(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_GPTQuery_listGPT_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBase_id(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBase_id(ctx, field)
 	if err != nil {
@@ -23636,6 +24397,53 @@ func (ec *executionContext) fieldContext_Query_Embedder(ctx context.Context, fie
 				return ec.fieldContext_EmbedderQuery_listEmbedders(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EmbedderQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_GPT(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_GPT(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Gpt(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*GPTQuery)
+	fc.Result = res
+	return ec.marshalOGPTQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_GPT(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "getGPT":
+				return ec.fieldContext_GPTQuery_getGPT(ctx, field)
+			case "listGPT":
+				return ec.fieldContext_GPTQuery_listGPT(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GPTQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -31564,7 +32372,7 @@ func (ec *executionContext) unmarshalInputCreateApplicationMetadataInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "category"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -31643,6 +32451,15 @@ func (ec *executionContext) unmarshalInputCreateApplicationMetadataInput(ctx con
 				return it, err
 			}
 			it.IsPublic = data
+		case "category":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
 		}
 	}
 
@@ -33510,6 +34327,62 @@ func (ec *executionContext) unmarshalInputListDatasetInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputListGPTInput(ctx context.Context, obj interface{}) (ListGPTInput, error) {
+	var it ListGPTInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"category", "keyword", "page", "pageSize"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "category":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "keyword":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Keyword = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputListKnowledgeBaseInput(ctx context.Context, obj interface{}) (ListKnowledgeBaseInput, error) {
 	var it ListKnowledgeBaseInput
 	asMap := map[string]interface{}{}
@@ -34705,7 +35578,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationMetadataInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "category"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34784,6 +35657,15 @@ func (ec *executionContext) unmarshalInputUpdateApplicationMetadataInput(ctx con
 				return it, err
 			}
 			it.IsPublic = data
+		case "category":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
 		}
 	}
 
@@ -35959,6 +36841,20 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._RayCluster(ctx, sel, obj)
+	case Rag:
+		return ec._RAG(ctx, sel, &obj)
+	case *Rag:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RAG(ctx, sel, obj)
+	case Gpt:
+		return ec._GPT(ctx, sel, &obj)
+	case *Gpt:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._GPT(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -36082,6 +36978,8 @@ func (ec *executionContext) _ApplicationMetadata(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._ApplicationMetadata_isPublic(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._ApplicationMetadata_status(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._ApplicationMetadata_category(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38588,6 +39486,162 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 	return out
 }
 
+var gPTImplementors = []string{"GPT", "PageNode"}
+
+func (ec *executionContext) _GPT(ctx context.Context, sel ast.SelectionSet, obj *Gpt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gPTImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GPT")
+		case "name":
+			out.Values[i] = ec._GPT_name(ctx, field, obj)
+		case "displayName":
+			out.Values[i] = ec._GPT_displayName(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._GPT_description(ctx, field, obj)
+		case "hot":
+			out.Values[i] = ec._GPT_hot(ctx, field, obj)
+		case "creator":
+			out.Values[i] = ec._GPT_creator(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._GPT_category(ctx, field, obj)
+		case "icon":
+			out.Values[i] = ec._GPT_icon(ctx, field, obj)
+		case "prologue":
+			out.Values[i] = ec._GPT_prologue(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var gPTQueryImplementors = []string{"GPTQuery"}
+
+func (ec *executionContext) _GPTQuery(ctx context.Context, sel ast.SelectionSet, obj *GPTQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gPTQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GPTQuery")
+		case "getGPT":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GPTQuery_getGPT(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "listGPT":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GPTQuery_listGPT(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var knowledgeBaseImplementors = []string{"KnowledgeBase", "PageNode"}
 
 func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.SelectionSet, obj *KnowledgeBase) graphql.Marshaler {
@@ -40393,6 +41447,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "GPT":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_GPT(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "KnowledgeBase":
 			field := field
 
@@ -40576,7 +41649,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var rAGImplementors = []string{"RAG"}
+var rAGImplementors = []string{"RAG", "PageNode"}
 
 func (ec *executionContext) _RAG(ctx context.Context, sel ast.SelectionSet, obj *Rag) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, rAGImplementors)
@@ -42863,6 +43936,20 @@ func (ec *executionContext) unmarshalNFileItem2ᚖgithubᚗcomᚋkubeagiᚋarcad
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNGPT2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGpt(ctx context.Context, sel ast.SelectionSet, v Gpt) graphql.Marshaler {
+	return ec._GPT(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGPT2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGpt(ctx context.Context, sel ast.SelectionSet, v *Gpt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GPT(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -42908,6 +43995,11 @@ func (ec *executionContext) marshalNLLM2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋap
 
 func (ec *executionContext) unmarshalNListCommonInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListCommonInput(ctx context.Context, v interface{}) (ListCommonInput, error) {
 	res, err := ec.unmarshalInputListCommonInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNListGPTInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListGPTInput(ctx context.Context, v interface{}) (ListGPTInput, error) {
+	res, err := ec.unmarshalInputListGPTInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -44330,6 +45422,13 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	}
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalOGPTQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTQuery(ctx context.Context, sel ast.SelectionSet, v *GPTQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GPTQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

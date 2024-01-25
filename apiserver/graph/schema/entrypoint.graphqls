@@ -104,4 +104,4 @@ type Tool {
     params: Map
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG | GPT

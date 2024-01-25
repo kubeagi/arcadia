@@ -36,6 +36,8 @@ import (
 	client1 "github.com/kubeagi/arcadia/apiserver/pkg/client"
 )
 
+var NeedAuth bool
+
 type contextKey string
 
 const (
@@ -57,13 +59,13 @@ type User struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-func isBearerToken(token string) (bool, string) {
+func isBearerToken(token string) (string, bool) {
 	if len(token) < 6 {
-		return false, ""
+		return "", false
 	}
 	head := strings.ToLower(token[:6])
 	payload := strings.TrimSpace(token[6:])
-	return head == "bearer" && len(payload) > 0, payload
+	return payload, head == "bearer" && len(payload) > 0
 }
 
 func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespace string) (bool, string, error) {
@@ -111,7 +113,7 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 		}
 		rawToken := ctx.GetHeader("Authorization")
 		namespace := ctx.GetHeader("namespace")
-		ok, rawToken := isBearerToken(rawToken)
+		rawToken, ok := isBearerToken(rawToken)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "unauthorized, not bearer token",
@@ -163,6 +165,30 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 
 		// for graphql query
 		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), idTokenContextKey, rawToken))
+		ctx.Next()
+	}
+}
+
+func AuthInterceptorInGraphql(needAuth bool, oidcVerifier *oidc.IDTokenVerifier) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if !needAuth {
+			NeedAuth = false
+			ctx.Next()
+			return
+		}
+		NeedAuth = true
+		rawToken, ok := isBearerToken(ctx.GetHeader("Authorization"))
+		if ok {
+			oidcIDtoken, err := oidcVerifier.Verify(ctx.Request.Context(), rawToken)
+			if err == nil {
+				u := &User{}
+				if err := oidcIDtoken.Claims(u); err == nil {
+					ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), UserNameContextKey, u.Name))
+				}
+				ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), idTokenContextKey, rawToken))
+			}
+		}
+
 		ctx.Next()
 	}
 }
