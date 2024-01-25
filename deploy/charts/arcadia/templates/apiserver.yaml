@@ -37,6 +37,7 @@ spec:
           command:
             - "./apiserver"
           args:
+            - "--v={{ .Values.apiserver.loglevel }}"
             - "--enable-playground={{ .Values.apiserver.enableplayground }}"
             - "--port={{ .Values.apiserver.port }}"
             - "--playground-endpoint-prefix={{ .Values.apiserver.ingress.path }}"

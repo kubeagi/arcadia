@@ -97,7 +97,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/chat.Conversation"
+                                "$ref": "#/definitions/storage.Conversation"
                             }
                         }
                     },
@@ -188,7 +188,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/chat.Conversation"
+                            "$ref": "#/definitions/storage.Conversation"
                         }
                     },
                     "400": {
@@ -1012,37 +1012,6 @@ const docTemplate = `{
                 }
             }
         },
-        "chat.Conversation": {
-            "type": "object",
-            "properties": {
-                "app_name": {
-                    "type": "string",
-                    "example": "chat-with-llm"
-                },
-                "app_namespace": {
-                    "type": "string",
-                    "example": "arcadia"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/chat.Message"
-                    }
-                },
-                "started_at": {
-                    "type": "string",
-                    "example": "2023-12-21T10:21:06.389359092+08:00"
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2023-12-22T10:21:06.389359092+08:00"
-                }
-            }
-        },
         "chat.ConversationReqBody": {
             "type": "object",
             "required": [
@@ -1073,29 +1042,6 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "conversation is not found"
-                }
-            }
-        },
-        "chat.Message": {
-            "type": "object",
-            "properties": {
-                "answer": {
-                    "type": "string",
-                    "example": "旷工最小计算单位为0.5天。"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
-                },
-                "query": {
-                    "type": "string",
-                    "example": "旷工最小计算单位为多少天？"
-                },
-                "references": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/retriever.Reference"
-                    }
                 }
             }
         },
@@ -1349,6 +1295,60 @@ const docTemplate = `{
                 },
                 "uploadID": {
                     "type": "string"
+                }
+            }
+        },
+        "storage.Conversation": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string",
+                    "example": "chat-with-llm"
+                },
+                "app_namespace": {
+                    "type": "string",
+                    "example": "arcadia"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Message"
+                    }
+                },
+                "started_at": {
+                    "type": "string",
+                    "example": "2023-12-21T10:21:06.389359092+08:00"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-12-22T10:21:06.389359092+08:00"
+                }
+            }
+        },
+        "storage.Message": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "example": "旷工最小计算单位为0.5天。"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
+                },
+                "query": {
+                    "type": "string",
+                    "example": "旷工最小计算单位为多少天？"
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/retriever.Reference"
+                    }
                 }
             }
         }

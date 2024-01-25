@@ -379,7 +379,7 @@ waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvecto
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
 info "8.2.2.2 When no related doc is found, return retriever.spec.docNullReturn info"
-getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "false"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "飞天的主演是谁？" "" "false"
 expected=$(kubectl get knowledgebaseretrievers -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
 if [[ $ai_data != $expected ]]; then
 	echo "when no related doc is found, return retriever.spec.docNullReturn info should be:"$expected ", but resp:"$resp
@@ -390,6 +390,7 @@ info "8.3 conversation chat app"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot"
 sleep 3
+getRespInAppChat "base-chat-with-bot" "arcadia" "Hi I am Bob" "" "false"
 getRespInAppChat "base-chat-with-bot" "arcadia" "Hi I am Jim" "" "false"
 getRespInAppChat "base-chat-with-bot" "arcadia" "What is my name?" ${resp_conversation_id} "false"
 if [[ $resp != *"Jim"* ]]; then
@@ -397,10 +398,31 @@ if [[ $resp != *"Jim"* ]]; then
 	exit 1
 fi
 
-info "8.4 check conversation list and message history"
-curl -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}'
-data=$(jq -n --arg conversationID "$resp_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
-curl -XPOST http://127.0.0.1:8081/chat/messages --data "$data"
+info "8.4 check other chat rest api"
+info "8.4.1 conversation list"
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+echo $resp | jq .
+delete_conversation_id=$(echo $resp | jq -r '.[0].id')
+info "8.4.2 message list"
+data=$(jq -n --arg conversationID "$delete_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/messages --data "$data")
+echo $resp | jq .
+info "8.4.3 message references"
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+message_id=$(echo $resp | jq -r '.[0].messages[0].id')
+conversation_id=$(echo $resp | jq -r '.[0].id')
+data=$(jq -n --arg conversationID "$conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/messages/$message_id/references --data "$data")
+echo $resp | jq .
+info "8.4.4 delete conversation"
+resp=$(curl -s -XDELETE http://127.0.0.1:8081/chat/conversations/$delete_conversation_id)
+echo $resp | jq .
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+if [[ $resp == *"$delete_conversation_id"* ]]; then
+	echo "delete conversation failed"
+	exit 1
+fi
+
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
 #getRespInAppChat "base-chat-with-bot" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversation_id} "false"

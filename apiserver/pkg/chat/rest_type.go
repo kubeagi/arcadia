@@ -19,8 +19,6 @@ package chat
 import (
 	"time"
 
-	"github.com/tmc/langchaingo/memory"
-
 	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
@@ -35,7 +33,6 @@ const (
 	Blocking ResponseMode = "blocking"
 	// Streaming means the response will use Server-Sent Events
 	Streaming ResponseMode = "streaming"
-	// todo isFlowValidForStream only some node(llm chain) support streaming
 )
 
 type APPMetadata struct {
@@ -77,25 +74,6 @@ type ChatRespBody struct {
 	// CreatedAt is the time when the message is created
 	CreatedAt time.Time `json:"created_at" example:"2023-12-21T10:21:06.389359092+08:00"`
 	// References is the list of references
-	References []retriever.Reference `json:"references,omitempty"`
-}
-
-type Conversation struct {
-	ID          string                     `json:"id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
-	AppName     string                     `json:"app_name" example:"chat-with-llm"`
-	AppNamespce string                     `json:"app_namespace" example:"arcadia"`
-	StartedAt   time.Time                  `json:"started_at" example:"2023-12-21T10:21:06.389359092+08:00"`
-	UpdatedAt   time.Time                  `json:"updated_at" example:"2023-12-22T10:21:06.389359092+08:00"`
-	Messages    []Message                  `json:"messages"`
-	History     *memory.ChatMessageHistory `json:"-"`
-	User        string                     `json:"-"`
-	Debug       bool                       `json:"-"`
-}
-
-type Message struct {
-	ID         string                `json:"id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
-	Query      string                `json:"query" example:"旷工最小计算单位为多少天？"`
-	Answer     string                `json:"answer" example:"旷工最小计算单位为0.5天。"`
 	References []retriever.Reference `json:"references,omitempty"`
 }
 

@@ -14,7 +14,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/gofiber/fiber/v2 v2.50.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/jackc/pgx/v5 v5.4.1
+	github.com/jackc/pgx/v5 v5.4.3
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.3
 	github.com/r3labs/sse/v2 v2.10.0
@@ -26,6 +26,8 @@ require (
 	github.com/tmc/langchaingo v0.1.3
 	github.com/valyala/fasthttp v1.50.0
 	github.com/vektah/gqlparser/v2 v2.5.10
+	gorm.io/driver/postgres v1.5.4
+	gorm.io/gorm v1.25.5
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v0.24.2
@@ -57,7 +59,9 @@ require (
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/puddle/v2 v2.2.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
