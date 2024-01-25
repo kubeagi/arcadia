@@ -29,7 +29,7 @@ from llm_api_service.qa_provider_open_ai import QAProviderOpenAI
 from llm_api_service.qa_provider_zhi_pu_ai_online import \
     QAProviderZhiPuAIOnline
 from transform.text import clean_transform, privacy_transform
-from utils import csv_utils, date_time_utils, file_utils
+from utils import csv_utils, date_time_utils, file_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +126,18 @@ def text_manipulate(
 
         qa_data_dict = [["q", "a", "file_name", "page_number", "chunk_content"]]
         for item in qa_list.get("data"):
+            meta_info = item.get("meta_info")
+            if meta_info:
+                meta_json = json_utils.loads(meta_info)
+                meta_source = meta_json.get("source")
+            else:
+                meta_source = item.get("file_name")
+
             qa_data_dict.append(
                 [
                     item.get("question"),
                     item.get("answer"),
-                    item.get("file_name"),
+                    meta_source,
                     item.get("page_number"),
                     item.get("content"),
                 ]
