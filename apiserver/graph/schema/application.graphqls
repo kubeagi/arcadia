@@ -95,6 +95,10 @@ type Application {
     showNextGuide 下一步引导，即是否在chat界面显示下一步引导
     """
     showNextGuide: Boolean
+    """
+    tools 要使用的工具列表
+    """
+    tools: [Tool]
 }
 
 """
@@ -335,4 +339,8 @@ input UpdateApplicationConfigInput {
     showNextGuide 下一步引导，即是否在chat界面显示下一步引导
     """
     showNextGuide: Boolean
+    """
+    tools 要使用的工具列表
+    """
+    tools: [ToolInput]
 }

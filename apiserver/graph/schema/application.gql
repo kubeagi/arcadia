@@ -67,6 +67,10 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             showRespInfo
             showRetrievalInfo
             showNextGuide
+            tools {
+                name
+                params
+            }
         }
     }
 }
@@ -104,6 +108,10 @@ query getApplication($name: String!, $namespace: String!){
             showRespInfo
             showRetrievalInfo
             showNextGuide
+            tools {
+                name
+                params
+            }
         }
     }
 }

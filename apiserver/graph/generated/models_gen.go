@@ -70,6 +70,8 @@ type Application struct {
 	ShowRetrievalInfo *bool `json:"showRetrievalInfo,omitempty"`
 	// showNextGuide 下一步引导，即是否在chat界面显示下一步引导
 	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
+	// tools 要使用的工具列表
+	Tools []*Tool `json:"tools,omitempty"`
 }
 
 // Application
@@ -1274,8 +1276,6 @@ type Rag struct {
 	PhaseMessage *string `json:"phaseMessage,omitempty"`
 }
 
-func (Rag) IsPageNode() {}
-
 type RAGDataset struct {
 	Source *TypedObjectReference `json:"source,omitempty"`
 	Files  []*F                  `json:"files,omitempty"`
@@ -1370,6 +1370,22 @@ type SelectorInput struct {
 	MatchExpressions []*LabelSelectorRequirementInput `json:"matchExpressions,omitempty"`
 }
 
+// Tool 应用和Agent中用到的工具
+type Tool struct {
+	// 名称，目前只有bing可选
+	Name *string `json:"name,omitempty"`
+	// params 参数
+	Params map[string]interface{} `json:"params,omitempty"`
+}
+
+// ToolInput 应用和Agent中用到的工具
+type ToolInput struct {
+	// 名称(必填)，目前只有bing可选
+	Name string `json:"name"`
+	// params 参数，可选
+	Params map[string]interface{} `json:"params,omitempty"`
+}
+
 type TypedObjectReference struct {
 	APIGroup    *string `json:"apiGroup,omitempty"`
 	Kind        string  `json:"kind"`
@@ -1422,6 +1438,8 @@ type UpdateApplicationConfigInput struct {
 	ShowRetrievalInfo *bool `json:"showRetrievalInfo,omitempty"`
 	// showNextGuide 下一步引导，即是否在chat界面显示下一步引导
 	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
+	// tools 要使用的工具列表
+	Tools []*ToolInput `json:"tools,omitempty"`
 }
 
 type UpdateApplicationMetadataInput struct {

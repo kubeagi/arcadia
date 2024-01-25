@@ -13,34 +13,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package weather
+
+package bingsearch
 
 import (
 	"context"
-	"strings"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/tools"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/appruntime/tools/weather/internal"
 )
 
 const (
-	ToolName = "Weather Query API"
+	ToolName    = "Bing Search API"
+	ParamAPIKey = "apiKey"
 )
 
 type Tool struct {
-	client           *internal.Client
+	client           *BingClient
 	CallbacksHandler callbacks.Handler
 }
 
 var _ tools.Tool = Tool{}
 
-// New creates a new weather tool to search on internet
+// New creates a new bing search tool to search on internet
 func New(tool *v1alpha1.Tool) (*Tool, error) {
 	return &Tool{
-		client: internal.New(tool.Params["apiKey"]),
+		client: NewBingClient(tool.Params[ParamAPIKey]),
 	}, nil
 }
 
@@ -49,23 +49,28 @@ func (t Tool) Name() string {
 }
 
 func (t Tool) Description() string {
-	return "Invoke API to get the realtime weather data."
+	return "Invoke API to get the realtime bing search data."
 }
 
 func (t Tool) Call(ctx context.Context, input string) (string, error) {
 	if t.CallbacksHandler != nil {
 		t.CallbacksHandler.HandleToolStart(ctx, input)
 	}
-	result, err := t.client.GetData(ctx, input)
+	result, err := t.client.Search(ctx, input)
 	if err != nil {
 		if t.CallbacksHandler != nil {
 			t.CallbacksHandler.HandleToolError(ctx, err)
 		}
 		return "", err
 	}
-	result = strings.Join(strings.Fields(result), " ")
 	if t.CallbacksHandler != nil {
-		t.CallbacksHandler.HandleToolEnd(ctx, result)
+		t.CallbacksHandler.HandleToolEnd(ctx, input)
 	}
 	return result, nil
+}
+
+type WebPage struct {
+	Title       string
+	Description string
+	URL         string
 }

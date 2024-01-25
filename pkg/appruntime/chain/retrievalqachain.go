@@ -95,6 +95,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	}
 	options := getChainOptions(instance.Spec.CommonChainConfig)
 
+	args = runTools(ctx, args, instance.Spec.Tools)
 	llmChain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
 		llmChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
@@ -122,7 +123,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 		}
 	}
 	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
-		args["_references"] = stuffDocuments.References
+		args = appretriever.AddReferencesToArgs(args, stuffDocuments.References)
 	}
 	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {

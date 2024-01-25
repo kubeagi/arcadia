@@ -90,6 +90,7 @@ type ComplexityRoot struct {
 		ShowRespInfo         func(childComplexity int) int
 		ShowRetrievalInfo    func(childComplexity int) int
 		Temperature          func(childComplexity int) int
+		Tools                func(childComplexity int) int
 		UserPrompt           func(childComplexity int) int
 	}
 
@@ -621,6 +622,11 @@ type ComplexityRoot struct {
 		MatchLabels      func(childComplexity int) int
 	}
 
+	Tool struct {
+		Name   func(childComplexity int) int
+		Params func(childComplexity int) int
+	}
+
 	TypedObjectReference struct {
 		APIGroup    func(childComplexity int) int
 		DisplayName func(childComplexity int) int
@@ -1002,6 +1008,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Temperature(childComplexity), true
+
+	case "Application.tools":
+		if e.complexity.Application.Tools == nil {
+			break
+		}
+
+		return e.complexity.Application.Tools(childComplexity), true
 
 	case "Application.userPrompt":
 		if e.complexity.Application.UserPrompt == nil {
@@ -3741,6 +3754,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Selector.MatchLabels(childComplexity), true
 
+	case "Tool.name":
+		if e.complexity.Tool.Name == nil {
+			break
+		}
+
+		return e.complexity.Tool.Name(childComplexity), true
+
+	case "Tool.params":
+		if e.complexity.Tool.Params == nil {
+			break
+		}
+
+		return e.complexity.Tool.Params(childComplexity), true
+
 	case "TypedObjectReference.apiGroup":
 		if e.complexity.TypedObjectReference.APIGroup == nil {
 			break
@@ -4298,6 +4325,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputResourceInput,
 		ec.unmarshalInputResourcesInput,
 		ec.unmarshalInputSelectorInput,
+		ec.unmarshalInputToolInput,
 		ec.unmarshalInputTypedObjectReferenceInput,
 		ec.unmarshalInputUpdateApplicationConfigInput,
 		ec.unmarshalInputUpdateApplicationMetadataInput,
@@ -4507,6 +4535,10 @@ type Application {
     showNextGuide 下一步引导，即是否在chat界面显示下一步引导
     """
     showNextGuide: Boolean
+    """
+    tools 要使用的工具列表
+    """
+    tools: [Tool]
 }
 
 """
@@ -4747,6 +4779,10 @@ input UpdateApplicationConfigInput {
     showNextGuide 下一步引导，即是否在chat界面显示下一步引导
     """
     showNextGuide: Boolean
+    """
+    tools 要使用的工具列表
+    """
+    tools: [ToolInput]
 }
 `, BuiltIn: false},
 	{Name: "../schema/dataprocessing.graphqls", Input: `# 数据处理 Mutation
@@ -5591,7 +5627,35 @@ type TypedObjectReference {
     namespace: String
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG
+"""
+ToolInput 应用和Agent中用到的工具
+"""
+input ToolInput {
+    """
+    名称(必填)，目前只有bing可选
+    """
+    name: String!
+    """
+    params 参数，可选
+    """
+    params: Map
+}
+
+"""
+Tool 应用和Agent中用到的工具
+"""
+type Tool {
+    """
+    名称，目前只有bing可选
+    """
+    name: String
+    """
+    params 参数
+    """
+    params: Map
+}
+
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster
 `, BuiltIn: false},
 	{Name: "../schema/k8s.graphqls", Input: `type LabelSelectorRequirement {
     key: String
@@ -9000,6 +9064,53 @@ func (ec *executionContext) fieldContext_Application_showNextGuide(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_tools(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_tools(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tools, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Tool)
+	fc.Result = res
+	return ec.marshalOTool2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_tools(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Tool_name(ctx, field)
+			case "params":
+				return ec.fieldContext_Tool_params(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tool", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMetadata_name(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMetadata_name(ctx, field)
 	if err != nil {
@@ -9828,6 +9939,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_showRetrievalInfo(ctx, field)
 			case "showNextGuide":
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
+			case "tools":
+				return ec.fieldContext_Application_tools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -9917,6 +10030,8 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_showRetrievalInfo(ctx, field)
 			case "showNextGuide":
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
+			case "tools":
+				return ec.fieldContext_Application_tools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -24477,6 +24592,8 @@ func (ec *executionContext) fieldContext_RAG_application(ctx context.Context, fi
 				return ec.fieldContext_Application_showRetrievalInfo(ctx, field)
 			case "showNextGuide":
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
+			case "tools":
+				return ec.fieldContext_Application_tools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -26149,6 +26266,88 @@ func (ec *executionContext) fieldContext_Selector_matchExpressions(ctx context.C
 				return ec.fieldContext_LabelSelectorRequirement_operator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LabelSelectorRequirement", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tool_name(ctx context.Context, field graphql.CollectedField, obj *Tool) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tool_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tool_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tool",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tool_params(ctx context.Context, field graphql.CollectedField, obj *Tool) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tool_params(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Params, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tool_params(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tool",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -34223,6 +34422,44 @@ func (ec *executionContext) unmarshalInputSelectorInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputToolInput(ctx context.Context, obj interface{}) (ToolInput, error) {
+	var it ToolInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "params"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "params":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("params"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Params = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTypedObjectReferenceInput(ctx context.Context, obj interface{}) (TypedObjectReferenceInput, error) {
 	var it TypedObjectReferenceInput
 	asMap := map[string]interface{}{}
@@ -34286,7 +34523,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34446,6 +34683,15 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.ShowNextGuide = data
+		case "tools":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tools"))
+			data, err := ec.unmarshalOToolInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐToolInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tools = data
 		}
 	}
 
@@ -35713,13 +35959,6 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._RayCluster(ctx, sel, obj)
-	case Rag:
-		return ec._RAG(ctx, sel, &obj)
-	case *Rag:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._RAG(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -35775,6 +36014,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_showRetrievalInfo(ctx, field, obj)
 		case "showNextGuide":
 			out.Values[i] = ec._Application_showNextGuide(ctx, field, obj)
+		case "tools":
+			out.Values[i] = ec._Application_tools(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40335,7 +40576,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var rAGImplementors = []string{"RAG", "PageNode"}
+var rAGImplementors = []string{"RAG"}
 
 func (ec *executionContext) _RAG(ctx context.Context, sel ast.SelectionSet, obj *Rag) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, rAGImplementors)
@@ -41097,6 +41338,44 @@ func (ec *executionContext) _Selector(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Selector_matchLabels(ctx, field, obj)
 		case "matchExpressions":
 			out.Values[i] = ec._Selector_matchExpressions(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var toolImplementors = []string{"Tool"}
+
+func (ec *executionContext) _Tool(ctx context.Context, sel ast.SelectionSet, obj *Tool) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, toolImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Tool")
+		case "name":
+			out.Values[i] = ec._Tool_name(ctx, field, obj)
+		case "params":
+			out.Values[i] = ec._Tool_params(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -44660,6 +44939,82 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	}
 	res := graphql.MarshalTime(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOTool2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTool(ctx context.Context, sel ast.SelectionSet, v []*Tool) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTool2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTool(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTool2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTool(ctx context.Context, sel ast.SelectionSet, v *Tool) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Tool(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOToolInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐToolInput(ctx context.Context, v interface{}) ([]*ToolInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ToolInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOToolInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐToolInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOToolInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐToolInput(ctx context.Context, v interface{}) (*ToolInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputToolInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOTypedObjectReference2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTypedObjectReference(ctx context.Context, sel ast.SelectionSet, v *TypedObjectReference) graphql.Marshaler {

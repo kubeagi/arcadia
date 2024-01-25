@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
 
+	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
@@ -90,6 +91,12 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		gApp.MaxLength = pointer.Int(chainConfig.MaxLength)
 		gApp.MaxTokens = pointer.Int(chainConfig.MaxTokens)
 		gApp.ConversionWindowSize = pointer.Int(chainConfig.Memory.ConversionWindowSize)
+		for _, v := range chainConfig.Tools {
+			gApp.Tools = append(gApp.Tools, &generated.Tool{
+				Name:   pointer.String(v.Name),
+				Params: utils.MapStr2Any(v.Params),
+			})
+		}
 	}
 	for _, node := range app.Spec.Nodes {
 		if node.Ref == nil {
@@ -382,6 +389,12 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			qachain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, qachain.Spec.MaxTokens)
 			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
 			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
+			for _, v := range input.Tools {
+				qachain.Spec.Tools = append(qachain.Spec.Tools, agent.Tool{
+					Name:   v.Name,
+					Params: utils.MapAny2Str(v.Params),
+				})
+			}
 		}, qachain); err != nil {
 			return nil, err
 		}
@@ -418,6 +431,12 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			llmchain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, llmchain.Spec.MaxTokens)
 			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
 			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
+			for _, v := range input.Tools {
+				llmchain.Spec.Tools = append(llmchain.Spec.Tools, agent.Tool{
+					Name:   v.Name,
+					Params: utils.MapAny2Str(v.Params),
+				})
+			}
 		}, llmchain); err != nil {
 			return nil, err
 		}

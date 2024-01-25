@@ -183,7 +183,7 @@ definitions:
         example: 旷工最小计算单位为 0.5 天。
         type: string
       content:
-        description: related content in the source file
+        description: related content in the source file or in webpage
         example: 旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。
         type: string
       file_name:
@@ -210,6 +210,14 @@ definitions:
         description: vector search score
         example: 0.34
         type: number
+      title:
+        description: Title of the webpage
+        example: 开始使用 Microsoft 帐户 – Microsoft
+        type: string
+      url:
+        description: URL of the webpage
+        example: https://www.microsoft.com/zh-cn/welcome
+        type: string
     type: object
   service.Chunk:
     properties:

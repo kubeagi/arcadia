@@ -420,6 +420,17 @@ curl -s -XPOST http://127.0.0.1:8081/chat --data '{"query":"年会不能停的�
 #	echo "Because conversationWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 #	exit 1
 #fi
+if [[ $GITHUB_ACTIONS != "true" ]]; then
+	info "8.6 bingsearch test"
+	kubectl apply -f config/samples/app_llmchain_chat_with_bot_bing.yaml
+	waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-bing"
+  sleep 3
+  getRespInAppChat "base-chat-with-bot-bing" "arcadia" "介绍一下微软的产品" "" "false"
+  if [ -z "$references" ] || [ "$references" = "null" ]; then
+  			echo $resp
+  			exit 1
+  fi
+fi
 
 info "9. show apiserver logs for debug"
 kubectl logs --tail=100 -n arcadia -l app=arcadia-apiserver >/tmp/apiserver.log

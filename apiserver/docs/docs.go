@@ -1174,7 +1174,7 @@ const docTemplate = `{
                     "example": "旷工最小计算单位为 0.5 天。"
                 },
                 "content": {
-                    "description": "related content in the source file",
+                    "description": "related content in the source file or in webpage",
                     "type": "string",
                     "example": "旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。"
                 },
@@ -1207,6 +1207,16 @@ const docTemplate = `{
                     "description": "vector search score",
                     "type": "number",
                     "example": 0.34
+                },
+                "title": {
+                    "description": "Title of the webpage",
+                    "type": "string",
+                    "example": "开始使用 Microsoft 帐户 – Microsoft"
+                },
+                "url": {
+                    "description": "URL of the webpage",
+                    "type": "string",
+                    "example": "https://www.microsoft.com/zh-cn/welcome"
                 }
             }
         },
