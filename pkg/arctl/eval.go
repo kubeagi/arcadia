@@ -20,12 +20,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -39,7 +41,9 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	downloadutil "github.com/kubeagi/arcadia/pkg/arctl/download"
+	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/evaluation"
+	pkgutils "github.com/kubeagi/arcadia/pkg/utils"
 )
 
 func NewEvalCmd(home *string, namespace *string) *cobra.Command {
@@ -77,6 +81,8 @@ arctl -narcadia eval --rag=<rag-name>
 			}
 			ragName, _ := cmd.Flags().GetString("rag")
 			dir, _ := cmd.Flags().GetString("dir")
+			systemConfNamespace, _ := cmd.Flags().GetString("system-conf-namespace")
+			systemConfName, _ := cmd.Flags().GetString("system-conf-name")
 			rag := evalv1alpha1.RAG{}
 			gv := evalv1alpha1.GroupVersion.String()
 			u, err := common.ResourceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
@@ -95,11 +101,13 @@ arctl -narcadia eval --rag=<rag-name>
 				os.Exit(1)
 			}
 
-			download(cmd.Context(), &rag, kubeClient, dir)
+			download(cmd.Context(), &rag, kubeClient, dir, systemConfName, systemConfNamespace)
 		},
 	}
 	cmd.Flags().String("rag", "", "rag name")
 	cmd.Flags().String("dir", ".", "specify the file download directory")
+	cmd.Flags().String("system-conf-namespace", "", "the namespace where the system configuration of the arcadia service is located.")
+	cmd.Flags().String("system-conf-name", "arcadia-config", "the system configuration name of the arcadia service.")
 	_ = cmd.MarkFlagRequired("rag")
 	return cmd
 }
@@ -220,10 +228,10 @@ func GenDatasetOnSingleFile(ctx context.Context, kubeClient dynamic.Interface, a
 	return nil
 }
 
-func parseOptions(
+func GetCustomDefineDatasource(
 	ctx context.Context,
 	kubeClient dynamic.Interface,
-	datasourceName, datasourceNamespace string) []downloadutil.DownloadOptionFunc {
+	datasourceName, datasourceNamespace string) (*basev1alpha1.Datasource, error) {
 	obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
 		APIGroup:  &common.ArcadiaAPIGroup,
 		Kind:      "Datasource",
@@ -232,25 +240,40 @@ func parseOptions(
 	}, metav1.GetOptions{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get datasource %s/%s error %s\n", datasourceNamespace, datasourceName, err)
-		return nil
+		return nil, err
 	}
 	datasource := basev1alpha1.Datasource{}
 	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &datasource); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to convert obj to datasource error %s\n", err)
-		return nil
+		return nil, err
 	}
-	if datasource.Spec.OSS == nil {
-		fmt.Fprintf(os.Stderr, "[Warning] the datasource %s/%s is not an object store.\n", datasourceNamespace, datasourceName)
-		return nil
-	}
+	return &datasource, nil
+}
 
+var (
+	once             sync.Once
+	systemDatasource *basev1alpha1.Datasource
+	systemError      error
+)
+
+func SysatemDatasource(ctx context.Context, kubeClient dynamic.Interface) (*basev1alpha1.Datasource, error) {
+	once.Do(func() {
+		systemDatasource, systemError = config.GetSystemDatasource(ctx, nil, kubeClient)
+	})
+	return systemDatasource, systemError
+}
+
+func parseOptions(
+	ctx context.Context,
+	kubeClient dynamic.Interface,
+	datasource *basev1alpha1.Datasource) []downloadutil.DownloadOptionFunc {
 	options := make([]downloadutil.DownloadOptionFunc, 0)
 	options = append(options, downloadutil.WithEndpoint(datasource.Spec.Endpoint.URL),
-		downloadutil.WithSecure(datasource.Spec.Endpoint.Insecure), downloadutil.WithBucket(datasource.Spec.OSS.Bucket))
+		downloadutil.WithSecure(datasource.Spec.Endpoint.Insecure))
 
 	if as := datasource.Spec.Endpoint.AuthSecret; as != nil {
 		secret := v1.Secret{}
-		ns := datasourceNamespace
+		ns := datasource.Namespace
 		if as.Namespace != nil {
 			ns = *as.Namespace
 		}
@@ -278,33 +301,90 @@ func parseOptions(
 	return options
 }
 
-func download(ctx context.Context, rag *evalv1alpha1.RAG, kubeClient dynamic.Interface, baseDir string) {
+func fromDatasource(ctx context.Context, kubeClient dynamic.Interface, dsName, dsNamespace string, clientCache map[string]*downloadutil.Download) error {
+	key := fmt.Sprintf("%s/%s", dsNamespace, dsName)
+	_, ok := clientCache[key]
+	if ok {
+		return nil
+	}
+	datasource, err := GetCustomDefineDatasource(ctx, kubeClient, dsName, dsNamespace)
+	if err != nil {
+		return err
+	}
+	options := parseOptions(ctx, kubeClient, datasource)
+	options = append(options, downloadutil.WithBucket(dsNamespace))
+	downloader := downloadutil.NewDownloader(options...)
+	clientCache[key] = downloader
+	return nil
+}
+
+const (
+	systemDatasourceKey = "system-datasource"
+)
+
+func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, clientCache map[string]*downloadutil.Download) error {
+	datasource, err := SysatemDatasource(ctx, kubeClient)
+	if err != nil {
+		return err
+	}
+	if datasource.Spec.OSS == nil {
+		return errors.New("the system datasource is not configured with bucket information")
+	}
+	_, ok := clientCache[systemDatasourceKey]
+	if ok {
+		return nil
+	}
+
+	options := parseOptions(ctx, kubeClient, datasource)
+	options = append(options, downloadutil.WithBucket(datasource.Spec.OSS.Bucket))
+
+	downloader := downloadutil.NewDownloader(options...)
+	clientCache[systemDatasourceKey] = downloader
+	return nil
+}
+
+func download(
+	ctx context.Context,
+	rag *evalv1alpha1.RAG,
+	kubeClient dynamic.Interface,
+	baseDir, systemConfName, systemConfNamespace string) {
 	curNamespace := rag.Namespace
 	clientCache := make(map[string]*downloadutil.Download)
-	skipSource := make(map[string]struct{})
+
+	os.Setenv(config.EnvConfigKey, systemConfName)
+	os.Setenv(pkgutils.EnvNamespaceKey, systemConfNamespace)
+	defer func() {
+		os.Unsetenv(config.EnvConfigKey)
+		os.Unsetenv(pkgutils.EnvNamespaceKey)
+	}()
+
 	for _, source := range rag.Spec.Datasets {
-		if source.Source.Kind != "Datasource" {
+		if source.Source.Kind != "Datasource" && source.Source.Kind != "VersionedDataset" {
+			fmt.Fprintf(os.Stderr, "warning: only support Datasource, VersioneddataSet to get data, the current fill in the kind is %s", source.Source.Kind)
 			continue
-		}
-		ns := curNamespace
-		if source.Source.Namespace != nil {
-			ns = *source.Source.Namespace
 		}
 
-		key := fmt.Sprintf("%s/%s", ns, source.Source.Name)
-		if _, ok := skipSource[key]; ok {
-			continue
-		}
-		downloader, ok := clientCache[key]
-		if !ok {
-			options := parseOptions(ctx, kubeClient, source.Source.Name, ns)
-			if len(options) == 0 {
-				skipSource[key] = struct{}{}
+		key := ""
+		ns := curNamespace
+		if source.Source.Kind == "Datasource" {
+			if source.Source.Namespace != nil {
+				ns = *source.Source.Namespace
+			}
+			key = fmt.Sprintf("%s/%s", ns, source.Source.Name)
+			if err := fromDatasource(ctx, kubeClient, source.Source.Name, ns, clientCache); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to get datasource %s error %s", source.Source.Name, err)
 				continue
 			}
-			downloader = downloadutil.NewDownloader(options...)
+		}
+		if source.Source.Kind == "VersionedDataset" {
+			key = systemDatasourceKey
+			if err := fromVersionedDataset(ctx, kubeClient, clientCache); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to get system datasource error %s", err)
+				continue
+			}
 		}
 
+		downloader := clientCache[key]
 		for _, f := range source.Files {
 			if err := downloader.Download(ctx, downloadutil.WithSrcFile(f), downloadutil.WithDstFile(filepath.Join(baseDir, f))); err != nil {
 				fmt.Fprintf(os.Stderr, "datasource %s failed to download file error %s\n", key, err)
