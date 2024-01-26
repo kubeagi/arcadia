@@ -55,7 +55,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 		case llms.ZhiPuAI:
 			return zhipuai.NewZhiPuAILLM(apiKey, zhipuai.WithRetryTimes(3)), nil
 		case llms.OpenAI:
-			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Spec.Endpoint.URL))
+			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()))
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c, cli)

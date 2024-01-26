@@ -89,6 +89,8 @@ spec:
                   url:
                     description: URL for this endpoint
                     type: string
+                required:
+                - url
                 type: object
               oss:
                 description: OSS defines info for object storage service

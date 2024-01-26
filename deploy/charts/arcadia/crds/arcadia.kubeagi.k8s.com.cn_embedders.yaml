@@ -102,6 +102,8 @@ spec:
                       url:
                         description: URL for this endpoint
                         type: string
+                    required:
+                    - url
                     type: object
                   worker:
                     description: Worker defines the worker info Means this LLM is

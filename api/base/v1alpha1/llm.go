@@ -44,6 +44,11 @@ func (llmStatus LLMStatus) LLMReady() (string, bool) {
 	return "", true
 }
 
+// GetLLMBaseURL returns the llm's url
+func (llm LLM) Get3rdPartyLLMBaseURL() string {
+	return llm.Spec.Endpoint.URL
+}
+
 // GetModelList returns a model list provided by this LLM based on different provider
 func (llm LLM) GetModelList() []string {
 	switch llm.Spec.Provider.GetType() {

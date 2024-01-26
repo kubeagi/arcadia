@@ -34,6 +34,11 @@ func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.I
 	return e.Spec.Endpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
 }
 
+// GetEmbedderBaseUrl returns the embedder's url
+func (e Embedder) Get3rdPartyEmbedderBaseURL() string {
+	return e.Spec.Endpoint.URL
+}
+
 // GetModelList returns a model list provided by this LLM based on different provider
 func (e Embedder) GetModelList() []string {
 	switch e.Spec.Provider.GetType() {

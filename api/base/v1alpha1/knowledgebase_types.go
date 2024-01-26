@@ -27,6 +27,8 @@ type KnowledgeBaseSpec struct {
 	// Embedder defines the embedder to embedding files
 	Embedder *TypedObjectReference `json:"embedder,omitempty"`
 
+	// TODO: add EmbedderOptions
+
 	// VectorStore defines the vectorstore to store results
 	VectorStore *TypedObjectReference `json:"vectorStore,omitempty"`
 

@@ -141,7 +141,7 @@ func (in *TypedObjectReference) GetNamespace(defaultNamespace string) string {
 type Endpoint struct {
 	// URL for this endpoint
 	// +kubebuilder:validation:Required
-	URL string `json:"url,omitempty"`
+	URL string `json:"url"`
 
 	// InternalURL for this endpoint which is much faster but only can be used inside this cluster
 	// +kubebuilder:validation:Required
