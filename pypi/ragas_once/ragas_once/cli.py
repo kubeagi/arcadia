@@ -5,7 +5,6 @@ import ragas_once.wrapper as pkg
 from datasets import Dataset, load_dataset
 from ragas import evaluate
 
-
 def main():
     """
     This function is the entry point for the program. It parses command line arguments and sets up the necessary variables for evaluation.
@@ -75,11 +74,16 @@ def main():
         fiqa = load_dataset("explodinggradients/fiqa", "ragas_eval")
         test_set = fiqa["baseline"].select(range(5))
 
+
     ms = pkg.set_metrics(metrics, judge_model, embeddings)
 
     result = evaluate(test_set, ms)
     print(result)
-
+    
+    # count total score and avearge
+    summary = result.scores.to_pandas().mean()
+    summary["total_score"] = summary.mean()
+    summary.to_csv("summary.csv")
     result.to_pandas().to_csv("result.csv")
 
 
