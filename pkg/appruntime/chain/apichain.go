@@ -36,13 +36,30 @@ import (
 type APIChain struct {
 	chains.APIChain
 	base.BaseNode
+	Instance *v1alpha1.APIChain
 }
 
 func NewAPIChain(baseNode base.BaseNode) *APIChain {
 	return &APIChain{
-		chains.APIChain{},
-		baseNode,
+		APIChain: chains.APIChain{},
+		BaseNode: baseNode,
 	}
+}
+
+func (l *APIChain) Init(ctx context.Context, cli dynamic.Interface, _ map[string]any) error {
+	ns := base.GetAppNamespace(ctx)
+	instance := &v1alpha1.APIChain{}
+	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "apichains"}).
+		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("can't find the chain in cluster: %w", err)
+	}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
+	if err != nil {
+		return fmt.Errorf("can't convert obj to APIChain: %w", err)
+	}
+	l.Instance = instance
+	return nil
 }
 
 func (l *APIChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
@@ -76,18 +93,8 @@ func (l *APIChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 		return args, errors.New("history not memory.ChatMessageHistory")
 	}
 
-	ns := base.GetAppNamespace(ctx)
-	instance := &v1alpha1.APIChain{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "apichains"}).
-		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
-	if err != nil {
-		return args, fmt.Errorf("can't find the chain in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return args, fmt.Errorf("can't convert obj to LLMChain: %w", err)
-	}
-	options := getChainOptions(instance.Spec.CommonChainConfig)
+	instance := l.Instance
+	options := GetChainOptions(instance.Spec.CommonChainConfig)
 
 	chain := chains.NewAPIChain(llm, http.DefaultClient)
 	chain.RequestChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")

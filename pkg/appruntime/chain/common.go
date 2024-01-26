@@ -53,7 +53,7 @@ func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	}
 }
 
-func getChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption {
+func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption {
 	options := make([]chains.ChainCallOption, 0)
 	if config.MaxTokens > 0 {
 		options = append(options, chains.WithMaxTokens(config.MaxTokens))

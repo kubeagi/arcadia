@@ -422,6 +422,13 @@ if [[ $resp == *"$delete_conversation_id"* ]]; then
 	echo "delete conversation failed"
 	exit 1
 fi
+info "8.4.5 get app prompt starters"
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+echo $resp | jq .
+if [[ $resp == *"err"* ]]; then
+	echo "failed"
+	exit 1
+fi
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
@@ -446,12 +453,12 @@ if [[ $GITHUB_ACTIONS != "true" ]]; then
 	info "8.6 bingsearch test"
 	kubectl apply -f config/samples/app_llmchain_chat_with_bot_bing.yaml
 	waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-bing"
-  sleep 3
-  getRespInAppChat "base-chat-with-bot-bing" "arcadia" "介绍一下微软的产品" "" "false"
-  if [ -z "$references" ] || [ "$references" = "null" ]; then
-  			echo $resp
-  			exit 1
-  fi
+	sleep 3
+	getRespInAppChat "base-chat-with-bot-bing" "arcadia" "介绍一下微软的产品" "" "false"
+	if [ -z "$references" ] || [ "$references" = "null" ]; then
+		echo $resp
+		exit 1
+	fi
 fi
 
 info "9. show apiserver logs for debug"

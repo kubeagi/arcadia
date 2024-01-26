@@ -840,6 +840,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/prompt-starter": {
+            "post": {
+                "description": "get app's prompt starters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "get app's prompt starters",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "how many prompts you need should \u003e 0 and \u003c 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.APPMetadata"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
         "/versioneddataset/files/csv": {
             "get": {
                 "description": "Read a file line by line",
@@ -990,6 +1045,11 @@ const docTemplate = `{
                     "description": "CreatedAt is the time when the message is created",
                     "type": "string",
                     "example": "2023-12-21T10:21:06.389359092+08:00"
+                },
+                "latency": {
+                    "description": "Latency(ms) is how much time the server cost to process a certain request.",
+                    "type": "integer",
+                    "example": 1000
                 },
                 "message": {
                     "description": "Message is what AI say",
@@ -1395,6 +1455,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
+                },
+                "latency": {
+                    "type": "integer",
+                    "example": 1000
                 },
                 "query": {
                     "type": "string",

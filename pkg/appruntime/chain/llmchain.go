@@ -38,16 +38,32 @@ import (
 type LLMChain struct {
 	chains.LLMChain
 	base.BaseNode
+	Instance *v1alpha1.LLMChain
 }
 
 func NewLLMChain(baseNode base.BaseNode) *LLMChain {
 	return &LLMChain{
-		chains.LLMChain{},
-		baseNode,
+		LLMChain: chains.LLMChain{},
+		BaseNode: baseNode,
 	}
 }
+func (l *LLMChain) Init(ctx context.Context, cli dynamic.Interface, _ map[string]any) error {
+	ns := base.GetAppNamespace(ctx)
+	instance := &v1alpha1.LLMChain{}
+	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llmchains"}).
+		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("can't find the chain in cluster: %w", err)
+	}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
+	if err != nil {
+		return fmt.Errorf("can't convert obj to LLMChain: %w", err)
+	}
+	l.Instance = instance
+	return nil
+}
 
-func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -73,19 +89,8 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 			return args, errors.New("history not memory.ChatMessageHistory")
 		}
 	}
-
-	ns := base.GetAppNamespace(ctx)
-	instance := &v1alpha1.LLMChain{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llmchains"}).
-		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
-	if err != nil {
-		return args, fmt.Errorf("can't find the chain in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return args, fmt.Errorf("can't convert obj to LLMChain: %w", err)
-	}
-	options := getChainOptions(instance.Spec.CommonChainConfig)
+	instance := l.Instance
+	options := GetChainOptions(instance.Spec.CommonChainConfig)
 	// Add the answer to the context if it's not empty
 	if args["_answer"] != nil {
 		klog.Infoln("get answer from upstream:", args["_answer"])

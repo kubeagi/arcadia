@@ -62,8 +62,9 @@ type ChatReqBody struct {
 	// * Streaming - means the response will use Server-Sent Events
 	ResponseMode        ResponseMode `json:"response_mode" binding:"required" example:"blocking"`
 	ConversationReqBody `json:",inline"`
-	Debug               bool `json:"-"`
-	NewChat             bool `json:"-"`
+	Debug               bool      `json:"-"`
+	NewChat             bool      `json:"-"`
+	StartTime           time.Time `json:"-"`
 }
 
 type ChatRespBody struct {
@@ -75,6 +76,8 @@ type ChatRespBody struct {
 	CreatedAt time.Time `json:"created_at" example:"2023-12-21T10:21:06.389359092+08:00"`
 	// References is the list of references
 	References []retriever.Reference `json:"references,omitempty"`
+	// Latency(ms) is how much time the server cost to process a certain request.
+	Latency int64 `json:"latency,omitempty" example:"1000"`
 }
 
 type ErrorResp struct {
