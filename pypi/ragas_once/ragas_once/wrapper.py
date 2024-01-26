@@ -81,6 +81,7 @@ def set_metrics(
     if embeddings:
         answer_relevancy.embeddings = embeddings
         answer_correctness.embeddings = embeddings
+        answer_similarity.embeddings = embeddings
     if not metrics:
         metrics = DEFAULT_METRICS
     for m in metrics:
