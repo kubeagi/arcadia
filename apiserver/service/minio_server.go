@@ -16,7 +16,9 @@ limitations under the License.
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,7 +36,9 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	apiserverds "github.com/kubeagi/arcadia/apiserver/pkg/datasource"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
+	"github.com/kubeagi/arcadia/apiserver/pkg/versioneddataset"
 	"github.com/kubeagi/arcadia/pkg/cache"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
@@ -97,6 +101,27 @@ type (
 		Bucket     string `json:"bucket"`
 		FileName   string `json:"fileName"`
 		BucketPath string `json:"bucketPath"`
+	}
+
+	WebCrawlerFileBody struct {
+		VersionedDataset string `json:"versioneddataset"`
+		Datasource       string `json:"datasource"`
+
+		// Params to generate a web crawler file
+		Params struct {
+			URL *string `json:"url,omitempty"`
+			// Params
+			IntervalTime   *int     `json:"interval_time,omitempty"`
+			ResourceTypes  []string `json:"resource_types,omitempty"`
+			MaxDepth       int      `json:"max_depth,omitempty"`
+			MaxCount       int      `json:"max_count,omitempty"`
+			ExcludeSubUrls []string `json:"exclude_sub_urls,omitempty"`
+			IncludeSubUrls []string `json:"include_sub_urls,omitempty"`
+			ExcludeImgInfo struct {
+				Weight int `json:"weight,omitempty"`
+				Height int `json:"height,omitempty"`
+			} `json:"exclude_img_info,omitempty"`
+		} `json:"params"`
 	}
 )
 
@@ -771,6 +796,91 @@ func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"url": u.String()})
 }
 
+// @Summary Create web cralwer file
+// @Schemes
+// @Description Create a web crawler file which contains crawer params
+// @Tags MinioAPI
+// @Accept json
+// @Produce json
+// @Param request body WebCrawlerFileBody true "request params"
+// @Param namespace header string true  "Name of the bucket"
+// @Success 200 {object} string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /model/files/chunks [post]
+func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
+	var body WebCrawlerFileBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		klog.Errorf("failed to parse body error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "need content-type application/json",
+		})
+		return
+	}
+
+	namespace := ctx.GetHeader(namespaceHeader)
+
+	// read versioneddataset
+	vds, err := versioneddataset.GetVersionedDataset(ctx, m.client, body.VersionedDataset, namespace)
+	if err != nil {
+		klog.Errorf("failed to get versioneddataset error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	// read datasource
+	ds, err := apiserverds.ReadDatasource(ctx, m.client, body.Datasource, namespace)
+	if err != nil {
+		klog.Errorf("failed to get datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	if ds.Type != string(v1alpha1.DatasourceTypeWeb) {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "not a web datasource",
+		})
+		return
+	}
+
+	if body.Params.URL == nil {
+		body.Params.URL = ds.Endpoint.URL
+	}
+	if body.Params.IntervalTime == nil {
+		body.Params.IntervalTime = ds.Web.RecommendIntervalTime
+	}
+	content, err := json.Marshal(body.Params)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": fmt.Sprintf("invalid web crawler params: %s", err.Error()),
+		})
+		return
+	}
+
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	object := fmt.Sprintf("dataset/%s/%s/%s-%s.web", vds.Dataset.Name, vds.Version, ds.Namespace, ds.Name)
+	_, err = source.Client.PutObject(ctx, namespace, object, bytes.NewReader(content), int64(len(content)), minio.PutObjectOptions{})
+	if err != nil {
+		klog.Errorf("failed to put webcrawler file error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"bucket": namespace, "object": object})
+}
+
 func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	c, err := client.GetClient(nil)
 	if err != nil {
@@ -805,5 +915,7 @@ func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		group.GET("/versioneddataset/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.Download)
 		group.GET("/versioneddataset/files/csv", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.ReadCSVLines)
 		group.GET("/versioneddataset/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetDownloadLink)
+		// create a webcrawler file for versioneddataset
+		group.POST("/versioneddataset/files/webcrawler", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.CreateWebCrawlerFile)
 	}
 }

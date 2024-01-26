@@ -268,6 +268,45 @@ definitions:
       uploadID:
         type: string
     type: object
+  service.WebCrawlerFileBody:
+    properties:
+      datasource:
+        type: string
+      params:
+        description: Params to generate a web crawler file
+        properties:
+          exclude_img_info:
+            properties:
+              height:
+                type: integer
+              weight:
+                type: integer
+            type: object
+          exclude_sub_urls:
+            items:
+              type: string
+            type: array
+          include_sub_urls:
+            items:
+              type: string
+            type: array
+          interval_time:
+            description: Params
+            type: integer
+          max_count:
+            type: integer
+          max_depth:
+            type: integer
+          resource_types:
+            items:
+              type: string
+            type: array
+          url:
+            type: string
+        type: object
+      versioneddataset:
+        type: string
+    type: object
   storage.Conversation:
     properties:
       app_name:
@@ -606,14 +645,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: create new multipart upload
+      description: Create a web crawler file which contains crawer params
       parameters:
-      - description: query params
+      - description: request params
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.NewMultipartBody'
+          $ref: '#/definitions/service.WebCrawlerFileBody'
       - description: Name of the bucket
         in: header
         name: namespace
@@ -625,9 +664,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            type: string
         "400":
           description: Bad Request
           schema:
@@ -640,7 +677,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: create new multipart upload
+      summary: Create web cralwer file
       tags:
       - MinioAPI
     put:

@@ -515,7 +515,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "create new multipart upload",
+                "description": "Create a web crawler file which contains crawer params",
                 "consumes": [
                     "application/json"
                 ],
@@ -525,15 +525,15 @@ const docTemplate = `{
                 "tags": [
                     "MinioAPI"
                 ],
-                "summary": "create new multipart upload",
+                "summary": "Create web cralwer file",
                 "parameters": [
                     {
-                        "description": "query params",
+                        "description": "request params",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.NewMultipartBody"
+                            "$ref": "#/definitions/service.WebCrawlerFileBody"
                         }
                     },
                     {
@@ -548,10 +548,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -1294,6 +1291,65 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "uploadID": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.WebCrawlerFileBody": {
+            "type": "object",
+            "properties": {
+                "datasource": {
+                    "type": "string"
+                },
+                "params": {
+                    "description": "Params to generate a web crawler file",
+                    "type": "object",
+                    "properties": {
+                        "exclude_img_info": {
+                            "type": "object",
+                            "properties": {
+                                "height": {
+                                    "type": "integer"
+                                },
+                                "weight": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "exclude_sub_urls": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "include_sub_urls": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "interval_time": {
+                            "description": "Params",
+                            "type": "integer"
+                        },
+                        "max_count": {
+                            "type": "integer"
+                        },
+                        "max_depth": {
+                            "type": "integer"
+                        },
+                        "resource_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "url": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "versioneddataset": {
                     "type": "string"
                 }
             }
