@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,10 +34,16 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat"
+	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 )
 
-func app2gpt(app *v1alpha1.Application) (*generated.Gpt, error) {
+var (
+	once        sync.Once
+	chatStorage storage.Storage
+)
+
+func app2gpt(app *v1alpha1.Application, c dynamic.Interface) (*generated.Gpt, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
@@ -45,7 +52,7 @@ func app2gpt(app *v1alpha1.Application) (*generated.Gpt, error) {
 		Name:        pointer.String(strings.Join([]string{app.Namespace, app.Name}, "/")),
 		DisplayName: pointer.String(app.Spec.DisplayName),
 		Description: pointer.String(app.Spec.Description),
-		Hot:         pointer.Int(getHot(app)),
+		Hot:         pointer.Int64(getHot(app, c)),
 		Creator:     pointer.String(app.Spec.Creator),
 		Category:    common.GetAppCategory(app),
 		Icon:        pointer.String(app.Spec.Icon),
@@ -54,19 +61,27 @@ func app2gpt(app *v1alpha1.Application) (*generated.Gpt, error) {
 	return gpt, nil
 }
 
-func unstructred2gpt(objApp *unstructured.Unstructured) (*generated.Gpt, error) {
+func unstructred2gpt(objApp *unstructured.Unstructured, c dynamic.Interface) (*generated.Gpt, error) {
 	app := &v1alpha1.Application{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(objApp.UnstructuredContent(), app); err != nil {
 		return nil, err
 	}
-	return app2gpt(app)
+	return app2gpt(app, c)
 }
 
-func getHot(app *v1alpha1.Application) (res int) {
-	for _, v := range chat.Conversations {
-		if v.AppNamespce == app.Namespace && v.AppName == app.Name {
-			res += len(v.Messages)
-		}
+func getHot(app *v1alpha1.Application, cli dynamic.Interface) int64 {
+	if chatStorage == nil {
+		once.Do(
+			func() {
+				chatStorage = chat.NewChatServer(cli).Storage()
+			})
+	}
+	if chatStorage == nil {
+		return 0
+	}
+	res, err := chatStorage.CountMessages(app.Name, app.Namespace)
+	if err != nil {
+		return 0
 	}
 	return res
 }
@@ -85,7 +100,7 @@ func GetGPT(ctx context.Context, c dynamic.Interface, name string) (*generated.G
 		return nil, fmt.Errorf("not a valid app or the app is not public")
 	}
 
-	return app2gpt(app)
+	return app2gpt(app, c)
 }
 
 func ListGPT(ctx context.Context, c dynamic.Interface, input generated.ListGPTInput) (*generated.PaginatedResult, error) {
@@ -107,7 +122,7 @@ func ListGPT(ctx context.Context, c dynamic.Interface, input generated.ListGPTIn
 		filter = append(filter, common.FilterApplicationByCategory(category))
 	}
 	return common.ListReources(res, page, pageSize, func(obj *unstructured.Unstructured) (generated.PageNode, error) {
-		return unstructred2gpt(obj)
+		return unstructred2gpt(obj, c)
 	}, filter...)
 }
 

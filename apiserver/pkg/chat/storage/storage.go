@@ -93,4 +93,6 @@ type MessageStorage interface {
 	//
 	// It takes ConversationID, messageID string parameters and returns *Message, error.
 	FindExistingMessage(ConversationID, messageID string, opts ...SearchOption) (*Message, error)
+	// CountMessages count how many messages is about this app
+	CountMessages(appName, appNamespace string) (int64, error)
 }

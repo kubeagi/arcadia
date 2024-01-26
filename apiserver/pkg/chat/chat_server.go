@@ -41,11 +41,10 @@ import (
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
-var once sync.Once
-
 type ChatServer struct {
 	cli     dynamic.Interface
 	storage storage.Storage
+	once    sync.Once
 }
 
 func NewChatServer(cli dynamic.Interface) *ChatServer {
@@ -55,7 +54,7 @@ func NewChatServer(cli dynamic.Interface) *ChatServer {
 }
 func (cs *ChatServer) Storage() storage.Storage {
 	if cs.storage == nil {
-		once.Do(func() {
+		cs.once.Do(func() {
 			ctx := context.TODO()
 			ds, err := pkgconfig.GetRelationalDatasource(ctx, nil, cs.cli)
 			if err != nil || ds == nil {

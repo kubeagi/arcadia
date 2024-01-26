@@ -784,7 +784,7 @@ type Gpt struct {
 	// description: 描述信息
 	Description *string `json:"description,omitempty"`
 	// hot: 热度
-	Hot *int `json:"hot,omitempty"`
+	Hot *int64 `json:"hot,omitempty"`
 	// creator: 创造者
 	Creator *string `json:"creator,omitempty"`
 	// category：gpt所属分类

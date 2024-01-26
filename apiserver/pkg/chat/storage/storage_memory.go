@@ -25,6 +25,15 @@ type MemoryStorage struct {
 	conversations map[string]Conversation
 }
 
+func (m *MemoryStorage) CountMessages(appName, appNamespace string) (res int64, err error) {
+	for _, c := range m.conversations {
+		if c.AppName == appName && c.AppNamespace == appNamespace {
+			res += int64(len(c.Messages))
+		}
+	}
+	return res, nil
+}
+
 // NewMemoryStorage creates a new MemoryStorage instance.
 //
 // No parameters.
