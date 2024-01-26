@@ -440,7 +440,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if !store.Status.IsReady() {
 		return errVectorStoreNotReady
 	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, nil)
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, nil, "")
 	if err != nil {
 		return err
 	}

@@ -153,7 +153,7 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface,
 	if err != nil {
 		return nil, fmt.Errorf("can't convert the embedder in cluster: %w", err)
 	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cli)
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cli, "")
 	if err != nil {
 		return nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
 	}

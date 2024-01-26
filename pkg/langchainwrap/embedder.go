@@ -37,7 +37,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Client, cli dynamic.Interface) (em langchaingoembeddings.Embedder, err error) {
+func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Client, cli dynamic.Interface, model string, opts ...langchaingoembeddings.Option) (em langchaingoembeddings.Embedder, err error) {
 	if err := utils.ValidateClient(c, cli); err != nil {
 		return nil, err
 	}
@@ -52,6 +52,26 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			return zhipuaiembeddings.NewZhiPuAI(
 				zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
 			)
+		case embeddings.OpenAI:
+			apiKey, err := e.AuthAPIKey(ctx, c, cli)
+			if err != nil {
+				return nil, err
+			}
+
+			// When apitype is OpenAI,there are two possible sources:
+			// 1. From official OpenAI
+			// 2. From kubeagi which provides OpenAI compatible apis
+			// Both only provides 1 embedding model,so get the 1st one should be fine if the model is not specified.
+			if model == "" {
+				models := e.GetModelList()
+				model = models[0]
+			}
+
+			llm, err := openai.New(openai.WithModel(model), openai.WithBaseURL(e.Get3rdPartyEmbedderBaseURL()), openai.WithToken(apiKey))
+			if err != nil {
+				return nil, err
+			}
+			return langchaingoembeddings.NewEmbedder(llm, opts...)
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c, cli)
@@ -90,7 +110,7 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 		if err != nil {
 			return nil, err
 		}
-		return langchaingoembeddings.NewEmbedder(llm)
+		return langchaingoembeddings.NewEmbedder(llm, opts...)
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }
