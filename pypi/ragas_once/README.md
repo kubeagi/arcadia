@@ -18,9 +18,9 @@ pip install ragas_once
 
 - `--model`: Specifies the model to use for evaluation.
     - Default value is "gpt-3.5-turbo". Langchain compatible.
-- `--api_base`: Specifies the base URL for the API.
+- `--apibase`: Specifies the base URL for the API.
     - Default value is "https://api.openai.com/v1".
-- `--api_key`: Specifies the API key to authenticate requests. 
+- `--apikey`: Specifies the API key to authenticate requests. 
     - Not required if using psuedo-openai API server, e.g. vLLM, Fastchat, etc.
 - `--embeddings`: Specifies the Huggingface embeddings model to use for evaluation. 
     - Embeddings will run **locally**.
@@ -39,7 +39,7 @@ pip install ragas_once
 ### Fiqa dataset demo:
 
 ```bash
-python3 -m ragas_once.cli --api_key "YOUR_OPENAI_API_KEY"
+python3 -m ragas_once.cli --apikey "YOUR_OPENAI_API_KEY"
 ```
 
 ### Evaluate with GPT-4 and `BAAI/bge-small-en` embeddings
@@ -52,7 +52,7 @@ pip install sentence-transformers
 Then run:
 
 ```bash
-python3 -m ragas_once.cli --model "gpt-4" --api_key "YOUR_OPENAI_API_KEY" --embeddings "BAAI/bge-small-en" --dataset "path/to/dataset.csv"
+python3 -m ragas_once.cli --model "gpt-4" --apikey "YOUR_OPENAI_API_KEY" --embeddings "BAAI/bge-small-en" --dataset "path/to/dataset.csv"
 ```
 
 ### Prepare Dataset

@@ -66,8 +66,10 @@ def main():
 
     if dataset:
         data = pd.read_csv(dataset)
-        data["ground_truths"] = data["ground_truths"].apply(lambda x: x.split(";"))
-        data["contexts"] = data["contexts"].apply(lambda x: x.split(";"))
+        if "ground_truths" in data.columns & data["ground_truths"].dtype == 'string':
+            data["ground_truths"] = data["ground_truths"].apply(lambda x: x.split(";"))
+        if "contexts" in data.columns & data["contexts"].dtype == 'string':
+            data["contexts"] = data["contexts"].apply(lambda x: x.split(";"))
         test_set = Dataset.from_pandas(data)
     else:
         print("test_set not provided, using fiqa dataset")
