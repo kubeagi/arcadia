@@ -49,6 +49,7 @@ type Message struct {
 	Answer         string     `gorm:"column:answer;type:string;comment:ai response" json:"answer" example:"旷工最小计算单位为0.5天。"`
 	References     References `gorm:"column:references;type:json;comment:references" json:"references,omitempty"`
 	ConversationID string     `gorm:"column:conversation_id;type:uuid;comment:conversation id" json:"-"`
+	Latency        int64      `gorm:"column:latency;type:int;comment:request latency, in ms" json:"latency" example:"1000"`
 }
 
 type References []retriever.Reference

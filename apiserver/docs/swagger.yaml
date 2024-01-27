@@ -54,6 +54,11 @@ definitions:
         description: CreatedAt is the time when the message is created
         example: "2023-12-21T10:21:06.389359092+08:00"
         type: string
+      latency:
+        description: Latency(ms) is how much time the server cost to process a certain
+          request.
+        example: 1000
+        type: integer
       message:
         description: Message is what AI say
         example: 旷工最小计算单位为0.5天。
@@ -337,6 +342,9 @@ definitions:
       id:
         example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
         type: string
+      latency:
+        example: 1000
+        type: integer
       query:
         example: 旷工最小计算单位为多少天？
         type: string
@@ -898,6 +906,42 @@ paths:
       summary: Statistics file information
       tags:
       - MinioAPI
+  /prompt-starter:
+    post:
+      consumes:
+      - application/json
+      description: get app's prompt starters
+      parameters:
+      - description: how many prompts you need should > 0 and < 10
+        in: query
+        name: limit
+        type: integer
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.APPMetadata'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: get app's prompt starters
+      tags:
+      - application
   /versioneddataset/files/csv:
     get:
       consumes:

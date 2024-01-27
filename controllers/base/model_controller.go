@@ -190,7 +190,7 @@ func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, in
 		if endpoint != nil && endpoint.AuthSecret != nil {
 			endpoint.AuthSecret.WithNameSpace(system.Namespace)
 		}
-		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+		ds, err = datasource.NewLocal(ctx, r.Client, nil, endpoint)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
@@ -225,7 +225,7 @@ func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, i
 	if endpoint != nil && endpoint.AuthSecret != nil {
 		endpoint.AuthSecret.WithNameSpace(system.Namespace)
 	}
-	ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+	ds, err = datasource.NewLocal(ctx, r.Client, nil, endpoint)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}

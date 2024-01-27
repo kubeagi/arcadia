@@ -17,13 +17,20 @@ limitations under the License.
 package chat
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/tmc/langchaingo/chains"
+	langchainllms "github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/memory"
+	"github.com/tmc/langchaingo/prompts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,9 +43,13 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	appruntimechain "github.com/kubeagi/arcadia/pkg/appruntime/chain"
+	"github.com/kubeagi/arcadia/pkg/appruntime/knowledgebase"
+	"github.com/kubeagi/arcadia/pkg/appruntime/llm"
 	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
+	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 )
 
 type ChatServer struct {
@@ -52,6 +63,7 @@ func NewChatServer(cli dynamic.Interface) *ChatServer {
 		cli: cli,
 	}
 }
+
 func (cs *ChatServer) Storage() storage.Storage {
 	if cs.storage == nil {
 		cs.once.Do(func() {
@@ -91,23 +103,9 @@ func (cs *ChatServer) Storage() storage.Storage {
 }
 
 func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream chan string, messageID string) (*ChatRespBody, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	app, c, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get a dynamic client: %w", err)
-	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "applications"}).
-		Namespace(req.AppNamespace).Get(ctx, req.APPName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get application: %w", err)
-	}
-	app := &v1alpha1.Application{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert application: %w", err)
-	}
-	if !app.Status.IsReady() {
-		return nil, errors.New("application is not ready")
+		return nil, err
 	}
 	var conversation *storage.Conversation
 	history := memory.NewChatMessageHistory()
@@ -134,8 +132,7 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 			ID:           req.ConversationID,
 			AppName:      req.APPName,
 			AppNamespace: req.AppNamespace,
-			StartedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
+			StartedAt:    req.StartTime,
 			Messages:     make([]storage.Message, 0),
 			User:         currentUser,
 			Debug:        req.Debug,
@@ -157,9 +154,10 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 		return nil, err
 	}
 
-	conversation.UpdatedAt = time.Now()
+	conversation.UpdatedAt = req.StartTime
 	conversation.Messages[len(conversation.Messages)-1].Answer = out.Answer
 	conversation.Messages[len(conversation.Messages)-1].References = out.References
+	conversation.Messages[len(conversation.Messages)-1].Latency = time.Since(req.StartTime).Milliseconds()
 	if err := cs.Storage().UpdateConversation(conversation); err != nil {
 		return nil, err
 	}
@@ -204,6 +202,186 @@ func (cs *ChatServer) GetMessageReferences(ctx context.Context, req MessageReqBo
 		return m.References, nil
 	}
 	return nil, errors.New("conversation or message is not found")
+}
+
+// ListPromptStarters PromptStarter are examples for users to help them get up and running with the application quickly. We use same name with chatgpt
+func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, limit int) (promptStarters []string, err error) {
+	app, c, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
+	if err != nil {
+		return nil, err
+	}
+	var kb *v1alpha1.KnowledgeBase
+	var chainOptions []chains.ChainCallOption
+	var model langchainllms.LLM
+	for _, n := range app.Spec.Nodes {
+		baseNode := base.NewBaseNode(app.Namespace, n.Name, *n.Ref)
+		switch baseNode.Group() {
+		case "chain":
+			switch baseNode.Kind() {
+			case "llmchain":
+				ch := appruntimechain.NewLLMChain(baseNode)
+				if err := ch.Init(ctx, c, nil); err != nil {
+					klog.Infof("init llmchain err:%s, will use empty chain config", err)
+				}
+				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
+			case "retrievalqachain":
+				ch := appruntimechain.NewRetrievalQAChain(baseNode)
+				if err := ch.Init(ctx, c, nil); err != nil {
+					klog.Infof("init retrievalqachain err:%s, will use empty chain config", err)
+				}
+				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
+			case "apichain":
+				ch := appruntimechain.NewAPIChain(baseNode)
+				if err := ch.Init(ctx, c, nil); err != nil {
+					klog.Infof("init apichain err:%s, will use empty chain config", err)
+				}
+				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
+			default:
+				klog.Infoln("can't find chain config in app, use empty chain config")
+			}
+		case "":
+			switch baseNode.Kind() {
+			case "llm":
+				l := llm.NewLLM(baseNode)
+				if err := l.Init(ctx, c, nil); err != nil {
+					klog.Infof("init llm err:%s, abort", err)
+					return nil, err
+				}
+				model = l.LLM
+			case "knowledgebase":
+				k := knowledgebase.NewKnowledgebase(baseNode)
+				if err := k.Init(ctx, c, nil); err != nil {
+					klog.Infof("init knowledgebase err:%s, abort", err)
+					return nil, err
+				}
+				kb = k.Instance
+			}
+		}
+	}
+	promptStarters = make([]string, 0, limit)
+	remains := limit
+	if kb != nil {
+		system, err := pkgconfig.GetSystemDatasource(ctx, nil, c)
+		if err != nil {
+			return nil, err
+		}
+		endpoint := system.Spec.Endpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(system.Namespace)
+		}
+		ds, err := datasource.NewLocal(ctx, nil, c, endpoint)
+		if err != nil {
+			return nil, err
+		}
+	Outer:
+		for _, detail := range kb.Status.FileGroupDetail {
+			if detail.Source == nil || detail.Source.Name == "" {
+				continue
+			}
+			obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "versioneddatasets"}).
+				Namespace(detail.Source.GetNamespace(kb.Namespace)).Get(ctx, detail.Source.Name, metav1.GetOptions{})
+			if err != nil {
+				klog.Infof("failed to get versionedDataset: %s, try next one", err)
+				continue
+			}
+			versionedDataset := &v1alpha1.VersionedDataset{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), versionedDataset)
+			if err != nil {
+				klog.Infof("failed to convert versionedDataset: %s, try next one", err)
+				continue
+			}
+			if !versionedDataset.Status.IsReady() {
+				klog.Infof("versionedDataset is not ready, try next one")
+				continue
+			}
+			info := &v1alpha1.OSS{Bucket: versionedDataset.Namespace}
+			for _, fileDetails := range detail.FileDetails {
+				info.Object = filepath.Join("dataset", versionedDataset.Name, versionedDataset.Spec.Version, fileDetails.Path)
+				file, err := ds.ReadFile(ctx, info)
+				if err != nil {
+					klog.Infof("failed to read file: %s, try next one", err)
+					continue
+				}
+				defer file.Close()
+				data, err := io.ReadAll(file)
+				if err != nil {
+					klog.Infof("failed to read file: %s, try next one", err)
+					continue
+				}
+				dataReader := bytes.NewReader(data)
+				doc, err := pkgdocumentloaders.NewQACSV(dataReader, "").Load(ctx)
+				if err != nil {
+					klog.Infof("failed to load doc file: %s, try next one", err)
+					continue
+				}
+				for i := 0; i < remains && i < len(doc); i++ {
+					promptStarters = append(promptStarters, doc[i].PageContent)
+				}
+				remains = limit - len(promptStarters)
+				if remains == 0 {
+					break Outer
+				}
+			}
+		}
+	} else {
+		klog.V(3).Infoln("app has no knowlegebase, let llm generate some question")
+		if model != nil {
+			p := prompts.NewPromptTemplate(PromptForGeneratePromptStarters, []string{"limit", "displayName", "description"})
+			var c *chains.LLMChain
+			if len(chainOptions) > 0 {
+				c = chains.NewLLMChain(model, p, chainOptions...)
+			} else {
+				c = chains.NewLLMChain(model, p)
+			}
+			result, err := chains.Predict(ctx, c,
+				map[string]any{
+					"limit":       limit,
+					"displayName": app.Spec.DisplayName,
+					"description": app.Spec.Description,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			res := strings.Split(result, "\n")
+			for _, r := range res {
+				promptStarters = append(promptStarters, strings.TrimSpace(r))
+			}
+		}
+	}
+	return promptStarters, nil
+}
+
+const PromptForGeneratePromptStarters = `You are the friendly and curious questioner, please ask {{.limit}} questions based on the name and description of this app below.
+
+Requires language consistent with the name and description of the application, no restating of my words, questions only, one question per line, no subheadings.
+
+The name of the application is: {{.displayName}}
+
+The description of the application is: {{.description}}
+
+The question you asked is:`
+
+func (cs *ChatServer) getApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, dynamic.Interface, error) {
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get a dynamic client: %w", err)
+	}
+	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "applications"}).
+		Namespace(appNamespace).Get(ctx, appName, metav1.GetOptions{})
+	if err != nil {
+		return nil, c, fmt.Errorf("failed to get application: %w", err)
+	}
+	app := &v1alpha1.Application{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
+	if err != nil {
+		return nil, c, fmt.Errorf("failed to convert application: %w", err)
+	}
+	if !app.Status.IsReady() {
+		return nil, c, errors.New("application is not ready")
+	}
+	return app, c, nil
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +41,8 @@ import (
 const (
 	// Time interval to check if the chat stream should be closed if no more message arrives
 	WaitTimeoutForChatStreaming = 5
+	// default prompt starter
+	PromptLimit = 4
 )
 
 type ChatService struct {
@@ -66,7 +69,7 @@ func NewChatService(cli dynamic.Interface) (*ChatService, error) {
 // @Router / [post]
 func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		req := chat.ChatReqBody{}
+		req := chat.ChatReqBody{StartTime: time.Now()}
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
@@ -102,6 +105,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						ConversationID: req.ConversationID,
 						Message:        err.Error(),
 						CreatedAt:      time.Now(),
+						Latency:        time.Since(req.StartTime).Milliseconds(),
 					})
 					// c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
 					klog.FromContext(c.Request.Context()).Error(err, "error resp")
@@ -148,6 +152,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						ConversationID: req.ConversationID,
 						Message:        msg,
 						CreatedAt:      time.Now(),
+						Latency:        time.Since(req.StartTime).Milliseconds(),
 					})
 					hasData = true
 					buf.WriteString(msg)
@@ -304,6 +309,50 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 	}
 }
 
+// @Summary get app's prompt starters
+// @Schemes
+// @Description get app's prompt starters
+// @Tags application
+// @Accept json
+// @Produce json
+// @Param limit     query int               false   "how many prompts you need should > 0 and < 10"
+// @Param request   body  chat.APPMetadata  true   "query params"
+// @Success 200 {object} []string
+// @Failure 400 {object} chat.ErrorResp
+// @Failure 500 {object} chat.ErrorResp
+// @Router /prompt-starter [post]
+func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		req := chat.APPMetadata{}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "PromptStartersHandler: error binding json")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+		limit := c.Query("limit")
+		limitVal := PromptLimit
+		if limit != "" {
+			var err error
+			limitVal, err = strconv.Atoi(limit)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
+				return
+			}
+			if limitVal > 10 || limitVal < 1 {
+				limitVal = PromptLimit
+			}
+		}
+		resp, err := cs.server.ListPromptStarters(c.Request.Context(), req, limitVal)
+		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error get Prompt Starters")
+			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+		klog.FromContext(c.Request.Context()).V(3).Info("get Prompt Starters done", "req", req)
+		c.JSON(http.StatusOK, resp)
+	}
+}
+
 func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
 	c, err := client.GetClient(nil)
 	if err != nil {
@@ -322,4 +371,6 @@ func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
 
 	g.POST("/messages", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.HistoryHandler())                         // messages history
 	g.POST("/messages/:messageID/references", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.ReferenceHandler()) // messages reference
+
+	g.POST("/prompt-starter", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.PromptStartersHandler())
 }
