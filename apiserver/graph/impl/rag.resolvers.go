@@ -9,61 +9,112 @@ import (
 	"fmt"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/application"
+	"github.com/kubeagi/arcadia/apiserver/pkg/llm"
+	"github.com/kubeagi/arcadia/apiserver/pkg/rag"
 )
 
 // Rag is the resolver for the RAG field.
 func (r *mutationResolver) Rag(ctx context.Context) (*generated.RAGMutation, error) {
-	panic(fmt.Errorf("not implemented: Rag - RAG"))
+	return &generated.RAGMutation{}, nil
 }
 
 // Rag is the resolver for the RAG field.
 func (r *queryResolver) Rag(ctx context.Context) (*generated.RAGQuery, error) {
-	panic(fmt.Errorf("not implemented: Rag - RAG"))
+	return &generated.RAGQuery{}, nil
 }
 
 // Application is the resolver for the application field.
 func (r *rAGResolver) Application(ctx context.Context, obj *generated.Rag) (*generated.Application, error) {
-	panic(fmt.Errorf("not implemented: Application - application"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r1, err := rag.GetV1alpha1RAG(ctx, c, obj.Name, obj.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	ns := obj.Namespace
+	if r1.Spec.Application.Namespace != nil {
+		ns = *r1.Spec.Application.Namespace
+	}
+	return application.GetApplication(ctx, c, r1.Spec.Application.Name, ns)
 }
 
 // Datasets is the resolver for the datasets field.
 func (r *rAGResolver) Datasets(ctx context.Context, obj *generated.Rag) ([]*generated.RAGDataset, error) {
-	panic(fmt.Errorf("not implemented: Datasets - datasets"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.GetRAGDatasets(ctx, c, obj.Name, obj.Namespace)
 }
 
 // JudgeLlm is the resolver for the judgeLLM field.
 func (r *rAGResolver) JudgeLlm(ctx context.Context, obj *generated.Rag) (*generated.Llm, error) {
-	panic(fmt.Errorf("not implemented: JudgeLlm - judgeLLM"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r1, err := rag.GetV1alpha1RAG(ctx, c, obj.Name, obj.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	ns := obj.Namespace
+	if r1.Spec.Application.Namespace != nil {
+		ns = *r1.Spec.Application.Namespace
+	}
+	return llm.ReadLLM(ctx, c, r1.Spec.JudgeLLM.Name, ns)
 }
 
 // Metrics is the resolver for the metrics field.
 func (r *rAGResolver) Metrics(ctx context.Context, obj *generated.Rag) ([]*generated.RAGMetric, error) {
-	panic(fmt.Errorf("not implemented: Metrics - metrics"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.GetRAGMetrics(ctx, c, obj.Name, obj.Namespace)
 }
 
 // CreateRag is the resolver for the createRAG field.
 func (r *rAGMutationResolver) CreateRag(ctx context.Context, obj *generated.RAGMutation, input generated.CreateRAGInput) (*generated.Rag, error) {
-	panic(fmt.Errorf("not implemented: CreateRag - createRAG"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.CreateRAG(ctx, c, &input)
 }
 
 // UpdateRag is the resolver for the updateRAG field.
-func (r *rAGMutationResolver) UpdateRag(ctx context.Context, obj *generated.RAGMutation, input *generated.UpdateRAGInput) (*generated.Rag, error) {
+func (r *rAGMutationResolver) UpdateRag(ctx context.Context, obj *generated.RAGMutation, input generated.UpdateRAGInput) (*generated.Rag, error) {
 	panic(fmt.Errorf("not implemented: UpdateRag - updateRAG"))
 }
 
 // DeleteRag is the resolver for the deleteRAG field.
-func (r *rAGMutationResolver) DeleteRag(ctx context.Context, obj *generated.RAGMutation, input *generated.DeleteRAGInput) (*string, error) {
-	panic(fmt.Errorf("not implemented: DeleteRag - deleteRAG"))
+func (r *rAGMutationResolver) DeleteRag(ctx context.Context, obj *generated.RAGMutation, input generated.DeleteRAGInput) (*string, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return nil, rag.DeleteRAG(ctx, c, &input)
 }
 
 // GetRag is the resolver for the getRAG field.
 func (r *rAGQueryResolver) GetRag(ctx context.Context, obj *generated.RAGQuery, name string, namespace string) (*generated.Rag, error) {
-	panic(fmt.Errorf("not implemented: GetRag - getRAG"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.GetRAG(ctx, c, name, namespace)
 }
 
 // ListRag is the resolver for the listRAG field.
 func (r *rAGQueryResolver) ListRag(ctx context.Context, obj *generated.RAGQuery, input generated.ListRAGInput) (*generated.PaginatedResult, error) {
-	panic(fmt.Errorf("not implemented: ListRag - listRAG"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.ListRAG(ctx, c, &input)
 }
 
 // RAG returns generated.RAGResolver implementation.

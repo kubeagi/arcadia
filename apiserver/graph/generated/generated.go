@@ -604,8 +604,8 @@ type ComplexityRoot struct {
 
 	RAGMutation struct {
 		CreateRag func(childComplexity int, input CreateRAGInput) int
-		DeleteRag func(childComplexity int, input *DeleteRAGInput) int
-		UpdateRag func(childComplexity int, input *UpdateRAGInput) int
+		DeleteRag func(childComplexity int, input DeleteRAGInput) int
+		UpdateRag func(childComplexity int, input UpdateRAGInput) int
 	}
 
 	RAGQuery struct {
@@ -877,8 +877,8 @@ type RAGResolver interface {
 }
 type RAGMutationResolver interface {
 	CreateRag(ctx context.Context, obj *RAGMutation, input CreateRAGInput) (*Rag, error)
-	UpdateRag(ctx context.Context, obj *RAGMutation, input *UpdateRAGInput) (*Rag, error)
-	DeleteRag(ctx context.Context, obj *RAGMutation, input *DeleteRAGInput) (*string, error)
+	UpdateRag(ctx context.Context, obj *RAGMutation, input UpdateRAGInput) (*Rag, error)
+	DeleteRag(ctx context.Context, obj *RAGMutation, input DeleteRAGInput) (*string, error)
 }
 type RAGQueryResolver interface {
 	GetRag(ctx context.Context, obj *RAGQuery, name string, namespace string) (*Rag, error)
@@ -3738,7 +3738,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.RAGMutation.DeleteRag(childComplexity, args["input"].(*DeleteRAGInput)), true
+		return e.complexity.RAGMutation.DeleteRag(childComplexity, args["input"].(DeleteRAGInput)), true
 
 	case "RAGMutation.updateRAG":
 		if e.complexity.RAGMutation.UpdateRag == nil {
@@ -3750,7 +3750,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.RAGMutation.UpdateRag(childComplexity, args["input"].(*UpdateRAGInput)), true
+		return e.complexity.RAGMutation.UpdateRag(childComplexity, args["input"].(UpdateRAGInput)), true
 
 	case "RAGQuery.getRAG":
 		if e.complexity.RAGQuery.GetRag == nil {
@@ -5908,7 +5908,7 @@ type PersistentVolumeClaimSpec {
     accessModes: [String!]
     selector: Selector
     resources:  Resource
-    volumeName: String!
+    volumeName: String
     storageClassName: String
     volumeMode: String
     datasource: TypedObjectReference
@@ -6786,7 +6786,7 @@ type RAG {
 }
 
 input CreateRAGInput {
-    name: String!
+    name: String
     namespace: String!
     labels: Map
     annotations: Map
@@ -6830,12 +6830,23 @@ input ListRAGInput {
     status: String
     """根据名字，displayName字段获取"""
     keyword: String
+        """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: 默认10
+    """
+    pageSize: Int
 }
 
 type RAGMutation {
     createRAG(input: CreateRAGInput!): RAG!
-    updateRAG(input: UpdateRAGInput): RAG!
-    deleteRAG(input: DeleteRAGInput): Void
+    updateRAG(input: UpdateRAGInput!): RAG!
+    deleteRAG(input: DeleteRAGInput!): Void
 }
 
 type RAGQuery {
@@ -8321,10 +8332,10 @@ func (ec *executionContext) field_RAGMutation_createRAG_args(ctx context.Context
 func (ec *executionContext) field_RAGMutation_deleteRAG_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *DeleteRAGInput
+	var arg0 DeleteRAGInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteRAGInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteRAGInput(ctx, tmp)
+		arg0, err = ec.unmarshalNDeleteRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteRAGInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8336,10 +8347,10 @@ func (ec *executionContext) field_RAGMutation_deleteRAG_args(ctx context.Context
 func (ec *executionContext) field_RAGMutation_updateRAG_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *UpdateRAGInput
+	var arg0 UpdateRAGInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOUpdateRAGInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateRAGInput(ctx, tmp)
+		arg0, err = ec.unmarshalNUpdateRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateRAGInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -23887,14 +23898,11 @@ func (ec *executionContext) _PersistentVolumeClaimSpec_volumeName(ctx context.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PersistentVolumeClaimSpec_volumeName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -26211,7 +26219,7 @@ func (ec *executionContext) _RAGMutation_updateRAG(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RAGMutation().UpdateRag(rctx, obj, fc.Args["input"].(*UpdateRAGInput))
+		return ec.resolvers.RAGMutation().UpdateRag(rctx, obj, fc.Args["input"].(UpdateRAGInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26306,7 +26314,7 @@ func (ec *executionContext) _RAGMutation_deleteRAG(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RAGMutation().DeleteRag(rctx, obj, fc.Args["input"].(*DeleteRAGInput))
+		return ec.resolvers.RAGMutation().DeleteRag(rctx, obj, fc.Args["input"].(DeleteRAGInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33164,7 +33172,7 @@ func (ec *executionContext) unmarshalInputCreateRAGInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -34648,7 +34656,7 @@ func (ec *executionContext) unmarshalInputListRAGInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"appName", "namespace", "status", "keyword"}
+	fieldsInOrder := [...]string{"appName", "namespace", "status", "keyword", "page", "pageSize"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34691,6 +34699,24 @@ func (ec *executionContext) unmarshalInputListRAGInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.Keyword = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
 		}
 	}
 
@@ -41277,9 +41303,6 @@ func (ec *executionContext) _PersistentVolumeClaimSpec(ctx context.Context, sel 
 			out.Values[i] = ec._PersistentVolumeClaimSpec_resources(ctx, field, obj)
 		case "volumeName":
 			out.Values[i] = ec._PersistentVolumeClaimSpec_volumeName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "storageClassName":
 			out.Values[i] = ec._PersistentVolumeClaimSpec_storageClassName(ctx, field, obj)
 		case "volumeMode":
@@ -43892,6 +43915,11 @@ func (ec *executionContext) unmarshalNDeleteCommonInput2githubᚗcomᚋkubeagi�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNDeleteRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteRAGInput(ctx context.Context, v interface{}) (DeleteRAGInput, error) {
+	res, err := ec.unmarshalInputDeleteRAGInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNDeleteVersionedDatasetInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteVersionedDatasetInput(ctx context.Context, v interface{}) (DeleteVersionedDatasetInput, error) {
 	res, err := ec.unmarshalInputDeleteVersionedDatasetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -44357,6 +44385,11 @@ func (ec *executionContext) unmarshalNUpdateApplicationConfigInput2githubᚗcom�
 
 func (ec *executionContext) unmarshalNUpdateApplicationMetadataInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateApplicationMetadataInput(ctx context.Context, v interface{}) (UpdateApplicationMetadataInput, error) {
 	res, err := ec.unmarshalInputUpdateApplicationMetadataInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateRAGInput(ctx context.Context, v interface{}) (UpdateRAGInput, error) {
+	res, err := ec.unmarshalInputUpdateRAGInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -45245,14 +45278,6 @@ func (ec *executionContext) unmarshalODeleteDataProcessInput2ᚖgithubᚗcomᚋk
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputDeleteDataProcessInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalODeleteRAGInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteRAGInput(ctx context.Context, v interface{}) (*DeleteRAGInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDeleteRAGInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -46192,14 +46217,6 @@ func (ec *executionContext) unmarshalOUpdateModelServiceInput2ᚖgithubᚗcomᚋ
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputUpdateModelServiceInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOUpdateRAGInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐUpdateRAGInput(ctx context.Context, v interface{}) (*UpdateRAGInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputUpdateRAGInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
