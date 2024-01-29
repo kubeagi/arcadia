@@ -42,6 +42,7 @@ import (
 
 func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
 	if len(category) == 0 {
+		delete(app.Annotations, v1alpha1.AppCategoryAnnotationKey)
 		return app
 	}
 	if app.Annotations == nil {
@@ -413,6 +414,9 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					Params: utils.MapAny2Str(v.Params),
 				})
 			}
+			if len(input.Tools) == 0 {
+				qachain.Spec.Tools = make([]agent.Tool, 0)
+			}
 		}, qachain); err != nil {
 			return nil, err
 		}
@@ -454,6 +458,9 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 					Name:   v.Name,
 					Params: utils.MapAny2Str(v.Params),
 				})
+			}
+			if len(input.Tools) == 0 {
+				llmchain.Spec.Tools = make([]agent.Tool, 0)
 			}
 		}, llmchain); err != nil {
 			return nil, err

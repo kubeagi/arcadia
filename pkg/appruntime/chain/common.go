@@ -126,8 +126,12 @@ func runTools(ctx context.Context, args map[string]any, tools []agent.Tool) map[
 			switch tool.Name { // nolint:gocritic
 			case "bing":
 				klog.V(3).Infof("tools call bing search: %s", input)
-				client := bingsearch.NewBingClient(tool.Params[bingsearch.ParamAPIKey])
-				data, _, err := client.GetWebPages(ctx, input)
+				client, err := bingsearch.NewFromToolSpec(&tool)
+				if err != nil {
+					klog.Errorf("failed to create bing client: %w", err)
+					return
+				}
+				data, _, err := client.SearchGetDetailData(ctx, input)
 				if err != nil {
 					klog.Errorf("failed to call bing search tool: %w", err)
 					return

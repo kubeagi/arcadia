@@ -19,12 +19,13 @@ package bingsearch
 import "time"
 
 type RespData struct {
-	Type            string          `json:"_type"`
-	QueryContext    QueryContext    `json:"queryContext"`
-	WebPages        WebPages        `json:"webPages"`
-	Entities        Entities        `json:"entities"`
-	Videos          Videos          `json:"videos"`
-	RankingResponse RankingResponse `json:"rankingResponse"`
+	Type            string          `json:"_type,omitempty"`
+	QueryContext    QueryContext    `json:"queryContext,omitempty"`
+	WebPages        WebPages        `json:"webPages,omitempty"`
+	Entities        Entities        `json:"entities,omitempty"`
+	Videos          Videos          `json:"videos,omitempty"`
+	News            News            `json:"news,omitempty"`
+	RankingResponse RankingResponse `json:"rankingResponse,omitempty"`
 	ErrorResp       *ErrorResp      `json:"error,omitempty"`
 }
 
@@ -152,8 +153,9 @@ type VideoValue struct {
 }
 
 type Thumbnail struct {
-	Width  int `json:"width"`
-	Height int `json:"height"`
+	Width      int    `json:"width"`
+	Height     int    `json:"height"`
+	ContentURL string `json:"contentUrl,omitempty"`
 }
 
 type Publisher struct {
@@ -162,4 +164,37 @@ type Publisher struct {
 
 type Creator struct {
 	Name string `json:"name"`
+}
+
+type News struct {
+	ID         string      `json:"id"`
+	ReadLink   string      `json:"readLink"`
+	NewsValues []NewsValue `json:"value"`
+}
+
+type NewsValue struct {
+	ContractualRules []ContractualRules `json:"contractualRules"`
+	Name             string             `json:"name"`
+	URL              string             `json:"url"`
+	Description      string             `json:"description"`
+	Provider         []Provider         `json:"provider"`
+	DatePublished    time.Time          `json:"datePublished"`
+	Category         string             `json:"category"`
+	Image            Image              `json:"image,omitempty"`
+}
+
+type ContractualRules struct {
+	Type string `json:"_type"`
+	Text string `json:"text"`
+}
+
+type Provider struct {
+	Type  string `json:"_type"`
+	Name  string `json:"name"`
+	Image Image  `json:"image"`
+}
+
+type Image struct {
+	ContentURL string    `json:"contentUrl"`
+	Thumbnail  Thumbnail `json:"thumbnail"`
 }

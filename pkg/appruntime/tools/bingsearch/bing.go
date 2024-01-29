@@ -18,6 +18,7 @@ package bingsearch
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/tools"
@@ -28,6 +29,7 @@ import (
 const (
 	ToolName    = "Bing Search API"
 	ParamAPIKey = "apiKey"
+	ParamCount  = "count"
 )
 
 type Tool struct {
@@ -39,9 +41,22 @@ var _ tools.Tool = Tool{}
 
 // New creates a new bing search tool to search on internet
 func New(tool *v1alpha1.Tool) (*Tool, error) {
-	return &Tool{
-		client: NewBingClient(tool.Params[ParamAPIKey]),
-	}, nil
+	client, err := NewFromToolSpec(tool)
+	return &Tool{client: client}, err
+}
+
+func NewFromToolSpec(tool *v1alpha1.Tool) (*BingClient, error) {
+	var countVal int
+	apikey := tool.Params[ParamAPIKey]
+	count, ok := tool.Params[ParamCount]
+	if ok {
+		atoi, err := strconv.Atoi(count)
+		if err != nil {
+			return nil, err
+		}
+		countVal = atoi
+	}
+	return NewBingClient(WithAPIKey(apikey), WithCount(countVal)), nil
 }
 
 func (t Tool) Name() string {
