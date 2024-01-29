@@ -113,11 +113,15 @@ arctl -narcadia eval --rag=<rag-name>
 }
 
 func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra.Command {
-	var inputDir string
-	var questionColumn string
-	var groundTruthsColumn string
-	var outputMethod string
-	var outputDir string
+	var (
+		inputDir           string
+		questionColumn     string
+		groundTruthsColumn string
+		outputMethod       string
+		outputDir          string
+		mergeFileName      string
+		merge              bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "gen_test_dataset",
@@ -151,6 +155,18 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 				return err
 			}
 
+			var (
+				csvWriter   *csv.Writer
+				writeHeader = true
+			)
+			if merge {
+				mergeFile, err := os.OpenFile(mergeFileName, os.O_CREATE|os.O_RDWR, 0744)
+				if err != nil {
+					return err
+				}
+				defer mergeFile.Close()
+				csvWriter = csv.NewWriter(mergeFile)
+			}
 			// read files from input directory
 			err = filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
@@ -162,13 +178,16 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 				var output evaluation.Output
 				switch outputMethod {
 				case "csv":
-					outputCSVFile, err := os.Create(strings.Replace(path, d.Name(), fmt.Sprintf("ragas-%s", d.Name()), 1))
-					if err != nil {
-						return err
-					}
-					defer outputCSVFile.Close()
 					csvOutput := &evaluation.CSVOutput{
-						W: csv.NewWriter(outputCSVFile),
+						W: csvWriter,
+					}
+					if !merge {
+						outputCSVFile, err := os.Create(strings.Replace(path, d.Name(), fmt.Sprintf("ragas-%s", d.Name()), 1))
+						if err != nil {
+							return err
+						}
+						defer outputCSVFile.Close()
+						csvOutput.W = csv.NewWriter(outputCSVFile)
 					}
 					defer csvOutput.W.Flush()
 					output = csvOutput
@@ -176,12 +195,18 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 					output = &evaluation.PrintOutput{}
 				}
 				// read file from dataset
-				return GenDatasetOnSingleFile(ctx, kubeClient, app,
+				err = GenDatasetOnSingleFile(ctx, kubeClient, app,
 					path,
 					evaluation.WithQuestionColumn(questionColumn),
 					evaluation.WithGroundTruthsColumn(groundTruthsColumn),
 					evaluation.WithOutput(output),
+					evaluation.WithWriteHeader(!merge || writeHeader),
 				)
+				if err != nil {
+					return err
+				}
+				writeHeader = false
+				return nil
 			})
 			return err
 		},
@@ -195,6 +220,8 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 	cmd.Flags().StringVar(&questionColumn, "question-column", "q", "The column name which provides questions")
 	cmd.Flags().StringVar(&groundTruthsColumn, "ground-truths-column", "a", "The column name which provides the answers")
 	cmd.Flags().StringVar(&outputMethod, "output", "", "The way to output the generated dataset rows.We support two ways: \n - stdout: print row \n - csv: save row to csv file")
+	cmd.Flags().BoolVar(&merge, "merge", false, "Whether to merge all generated test data into a single file")
+	cmd.Flags().StringVar(&mergeFileName, "merge-file", "ragas.csv", "name of the merged document")
 
 	return cmd
 }
