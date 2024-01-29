@@ -57,14 +57,16 @@ func NewRagasDatasetGenerator(ctx context.Context, cli dynamic.Interface, app *v
 	}
 
 	// output header
-	err := genOpts.output.Output(RagasDataRow{
-		Question:     "question",
-		GroundTruths: []string{"ground_truths"},
-		Contexts:     []string{"contexts"},
-		Answer:       "answer",
-	})
-	if err != nil {
-		return nil, err
+	if genOpts.writeHeader {
+		err := genOpts.output.Output(RagasDataRow{
+			Question:     "question",
+			GroundTruths: []string{"ground_truths"},
+			Contexts:     []string{"contexts"},
+			Answer:       "answer",
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	runapp, err := appruntime.NewAppOrGetFromCache(ctx, cli, app)
@@ -81,6 +83,8 @@ type genOptions struct {
 	groundTruthsColumn string
 
 	output Output
+
+	writeHeader bool
 }
 
 func defaultGenOptions() *genOptions {
@@ -91,6 +95,11 @@ func defaultGenOptions() *genOptions {
 	}
 }
 
+func WithWriteHeader(writeHeader bool) GenOptions {
+	return func(genOpts *genOptions) {
+		genOpts.writeHeader = writeHeader
+	}
+}
 func WithQuestionColumn(questionColumn string) GenOptions {
 	return func(genOpts *genOptions) {
 		genOpts.questionColumn = questionColumn
