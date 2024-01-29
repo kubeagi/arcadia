@@ -73,7 +73,7 @@ def add(req_json, pool):
         try:
 
             async def async_text_manipulate(req_json, pool, id):
-                minio_store_process.text_manipulate(req_json, pool=pool, id=id)
+                await minio_store_process.text_manipulate(req_json, pool=pool, id=id)
 
             def execute_text_manipulate_task(loop):
                 asyncio.set_event_loop(loop)

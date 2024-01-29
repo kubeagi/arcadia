@@ -28,7 +28,7 @@ from utils import docx_utils, file_utils
 logger = logging.getLogger(__name__)
 
 
-def docx_text_manipulate(
+def docx_manipulate(
     file_name,
     document_id,
     support_type,

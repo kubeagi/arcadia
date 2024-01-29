@@ -530,7 +530,7 @@ def filter_image(url, resource_types, exclude_img_info):
                     )
                     return False
                 # 如果format无法获取，则默认为JPEG格式
-                format = image.format or 'JPEG' 
+                format = image.format or 'JPEG'
                 if  format.lower() not in resource_types:
                     logger.debug(f"{log_tag_const.WEB_CRAWLING} Not within the range of resource types to be crawled")
                     return False

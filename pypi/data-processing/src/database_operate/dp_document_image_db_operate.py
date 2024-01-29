@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 

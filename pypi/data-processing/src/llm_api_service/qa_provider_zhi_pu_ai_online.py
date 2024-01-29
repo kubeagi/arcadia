@@ -90,7 +90,7 @@ class QAProviderZhiPuAIOnline(BaseQAProvider):
                     result = self.__format_response_to_qa_list(response)
                     if len(result) > 0:
                         break
-                    
+
                     logger.warn(
                         f"failed to get QA list, wait for {wait_seconds} seconds and retry"
                     )

@@ -27,14 +27,14 @@ from database_operate import (data_process_db_operate,
                               data_process_document_db_operate,
                               data_process_log_db_operate,
                               data_process_stage_log_db_operate)
-from file_handle import common_handle, pdf_handle, word_handle
+from file_handle import common_handle, pdf_handle, web_handle, word_handle
 from kube import dataset_cr
 from utils import date_time_utils, file_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
 
-def text_manipulate(
+async def text_manipulate(
     req_json,
     pool,
     id,
@@ -147,7 +147,7 @@ def text_manipulate(
             file_extension = file_utils.get_file_extension(file_name)
             if file_extension in ["pdf"]:
                 # 处理PDF文件
-                result = pdf_handle.text_manipulate(
+                result = pdf_handle.pdf_manipulate(
                     chunk_size=req_json.get("chunk_size"),
                     chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
@@ -160,7 +160,19 @@ def text_manipulate(
 
             elif file_extension in ["docx"]:
                 # 处理.docx文件
-                result = word_handle.docx_text_manipulate(
+                result = word_handle.docx_manipulate(
+                    chunk_size=req_json.get("chunk_size"),
+                    chunk_overlap=req_json.get("chunk_overlap"),
+                    file_name=file_name,
+                    document_id=item.get("document_id"),
+                    support_type=support_type,
+                    conn_pool=pool,
+                    task_id=id,
+                    create_user=req_json["creator"],
+                )
+            elif file_extension == "web":
+                # 处理.web文件
+                result = await web_handle.web_manipulate(
                     chunk_size=req_json.get("chunk_size"),
                     chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
@@ -987,7 +999,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
         document_type = document.get("document_type")
         if document_type in ["pdf"]:
             # 处理PDF文件
-            result = pdf_handle.text_manipulate(
+            result = pdf_handle.pdf_manipulate(
                 file_name=file_name,
                 document_id=document.get("id"),
                 support_type=support_type,
@@ -998,7 +1010,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
 
         elif document_type in ["docx"]:
             # 处理.docx文件
-            result = word_handle.docx_text_manipulate(
+            result = word_handle.docx_manipulate(
                 file_name=file_name,
                 document_id=document.get("id"),
                 support_type=support_type,
