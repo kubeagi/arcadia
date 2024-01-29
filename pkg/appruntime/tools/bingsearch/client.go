@@ -23,60 +23,154 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"k8s.io/klog/v2"
 )
 
 const (
-	Endpoint      = "https://api.bing.microsoft.com/v7.0/search?mkt=zh-CN&q="
+	Endpoint      = "https://api.bing.microsoft.com/v7.0/search"
 	AuthHeaderKey = "Ocp-Apim-Subscription-Key"
 )
 
 type BingClient struct {
-	apiKey string
+	options options
 }
 
-func NewBingClient(apiKey string) *BingClient {
-	if apiKey == "" {
-		apiKey = os.Getenv("BING_KEY")
+type options struct {
+	apiKey         string
+	count          int
+	responseFilter string
+	promote        string
+	mkt            string
+	answerCount    int
+}
+
+func defaultOptions() options {
+	return options{
+		apiKey:         os.Getenv("BING_KEY"),
+		count:          5,
+		responseFilter: "News,Webpages",
+		promote:        "News,Webpages",
+		mkt:            "zh-CN",
+		answerCount:    2,
 	}
-	return &BingClient{
-		apiKey: apiKey,
+}
+
+type Option func(*options)
+
+func WithAPIKey(apiKey string) Option {
+	return func(opts *options) {
+		if len(apiKey) != 0 {
+			opts.apiKey = apiKey
+		}
 	}
+}
+
+func WithCount(count int) Option {
+	return func(opts *options) {
+		if count > 0 {
+			opts.count = count
+		}
+	}
+}
+
+func NewBingClient(opts ...Option) *BingClient {
+	clientOptions := defaultOptions()
+	for _, opt := range opts {
+		opt(&clientOptions)
+	}
+	return &BingClient{clientOptions}
 }
 
 func (client *BingClient) Search(ctx context.Context, query string) (string, error) {
-	p, data, err := client.GetWebPages(ctx, query)
+	p, data, err := client.SearchGetDetailData(ctx, query)
 	if len(p) > 0 {
 		return FormatResults(p), nil
 	}
 	return data, err
 }
-func (client *BingClient) GetWebPages(ctx context.Context, query string) (p []WebPage, data string, err error) {
-	queryURL := Endpoint + url.QueryEscape(query)
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, queryURL, nil)
-	if err != nil {
-		return nil, "", fmt.Errorf("creating bingSearch request failed: %w", err)
+// SearchGetDetailData will try to parse bing search list type webpages and news.
+// Unlike the Search method, it returns a more detailed list of structures, not just a string.
+// Note: only parse search list, not single source page.
+func (client *BingClient) SearchGetDetailData(ctx context.Context, query string) (resp []WebPage, data string, err error) {
+	want := client.options.count
+	remains := want
+	// count max value is 50, ref: https://learn.microsoft.com/en-us/rest/api/cognitiveservices-bingsearch/bing-web-api-v7-reference#query-parameters
+	// offset default value is 0, same ref with above
+	count, offset := 50, 0
+	resp = make([]WebPage, 0)
+	for remains > 0 {
+		if want < count {
+			count = want
+		}
+		data, err := client.getOnePage(ctx, query, count, offset)
+		if err != nil {
+			return nil, "", err
+		}
+		if len(data) == 0 {
+			break
+		}
+		resp = append(resp, data...)
+		offset += len(data)
+		remains = want - len(resp)
 	}
-	request.Header.Add(AuthHeaderKey, client.apiKey)
+	if len(resp) > want {
+		resp = resp[:want]
+	}
+	bytes, err := json.Marshal(resp)
+	if err != nil {
+		return nil, "", fmt.Errorf("bingSearch json marshal resp, get err:%w", err)
+	}
+	klog.V(3).Infof("bingSearch finally get webpages: %#v", resp)
+	klog.V(5).Infof("bingSearch get resp: %s", string(bytes))
+	return resp, string(bytes), nil
+}
+
+func (client *BingClient) getOnePage(ctx context.Context, query string, count, offset int) (p []WebPage, err error) {
+	queryURL, err := url.Parse(Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	q := queryURL.Query()
+	q.Set("q", query)
+	q.Set("count", strconv.Itoa(count))
+	q.Set("mkt", client.options.mkt)
+	q.Set("promote", client.options.promote)
+	q.Set("answerCount", strconv.Itoa(client.options.answerCount))
+	q.Set("offset", strconv.Itoa(offset))
+	queryURL.RawQuery = q.Encode()
+	queryfullURL := queryURL.String()
+	// https://api.bing.microsoft.com/v7.0/search?answerCount=2&count=5&mkt=zh-CN&promote=News%2CWebpages&q=langchain&responseFilter=News%2C%20Webpages
+	// https://api.bing.microsoft.com/v7.0/search?answerCount=2&count=5&mkt=zh-CN&promote=News%2CWebpages&q=langchain&responseFilter=News,Webpages
+	// Note: The URL above will return a http 400 error, while the one below will not
+	queryfullURL += fmt.Sprintf("&responseFilter=%s", client.options.responseFilter)
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, queryfullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating bingSearch request failed: %w", err)
+	}
+	request.Header.Add(AuthHeaderKey, client.options.apiKey)
 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return nil, "", fmt.Errorf("bingSearch[%s] get error: %w", queryURL, err)
+		return nil, fmt.Errorf("bingSearch[%s] get error: %w", queryURL, err)
 	}
 
 	defer response.Body.Close()
 	code := response.StatusCode
 	resp := &RespData{}
 	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-		return nil, "", fmt.Errorf("bingSearch parse json resp get err:%w, http status code:%d", err, code)
+		return nil, fmt.Errorf("bingSearch parse json resp get err:%w, http status code:%d", err, code)
 	}
 	if resp.ErrorResp != nil {
-		return nil, "", fmt.Errorf("bingSearch get error resp from bing server: http status code:%d message:%s, code:%s", code, resp.ErrorResp.Message, resp.ErrorResp.Code)
+		return nil, fmt.Errorf("bingSearch get error resp from bing server: http status code:%d message:%s, code:%s", code, resp.ErrorResp.Message, resp.ErrorResp.Code)
 	}
-	if len(resp.WebPages.Value) > 0 {
-		p = make([]WebPage, len(resp.WebPages.Value))
+	webpagesLen := len(resp.WebPages.Value)
+	newsLen := len(resp.News.NewsValues)
+	p = make([]WebPage, webpagesLen+newsLen)
+	if webpagesLen > 0 {
 		for i, v := range resp.WebPages.Value {
 			v := v
 			p[i] = WebPage{
@@ -86,13 +180,18 @@ func (client *BingClient) GetWebPages(ctx context.Context, query string) (p []We
 			}
 		}
 	}
-	bytes, err := json.Marshal(resp)
-	if err != nil {
-		return nil, "", fmt.Errorf("bingSearch json marshal resp, get err:%w", err)
+	if newsLen > 0 {
+		for i, v := range resp.News.NewsValues {
+			v := v
+			p[i+webpagesLen] = WebPage{
+				Title:       v.Name,
+				Description: v.Description,
+				URL:         v.URL,
+			}
+		}
 	}
-	klog.V(3).Infof("bingSearch get webpages: %#v", p)
-	klog.V(5).Infof("bingSearch get resp: %s", string(bytes))
-	return p, string(bytes), nil
+	klog.V(3).Infof("bingSearch query:%s TotalEstimatedMatches:%d count:%d offset:%d webpages: %#v", query, resp.WebPages.TotalEstimatedMatches, count, offset, p)
+	return p, nil
 }
 
 func FormatResults(vals []WebPage) (res string) {

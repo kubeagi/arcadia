@@ -26,11 +26,11 @@ import (
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 )
 
-func TestBingSearch(t *testing.T) {
+func TestBingSearchTool(t *testing.T) {
 	t.Parallel()
 	apikey := os.Getenv("BING_KEY")
 	if apikey == "" {
-		t.Skip("Must set BING_SEARCH_V7_SUBSCRIPTION_KEY to run TestBingSearch")
+		t.Skip("Must set BING_KEY to run TestBingSearchTool")
 	}
 	rightTool := &v1alpha1.Tool{
 		Params: map[string]string{
@@ -48,4 +48,27 @@ func TestBingSearch(t *testing.T) {
 	_, err = tool.Call(context.Background(), "langchain")
 	t.Logf("should get err:\n%s", err)
 	require.Error(t, err)
+}
+
+func TestBingSearchClient(t *testing.T) {
+	t.Parallel()
+	apikey := os.Getenv("BING_KEY")
+	if apikey == "" {
+		t.Skip("Must set BING_KEY to run TestBingSearchClient")
+	}
+	client := NewBingClient(WithAPIKey(apikey))
+	p, _, err := client.SearchGetDetailData(context.Background(), "langchain")
+	require.NoError(t, err)
+	require.Equal(t, defaultOptions().count, len(p))
+	for i, _p := range p {
+		t.Logf("get format resp[%d]:\n%#v", i, _p)
+	}
+	// more count
+	client = NewBingClient(WithAPIKey(apikey), WithCount(100))
+	p, _, err = client.SearchGetDetailData(context.Background(), "langchain")
+	require.NoError(t, err)
+	require.Equal(t, 100, len(p))
+	for i, _p := range p {
+		t.Logf("get format resp[%d]:\n%#v", i, _p)
+	}
 }
