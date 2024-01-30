@@ -82,6 +82,7 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 	vds.DataProcessMsg = new(string)
 	first := true
 	for _, cond := range versioneddataset.Status.Conditions {
+		cond := cond
 		if cond.Type == v1alpha1.TypeReady {
 			*vds.SyncStatus = string(cond.Reason)
 			*vds.SyncMsg = cond.Message
