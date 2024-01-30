@@ -19,7 +19,7 @@ The data processing process includes: cleaning abnormal data, filtering, de-dupl
 
 ## Design
 
-![Design](../assets/data_process.drawio.png)
+![Design](../../docs/images/data-process.drawio.png)
 
 ## Local Development
 ### Software Requirements
