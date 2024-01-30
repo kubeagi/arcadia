@@ -23,7 +23,7 @@ import (
 	"github.com/tmc/langchaingo/tools"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/appruntime/tools/weather/internal"
+	"github.com/kubeagi/arcadia/pkg/tools/weather/internal"
 )
 
 const (
