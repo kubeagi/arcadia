@@ -19,14 +19,18 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	"github.com/minio/minio-go/v7"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/env"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,6 +38,7 @@ import (
 
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/evaluation"
 	"github.com/kubeagi/arcadia/pkg/streamlit"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
@@ -52,6 +57,8 @@ type NamespaceReconciler struct {
 }
 
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterrolebindings,verbs=get;list;update
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -67,11 +74,17 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger := log.FromContext(ctx)
 	logger.V(5).Info("Starting namespace reconcile")
 
-	instance := &v1.Namespace{}
+	instance := &corev1.Namespace{}
 	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
-			err = r.removeBucket(ctx, req.Name)
-			return reconcile.Result{RequeueAfter: waitSmaller}, err
+			if err = r.removeBucket(ctx, req.Name); err != nil {
+				return reconcile.Result{RequeueAfter: waitSmaller}, err
+			}
+			if err = r.removeRagRBAC(ctx, logger, req.Name); err != nil {
+				return reconcile.Result{RequeueAfter: waitSmaller}, err
+			}
+
+			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
@@ -97,7 +110,11 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: waitSmaller}, err
 	}
 
-	// 2. Reconcile for MinIO bucket, we will create a separate bucket for each namespace
+	// 2. checkout rag serviceaccount and rolebing
+	if err := r.ensureRagRBAC(ctx, logger, instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	// 3. Reconcile for MinIO bucket, we will create a separate bucket for each namespace
 	skip, err := r.checkSkippedNamespace(ctx, instance.Name)
 	if err != nil {
 		return reconcile.Result{RequeueAfter: waitMedium}, err
@@ -118,7 +135,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Namespace{}).
+		For(&corev1.Namespace{}).
 		Complete(r)
 }
 
@@ -181,7 +198,7 @@ func (r *NamespaceReconciler) removeBucket(ctx context.Context, bucketName strin
 }
 
 func (r *NamespaceReconciler) checkSkippedNamespace(ctx context.Context, namespace string) (bool, error) {
-	cm := v1.ConfigMap{}
+	cm := corev1.ConfigMap{}
 	controllerNamespace := utils.GetCurrentNamespace()
 	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: controllerNamespace, Name: SkipNamespaceConfigMap}, &cm); err != nil {
 		if errors.IsNotFound(err) {
@@ -194,7 +211,7 @@ func (r *NamespaceReconciler) checkSkippedNamespace(ctx context.Context, namespa
 }
 
 // InstallStreamlitTool to install the required resource of streamlit
-func (r *NamespaceReconciler) InstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *v1.Namespace) error {
+func (r *NamespaceReconciler) InstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *corev1.Namespace) error {
 	logger.Info("Installing streamlit tool...")
 	stDeployer := streamlit.NewStreamlitDeployer(ctx, r.Client, instance)
 
@@ -202,8 +219,60 @@ func (r *NamespaceReconciler) InstallStreamlitTool(ctx context.Context, logger l
 }
 
 // UninstallStreamlitTool to remove resources of streamlit
-func (r *NamespaceReconciler) UninstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *v1.Namespace) error {
+func (r *NamespaceReconciler) UninstallStreamlitTool(ctx context.Context, logger logr.Logger, instance *corev1.Namespace) error {
 	stDeployer := streamlit.NewStreamlitDeployer(ctx, r.Client, instance)
 
 	return stDeployer.Uninstall()
+}
+
+func (r *NamespaceReconciler) ensureRagRBAC(ctx context.Context, logger logr.Logger, instance *corev1.Namespace) error {
+	saName := env.GetString(evaluation.RAGServiceAccountEnv, evaluation.RAGJobServiceAccount)
+	sa := corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      saName,
+			Namespace: instance.Name,
+		},
+	}
+	if err := r.Client.Create(ctx, &sa); err != nil && !errors.IsAlreadyExists(err) {
+		logger.Error(err, "failed to create serviceaccount", "ServiceAccount", evaluation.RAGJobServiceAccount, "Namespace", instance.Name)
+		return err
+	}
+	clusterRoleBindingName := env.GetString(evaluation.RAGClusterRoleBindingEnv, evaluation.RAGJobClusterRoleBinding)
+	crb := v1.ClusterRoleBinding{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: clusterRoleBindingName}, &crb); err != nil {
+		return err
+	}
+	idx := sort.Search(len(crb.Subjects), func(i int) bool {
+		s := crb.Subjects[i]
+		if s.Namespace == instance.Name {
+			return s.Name > saName
+		}
+		return s.Namespace > instance.Name
+	})
+	crb.Subjects = append(crb.Subjects[:idx], append([]v1.Subject{{
+		Kind:      "ServiceAccount",
+		Name:      saName,
+		Namespace: instance.Name}}, crb.Subjects[idx:]...)...)
+	return r.Client.Update(ctx, &crb)
+}
+
+func (r *NamespaceReconciler) removeRagRBAC(ctx context.Context, logger logr.Logger, namespace string) error {
+	saName := env.GetString(evaluation.RAGServiceAccountEnv, evaluation.RAGJobServiceAccount)
+	clusterRoleBindingName := env.GetString(evaluation.RAGClusterRoleBindingEnv, evaluation.RAGJobClusterRoleBinding)
+	crb := v1.ClusterRoleBinding{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: clusterRoleBindingName}, &crb); err != nil {
+		return err
+	}
+	idx := sort.Search(len(crb.Subjects), func(i int) bool {
+		s := crb.Subjects[i]
+		if s.Namespace == namespace {
+			return s.Name >= saName
+		}
+		return s.Namespace > namespace
+	})
+	if idx == len(crb.Subjects) {
+		return nil
+	}
+	crb.Subjects = append(crb.Subjects[:idx], crb.Subjects[idx+1:]...)
+	return r.Client.Update(ctx, &crb)
 }
