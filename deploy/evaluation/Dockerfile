@@ -30,12 +30,12 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 # Official: https://pypi.org/simple
 ARG PYTHON_INDEX_URL=https://pypi.mirrors.ustc.edu.cn/simple/
 
-WORKDIR /app
-COPY --from=builder /go/src/cmd/arctl ./arctl
-RUN python -m pip install ragas langchain -i ${PYTHON_INDEX_URL}
+WORKDIR /usr/local/bin
+COPY --from=builder /go/src/arctl ./arctl
+RUN python -m pip install ragas langchain==0.0.354 -i ${PYTHON_INDEX_URL}
 
 # build ragas-once by source code
 COPY ./pypi/ragas_once ./ragas_once
-WORKDIR /app/ragas_once
-RUN python setup.py bdist_wheel -d /app/ragas_once/dist
+WORKDIR /usr/local/bin/ragas_once
+RUN python setup.py bdist_wheel -d /usr/local/bin/ragas_once/dist
 RUN pip install dist/ragas_once-0.0.1-py3-none-any.whl
