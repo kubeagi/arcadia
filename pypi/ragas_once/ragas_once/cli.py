@@ -66,10 +66,10 @@ def main():
 
     if dataset:
         data = pd.read_csv(dataset)
-        if "ground_truths" in data.columns & data["ground_truths"].dtype == 'string':
-            data["ground_truths"] = data["ground_truths"].apply(lambda x: x.split(";"))
-        if "contexts" in data.columns & data["contexts"].dtype == 'string':
-            data["contexts"] = data["contexts"].apply(lambda x: x.split(";"))
+        if "ground_truths" in data.columns:
+            data["ground_truths"] = data["ground_truths"].astype(str).apply(lambda x: x.split(";")).to_list()
+        if "contexts" in data.columns:
+            data["contexts"] = data["contexts"].astype(str).apply(lambda x: x.split(";")).to_list()
         test_set = Dataset.from_pandas(data)
     else:
         print("test_set not provided, using fiqa dataset")
@@ -80,7 +80,6 @@ def main():
     ms = pkg.set_metrics(metrics, judge_model, embeddings)
 
     result = evaluate(test_set, ms)
-    print(result)
     
     # count total score and avearge
     summary = result.scores.to_pandas().mean()
