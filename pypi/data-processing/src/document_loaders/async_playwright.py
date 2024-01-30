@@ -13,13 +13,17 @@
 # limitations under the License.
 
 import logging
+import time
+import traceback
 from typing import List
 
-from langchain_community.document_loaders.base import BaseLoader
+import playwright
 from langchain_community.document_transformers import Html2TextTransformer
 from langchain_core.documents import Document
+from playwright.async_api import async_playwright
 
 from common import log_tag_const
+from document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +36,7 @@ class AsyncPlaywrightLoader(BaseLoader):
         url: str,
         max_count: int = 100,
         max_depth: int = 1,
-        interval_time: int = 1,
+        interval_time: int = 1000,
     ):
         """
         Initialize the loader with a list of URL paths.
@@ -46,18 +50,17 @@ class AsyncPlaywrightLoader(BaseLoader):
         Raises:
             ImportError: If the required 'playwright' package is not installed.
         """
-        self.url = url
-        self.max_count = max_count
-        self.max_depth = max_depth
-        self.interval_time = interval_time
+        if max_count is None:
+            max_count = 100
+        if max_depth is None:
+            max_depth = 1
+        if interval_time is None:
+            interval_time = 1000
 
-        try:
-            import playwright
-        except ImportError:
-            raise ImportError(
-                "playwright is required for AsyncPlaywrightLoader. "
-                "Please install it with `pip install playwright`."
-            )
+        self._url = url
+        self._max_count = max_count
+        self._max_depth = max_depth
+        self._interval_time = interval_time / 1000
 
     async def ascrape_playwright(self, url: str) -> str:
         """
@@ -70,7 +73,6 @@ class AsyncPlaywrightLoader(BaseLoader):
             str: The scraped HTML content or an error message if an exception occurs.
 
         """
-        from playwright.async_api import async_playwright
 
         logger.info("Starting scraping...")
         results = ""
@@ -121,20 +123,18 @@ class AsyncPlaywrightLoader(BaseLoader):
             "".join(
                 [
                     f"{log_tag_const.WEB_CRAWLING} Get all url in a web page\n",
-                    f"  url: {self.url}"
+                    f"  url: {self._url}"
                 ]
             )
         )
 
-        all_url = [self.url]
-        sub_urls = [self.url]
-
+        all_url = [self._url]
+        sub_urls = [self._url]
         try:
-            for i in range(1, self.max_depth):
+            for i in range(1, self._max_depth):
                 for sub_url in sub_urls:
                     children_urls = await self._get_children_url(
                         url=sub_url,
-                        max_count=self.max_count,
                         url_count=len(all_url)
                     )
 
@@ -147,12 +147,12 @@ class AsyncPlaywrightLoader(BaseLoader):
                         all_url = list(unique_urls)
 
                         # 如果达到最大数量限制，直接返回
-                        if res.get("url_count") >= self.max_count:
+                        if res.get("url_count") >= self._max_count:
                             logger.info(
                                 "".join(
                                     [
                                         f"{log_tag_const.WEB_CRAWLING} The number of URLs has reached the upper limit.\n",
-                                        f"  max_count: {self.max_count}\n"
+                                        f"  max_count: {self._max_count}\n"
                                     ]
                                 )
                             )
@@ -160,8 +160,8 @@ class AsyncPlaywrightLoader(BaseLoader):
 
                         sub_urls = res.get("children_url")
                         # 时间间隔
-                        logger.info(f"{log_tag_const.WEB_CRAWLING} Wait for {self.interval_time} seconds before continuing the visit.")
-                        time.sleep(self.interval_time)
+                        logger.info(f"{log_tag_const.WEB_CRAWLING} Wait for {self._interval_time} seconds before continuing the visit.")
+                        time.sleep(self._interval_time)
             return all_url
         except Exception:
             logger.error(
@@ -188,7 +188,7 @@ class AsyncPlaywrightLoader(BaseLoader):
                 [
                     f"{log_tag_const.WEB_CRAWLING} Get sub url in a web page\n",
                     f"  url: {url}\n",
-                    f"  max_count: {self.max_count}\n",
+                    f"  max_count: {self._max_count}\n",
                     f"  url_count: {url_count}"
                 ]
             )
@@ -209,12 +209,12 @@ class AsyncPlaywrightLoader(BaseLoader):
                 for link in links:
                     href = await link.get_attribute('href')
                     # 需要抓取的url数量不得超过最大数量
-                    if url_count >= self.max_count:
+                    if url_count >= self._max_count:
                         logger.info(
                             "".join(
                                 [
                                     f"{log_tag_const.WEB_CRAWLING} The number of URLs has reached the upper limit.\n",
-                                    f"  max_count: {self.max_count}\n",
+                                    f"  max_count: {self._max_count}\n",
                                     f"  url_count: {url_count}"
                                 ]
                             )

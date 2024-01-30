@@ -15,6 +15,7 @@
 from database_clients import postgresql_pool_client
 from utils import date_time_utils
 
+
 def add(
     req_json,
     pool
