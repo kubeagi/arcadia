@@ -366,3 +366,15 @@
         meta_info text
     );
 
+    CREATE TABLE IF NOT EXISTS data_process_task_question_answer_remove_duplicate_tmp
+    (
+        id varchar(32),
+        task_id varchar(32),
+        document_id varchar(32),
+        question text,
+        answer text,
+        question_vector vector,
+        answer_vector vector,
+        create_datetime varchar(32)
+    );
+
