@@ -18,10 +18,12 @@ package evaluation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
@@ -127,6 +129,7 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 		o(eval.options)
 	}
 
+	klog.V(5).Infof("Generate ragas dataset with questionColumn:%s groundTruthsColumn:%s", eval.options.questionColumn, eval.options.groundTruthsColumn)
 	// load csv to langchain documents
 	loader := pkgdocumentloaders.NewQACSV(csvData, "", pkgdocumentloaders.WithQuestionColumn(eval.options.questionColumn), pkgdocumentloaders.WithAnswerColumn(eval.options.groundTruthsColumn))
 	langchainDocuments, err := loader.Load(ctx)
@@ -136,14 +139,20 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 
 	// convert langchain documents to ragas dataset
 	for _, doc := range langchainDocuments {
+		groundTruths, ok := doc.Metadata[eval.options.groundTruthsColumn].(string)
+		if !ok {
+			klog.V(1).ErrorS(errors.New("empty groundTruths in document"), "invalid document", "metadata", doc.Metadata)
+			continue
+		}
 		ragasRow := RagasDataRow{
 			Question:     doc.PageContent,
-			GroundTruths: []string{doc.Metadata[eval.options.groundTruthsColumn].(string)},
+			GroundTruths: []string{groundTruths},
 		}
 
 		// chat with application
 		out, err := eval.app.Run(ctx, eval.cli, nil, appruntime.Input{Question: ragasRow.Question, NeedStream: false, History: nil})
 		if err != nil {
+			klog.V(1).ErrorS(err, "failed to get the answer", "app", eval.app.Name, "namespace", eval.app.Namespace, "question", ragasRow.Question)
 			return err
 		}
 		ragasRow.Answer = out.Answer
@@ -156,6 +165,7 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 		ragasRow.Contexts = contexts
 
 		if err = eval.options.output.Output(ragasRow); err != nil {
+			klog.V(1).ErrorS(err, "invalid ragas output", "app", eval.app.Name, "namespace", eval.app.Namespace, "ragasRow", ragasRow)
 			return fmt.Errorf("output: %v", err)
 		}
 	}

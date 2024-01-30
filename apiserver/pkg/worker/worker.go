@@ -139,7 +139,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		typedModel := worker.Model()
 		model, err := gqlmodel.ReadModel(ctx, c, typedModel.Name, *typedModel.Namespace)
 		if err != nil {
-			klog.V(1).ErrorS(err, "worker has no model defined", "worker")
+			klog.V(1).ErrorS(err, "worker has no model defined", "worker", worker.Name)
 		} else {
 			w.ModelTypes = model.Types
 		}

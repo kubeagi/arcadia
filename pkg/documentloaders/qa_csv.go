@@ -111,7 +111,7 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 			case c.questionColumn:
 				doc.PageContent = fmt.Sprintf("%s: %s", header[i], value)
 			case c.answerColumn:
-				doc.Metadata[AnswerCol] = value
+				doc.Metadata[c.answerColumn] = value
 				doc.Metadata[QAFileName] = c.fileName
 				doc.Metadata[LineNumber] = strconv.Itoa(rown)
 			case c.pageNumberColumn:
