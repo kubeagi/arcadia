@@ -340,8 +340,12 @@ func fromDatasource(ctx context.Context, kubeClient dynamic.Interface, dsName, d
 	if err != nil {
 		return err
 	}
+	if datasource.Spec.OSS == nil {
+		return errors.New("the datasource is not configured with bucket information")
+	}
+
 	options := parseOptions(ctx, kubeClient, datasource)
-	options = append(options, downloadutil.WithBucket(dsNamespace))
+	options = append(options, downloadutil.WithBucket(datasource.Spec.OSS.Bucket))
 	downloader := downloadutil.NewDownloader(options...)
 	clientCache[key] = downloader
 	return nil
@@ -351,7 +355,7 @@ const (
 	systemDatasourceKey = "system-datasource"
 )
 
-func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, clientCache map[string]*downloadutil.Download) error {
+func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, bucket string, clientCache map[string]*downloadutil.Download) error {
 	datasource, err := SysatemDatasource(ctx, kubeClient)
 	if err != nil {
 		return err
@@ -365,7 +369,7 @@ func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, cli
 	}
 
 	options := parseOptions(ctx, kubeClient, datasource)
-	options = append(options, downloadutil.WithBucket(datasource.Spec.OSS.Bucket))
+	options = append(options, downloadutil.WithBucket(bucket))
 
 	downloader := downloadutil.NewDownloader(options...)
 	clientCache[systemDatasourceKey] = downloader
@@ -406,8 +410,11 @@ func download(
 			}
 		}
 		if source.Source.Kind == "VersionedDataset" {
+			if source.Source.Namespace != nil {
+				ns = *source.Source.Namespace
+			}
 			key = systemDatasourceKey
-			if err := fromVersionedDataset(ctx, kubeClient, clientCache); err != nil {
+			if err := fromVersionedDataset(ctx, kubeClient, ns, clientCache); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to get system datasource error %s", err)
 				continue
 			}
