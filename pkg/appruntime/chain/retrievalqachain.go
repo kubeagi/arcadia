@@ -119,7 +119,9 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
-	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+	needStream := false
+	needStream, ok = args["_need_stream"].(bool)
+	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
 	} else {
@@ -132,6 +134,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args 
 	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
 		args = appretriever.AddReferencesToArgs(args, stuffDocuments.References)
 	}
+	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.ConversationalRetrievalQA, args, options)
 	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out

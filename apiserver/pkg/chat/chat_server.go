@@ -76,6 +76,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 					klog.Infoln("no relational datasource found, use memory storage for chat")
 				}
 				cs.storage = storage.NewMemoryStorage()
+				return
 			}
 			pg, err := datasource.GetPostgreSQLPool(ctx, nil, cs.cli, ds)
 			if err != nil {
