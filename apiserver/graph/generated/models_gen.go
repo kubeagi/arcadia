@@ -1679,7 +1679,7 @@ type UpdateRAGInput struct {
 	Annotations        map[string]interface{}          `json:"annotations,omitempty"`
 	DisplayName        *string                         `json:"displayName,omitempty"`
 	Description        *string                         `json:"description,omitempty"`
-	Application        TypedObjectReferenceInput       `json:"application"`
+	Application        *TypedObjectReferenceInput      `json:"application,omitempty"`
 	Datasets           []*RAGDatasetInput              `json:"datasets,omitempty"`
 	JudgeLlm           *TypedObjectReferenceInput      `json:"judgeLLM,omitempty"`
 	Metrics            []*RAGMetricInput               `json:"metrics,omitempty"`

@@ -6808,7 +6808,7 @@ input UpdateRAGInput {
     annotations: Map
     displayName: String
     description: String
-    application: TypedObjectReferenceInput!
+    application: TypedObjectReferenceInput
     datasets: [RAGDatasetInput!]
     judgeLLM: TypedObjectReferenceInput
     metrics: [RAGMetricInput!]
@@ -36432,7 +36432,7 @@ func (ec *executionContext) unmarshalInputUpdateRAGInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("application"))
-			data, err := ec.unmarshalNTypedObjectReferenceInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx, v)
+			data, err := ec.unmarshalOTypedObjectReferenceInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐTypedObjectReferenceInput(ctx, v)
 			if err != nil {
 				return it, err
 			}

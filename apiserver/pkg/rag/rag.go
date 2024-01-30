@@ -33,6 +33,7 @@ import (
 	evav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -332,6 +333,104 @@ func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 		return nil, err
 	}
 	return rag2model(u1)
+}
+
+func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.UpdateRAGInput) (*generated.Rag, error) {
+	obj, err := kubeClient.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "RAG")).Namespace(input.Namespace).Get(ctx, input.Name, v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	rag := &evav1alpha1.RAG{}
+	if err := utils.UnstructuredToStructured(obj, rag); err != nil {
+		return nil, err
+	}
+
+	if input.Labels != nil {
+		rag.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	}
+	if input.Annotations != nil {
+		rag.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+	}
+	if input.DisplayName != nil {
+		rag.Spec.DisplayName = *input.DisplayName
+	}
+	if input.Description != nil {
+		rag.Spec.Description = *input.Description
+	}
+	if input.Application != nil {
+		rag.Spec.Application = &v1alpha1.TypedObjectReference{
+			APIGroup:  input.Application.APIGroup,
+			Kind:      input.Application.Kind,
+			Name:      input.Application.Name,
+			Namespace: input.Application.Namespace,
+		}
+	}
+	if input.Datasets != nil {
+		rag.Spec.Datasets = make([]evav1alpha1.Dataset, 0)
+		for i, dataset := range input.Datasets {
+			ds := evav1alpha1.Dataset{
+				Source: &v1alpha1.TypedObjectReference{
+					APIGroup:  input.Datasets[i].Source.APIGroup,
+					Kind:      input.Datasets[i].Source.Kind,
+					Name:      input.Datasets[i].Source.Name,
+					Namespace: input.Datasets[i].Source.Namespace,
+				},
+				Files: dataset.Files,
+			}
+			rag.Spec.Datasets = append(rag.Spec.Datasets, ds)
+		}
+	}
+	if input.JudgeLlm != nil {
+		rag.Spec.JudgeLLM = &v1alpha1.TypedObjectReference{
+			APIGroup:  input.JudgeLlm.APIGroup,
+			Kind:      input.JudgeLlm.Kind,
+			Name:      input.JudgeLlm.Name,
+			Namespace: input.JudgeLlm.Namespace,
+		}
+	}
+	if input.Metrics != nil {
+		rag.Spec.Metrics = make([]evav1alpha1.Metric, 0)
+		for _, m := range input.Metrics {
+			mm := evav1alpha1.Metric{
+				Parameters: make([]evav1alpha1.Parameter, 0),
+			}
+			if m.MetricKind != nil {
+				mm.Kind = evav1alpha1.MetricsKind(*m.MetricKind)
+			}
+			if m.ToleranceThreshbold != nil {
+				mm.ToleranceThreshbold = *m.ToleranceThreshbold
+			}
+			for _, p := range m.Parameters {
+				mm.Parameters = append(mm.Parameters, evav1alpha1.Parameter{
+					Key:   *p.Key,
+					Value: *p.Value,
+				})
+			}
+			rag.Spec.Metrics = append(rag.Spec.Metrics, mm)
+		}
+	}
+
+	if input.Storage != nil {
+		rag.Spec.Storage = gen2storage(*input.Storage)
+	}
+	if input.Suspend != nil {
+		rag.Spec.Suspend = *input.Suspend
+	}
+
+	unstructuredRag, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&rag)
+	if err != nil {
+		return nil, err
+	}
+	updatedRag, err := common.ResouceUpdate(ctx, kubeClient, generated.TypedObjectReferenceInput{
+		APIGroup:  &common.ArcadiaAPIGroup,
+		Kind:      "RAG",
+		Namespace: &rag.Namespace,
+		Name:      rag.Name,
+	}, unstructuredRag, v1.UpdateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return rag2model(updatedRag)
 }
 
 func ListRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.ListRAGInput) (*generated.PaginatedResult, error) {
