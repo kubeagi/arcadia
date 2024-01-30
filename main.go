@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -68,6 +69,7 @@ func init() {
 	utilruntime.Must(apiprompt.AddToScheme(scheme))
 	utilruntime.Must(apiretriever.AddToScheme(scheme))
 	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(batchv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

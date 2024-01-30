@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"reflect"
+
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -133,4 +135,23 @@ func RagStatus(rag *RAG) (string, RAGPhase, string) {
 		status = SUSPEND
 	}
 	return status, phase, phaseMsg
+}
+
+func RAGSpecChanged(a, b RAGSpec) bool {
+	if !reflect.DeepEqual(*a.Application, *b.Application) {
+		return true
+	}
+	if !reflect.DeepEqual(a.Datasets, b.Datasets) {
+		return true
+	}
+	if !reflect.DeepEqual(a.JudgeLLM, b.JudgeLLM) {
+		return true
+	}
+	if !reflect.DeepEqual(*a.Storage, *b.Storage) {
+		return true
+	}
+	if a.ServiceAccountName != b.ServiceAccountName {
+		return true
+	}
+	return false
 }
