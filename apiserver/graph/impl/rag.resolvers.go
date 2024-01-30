@@ -6,7 +6,6 @@ package impl
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/application"
@@ -87,7 +86,11 @@ func (r *rAGMutationResolver) CreateRag(ctx context.Context, obj *generated.RAGM
 
 // UpdateRag is the resolver for the updateRAG field.
 func (r *rAGMutationResolver) UpdateRag(ctx context.Context, obj *generated.RAGMutation, input generated.UpdateRAGInput) (*generated.Rag, error) {
-	panic(fmt.Errorf("not implemented: UpdateRag - updateRAG"))
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.UpdateRAG(ctx, c, &input)
 }
 
 // DeleteRag is the resolver for the deleteRAG field.
