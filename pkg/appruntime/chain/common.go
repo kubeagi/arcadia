@@ -31,7 +31,7 @@ import (
 	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
-	"github.com/kubeagi/arcadia/pkg/appruntime/tools/bingsearch"
+	"github.com/kubeagi/arcadia/pkg/tools/bingsearch"
 )
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {

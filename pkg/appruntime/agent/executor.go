@@ -33,7 +33,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
-	"github.com/kubeagi/arcadia/pkg/appruntime/tools/weather"
+	"github.com/kubeagi/arcadia/pkg/tools/weather"
 )
 
 type Executor struct {
