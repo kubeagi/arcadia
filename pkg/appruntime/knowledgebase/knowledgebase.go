@@ -51,3 +51,7 @@ func (k *Knowledgebase) Init(ctx context.Context, cli client.Client, _ map[strin
 func (k *Knowledgebase) Run(_ context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
 	return args, nil
 }
+
+func (k *Knowledgebase) Ready() (isReady bool, msg string) {
+	return k.Instance.Status.IsReadyOrGetReadyMessage()
+}

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
@@ -69,6 +70,7 @@ func init() {
 	utilruntime.Must(apiretriever.AddToScheme(scheme))
 	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchv1.AddToScheme(scheme))
+	utilruntime.Must(agentv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -233,7 +235,7 @@ func main() {
 	if err = (&basecontrollers.ApplicationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Application")
 		os.Exit(1)
 	}

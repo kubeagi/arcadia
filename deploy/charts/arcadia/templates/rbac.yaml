@@ -112,6 +112,32 @@ rules:
 - apiGroups:
   - arcadia.kubeagi.k8s.com.cn
   resources:
+  - agents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - agents/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - agents/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
   - applications
   verbs:
   - create

@@ -76,3 +76,7 @@ func (p *Prompt) Run(ctx context.Context, cli client.Client, args map[string]any
 	args["prompt"] = p
 	return args, nil
 }
+
+func (p *Prompt) Ready() (isReady bool, msg string) {
+	return p.Instance.Status.IsReadyOrGetReadyMessage()
+}

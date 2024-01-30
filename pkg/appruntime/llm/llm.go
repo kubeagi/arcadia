@@ -33,6 +33,7 @@ import (
 type LLM struct {
 	base.BaseNode
 	langchainllms.LLM
+	Instance *v1alpha1.LLM
 }
 
 func NewLLM(baseNode base.BaseNode) *LLM {
@@ -52,6 +53,7 @@ func (z *LLM) Init(ctx context.Context, cli client.Client, _ map[string]any) err
 		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}
 	z.LLM = llm
+	z.Instance = instance
 	return nil
 }
 
@@ -61,4 +63,8 @@ func (z *LLM) Run(ctx context.Context, _ client.Client, args map[string]any) (ma
 	ns := base.GetAppNamespace(ctx)
 	logger.Info("use llm", "name", z.Ref.Name, "namespace", z.Ref.GetNamespace(ns))
 	return args, nil
+}
+
+func (z *LLM) Ready() (isReady bool, msg string) {
+	return z.Instance.Status.IsReadyOrGetReadyMessage()
 }

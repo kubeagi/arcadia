@@ -117,3 +117,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	}
 	return args, fmt.Errorf("llmchain run error: %w", err)
 }
+
+func (l *LLMChain) Ready() (isReady bool, msg string) {
+	return l.Instance.Status.IsReadyOrGetReadyMessage()
+}

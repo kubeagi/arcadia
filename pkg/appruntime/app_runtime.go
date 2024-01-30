@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
@@ -279,4 +280,19 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 	default:
 		return nil, fmt.Errorf("unknown group %s:%v", name, ref)
 	}
+}
+
+// FindNodesHas group means ref.APIGroup files before `arcadia.kubeagi.k8s.com.cn`
+func FindNodesHas(app *arcadiav1alpha1.Application, group, kind string) (has bool, namespace, name string) {
+	group, kind = strings.ToLower(group), strings.ToLower(kind)
+	for _, n := range app.Spec.Nodes {
+		if n.Ref == nil {
+			return false, "", ""
+		}
+		baseNode := base.NewBaseNode(app.Namespace, n.Name, *n.Ref)
+		if group == baseNode.Group() && kind == baseNode.Kind() {
+			return true, baseNode.RefNamespace(), baseNode.RefName()
+		}
+	}
+	return false, "", ""
 }

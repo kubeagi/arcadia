@@ -134,3 +134,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	}
 	return args, fmt.Errorf("retrievalqachain run error: %w", err)
 }
+
+func (l *RetrievalQAChain) Ready() (isReady bool, msg string) {
+	return l.Instance.Status.IsReadyOrGetReadyMessage()
+}
