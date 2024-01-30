@@ -50,6 +50,7 @@ type Output struct {
 
 type Application struct {
 	Namespace     string
+	Name          string
 	Spec          arcadiav1alpha1.ApplicationSpec
 	Inited        bool
 	Nodes         map[string]base.Node
@@ -86,6 +87,7 @@ func NewAppOrGetFromCache(ctx context.Context, cli dynamic.Interface, app *arcad
 	// }
 	a := &Application{
 		Namespace: app.GetNamespace(),
+		Name:      app.Name,
 		Spec:      app.Spec,
 		Inited:    false,
 	}

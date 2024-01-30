@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 
 	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	evalv1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
@@ -227,6 +228,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 }
 
 func GenDatasetOnSingleFile(ctx context.Context, kubeClient dynamic.Interface, app *basev1alpha1.Application, file string, genOpts ...evaluation.GenOptions) error {
+	klog.V(3).Infof("GenDatasetOnSingleFile for application %s in namespace %s from file %s", app.Name, app.Namespace, file)
 	// read file content
 	f, err := os.Open(file)
 	if err != nil {
