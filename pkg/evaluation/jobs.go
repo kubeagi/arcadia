@@ -39,6 +39,16 @@ const (
 	defaultPVCMountPath = "/data/evaluations"
 	defaultTestRagFile  = "ragas.csv"
 	defaultMCImage      = "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z"
+
+	// The clusterrolebinding required for the rag evaluation process is ragas-eval-clusterrolebinding by default,
+	// and can be changed via environment variable RAG_EVAL_CLUSTERROLEBINDING.
+	RAGClusterRoleBindingEnv = "RAG_EVAL_CLUSTERROLEBINDING"
+	RAGJobClusterRoleBinding = "ragas-eval-clusterrolebinding"
+
+	// The serviceaccount used by the job during rag evaluation, which is ragas-eval-sa by default,
+	// can be changed via the environment variable RAG_EVAL_SERVICEACCOUNT.
+	RAGServiceAccountEnv = "RAG_EVAL_SERVICEACCOUNT"
+	RAGJobServiceAccount = "ragas-eval-sa"
 )
 
 func PhaseJobName(instance *evav1alpha1.RAG, phase evav1alpha1.RAGPhase) string {

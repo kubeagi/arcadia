@@ -74,6 +74,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -559,6 +566,14 @@ rules:
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - get
+  - list
   - update
 - apiGroups:
   - retriever.arcadia.kubeagi.k8s.com.cn

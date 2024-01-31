@@ -1,0 +1,53 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ragas-eval-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - arcadia.kubeagi.k8s.com.cn
+  resources:
+  - datasources
+  - versioneddatasets
+  - applications
+  - llms
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - evaluation.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rags
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - chain.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - llmchains
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - prompt.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - prompts
+  verbs:
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ragas-eval-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ragas-eval-clusterrole
