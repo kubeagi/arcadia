@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-from database_clients import postgresql_pool_client
 from database_operate import dp_document_qa_remove_duplicate_db_operate
 from utils import date_time_utils
 
@@ -23,7 +22,8 @@ class QARemoveDuplicate():
 
     def __init__(
         self,
-        embeddings
+        embeddings,
+        pool
     ):
         """QA Remove Duplicated
 
@@ -31,6 +31,7 @@ class QARemoveDuplicate():
             embeddings (Embeddings): QA embeddings Client.
         """
         self.embeddings = embeddings
+        self.pool = pool
 
     def _import_qa_embedding_data(
         self,
@@ -63,7 +64,7 @@ class QARemoveDuplicate():
             }
             dp_document_qa_remove_duplicate_db_operate.add(
                 params,
-                postgresql_pool_client
+                self.pool
             )
 
     def _remove_qa_embedding_data_by_id(
@@ -77,7 +78,7 @@ class QARemoveDuplicate():
         }
         dp_document_qa_remove_duplicate_db_operate.delete_by_id(
             params,
-            postgresql_pool_client
+            self.pool
         )
 
     def _remove_qa_embedding_data_by_document(
@@ -93,7 +94,7 @@ class QARemoveDuplicate():
         }
         dp_document_qa_remove_duplicate_db_operate.delete_by_task_document(
             params,
-            postgresql_pool_client
+            self.pool
         )
 
     def _remove_duplicate_qa_data(
@@ -122,7 +123,7 @@ class QARemoveDuplicate():
             }
             res = dp_document_qa_remove_duplicate_db_operate.filter_by_distance(
                 params,
-                postgresql_pool_client
+                self.pool
             )
             self._remove_qa_embedding_data_by_id(
                 qa_pair["id"]
