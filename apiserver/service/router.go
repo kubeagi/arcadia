@@ -49,16 +49,25 @@ func NewServerAndRun(conf config.ServerConfig) {
 	r.GET("/healthz", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
+
+	// enable oidc authentication
 	if conf.EnableOIDC {
 		oidc.InitOIDCArgs(conf.IssuerURL, conf.MasterURL, conf.ClientSecret, conf.ClientID)
 	}
+
 	bffGroup := r.Group("/bff")
+	// for file operations
+	registerMinIOAPI(bffGroup, conf)
+	// for ops apis with graphql
+	registerGraphQL(r, bffGroup, conf)
+
+	// for chat server with Restful apis
 	chatGroup := r.Group("/chat")
-	RegisterMinIOAPI(bffGroup, conf)
-	RegisterGraphQL(r, bffGroup, conf)
 	registerChat(chatGroup, conf)
+
+	//  for swagger
 	if conf.EnableSwagger {
-		docs.SwaggerInfo.BasePath = "/"
+		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 		r.GET("swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	}
 

@@ -18,6 +18,7 @@ package langchainwrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	langchaingoembeddings "github.com/tmc/langchaingo/embeddings"
@@ -64,6 +65,9 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			// Both only provides 1 embedding model,so get the 1st one should be fine if the model is not specified.
 			if model == "" {
 				models := e.GetModelList()
+				if len(models) == 0 {
+					return nil, errors.New("no valid models for this Embedder")
+				}
 				model = models[0]
 			}
 

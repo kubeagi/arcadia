@@ -55,7 +55,7 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	if err != nil {
 		return fmt.Errorf("can't convert the llm in cluster: %w", err)
 	}
-	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, nil, cli)
+	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, nil, cli, "")
 	if err != nil {
 		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}

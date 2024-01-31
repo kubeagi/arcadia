@@ -132,10 +132,5 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 // LoadAndSplit reads text data from the io.Reader and splits it into multiple
 // documents using a text splitter.
 func (c QACSV) LoadAndSplit(ctx context.Context, splitter textsplitter.TextSplitter) ([]schema.Document, error) {
-	docs, err := c.Load(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return textsplitter.SplitDocuments(splitter, docs)
+	return c.Load(ctx)
 }

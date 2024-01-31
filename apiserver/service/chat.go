@@ -49,8 +49,6 @@ type ChatService struct {
 	server *chat.ChatServer
 }
 
-// @BasePath /chat
-
 func NewChatService(cli dynamic.Interface) (*ChatService, error) {
 	return &ChatService{chat.NewChatServer(cli)}, nil
 }
@@ -66,7 +64,7 @@ func NewChatService(cli dynamic.Interface) (*ChatService, error) {
 // @Success 200 {object} chat.ChatRespBody "blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned"
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router / [post]
+// @Router /chat [post]
 func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ChatReqBody{StartTime: time.Now()}
@@ -188,7 +186,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 // @Success 200 {object} []storage.Conversation
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router /conversations [post]
+// @Router /chat/conversations [post]
 func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
@@ -218,7 +216,7 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 // @Success 200 {object} chat.SimpleResp
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router /conversations/:conversationID [delete]
+// @Router /chat/conversations/:conversationID [delete]
 func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conversationID := c.Param("conversationID")
@@ -249,7 +247,7 @@ func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 // @Success 200 {object} storage.Conversation
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router /messages [post]
+// @Router /chat/messages [post]
 func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ConversationReqBody{}
@@ -280,7 +278,7 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 // @Success 200 {object} []retriever.Reference
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router /messages/:messageID/references [post]
+// @Router /chat/messages/:messageID/references [post]
 func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		messageID := c.Param("messageID")
@@ -320,7 +318,7 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 // @Success 200 {object} []string
 // @Failure 400 {object} chat.ErrorResp
 // @Failure 500 {object} chat.ErrorResp
-// @Router /prompt-starter [post]
+// @Router /chat/prompt-starter [post]
 func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
@@ -353,6 +351,53 @@ func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 	}
 }
 
+// @Summary receive and process uploaded documents(pdf, docx) for one conversation
+// @Schemes
+// @Description receive and process uploaded documents(pdf, docx) for one conversation
+// @Tags application
+// @Accept  multipart/form-data
+// @Produce json
+//
+//	@Param			app_namespace	formData	string			true	"The app namespace for this conversation"
+//	@Param			app_name		formData	string			true	"The app name for this conversation"
+//	@Param			conversation_id	formData	string			true	"The conversation id for this document"
+//	@Param			chunk_size		formData	int				false	"The chunk size when load and split the document"
+//	@Param			chunk_overlap	formData	int				false	"The chunk overlap when load and split the document"
+//	@Param			docs			formData	file			true	"This is the docs for the conversation"
+//
+// @Success 200 {object} chat.ConversationDocsRespBody
+// @Failure 400 {object} chat.ErrorResp
+// @Failure 500 {object} chat.ErrorResp
+// @Router /chat/conversations/docs [post]
+func (cs *ChatService) ConversationDocs() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		req := chat.ConversationDocsReqBody{}
+		if err := c.ShouldBind(&req); err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "conversationDocsHandler: error binding json")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+
+		doc, err := c.FormFile("docs")
+		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error receive and process uploaded documents(pdf, docx)")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+
+		// Upload the file to specific dst.
+		resp, err := cs.server.ReceiveConversationDocs(c, req, doc)
+		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "error receive and process uploaded documents(pdf, docx)")
+			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, resp)
+		klog.FromContext(c.Request.Context()).V(3).Info("receive and process uploaded documents(pdf, docx) done", "req", req)
+	}
+}
+
 func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
 	c, err := client.GetClient(nil)
 	if err != nil {
@@ -366,6 +411,7 @@ func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
 
 	g.POST("", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.ChatHandler()) // chat with bot
 
+	g.POST("/conversations/docs", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.ConversationDocs())                       // upload docs for conversation
 	g.POST("/conversations", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.ListConversationHandler())                     // list conversations
 	g.DELETE("/conversations/:conversationID", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "applications"), requestid.RequestIDInterceptor(), chatService.DeleteConversationHandler()) // delete conversation
 

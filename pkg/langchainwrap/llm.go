@@ -18,6 +18,7 @@ package langchainwrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -41,7 +42,7 @@ const (
 	GatewayUseExternalURLEnv = "GATEWAY_USE_EXTERNAL_URL"
 )
 
-func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cli dynamic.Interface) (langchainllms.LLM, error) {
+func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cli dynamic.Interface, model string) (langchainllms.LLM, error) {
 	if err := utils.ValidateClient(c, cli); err != nil {
 		return nil, err
 	}
@@ -55,7 +56,18 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, cl
 		case llms.ZhiPuAI:
 			return zhipuai.NewZhiPuAILLM(apiKey, zhipuai.WithRetryTimes(3)), nil
 		case llms.OpenAI:
-			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()))
+			// When apitype is OpenAI,there are two possible sources:
+			// 1. From official OpenAI
+			// 2. From kubeagi which provides OpenAI compatible apis
+			// Both only provides 1 embedding model,so get the 1st one should be fine if the model is not specified.
+			if model == "" {
+				models := llm.GetModelList()
+				if len(models) == 0 {
+					return nil, errors.New("no valid models for this LLM")
+				}
+				model = models[0]
+			}
+			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model))
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c, cli)

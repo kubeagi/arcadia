@@ -9,260 +9,18 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
+        "termsOfService": "http://swagger.io/terms/",
         "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/": {
-            "post": {
-                "description": "chat with application",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "chat with application",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Should the chat request be treated as debugging?",
-                        "name": "debug",
-                        "in": "query"
-                    },
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/chat.ChatReqBody"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ChatRespBody"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/conversations": {
-            "post": {
-                "description": "list all conversations",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "list all conversations",
-                "parameters": [
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/chat.APPMetadata"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/storage.Conversation"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/conversations/:conversationID": {
-            "delete": {
-                "description": "delete one conversation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "delete one conversation",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "conversationID",
-                        "name": "conversationID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/chat.SimpleResp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/messages": {
-            "post": {
-                "description": "get all messages history for one conversation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "get all messages history for one conversation",
-                "parameters": [
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/chat.ConversationReqBody"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/storage.Conversation"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/messages/:messageID/references": {
-            "post": {
-                "description": "get one message's references",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "get one message references",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "messageID",
-                        "name": "messageID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/chat.MessageReqBody"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/retriever.Reference"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/model/files": {
+        "/bff/model/files": {
             "delete": {
                 "description": "Delete files",
                 "consumes": [
@@ -321,7 +79,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/chunk_url": {
+        "/bff/model/files/chunk_url": {
             "post": {
                 "description": "Get multipart upload URL",
                 "consumes": [
@@ -380,7 +138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/chunks": {
+        "/bff/model/files/chunks": {
             "get": {
                 "description": "Get success chunks of a file",
                 "consumes": [
@@ -515,7 +273,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a web crawler file which contains crawer params",
+                "description": "create new multipart upload",
                 "consumes": [
                     "application/json"
                 ],
@@ -525,15 +283,15 @@ const docTemplate = `{
                 "tags": [
                     "MinioAPI"
                 ],
-                "summary": "Create web cralwer file",
+                "summary": "create new multipart upload",
                 "parameters": [
                     {
-                        "description": "request params",
+                        "description": "query params",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.WebCrawlerFileBody"
+                            "$ref": "#/definitions/service.NewMultipartBody"
                         }
                     },
                     {
@@ -548,7 +306,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -572,7 +333,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/chunks/abort": {
+        "/bff/model/files/chunks/abort": {
             "put": {
                 "description": "Abort a file upload",
                 "consumes": [
@@ -631,7 +392,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/download": {
+        "/bff/model/files/download": {
             "get": {
                 "description": "Download files in chunks",
                 "consumes": [
@@ -706,7 +467,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/downloadlink": {
+        "/bff/model/files/downloadlink": {
             "get": {
                 "description": "Get a download link",
                 "consumes": [
@@ -773,7 +534,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/model/files/stat": {
+        "/bff/model/files/stat": {
             "get": {
                 "description": "Statistics file information",
                 "consumes": [
@@ -840,62 +601,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/prompt-starter": {
-            "post": {
-                "description": "get app's prompt starters",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "get app's prompt starters",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "how many prompts you need should \u003e 0 and \u003c 10",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/chat.APPMetadata"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/versioneddataset/files/csv": {
+        "/bff/versioneddataset/files/csv": {
             "get": {
                 "description": "Read a file line by line",
                 "consumes": [
@@ -972,6 +678,444 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/bff/versioneddataset/files/webcrawler": {
+            "post": {
+                "description": "Create a web crawler file which contains crawer params",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Create web cralwer file",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.WebCrawlerFileBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/chat": {
+            "post": {
+                "description": "chat with application",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "chat with application",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Should the chat request be treated as debugging?",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.ChatReqBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ChatRespBody"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations": {
+            "post": {
+                "description": "list all conversations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "list all conversations",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.APPMetadata"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storage.Conversation"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations/:conversationID": {
+            "delete": {
+                "description": "delete one conversation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "delete one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "conversationID",
+                        "name": "conversationID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chat.SimpleResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations/docs": {
+            "post": {
+                "description": "receive and process uploaded documents(pdf, docx) for one conversation",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "receive and process uploaded documents(pdf, docx) for one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The app namespace for this conversation",
+                        "name": "app_namespace",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The app name for this conversation",
+                        "name": "app_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The conversation id for this document",
+                        "name": "conversation_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "The chunk size when load and split the document",
+                        "name": "chunk_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "The chunk overlap when load and split the document",
+                        "name": "chunk_overlap",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "This is the docs for the conversation",
+                        "name": "docs",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ConversationDocsRespBody"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/messages": {
+            "post": {
+                "description": "get all messages history for one conversation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "get all messages history for one conversation",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.ConversationReqBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/storage.Conversation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/messages/:messageID/references": {
+            "post": {
+                "description": "get one message's references",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "get one message references",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "messageID",
+                        "name": "messageID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.MessageReqBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/retriever.Reference"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/prompt-starter": {
+            "post": {
+                "description": "get app's prompt starters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "get app's prompt starters",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "how many prompts you need should \u003e 0 and \u003c 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.APPMetadata"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -990,7 +1134,7 @@ const docTemplate = `{
                 "app_namespace": {
                     "description": "AppNamespace, the namespace of the application",
                     "type": "string",
-                    "example": "arcadia"
+                    "example": "kubeagi-system"
                 }
             }
         },
@@ -1011,7 +1155,7 @@ const docTemplate = `{
                 "app_namespace": {
                     "description": "AppNamespace, the namespace of the application",
                     "type": "string",
-                    "example": "arcadia"
+                    "example": "kubeagi-system"
                 },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",
@@ -1069,6 +1213,39 @@ const docTemplate = `{
                 }
             }
         },
+        "chat.ConversatioSingleDocRespBody": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string"
+                },
+                "number_of_documents": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "description": "Summary info",
+                    "type": "string"
+                },
+                "timecost_for_embedding": {
+                    "description": "Embedding info",
+                    "type": "number"
+                },
+                "timecost_for_summarization": {
+                    "type": "number"
+                }
+            }
+        },
+        "chat.ConversationDocsRespBody": {
+            "type": "object",
+            "properties": {
+                "docs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chat.ConversatioSingleDocRespBody"
+                    }
+                }
+            }
+        },
         "chat.ConversationReqBody": {
             "type": "object",
             "required": [
@@ -1084,7 +1261,7 @@ const docTemplate = `{
                 "app_namespace": {
                     "description": "AppNamespace, the namespace of the application",
                     "type": "string",
-                    "example": "arcadia"
+                    "example": "kubeagi-system"
                 },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",
@@ -1117,7 +1294,7 @@ const docTemplate = `{
                 "app_namespace": {
                     "description": "AppNamespace, the namespace of the application",
                     "type": "string",
-                    "example": "arcadia"
+                    "example": "kubeagi-system"
                 },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",
@@ -1357,6 +1534,10 @@ const docTemplate = `{
         },
         "service.WebCrawlerFileBody": {
             "type": "object",
+            "required": [
+                "datasource",
+                "versioneddataset"
+            ],
             "properties": {
                 "datasource": {
                     "type": "string"
@@ -1472,17 +1653,25 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API token for authorization",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8081",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "ApiServer Swagger API",
+	Description:      "This is a apiserver for KubeAGI.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

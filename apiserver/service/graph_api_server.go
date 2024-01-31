@@ -52,7 +52,7 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 }
 
-func RegisterGraphQL(g *gin.Engine, bg *gin.RouterGroup, conf config.ServerConfig) {
+func registerGraphQL(g *gin.Engine, bg *gin.RouterGroup, conf config.ServerConfig) {
 	if conf.EnablePlayground {
 		endpoint := "/bff"
 		if conf.PlaygroundEndpointPrefix != "" {

@@ -43,6 +43,7 @@ var (
 	ErrNoConfig            = fmt.Errorf("config in configmap is empty")
 	ErrNoConfigGateway     = fmt.Errorf("config Gateway in configmap is not found")
 	ErrNoConfigMinIO       = fmt.Errorf("config MinIO in comfigmap is not found")
+	ErrNoConfigEmbedder    = fmt.Errorf("config Embedder in comfigmap is not found")
 	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
 	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
 	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
@@ -132,6 +133,19 @@ func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (con
 	return config, nil
 }
 
+// GetEmbedder get the default embedder from config
+func GetEmbedder(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfig(ctx, c, cli)
+	if err != nil {
+		return nil, err
+	}
+	if config.Embedder == nil {
+		return nil, ErrNoConfigEmbedder
+	}
+	return config.Embedder, nil
+}
+
+// GetVectorStore get the default vector store from config
 func GetVectorStore(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
 	config, err := GetConfig(ctx, c, cli)
 	if err != nil {

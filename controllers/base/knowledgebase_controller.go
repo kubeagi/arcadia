@@ -457,11 +457,8 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		loader = documentloaders.NewText(dataReader)
 	case ".csv":
 		if v == arcadiav1alpha1.ObjectTypeQA {
+			// for qa csv,we skip the text splitter
 			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName)
-			documents, err = loader.Load(ctx)
-			if err != nil {
-				return err
-			}
 		} else {
 			loader = documentloaders.NewCSV(dataReader)
 		}
@@ -495,12 +492,11 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	//	)
 	//}
 
-	if len(documents) == 0 {
-		documents, err = loader.LoadAndSplit(ctx, split)
-		if err != nil {
-			return err
-		}
+	documents, err = loader.LoadAndSplit(ctx, split)
+	if err != nil {
+		return err
 	}
+
 	return vectorstore.AddDocuments(ctx, log, store, em, kb.VectorStoreCollectionName(), r.Client, nil, documents)
 }
 

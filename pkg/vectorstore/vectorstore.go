@@ -114,7 +114,7 @@ func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.Vect
 	log.Info("handle file: add documents to embedder")
 	if store, ok := s.(*PGVectorStore); ok {
 		// now only pgvector support Row-level updates
-		log.Info("handle file: use pgvector, filter out exist documents")
+		log.V(3).Info("handle file: use pgvector, filter out exist documents")
 		if documents, err = store.RemoveExist(ctx, log, documents); err != nil {
 			return err
 		}
@@ -128,6 +128,6 @@ func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.Vect
 	if finish != nil {
 		finish()
 	}
-	log.Info("handle file succeeded")
+	log.V(3).Info("handle file succeeded")
 	return nil
 }
