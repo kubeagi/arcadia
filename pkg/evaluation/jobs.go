@@ -72,7 +72,7 @@ func DownloadJob(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
 					Containers: []v1.Container{
 						{
 							Name:  "download-dataset-files",
-							Image: "kubeagi/arcadia-eval",
+							Image: "kubeagi/arcadia-eval:v0.1.0",
 							Command: []string{
 								"arctl",
 							},
@@ -132,7 +132,7 @@ func GenTestDataJob(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
 					Containers: []v1.Container{
 						{
 							Name:  "gen-test-files",
-							Image: "kubeagi/arcadia-eval",
+							Image: "kubeagi/arcadia-eval:v0.1.0",
 							Command: []string{
 								"arctl",
 							},
