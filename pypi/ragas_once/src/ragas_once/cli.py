@@ -80,6 +80,7 @@ def main():
     ms = pkg.set_metrics(metrics, judge_model, embeddings)
 
     result = evaluate(test_set, ms)
+
     
     # count total score and avearge
     summary = result.scores.to_pandas().mean()

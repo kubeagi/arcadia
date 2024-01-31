@@ -39,7 +39,7 @@ pip install ragas_once
 ### Fiqa dataset demo:
 
 ```bash
-python3 -m ragas_once.cli --apikey "YOUR_OPENAI_API_KEY"
+ro --apikey "YOUR_OPENAI_API_KEY"
 ```
 
 ### Evaluate with GPT-4 and `BAAI/bge-small-en` embeddings
@@ -52,7 +52,7 @@ pip install sentence-transformers
 Then run:
 
 ```bash
-python3 -m ragas_once.cli --model "gpt-4" --apikey "YOUR_OPENAI_API_KEY" --embeddings "BAAI/bge-small-en" --dataset "path/to/dataset.csv"
+ro --model "gpt-4" --apikey "YOUR_OPENAI_API_KEY" --embeddings "BAAI/bge-small-en" --dataset "path/to/dataset.csv"
 ```
 
 ### Prepare Dataset

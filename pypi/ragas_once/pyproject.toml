@@ -1,12 +1,11 @@
 [build-system]
 requires = [
     "setuptools>=61.0",
-    "ragas",
+    "setuptools-scm",
+    "ragas==0.0.22",
     "langchain==0.0.354"
 ]
 build-backend = "setuptools.build_meta"
-
-[tool.poetry]
 
 [project]
 name = "ragas_once"
@@ -16,12 +15,16 @@ authors = [
 ]
 description = "A one-step Ragas cli tool to evaluate RAG apps"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "langchain==0.0.354",
+    "ragas==0.0.22",
+]
 
-[tool.poetry.entry-points]
+[project.scripts]
 ro = "ragas_once.cli:main"
