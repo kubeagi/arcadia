@@ -9,6 +9,12 @@ mutation createApplication($input:CreateApplicationMetadataInput!){
             displayName
             description
             icon
+            creator
+            creationTimestamp
+            updateTimestamp
+            isPublic
+            status
+            category
         }
     }
 }
@@ -24,7 +30,12 @@ mutation updateApplication($input: UpdateApplicationMetadataInput!){
             displayName
             description
             icon
+            creator
+            creationTimestamp
+            updateTimestamp
             isPublic
+            status
+            category
         }
     }
 }
@@ -51,6 +62,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
                 updateTimestamp
                 isPublic
                 status
+                category
             }
             prologue
             model
@@ -92,6 +104,7 @@ query getApplication($name: String!, $namespace: String!){
                 updateTimestamp
                 isPublic
                 status
+                category
             }
             prologue
             model
@@ -138,6 +151,7 @@ query listApplications($input: ListCommonInput!) {
                     updateTimestamp
                     isPublic
                     status
+                    category
                 }
             }
         }
