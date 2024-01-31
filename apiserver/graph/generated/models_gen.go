@@ -319,20 +319,20 @@ type CreateModelServiceInput struct {
 }
 
 type CreateRAGInput struct {
-	Name               *string                        `json:"name,omitempty"`
-	Namespace          string                         `json:"namespace"`
-	Labels             map[string]interface{}         `json:"labels,omitempty"`
-	Annotations        map[string]interface{}         `json:"annotations,omitempty"`
-	Creator            *string                        `json:"creator,omitempty"`
-	DisplayName        *string                        `json:"displayName,omitempty"`
-	Description        *string                        `json:"description,omitempty"`
-	Application        TypedObjectReferenceInput      `json:"application"`
-	Datasets           []*RAGDatasetInput             `json:"datasets"`
-	JudgeLlm           TypedObjectReferenceInput      `json:"judgeLLM"`
-	Metrics            []*RAGMetricInput              `json:"metrics"`
-	Storage            PersistentVolumeClaimSpecInput `json:"storage"`
-	ServiceAccountName *string                        `json:"serviceAccountName,omitempty"`
-	Suspend            *bool                          `json:"suspend,omitempty"`
+	Name               *string                         `json:"name,omitempty"`
+	Namespace          string                          `json:"namespace"`
+	Labels             map[string]interface{}          `json:"labels,omitempty"`
+	Annotations        map[string]interface{}          `json:"annotations,omitempty"`
+	Creator            *string                         `json:"creator,omitempty"`
+	DisplayName        *string                         `json:"displayName,omitempty"`
+	Description        *string                         `json:"description,omitempty"`
+	Application        TypedObjectReferenceInput       `json:"application"`
+	Datasets           []*RAGDatasetInput              `json:"datasets"`
+	JudgeLlm           TypedObjectReferenceInput       `json:"judgeLLM"`
+	Metrics            []*RAGMetricInput               `json:"metrics"`
+	Storage            *PersistentVolumeClaimSpecInput `json:"storage,omitempty"`
+	ServiceAccountName *string                         `json:"serviceAccountName,omitempty"`
+	Suspend            *bool                           `json:"suspend,omitempty"`
 }
 
 type CreateVersionedDatasetInput struct {
@@ -1253,7 +1253,7 @@ type ParameterInput struct {
 }
 
 type PersistentVolumeClaimSpec struct {
-	AccessModes      []string              `json:"accessModes,omitempty"`
+	AccessModes      []string              `json:"accessModes"`
 	Selector         *Selector             `json:"selector,omitempty"`
 	Resources        *Resource             `json:"resources,omitempty"`
 	VolumeName       *string               `json:"volumeName,omitempty"`
@@ -1264,10 +1264,10 @@ type PersistentVolumeClaimSpec struct {
 }
 
 type PersistentVolumeClaimSpecInput struct {
-	AccessModes      []string                   `json:"accessModes,omitempty"`
+	AccessModes      []string                   `json:"accessModes"`
 	Selector         *SelectorInput             `json:"selector,omitempty"`
 	Resources        *ResourceInput             `json:"resources,omitempty"`
-	VolumeName       string                     `json:"volumeName"`
+	VolumeName       *string                    `json:"volumeName,omitempty"`
 	StorageClassName *string                    `json:"storageClassName,omitempty"`
 	VolumeMode       *string                    `json:"volumeMode,omitempty"`
 	Datasource       *TypedObjectReferenceInput `json:"datasource,omitempty"`

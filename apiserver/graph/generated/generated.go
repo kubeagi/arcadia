@@ -5905,7 +5905,7 @@ input ResourceInput {
 }
 
 type PersistentVolumeClaimSpec {
-    accessModes: [String!]
+    accessModes: [String!]!
     selector: Selector
     resources:  Resource
     volumeName: String
@@ -5916,15 +5916,16 @@ type PersistentVolumeClaimSpec {
 }
 
 input PersistentVolumeClaimSpecInput {
-    accessModes: [String!]
+    accessModes: [String!]!
     selector: SelectorInput
     resources:  ResourceInput
-    volumeName: String!
+    volumeName: String
     storageClassName: String
     volumeMode: String
     datasource: TypedObjectReferenceInput
     dataSourceRef: TypedObjectReferenceInput
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 	{Name: "../schema/knowledgebase.graphqls", Input: `"""
 文件组
 规则: 属于同一个源(数据集)的文件要放在同一个filegroup中
@@ -6797,7 +6798,7 @@ input CreateRAGInput {
     datasets: [RAGDatasetInput!]!
     judgeLLM: TypedObjectReferenceInput!
     metrics: [RAGMetricInput!]!
-    storage: PersistentVolumeClaimSpecInput!
+    storage: PersistentVolumeClaimSpecInput
     serviceAccountName: String
     suspend: Boolean
 }
@@ -6826,11 +6827,14 @@ input DeleteRAGInput {
 input ListRAGInput {
     appName: String!
     namespace: String!
+
     """根据状态过滤"""
     status: String
+
     """根据名字，displayName字段获取"""
     keyword: String
-        """
+
+    """
     分页页码，
     规则: 从1开始，默认是1
     """
@@ -23763,11 +23767,14 @@ func (ec *executionContext) _PersistentVolumeClaimSpec_accessModes(ctx context.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PersistentVolumeClaimSpec_accessModes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -33271,7 +33278,7 @@ func (ec *executionContext) unmarshalInputCreateRAGInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("storage"))
-			data, err := ec.unmarshalNPersistentVolumeClaimSpecInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPersistentVolumeClaimSpecInput(ctx, v)
+			data, err := ec.unmarshalOPersistentVolumeClaimSpecInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPersistentVolumeClaimSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35039,7 +35046,7 @@ func (ec *executionContext) unmarshalInputPersistentVolumeClaimSpecInput(ctx con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("accessModes"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35066,7 +35073,7 @@ func (ec *executionContext) unmarshalInputPersistentVolumeClaimSpecInput(ctx con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("volumeName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -41297,6 +41304,9 @@ func (ec *executionContext) _PersistentVolumeClaimSpec(ctx context.Context, sel 
 			out.Values[i] = graphql.MarshalString("PersistentVolumeClaimSpec")
 		case "accessModes":
 			out.Values[i] = ec._PersistentVolumeClaimSpec_accessModes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "selector":
 			out.Values[i] = ec._PersistentVolumeClaimSpec_selector(ctx, field, obj)
 		case "resources":
@@ -44125,11 +44135,6 @@ func (ec *executionContext) unmarshalNParameterInput2ᚖgithubᚗcomᚋkubeagi�
 
 func (ec *executionContext) marshalNPersistentVolumeClaimSpec2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPersistentVolumeClaimSpec(ctx context.Context, sel ast.SelectionSet, v PersistentVolumeClaimSpec) graphql.Marshaler {
 	return ec._PersistentVolumeClaimSpec(ctx, sel, &v)
-}
-
-func (ec *executionContext) unmarshalNPersistentVolumeClaimSpecInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPersistentVolumeClaimSpecInput(ctx context.Context, v interface{}) (PersistentVolumeClaimSpecInput, error) {
-	res, err := ec.unmarshalInputPersistentVolumeClaimSpecInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNRAG2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRag(ctx context.Context, sel ast.SelectionSet, v Rag) graphql.Marshaler {
