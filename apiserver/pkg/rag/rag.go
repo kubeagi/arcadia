@@ -66,9 +66,9 @@ func gen2storage(p generated.PersistentVolumeClaimSpecInput) *corev1.PersistentV
 	pvc := &corev1.PersistentVolumeClaimSpec{
 		VolumeName: p.VolumeName,
 	}
-	if len(pvc.AccessModes) > 0 {
+	if len(p.AccessModes) > 0 {
 		pvc.AccessModes = make([]corev1.PersistentVolumeAccessMode, 0)
-		for _, s := range pvc.AccessModes {
+		for _, s := range p.AccessModes {
 			pvc.AccessModes = append(pvc.AccessModes, corev1.PersistentVolumeAccessMode(s))
 		}
 	}
