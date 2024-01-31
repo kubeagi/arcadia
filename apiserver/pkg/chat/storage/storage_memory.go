@@ -16,7 +16,10 @@ limitations under the License.
 
 package storage
 
-import "sync"
+import (
+	"sort"
+	"sync"
+)
 
 var _ Storage = (*MemoryStorage)(nil)
 
@@ -68,6 +71,9 @@ func (m *MemoryStorage) ListConversations(opts ...SearchOption) (conversations [
 		conversations = append(conversations, c)
 	}
 	m.mu.Unlock()
+	sort.Slice(conversations, func(i, j int) bool {
+		return conversations[i].UpdatedAt.After(conversations[j].UpdatedAt)
+	})
 	return conversations, nil
 }
 
