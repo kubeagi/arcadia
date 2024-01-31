@@ -805,10 +805,9 @@ const docTemplate = `{
                 "summary": "list all conversations",
                 "parameters": [
                     {
-                        "description": "query params",
+                        "description": "query params, if not set will return all current user's conversations",
                         "name": "request",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/chat.APPMetadata"
                         }

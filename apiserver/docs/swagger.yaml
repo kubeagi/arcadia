@@ -912,10 +912,9 @@ paths:
       - application/json
       description: list all conversations
       parameters:
-      - description: query params
+      - description: query params, if not set will return all current user's conversations
         in: body
         name: request
-        required: true
         schema:
           $ref: '#/definitions/chat.APPMetadata'
       produces:

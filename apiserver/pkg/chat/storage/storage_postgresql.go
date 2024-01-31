@@ -103,7 +103,7 @@ func (p *PostgreSQLStorage) ListConversations(opts ...SearchOption) ([]Conversat
 	conversationQuery.Debug = false
 	conversationQuery.DeletedAt.Valid = false
 	res := make([]Conversation, 0)
-	tx := p.db.Preload("Messages").Find(&res, conversationQuery)
+	tx := p.db.Preload("Messages").Order("updated_at DESC").Find(&res, conversationQuery)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

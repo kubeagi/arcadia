@@ -53,18 +53,18 @@ func NewChatService(cli dynamic.Interface) (*ChatService, error) {
 	return &ChatService{chat.NewChatServer(cli)}, nil
 }
 
-// @Summary chat with application
+// @Summary	chat with application
 // @Schemes
-// @Description chat with application
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param debug    query  bool              false  "Should the chat request be treated as debugging?"
-// @Param request  body   chat.ChatReqBody  true   "query params"
-// @Success 200 {object} chat.ChatRespBody "blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned"
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat [post]
+// @Description	chat with application
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			debug	query		bool				false	"Should the chat request be treated as debugging?"
+// @Param			request	body		chat.ChatReqBody	true	"query params"
+// @Success		200		{object}	chat.ChatRespBody	"blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned"
+// @Failure		400		{object}	chat.ErrorResp
+// @Failure		500		{object}	chat.ErrorResp
+// @Router			/chat [post]
 func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ChatReqBody{StartTime: time.Now()}
@@ -176,25 +176,21 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary list all conversations
+// @Summary	list all conversations
 // @Schemes
-// @Description list all conversations
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param request  body   chat.APPMetadata  true   "query params"
-// @Success 200 {object} []storage.Conversation
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/conversations [post]
+// @Description	list all conversations
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			request	body		chat.APPMetadata	false	"query params, if not set will return all current user's conversations"
+// @Success		200		{object}	[]storage.Conversation
+// @Failure		400		{object}	chat.ErrorResp
+// @Failure		500		{object}	chat.ErrorResp
+// @Router			/chat/conversations [post]
 func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			klog.FromContext(c.Request.Context()).Error(err, "list conversation: error binding json")
-			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
-			return
-		}
+		_ = c.ShouldBindJSON(&req)
 		resp, err := cs.server.ListConversations(c, req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error list conversation")
@@ -206,17 +202,17 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary delete one conversation
+// @Summary	delete one conversation
 // @Schemes
-// @Description delete one conversation
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param conversationID path string true "conversationID"
-// @Success 200 {object} chat.SimpleResp
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/conversations/:conversationID [delete]
+// @Description	delete one conversation
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			conversationID	path		string	true	"conversationID"
+// @Success		200				{object}	chat.SimpleResp
+// @Failure		400				{object}	chat.ErrorResp
+// @Failure		500				{object}	chat.ErrorResp
+// @Router			/chat/conversations/:conversationID [delete]
 func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conversationID := c.Param("conversationID")
@@ -237,17 +233,17 @@ func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary get all messages history for one conversation
+// @Summary	get all messages history for one conversation
 // @Schemes
-// @Description get all messages history for one conversation
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param request  body   chat.ConversationReqBody  true   "query params"
-// @Success 200 {object} storage.Conversation
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/messages [post]
+// @Description	get all messages history for one conversation
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			request	body		chat.ConversationReqBody	true	"query params"
+// @Success		200		{object}	storage.Conversation
+// @Failure		400		{object}	chat.ErrorResp
+// @Failure		500		{object}	chat.ErrorResp
+// @Router			/chat/messages [post]
 func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ConversationReqBody{}
@@ -267,18 +263,18 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary get one message references
+// @Summary	get one message references
 // @Schemes
-// @Description get one message's references
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param messageID path  string               true   "messageID"
-// @Param request   body  chat.MessageReqBody  true   "query params"
-// @Success 200 {object} []retriever.Reference
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/messages/:messageID/references [post]
+// @Description	get one message's references
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			messageID	path		string				true	"messageID"
+// @Param			request		body		chat.MessageReqBody	true	"query params"
+// @Success		200			{object}	[]retriever.Reference
+// @Failure		400			{object}	chat.ErrorResp
+// @Failure		500			{object}	chat.ErrorResp
+// @Router			/chat/messages/:messageID/references [post]
 func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		messageID := c.Param("messageID")
@@ -307,18 +303,18 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary get app's prompt starters
+// @Summary	get app's prompt starters
 // @Schemes
-// @Description get app's prompt starters
-// @Tags application
-// @Accept json
-// @Produce json
-// @Param limit     query int               false   "how many prompts you need should > 0 and < 10"
-// @Param request   body  chat.APPMetadata  true   "query params"
-// @Success 200 {object} []string
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/prompt-starter [post]
+// @Description	get app's prompt starters
+// @Tags			application
+// @Accept			json
+// @Produce		json
+// @Param			limit	query		int					false	"how many prompts you need should > 0 and < 10"
+// @Param			request	body		chat.APPMetadata	true	"query params"
+// @Success		200		{object}	[]string
+// @Failure		400		{object}	chat.ErrorResp
+// @Failure		500		{object}	chat.ErrorResp
+// @Router			/chat/prompt-starter [post]
 func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
@@ -351,24 +347,24 @@ func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 	}
 }
 
-// @Summary receive and process uploaded documents(pdf, docx) for one conversation
+// @Summary	receive and process uploaded documents(pdf, docx) for one conversation
 // @Schemes
-// @Description receive and process uploaded documents(pdf, docx) for one conversation
-// @Tags application
-// @Accept  multipart/form-data
-// @Produce json
+// @Description	receive and process uploaded documents(pdf, docx) for one conversation
+// @Tags			application
+// @Accept			multipart/form-data
+// @Produce		json
 //
-//	@Param			app_namespace	formData	string			true	"The app namespace for this conversation"
-//	@Param			app_name		formData	string			true	"The app name for this conversation"
-//	@Param			conversation_id	formData	string			true	"The conversation id for this document"
-//	@Param			chunk_size		formData	int				false	"The chunk size when load and split the document"
-//	@Param			chunk_overlap	formData	int				false	"The chunk overlap when load and split the document"
-//	@Param			docs			formData	file			true	"This is the docs for the conversation"
+// @Param			app_namespace	formData	string	true	"The app namespace for this conversation"
+// @Param			app_name		formData	string	true	"The app name for this conversation"
+// @Param			conversation_id	formData	string	true	"The conversation id for this document"
+// @Param			chunk_size		formData	int		false	"The chunk size when load and split the document"
+// @Param			chunk_overlap	formData	int		false	"The chunk overlap when load and split the document"
+// @Param			docs			formData	file	true	"This is the docs for the conversation"
 //
-// @Success 200 {object} chat.ConversationDocsRespBody
-// @Failure 400 {object} chat.ErrorResp
-// @Failure 500 {object} chat.ErrorResp
-// @Router /chat/conversations/docs [post]
+// @Success		200				{object}	chat.ConversationDocsRespBody
+// @Failure		400				{object}	chat.ErrorResp
+// @Failure		500				{object}	chat.ErrorResp
+// @Router			/chat/conversations/docs [post]
 func (cs *ChatService) ConversationDocs() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.ConversationDocsReqBody{}

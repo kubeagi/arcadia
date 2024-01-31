@@ -299,6 +299,7 @@ prepare-push: manifests generate fmt vet gql-gen
 	@echo "install swag"
 	@go install github.com/swaggo/swag/cmd/swag@latest
 	@swag init -g apiserver/main.go -o apiserver/docs .
+	@swag fmt
 
 PYTHON_INDEX_URL ?=https://pypi.mirrors.ustc.edu.cn/simple/
 .PHONY: prepare-push-pypi
