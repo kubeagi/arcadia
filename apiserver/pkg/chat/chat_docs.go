@@ -262,11 +262,11 @@ func (cs *ChatServer) GenerateSingleDocEmbeddings(ctx context.Context, req Conve
 	if err != nil {
 		return err
 	}
-	langchainEmbedder, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cs.cli, "")
+	langchainEmbedder, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, cs.cli, "")
 	if err != nil {
 		return err
 	}
-	err = vectorstore.AddDocuments(ctx, klog.FromContext(ctx), vectorStore, langchainEmbedder, req.ConversationID, nil, cs.cli, documents)
+	err = vectorstore.AddDocuments(ctx, klog.FromContext(ctx), vectorStore, langchainEmbedder, req.ConversationID, cs.cli, documents)
 	if err != nil {
 		return err
 	}

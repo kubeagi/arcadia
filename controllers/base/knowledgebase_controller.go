@@ -366,7 +366,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		return errDataSourceNotReady
 	}
 
-	system, err := config.GetSystemDatasource(ctx, r.Client, nil)
+	system, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
 		return err
 	}
@@ -374,7 +374,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	if endpoint != nil && endpoint.AuthSecret != nil {
 		endpoint.AuthSecret.WithNameSpace(system.Namespace)
 	}
-	ds, err := datasource.NewLocal(ctx, r.Client, nil, endpoint)
+	ds, err := datasource.NewLocal(ctx, r.Client, endpoint)
 	if err != nil {
 		return err
 	}
@@ -514,7 +514,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if !store.Status.IsReady() {
 		return errVectorStoreNotReady
 	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, nil, "")
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, "")
 	if err != nil {
 		return err
 	}
@@ -571,7 +571,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		return err
 	}
 
-	return vectorstore.AddDocuments(ctx, log, store, em, kb.VectorStoreCollectionName(), r.Client, nil, documents)
+	return vectorstore.AddDocuments(ctx, log, store, em, kb.VectorStoreCollectionName(), r.Client, documents)
 }
 
 func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.Logger, kb *arcadiav1alpha1.KnowledgeBase) {
@@ -585,7 +585,7 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 	// Sometimes the deletion action can jam the reconciler goroutine, the deletion is a best effort and we don't want it to block the current goroutine
 	go func() {
 		log.V(3).Info("remove vector store collection start")
-		_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName(), r.Client, nil)
+		_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName(), r.Client)
 		log.V(3).Info("remove vector store collection done")
 	}()
 }

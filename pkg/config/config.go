@@ -21,11 +21,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -49,46 +45,34 @@ var (
 	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
 )
 
-func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client, cli dynamic.Interface) (ds *arcadiav1alpha1.Datasource, err error) {
+func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client) (ds *arcadiav1alpha1.Datasource, err error) {
 	name := ref.Name
 	namespace := ref.GetNamespace(utils.GetCurrentNamespace())
 	source := &arcadiav1alpha1.Datasource{}
-	if c != nil {
-		if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
-			return nil, err
-		}
-	} else {
-		obj, err := cli.Resource(schema.GroupVersionResource{Group: arcadiav1alpha1.GroupVersion.Group, Version: arcadiav1alpha1.GroupVersion.Version, Resource: "datasources"}).
-			Namespace(namespace).Get(ctx, name, v1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, source)
-		if err != nil {
-			return nil, err
-		}
+	if err = c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, source); err != nil {
+		return nil, err
 	}
 	return source, err
 }
 
-func GetSystemDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	return getDatasource(ctx, config.SystemDatasource, c, cli)
+	return getDatasource(ctx, config.SystemDatasource, c)
 }
 
-func GetRelationalDatasource(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetRelationalDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
-	return getDatasource(ctx, config.RelationalDatasource, c, cli)
+	return getDatasource(ctx, config.RelationalDatasource, c)
 }
 
-func GetGateway(ctx context.Context, c client.Client, cli dynamic.Interface) (*Gateway, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -98,30 +82,15 @@ func GetGateway(ctx context.Context, c client.Client, cli dynamic.Interface) (*G
 	return config.Gateway, nil
 }
 
-func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (config *Config, err error) {
-	if err := utils.ValidateClient(c, cli); err != nil {
-		return nil, err
-	}
+func GetConfig(ctx context.Context, c client.Client) (config *Config, err error) {
 	cmName := env.GetString(EnvConfigKey, EnvConfigDefaultValue)
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
 	cmNamespace := utils.GetCurrentNamespace()
 	cm := &corev1.ConfigMap{}
-	if c != nil {
-		if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
-			return nil, err
-		}
-	} else {
-		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).
-			Namespace(cmNamespace).Get(ctx, cmName, v1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), cm)
-		if err != nil {
-			return nil, err
-		}
+	if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
+		return nil, err
 	}
 	value, ok := cm.Data["config"]
 	if !ok || len(value) == 0 {
@@ -134,8 +103,8 @@ func GetConfig(ctx context.Context, c client.Client, cli dynamic.Interface) (con
 }
 
 // GetEmbedder get the default embedder from config
-func GetEmbedder(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetEmbedder(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +115,8 @@ func GetEmbedder(ctx context.Context, c client.Client, cli dynamic.Interface) (*
 }
 
 // GetVectorStore get the default vector store from config
-func GetVectorStore(ctx context.Context, c client.Client, cli dynamic.Interface) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetVectorStore(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +127,8 @@ func GetVectorStore(ctx context.Context, c client.Client, cli dynamic.Interface)
 }
 
 // Get the configuration of streamlit tool
-func GetStreamlit(ctx context.Context, c client.Client, cli dynamic.Interface) (*Streamlit, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +139,8 @@ func GetStreamlit(ctx context.Context, c client.Client, cli dynamic.Interface) (
 }
 
 // Get the ray cluster that can be used a resource pool
-func GetRayClusters(ctx context.Context, c client.Client, cli dynamic.Interface) ([]RayCluster, error) {
-	config, err := GetConfig(ctx, c, cli)
+func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) {
+	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}

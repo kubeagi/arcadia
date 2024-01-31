@@ -20,7 +20,7 @@ import (
 	"context"
 	"strings"
 
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
@@ -31,8 +31,8 @@ type Node interface {
 	Kind() string
 	RefName() string
 	RefNamespace() string
-	Init(ctx context.Context, cli dynamic.Interface, args map[string]any) error
-	Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error)
+	Init(ctx context.Context, cli client.Client, args map[string]any) error
+	Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error)
 	SetPrevNode(nodes ...Node)
 	SetNextNode(nodes ...Node)
 	GetPrevNode() []Node
@@ -100,10 +100,10 @@ func (c *BaseNode) SetNextNode(nodes ...Node) {
 	c.next = append(c.next, nodes...)
 }
 
-func (c *BaseNode) Init(_ context.Context, _ dynamic.Interface, _ map[string]any) error {
+func (c *BaseNode) Init(_ context.Context, _ client.Client, _ map[string]any) error {
 	return nil
 }
 
-func (c *BaseNode) Run(_ context.Context, _ dynamic.Interface, _ map[string]any) (map[string]any, error) {
+func (c *BaseNode) Run(_ context.Context, _ client.Client, _ map[string]any) (map[string]any, error) {
 	return nil, nil
 }

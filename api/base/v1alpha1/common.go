@@ -21,11 +21,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -185,34 +181,19 @@ type CommonSpec struct {
 	Description string `json:"description,omitempty"`
 }
 
-func (endpoint Endpoint) AuthData(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (map[string][]byte, error) {
+func (endpoint Endpoint) AuthData(ctx context.Context, ns string, c client.Client) (map[string][]byte, error) {
 	if endpoint.AuthSecret == nil {
 		return nil, nil
 	}
-	if err := utils.ValidateClient(c, cli); err != nil {
-		return nil, err
-	}
 	authSecret := &corev1.Secret{}
-	if c != nil {
-		if err := c.Get(ctx, types.NamespacedName{Name: endpoint.AuthSecret.Name, Namespace: endpoint.AuthSecret.GetNamespace(ns)}, authSecret); err != nil {
-			return nil, err
-		}
-	} else {
-		obj, err := cli.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).
-			Namespace(endpoint.AuthSecret.GetNamespace(ns)).Get(ctx, endpoint.AuthSecret.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), authSecret)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.Get(ctx, types.NamespacedName{Name: endpoint.AuthSecret.Name, Namespace: endpoint.AuthSecret.GetNamespace(ns)}, authSecret); err != nil {
+		return nil, err
 	}
 	return authSecret.Data, nil
 }
 
-func (endpoint Endpoint) AuthAPIKey(ctx context.Context, ns string, c client.Client, cli dynamic.Interface) (string, error) {
-	data, err := endpoint.AuthData(ctx, ns, c, cli)
+func (endpoint Endpoint) AuthAPIKey(ctx context.Context, ns string, c client.Client) (string, error) {
+	data, err := endpoint.AuthData(ctx, ns, c)
 	if err != nil {
 		return "", err
 	}

@@ -72,7 +72,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 	if model == nil {
 		return nil, errors.New("nil model")
 	}
-	gw, err := config.GetGateway(ctx, runner.c, nil)
+	gw, err := config.GetGateway(ctx, runner.c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
@@ -138,7 +138,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 	if model == nil {
 		return nil, errors.New("nil model")
 	}
-	gw, err := config.GetGateway(ctx, runner.c, nil)
+	gw, err := config.GetGateway(ctx, runner.c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
@@ -161,7 +161,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 
 	// Get ray config from configMap
 	if gpuCount > 1 {
-		rayClusters, err := config.GetRayClusters(ctx, runner.c, nil)
+		rayClusters, err := config.GetRayClusters(ctx, runner.c)
 		if err != nil || len(rayClusters) == 0 {
 			klog.Warningln("no ray cluster configured, fallback to local resource: ", err)
 		} else {

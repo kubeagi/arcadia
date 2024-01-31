@@ -23,11 +23,7 @@ import (
 
 	langchaingoembeddings "github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/llms/openai"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -35,18 +31,14 @@ import (
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	zhipuaiembeddings "github.com/kubeagi/arcadia/pkg/embeddings/zhipuai"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Client, cli dynamic.Interface, model string, opts ...langchaingoembeddings.Option) (em langchaingoembeddings.Embedder, err error) {
-	if err := utils.ValidateClient(c, cli); err != nil {
-		return nil, err
-	}
+func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Client, model string, opts ...langchaingoembeddings.Option) (em langchaingoembeddings.Embedder, err error) {
 	switch e.Spec.Provider.GetType() {
 	case v1alpha1.ProviderType3rdParty:
 		switch e.Spec.Type { // nolint: gocritic
 		case embeddings.ZhiPuAI:
-			apiKey, err := e.AuthAPIKey(ctx, c, cli)
+			apiKey, err := e.AuthAPIKey(ctx, c)
 			if err != nil {
 				return nil, err
 			}
@@ -54,7 +46,7 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 				zhipuaiembeddings.WithClient(*zhipuai.NewZhiPuAI(apiKey)),
 			)
 		case embeddings.OpenAI:
-			apiKey, err := e.AuthAPIKey(ctx, c, cli)
+			apiKey, err := e.AuthAPIKey(ctx, c)
 			if err != nil {
 				return nil, err
 			}
@@ -78,7 +70,7 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			return langchaingoembeddings.NewEmbedder(llm, opts...)
 		}
 	case v1alpha1.ProviderTypeWorker:
-		gateway, err := config.GetGateway(ctx, c, cli)
+		gateway, err := config.GetGateway(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -90,20 +82,8 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			return nil, fmt.Errorf("embedder.spec.worker not defined")
 		}
 		worker := &v1alpha1.Worker{}
-		if c != nil {
-			if err := c.Get(ctx, types.NamespacedName{Namespace: workerRef.GetNamespace(e.GetNamespace()), Name: workerRef.Name}, worker); err != nil {
-				return nil, err
-			}
-		} else {
-			obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: "workers"}).
-				Namespace(workerRef.GetNamespace(e.GetNamespace())).Get(ctx, workerRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), worker)
-			if err != nil {
-				return nil, err
-			}
+		if err := c.Get(ctx, types.NamespacedName{Namespace: workerRef.GetNamespace(e.GetNamespace()), Name: workerRef.Name}, worker); err != nil {
+			return nil, err
 		}
 		modelRef := worker.Spec.Model
 		if modelRef == nil {

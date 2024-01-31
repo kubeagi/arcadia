@@ -162,7 +162,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	var info any
 	switch instance.Spec.Type() {
 	case arcadiav1alpha1.DatasourceTypeOSS:
-		ds, err = datasource.NewOSS(ctx, r.Client, nil, endpoint)
+		ds, err = datasource.NewOSS(ctx, r.Client, endpoint)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
@@ -170,7 +170,7 @@ func (r *DatasourceReconciler) Checkdatasource(ctx context.Context, logger logr.
 	case arcadiav1alpha1.DatasourceTypeRDMA:
 		return r.UpdateStatus(ctx, instance, nil)
 	case arcadiav1alpha1.DatasourceTypePostgreSQL:
-		ds, err = datasource.GetPostgreSQLPool(ctx, r.Client, nil, instance)
+		ds, err = datasource.GetPostgreSQLPool(ctx, r.Client, instance)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}

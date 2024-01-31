@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/tmc/langchaingo/llms"
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -40,7 +40,7 @@ import (
 // CreateModelService creates a 3rd_party model service
 // If serviceType is llm,embedding,then a LLM and a Embedder will be created
 // - Wrap all elements into *generated.ModelService
-func CreateModelService(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
+func CreateModelService(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
 	// - Get general info from input: displayName, description, types, name & namespace, etc.
 	displayName, description, serviceType, APIType := "", "", "", ""
 
@@ -108,7 +108,7 @@ func CreateModelService(ctx context.Context, c dynamic.Interface, input generate
 }
 
 // UpdateModelService updates a 3rd_party model service
-func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generated.UpdateModelServiceInput) (*generated.ModelService, error) {
+func UpdateModelService(ctx context.Context, c client.Client, input *generated.UpdateModelServiceInput) (*generated.ModelService, error) {
 	var updatedLLM *generated.Llm
 	var updatedEmbedder *generated.Embedder
 
@@ -200,7 +200,7 @@ func UpdateModelService(ctx context.Context, c dynamic.Interface, input *generat
 }
 
 // DeleteModelService deletes a 3rd_party model service
-func DeleteModelService(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
+func DeleteModelService(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
 	// check types of the model service
 	ms, err := ReadModelService(ctx, c, *input.Name, input.Namespace)
 	if err != nil {
@@ -225,7 +225,7 @@ func DeleteModelService(ctx context.Context, c dynamic.Interface, input *generat
 }
 
 // ReadModelService get a 3rd_party model service
-func ReadModelService(ctx context.Context, c dynamic.Interface, name string, namespace string) (*generated.ModelService, error) {
+func ReadModelService(ctx context.Context, c client.Client, name string, namespace string) (*generated.ModelService, error) {
 	var modelService = &generated.ModelService{}
 	var serviceTypes []string
 	var llmModels, embeddingModels []string
@@ -251,7 +251,7 @@ func ReadModelService(ctx context.Context, c dynamic.Interface, name string, nam
 }
 
 // ListModelServices based on input
-func ListModelServices(ctx context.Context, c dynamic.Interface, input *generated.ListModelServiceInput) (*generated.PaginatedResult, error) {
+func ListModelServices(ctx context.Context, c client.Client, input *generated.ListModelServiceInput) (*generated.PaginatedResult, error) {
 	// use `UnlimitedPageSize` so we can get all llms and embeddings
 	notWorkerSelector := fmt.Sprintf("%s=%s", v1alpha1.ProviderLabel, v1alpha1.ProviderType3rdParty)
 
@@ -365,7 +365,7 @@ var (
 	ErrNoAPIKeyProvided = errors.New("no apiKey provided")
 )
 
-func CheckModelService(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
+func CheckModelService(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (*generated.ModelService, error) {
 	var err error
 	if input.Endpoint.Auth != nil {
 		var info string
@@ -399,7 +399,7 @@ func CheckModelService(ctx context.Context, c dynamic.Interface, input generated
 	return nil, ErrNoAuthProvided
 }
 
-func checkOpenAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
+func checkOpenAI(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
 	client, err := openai.NewOpenAI(apiKey, input.Endpoint.URL)
 	if err != nil {
@@ -414,7 +414,7 @@ func checkOpenAI(ctx context.Context, c dynamic.Interface, input generated.Creat
 	return res.String(), nil
 }
 
-func checkZhipuAI(ctx context.Context, c dynamic.Interface, input generated.CreateModelServiceInput) (string, error) {
+func checkZhipuAI(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
 	client := zhipuai.NewZhiPuAI(apiKey)
 	res, err := client.Validate(ctx)

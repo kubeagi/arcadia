@@ -28,7 +28,6 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -52,13 +51,13 @@ var (
 	ossDefaultGetTagOpt = minio.GetObjectTaggingOptions{}
 )
 
-func NewOSS(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint *v1alpha1.Endpoint) (*OSS, error) {
+func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
 		if endpoint.AuthSecret.Namespace == nil {
 			return nil, errors.New("no namespace found for endpoint.authsecret")
 		}
-		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c, dc)
+		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c)
 		if err != nil {
 			return nil, err
 		}

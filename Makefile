@@ -254,7 +254,7 @@ arctl: fmt vet ## Build manager binary.
 
 # apiserver go
 gql-gen:
-	@go run github.com/99designs/gqlgen@v0.17.40 generate
+	@go run github.com/99designs/gqlgen@v0.17.44 generate
 build-apiserver: gql-gen
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/apiserver apiserver/main.go
 run-apiserver:

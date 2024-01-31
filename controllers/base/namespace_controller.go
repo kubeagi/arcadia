@@ -140,7 +140,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, error) {
-	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
 		klog.Errorf("get system datasource error %s", err)
 		return nil, err
@@ -149,7 +149,7 @@ func (r *NamespaceReconciler) ossClient(ctx context.Context) (*datasource.OSS, e
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
 	if err != nil {
 		klog.Errorf("generate new minio client error %s", err)
 		return nil, err

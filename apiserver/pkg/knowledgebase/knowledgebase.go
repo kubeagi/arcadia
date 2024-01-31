@@ -18,33 +18,30 @@ package knowledgebase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func knowledgebase2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
-	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
-		return knowledgebase2model(ctx, c, u)
+func knowledgebase2modelConverter(ctx context.Context, c client.Client) func(obj client.Object) (generated.PageNode, error) {
+	return func(u client.Object) (generated.PageNode, error) {
+		kb, ok := u.(*v1alpha1.KnowledgeBase)
+		if !ok {
+			return nil, errors.New("can't convert object to Knowledgebase")
+		}
+		return knowledgebase2model(ctx, c, kb)
 	}
 }
 
-func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.KnowledgeBase, error) {
-	knowledgebase := &v1alpha1.KnowledgeBase{}
-	if err := utils.UnstructuredToStructured(obj, knowledgebase); err != nil {
-		return nil, err
-	}
-
+func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1alpha1.KnowledgeBase) (*generated.KnowledgeBase, error) {
 	id := string(knowledgebase.GetUID())
 
 	creationtimestamp := knowledgebase.GetCreationTimestamp().Time
@@ -59,8 +56,6 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 	if knowledgebase.DeletionTimestamp != nil {
 		status = "Deleting"
 	}
-
-	apiversion := obj.GetAPIVersion()
 
 	var filegroupdetails []*generated.Filegroupdetail
 	for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
@@ -88,35 +83,31 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 		filegroupdetails = append(filegroupdetails, filegroupdetail)
 	}
 
+	embedderResource := &v1alpha1.Embedder{}
 	embedder := generated.TypedObjectReference{
-		APIGroup:  &apiversion,
 		Kind:      knowledgebase.Spec.Embedder.Kind,
 		Name:      knowledgebase.Spec.Embedder.Name,
 		Namespace: knowledgebase.Spec.Embedder.Namespace,
 	}
+	err := c.Get(ctx, types.NamespacedName{Namespace: knowledgebase.Spec.Embedder.GetNamespace(knowledgebase.Namespace), Name: knowledgebase.Spec.Embedder.Name}, embedderResource)
 	// read displayname
-	embedderUnstrctured, err := common.ResourceGet(ctx, c, common.TypedObjectReferenceToInput(embedder), metav1.GetOptions{})
 	var embedderType string
 	if err != nil {
 		displayName := fmt.Sprintf("Unknown: %s", err.Error())
 		embedder.DisplayName = &displayName
 		embedderType = "Unknown"
 	} else {
-		embedderResource := &v1alpha1.Embedder{}
-		if err := utils.UnstructuredToStructured(embedderUnstrctured, embedderResource); err != nil {
-			return nil, err
-		}
 		embedder.DisplayName = &embedderResource.Spec.DisplayName
 		embedderType = string(embedderResource.Spec.Provider.GetType())
 	}
 
 	md := generated.KnowledgeBase{
 		ID:                &id,
-		Name:              obj.GetName(),
-		Namespace:         obj.GetNamespace(),
+		Name:              knowledgebase.GetName(),
+		Namespace:         knowledgebase.GetNamespace(),
 		Creator:           &knowledgebase.Spec.Creator,
-		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		Labels:            graphqlutils.MapStr2Any(knowledgebase.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(knowledgebase.GetAnnotations()),
 		DisplayName:       &knowledgebase.Spec.DisplayName,
 		Description:       &knowledgebase.Spec.Description,
 		CreationTimestamp: &creationtimestamp,
@@ -126,7 +117,6 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 		EmbedderType: &embedderType,
 		// Vector info
 		VectorStore: &generated.TypedObjectReference{
-			APIGroup:  &apiversion,
 			Kind:      knowledgebase.Spec.VectorStore.Kind,
 			Name:      knowledgebase.Spec.VectorStore.Name,
 			Namespace: knowledgebase.Spec.VectorStore.Namespace,
@@ -140,15 +130,11 @@ func knowledgebase2model(ctx context.Context, c dynamic.Interface, obj *unstruct
 	return &md, nil
 }
 
-func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, displayname, description, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
-	knowledgebase := v1alpha1.KnowledgeBase{
+func CreateKnowledgeBase(ctx context.Context, c client.Client, name, namespace, displayname, description, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
+	knowledgebase := &v1alpha1.KnowledgeBase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "KnowledgeBase",
-			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.KnowledgeBaseSpec{
 			CommonSpec: v1alpha1.CommonSpec{
@@ -166,16 +152,11 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	}
 	common.SetCreator(ctx, &knowledgebase.Spec.CommonSpec)
 
-	unstructuredKnowledgeBase, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&knowledgebase)
+	err := c.Create(ctx, knowledgebase)
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredKnowledgeBase}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	kb, err := knowledgebase2model(ctx, c, obj)
+	kb, err := knowledgebase2model(ctx, c, knowledgebase)
 	if err != nil {
 		return nil, err
 	}
@@ -206,24 +187,18 @@ func CreateKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespa
 	return kb, nil
 }
 
-func UpdateKnowledgeBase(ctx context.Context, c dynamic.Interface, input *generated.UpdateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"})
-	obj, err := resource.Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.UpdateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
+	kb := &v1alpha1.KnowledgeBase{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, kb)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create an instance of the structured custom resource type
-	structuredObj := &v1alpha1.KnowledgeBase{}
-	if err = utils.UnstructuredToStructured(obj, structuredObj); err != nil {
-		return nil, err
+	if input.DisplayName != nil && *input.DisplayName != kb.Spec.DisplayName {
+		kb.Spec.DisplayName = *input.DisplayName
 	}
-
-	if input.DisplayName != nil && *input.DisplayName != structuredObj.Spec.DisplayName {
-		obj.Object["spec"].(map[string]interface{})["displayName"] = *input.DisplayName
-	}
-	if input.Description != nil && *input.Description != structuredObj.Spec.Description {
-		obj.Object["spec"].(map[string]interface{})["description"] = *input.Description
+	if input.Description != nil && *input.Description != kb.Spec.Description {
+		kb.Spec.Description = *input.Description
 	}
 
 	if input.FileGroups != nil {
@@ -235,60 +210,48 @@ func UpdateKnowledgeBase(ctx context.Context, c dynamic.Interface, input *genera
 			}
 			filegroups[index] = filegroup
 		}
-		obj.Object["spec"].(map[string]interface{})["fileGroups"] = filegroups
+		kb.Spec.FileGroups = filegroups
 	}
 
-	updatedObject, err := resource.Namespace(input.Namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	err = c.Update(ctx, kb)
 	if err != nil {
 		return nil, err
 	}
 
-	return knowledgebase2model(ctx, c, updatedObject)
+	return knowledgebase2model(ctx, c, kb)
 }
 
-func DeleteKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace, labelSelector, fieldSelector string) (*string, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"})
-	if name != "" {
-		err := resource.Namespace(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := resource.Namespace(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: fieldSelector,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
-}
-
-func ReadKnowledgeBase(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.KnowledgeBase, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"})
-	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func DeleteKnowledgeBase(ctx context.Context, c client.Client, name, namespace, labelSelector, fieldSelector string) (*string, error) {
+	opts, err := common.DeleteAllOptions(&generated.DeleteCommonInput{
+		Name:          &name,
+		Namespace:     namespace,
+		LabelSelector: &labelSelector,
+		FieldSelector: &fieldSelector,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return knowledgebase2model(ctx, c, u)
+	err = c.DeleteAllOf(ctx, &v1alpha1.KnowledgeBase{}, opts...)
+	return nil, err
 }
 
-func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
-	labelSelector, fieldSelector := "", ""
+func ReadKnowledgeBase(ctx context.Context, c client.Client, name, namespace string) (*generated.KnowledgeBase, error) {
+	kb := &v1alpha1.KnowledgeBase{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, kb)
+	if err != nil {
+		return nil, err
+	}
+	return knowledgebase2model(ctx, c, kb)
+}
+
+func ListKnowledgeBases(ctx context.Context, c client.Client, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
 	page, pageSize := 1, 10
 	filter := make([]common.ResourceFilter, 0)
 	if input.Name != nil {
-		filter = append(filter, common.FilterKnowledgeByName(*input.Name))
+		filter = append(filter, common.FilterByNameContains(*input.Name))
 	}
 	if input.DisplayName != nil {
 		filter = append(filter, common.FilterKnowledgeByDisplayName(*input.DisplayName))
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
 	}
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -297,15 +260,25 @@ func ListKnowledgeBases(ctx context.Context, c dynamic.Interface, input generate
 		pageSize = *input.PageSize
 	}
 
-	dsSchema := schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	}
-	us, err := c.Resource(dsSchema).Namespace(input.Namespace).List(ctx, listOptions)
+	us := &v1alpha1.KnowledgeBaseList{}
+	opts, err := common.NewListOptions(generated.ListCommonInput{
+		Namespace:     input.Namespace,
+		Keyword:       input.Keyword,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: input.FieldSelector,
+		Page:          input.Page,
+		PageSize:      input.PageSize,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	return common.ListReources(us, page, pageSize, knowledgebase2modelConverter(ctx, c), filter...)
+	err = c.List(ctx, us, opts...)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]client.Object, len(us.Items))
+	for i := range us.Items {
+		items[i] = &us.Items[i]
+	}
+	return common.ListReources(items, page, pageSize, knowledgebase2modelConverter(ctx, c), filter...)
 }

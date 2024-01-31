@@ -202,7 +202,7 @@ func (r *WorkerReconciler) reconcile(ctx context.Context, logger logr.Logger, wo
 			return worker, errors.Wrap(err, "model config datasource, but get it failed.")
 		}
 	} else {
-		datasource, err = config.GetSystemDatasource(ctx, r.Client, nil)
+		datasource, err = config.GetSystemDatasource(ctx, r.Client)
 		if err != nil {
 			return worker, errors.Wrap(err, "Failed to get system datasource")
 		}

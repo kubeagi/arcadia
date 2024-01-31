@@ -19,10 +19,7 @@ import (
 	"context"
 	"strings"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	evav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
@@ -30,21 +27,21 @@ import (
 )
 
 type (
-	ResourceFilter    func(*unstructured.Unstructured) bool
-	ResourceConverter func(*unstructured.Unstructured) (generated.PageNode, error)
+	ResourceFilter    func(client.Object) bool
+	ResourceConverter func(client.Object) (generated.PageNode, error)
 )
 
-func FilterByName(name string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		return u.GetName() == name
+func FilterByNameContains(name string) ResourceFilter {
+	return func(u client.Object) bool {
+		return strings.Contains(u.GetName(), name)
 	}
 }
 
 // Dataset Filter
 func FilterDatasetByDisplayName(displayName string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		ds := v1alpha1.Dataset{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ds); err != nil {
+	return func(u client.Object) bool {
+		ds, ok := u.(*v1alpha1.Dataset)
+		if !ok {
 			return false
 		}
 		return ds.Spec.DisplayName == displayName
@@ -52,9 +49,9 @@ func FilterDatasetByDisplayName(displayName string) ResourceFilter {
 }
 
 func FilterDatasetByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		ds := v1alpha1.Dataset{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &ds); err != nil {
+	return func(u client.Object) bool {
+		ds, ok := u.(*v1alpha1.Dataset)
+		if !ok {
 			return false
 		}
 		if strings.Contains(ds.Name, keyword) {
@@ -80,14 +77,18 @@ func FilterDatasetByKeyword(keyword string) ResourceFilter {
 
 // Application
 func FilterApplicationByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		displayName, _, _ := unstructured.NestedString(u.Object, "spec", "displayName")
+	return func(u client.Object) bool {
+		app, ok := u.(*v1alpha1.Application)
+		if !ok {
+			return false
+		}
+		displayName := app.Spec.DisplayName
 		return strings.Contains(displayName, keyword) || strings.Contains(u.GetName(), keyword)
 	}
 }
 
 func FilterApplicationByCategory(category string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
+	return func(u client.Object) bool {
 		categoryStr, ok := u.GetAnnotations()[v1alpha1.AppCategoryAnnotationKey]
 		if !ok {
 			return false
@@ -98,9 +99,9 @@ func FilterApplicationByCategory(category string) ResourceFilter {
 
 // Datasource
 func FilterDatasourceByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		datasource := v1alpha1.Datasource{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &datasource); err != nil {
+	return func(u client.Object) bool {
+		datasource, ok := u.(*v1alpha1.Datasource)
+		if !ok {
 			return false
 		}
 		return strings.Contains(datasource.Name, keyword) || strings.Contains(datasource.Spec.DisplayName, keyword)
@@ -109,9 +110,9 @@ func FilterDatasourceByKeyword(keyword string) ResourceFilter {
 
 // Embedder
 func FilterEmbedderByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		embedder := v1alpha1.Embedder{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &embedder); err != nil {
+	return func(u client.Object) bool {
+		embedder, ok := u.(*v1alpha1.Embedder)
+		if !ok {
 			return false
 		}
 		return strings.Contains(embedder.Name, keyword) || strings.Contains(embedder.Spec.DisplayName, keyword)
@@ -119,19 +120,10 @@ func FilterEmbedderByKeyword(keyword string) ResourceFilter {
 }
 
 // KnowledgeBase
-func FilterKnowledgeByName(name string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		kb := v1alpha1.KnowledgeBase{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &kb); err != nil {
-			return false
-		}
-		return strings.Contains(kb.Name, name)
-	}
-}
 func FilterKnowledgeByDisplayName(displayName string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		kb := v1alpha1.KnowledgeBase{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &kb); err != nil {
+	return func(u client.Object) bool {
+		kb, ok := u.(*v1alpha1.KnowledgeBase)
+		if !ok {
 			return false
 		}
 		return strings.Contains(kb.Spec.DisplayName, displayName)
@@ -140,9 +132,9 @@ func FilterKnowledgeByDisplayName(displayName string) ResourceFilter {
 
 // LLM
 func FilterLLMByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		llm := v1alpha1.LLM{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &llm); err != nil {
+	return func(u client.Object) bool {
+		llm, ok := u.(*v1alpha1.LLM)
+		if !ok {
 			return false
 		}
 		return strings.Contains(llm.Name, keyword) || strings.Contains(llm.Spec.DisplayName, keyword)
@@ -151,9 +143,9 @@ func FilterLLMByKeyword(keyword string) ResourceFilter {
 
 // Model
 func FilterModelByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		model := v1alpha1.Model{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &model); err != nil {
+	return func(u client.Object) bool {
+		model, ok := u.(*v1alpha1.Model)
+		if !ok {
 			return false
 		}
 		return strings.Contains(model.Name, keyword) || strings.Contains(model.Spec.DisplayName, keyword)
@@ -162,9 +154,9 @@ func FilterModelByKeyword(keyword string) ResourceFilter {
 
 // VersionedData
 func FilterVersionedDatasetByDisplayName(displayName string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		v := v1alpha1.VersionedDataset{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &v); err != nil {
+	return func(u client.Object) bool {
+		v, ok := u.(*v1alpha1.VersionedDataset)
+		if !ok {
 			return false
 		}
 		return v.Spec.DisplayName == displayName
@@ -172,9 +164,9 @@ func FilterVersionedDatasetByDisplayName(displayName string) ResourceFilter {
 }
 
 func FilterVersionedDatasetByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		v := v1alpha1.VersionedDataset{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &v); err != nil {
+	return func(u client.Object) bool {
+		v, ok := u.(*v1alpha1.VersionedDataset)
+		if !ok {
 			return false
 		}
 		if strings.Contains(v.Name, keyword) {
@@ -197,28 +189,28 @@ func FilterVersionedDatasetByKeyword(keyword string) ResourceFilter {
 
 // Worekr
 func FilterWorkerByKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		w := v1alpha1.Worker{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &w); err != nil {
+	return func(u client.Object) bool {
+		w, ok := u.(*v1alpha1.Worker)
+		if !ok {
 			return false
 		}
 		return strings.Contains(w.Name, keyword) || strings.Contains(w.Spec.DisplayName, keyword)
 	}
 }
 
-func FilterWorkerByType(c dynamic.Interface, namespace, modelType string) ResourceFilter {
+func FilterWorkerByType(c client.Client, namespace, modelType string) ResourceFilter {
 	cache := make(map[string]string)
-	models, err := c.Resource(SchemaOf(&ArcadiaAPIGroup, "model")).
-		Namespace(namespace).List(context.Background(), v1.ListOptions{})
+	models := &v1alpha1.ModelList{}
+	err := c.List(context.Background(), models, client.InNamespace(namespace))
 	if err == nil {
 		for _, m := range models.Items {
-			types, _, _ := unstructured.NestedString(m.Object, "spec", "types")
+			types := m.Spec.Types
 			cache[m.GetName()] = types
 		}
 	}
-	return func(u *unstructured.Unstructured) bool {
-		w := v1alpha1.Worker{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &w); err != nil {
+	return func(u client.Object) bool {
+		w, ok := u.(*v1alpha1.Worker)
+		if !ok {
 			return false
 		}
 		// TODO: how do we do if the model and worek have different namespace?
@@ -229,20 +221,20 @@ func FilterWorkerByType(c dynamic.Interface, namespace, modelType string) Resour
 // RAG Filter
 
 func FilterRAGByStatus(status string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		rag := evav1alpha1.RAG{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
+	return func(u client.Object) bool {
+		rag, ok := u.(*evav1alpha1.RAG)
+		if !ok {
 			return false
 		}
-		ragStatus, _, _ := evav1alpha1.RagStatus(&rag)
+		ragStatus, _, _ := evav1alpha1.RagStatus(rag)
 		return ragStatus == status
 	}
 }
 
 func FilterByRAGKeyword(keyword string) ResourceFilter {
-	return func(u *unstructured.Unstructured) bool {
-		rag := evav1alpha1.RAG{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
+	return func(u client.Object) bool {
+		rag, ok := u.(*evav1alpha1.RAG)
+		if !ok {
 			return false
 		}
 		return strings.Contains(rag.Name, keyword) ||

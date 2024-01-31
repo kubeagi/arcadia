@@ -20,14 +20,14 @@ import (
 	"context"
 	"strings"
 
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/pkg/config"
 )
 
-func ListRayClusters(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
-	clusters, err := config.GetRayClusters(ctx, nil, c)
+func ListRayClusters(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+	clusters, err := config.GetRayClusters(ctx, c)
 	if err != nil {
 		return nil, err
 	}

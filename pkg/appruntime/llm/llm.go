@@ -21,11 +21,9 @@ import (
 	"fmt"
 
 	langchainllms "github.com/tmc/langchaingo/llms"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -43,19 +41,13 @@ func NewLLM(baseNode base.BaseNode) *LLM {
 	}
 }
 
-func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]any) error {
+func (z *LLM) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.LLM{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"}).
-		Namespace(z.Ref.GetNamespace(ns)).Get(ctx, z.Ref.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: z.Ref.GetNamespace(ns), Name: z.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the llm in cluster: %w", err)
 	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return fmt.Errorf("can't convert the llm in cluster: %w", err)
-	}
-	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, nil, cli, "")
+	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, cli, "")
 	if err != nil {
 		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}
@@ -63,7 +55,7 @@ func (z *LLM) Init(ctx context.Context, cli dynamic.Interface, args map[string]a
 	return nil
 }
 
-func (z *LLM) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (z *LLM) Run(ctx context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
 	args["llm"] = z
 	logger := klog.FromContext(ctx)
 	ns := base.GetAppNamespace(ctx)

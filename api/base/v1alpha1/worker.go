@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 	"github.com/kubeagi/arcadia/pkg/llms"
@@ -62,6 +63,7 @@ func (worker Worker) Model() TypedObjectReference {
 		modelNs = *worker.Spec.Model.Namespace
 	}
 	return TypedObjectReference{
+		APIGroup:  pointer.String(GroupVersion.String()),
 		Kind:      "Model",
 		Name:      worker.Spec.Model.Name,
 		Namespace: &modelNs,

@@ -25,32 +25,27 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func datasource2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
-	return datasource2model(obj)
+func datasource2modelConverter(obj client.Object) (generated.PageNode, error) {
+	ds, ok := obj.(*v1alpha1.Datasource)
+	if !ok {
+		return nil, errors.New("can't convert object to Datasource")
+	}
+	return datasource2model(ds)
 }
 
-func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, error) {
-	datasource := &v1alpha1.Datasource{}
-	if err := utils.UnstructuredToStructured(obj, datasource); err != nil {
-		return nil, err
-	}
-
+func datasource2model(datasource *v1alpha1.Datasource) (*generated.Datasource, error) {
 	id := string(datasource.GetUID())
-
 	creationtimestamp := datasource.GetCreationTimestamp().Time
 
 	// conditioned status
@@ -88,8 +83,8 @@ func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, er
 		Name:              datasource.Name,
 		Namespace:         datasource.Namespace,
 		Creator:           pointer.String(datasource.Spec.Creator),
-		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		Labels:            graphqlutils.MapStr2Any(datasource.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(datasource.GetAnnotations()),
 		DisplayName:       &datasource.Spec.DisplayName,
 		Description:       &datasource.Spec.Description,
 		Endpoint:          &endpoint,
@@ -104,42 +99,20 @@ func datasource2model(obj *unstructured.Unstructured) (*generated.Datasource, er
 	return &md, nil
 }
 
-func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
-	var displayname, description string
-
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-
+func CreateDatasource(ctx context.Context, c client.Client, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
 	// create datasource
 	datasource := &v1alpha1.Datasource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
 		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Datasource",
-			APIVersion: v1alpha1.GroupVersion.String(),
-		},
-		Spec: v1alpha1.DatasourceSpec{
-			CommonSpec: v1alpha1.CommonSpec{
-				DisplayName: displayname,
-				Description: description,
-			},
-		},
 	}
 	common.SetCreator(ctx, &datasource.Spec.CommonSpec)
+	datasource.Spec.DisplayName = pointer.StringDeref(input.DisplayName, datasource.Spec.DisplayName)
+	datasource.Spec.Description = pointer.StringDeref(input.Description, datasource.Spec.Description)
 
 	// make endpoint
-	endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &datasource.APIVersion,
-		Kind:      datasource.Kind,
-		Name:      datasource.Name,
-		Namespace: &datasource.Namespace,
-	}, input.Endpointinput)
+	endpoint, err := common.MakeEndpoint(ctx, c, datasource, input.Endpointinput)
 	if err != nil {
 		return nil, err
 	}
@@ -160,12 +133,7 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 		}
 	}
 
-	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&datasource)
-	if err != nil {
-		return nil, err
-	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"}).
-		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
+	err = c.Create(ctx, datasource)
 	if err != nil {
 		return nil, err
 	}
@@ -173,52 +141,29 @@ func CreateDatasource(ctx context.Context, c dynamic.Interface, input generated.
 	// update auth secret with owner reference
 	if input.Endpointinput.Auth != nil {
 		// user obj as the owner
-		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
-			APIGroup:  &common.CoreV1APIGroup,
-			Kind:      "Secret",
-			Name:      common.MakeAuthSecretName(datasource.Name, "datasource"),
-			Namespace: &input.Namespace,
-		}, input.Endpointinput.Auth, obj)
+		err := common.MakeAuthSecret(ctx, c, input.Namespace, common.GenerateAuthSecretName(datasource.Name, "datasource"), input.Endpointinput.Auth, datasource)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return datasource2model(obj)
+	return datasource2model(datasource)
 }
 
-func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
-	obj, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Datasource",
-		Name:      input.Name,
-		Namespace: &input.Namespace,
-	}, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+func UpdateDatasource(ctx context.Context, c client.Client, input *generated.UpdateDatasourceInput) (*generated.Datasource, error) {
 	datasource := &v1alpha1.Datasource{}
-	if err := utils.UnstructuredToStructured(obj, datasource); err != nil {
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, datasource)
+	if err != nil {
 		return nil, err
 	}
 
 	datasource.SetLabels(graphqlutils.MapAny2Str(input.Labels))
 	datasource.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
-
-	if input.DisplayName != nil {
-		datasource.Spec.DisplayName = *input.DisplayName
-	}
-	if input.Description != nil {
-		datasource.Spec.Description = *input.Description
-	}
+	datasource.Spec.DisplayName = pointer.StringDeref(input.DisplayName, datasource.Spec.DisplayName)
+	datasource.Spec.Description = pointer.StringDeref(input.Description, datasource.Spec.Description)
 
 	// Update endpoint
 	if input.Endpointinput != nil {
-		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
-			APIGroup:  &datasource.APIVersion,
-			Kind:      datasource.Kind,
-			Name:      datasource.Name,
-			Namespace: &datasource.Namespace,
-		}, *input.Endpointinput)
+		endpoint, err := common.MakeEndpoint(ctx, c, datasource, *input.Endpointinput)
 		if err != nil {
 			return nil, err
 		}
@@ -243,63 +188,27 @@ func UpdateDatasource(ctx context.Context, c dynamic.Interface, input *generated
 		}
 	}
 
-	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&datasource)
+	err = c.Update(ctx, datasource)
 	if err != nil {
 		return nil, err
 	}
+	return datasource2model(datasource)
+}
 
-	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Datasource",
-		Namespace: &datasource.Namespace,
-		Name:      datasource.Name,
-	}, unstructuredDatasource, metav1.UpdateOptions{})
+func DeleteDatasources(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
+	opts, err := common.DeleteAllOptions(input)
 	if err != nil {
 		return nil, err
 	}
-	return datasource2model(updatedObject)
+	err = c.DeleteAllOf(ctx, &v1alpha1.Datasource{}, opts...)
+	return nil, err
 }
 
-func DeleteDatasources(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "datasources"})
-	if name != "" {
-		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: fieldSelector,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
-}
-func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
-	keyword, labelSelector, fieldSelector := "", "", ""
+func ListDatasources(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+	keyword := ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
 		keyword = *input.Keyword
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
 	}
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -308,29 +217,30 @@ func ListDatasources(ctx context.Context, c dynamic.Interface, input generated.L
 		pageSize = *input.PageSize
 	}
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	}
-
-	datasList, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Datasource")).Namespace(input.Namespace).List(ctx, listOptions)
+	opts, err := common.NewListOptions(input)
 	if err != nil {
 		return nil, err
 	}
+	datasList := &v1alpha1.DatasourceList{}
+	err = c.List(ctx, datasList, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	filter := make([]common.ResourceFilter, 0)
 	if keyword != "" {
 		filter = append(filter, common.FilterDatasourceByKeyword(keyword))
 	}
-	return common.ListReources(datasList, page, pageSize, datasource2modelConverter, filter...)
+	items := make([]client.Object, len(datasList.Items))
+	for i := range datasList.Items {
+		items[i] = &datasList.Items[i]
+	}
+	return common.ListReources(items, page, pageSize, datasource2modelConverter, filter...)
 }
 
-func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Datasource, error) {
-	u, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Datasource",
-		Name:      name,
-		Namespace: &namespace,
-	}, metav1.GetOptions{})
+func ReadDatasource(ctx context.Context, c client.Client, name, namespace string) (*generated.Datasource, error) {
+	u := &v1alpha1.Datasource{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, u)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +248,7 @@ func ReadDatasource(ctx context.Context, c dynamic.Interface, name, namespace st
 }
 
 // CheckDatasource
-func CheckDatasource(ctx context.Context, c dynamic.Interface, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
+func CheckDatasource(ctx context.Context, _ client.Client, input generated.CreateDatasourceInput) (*generated.Datasource, error) {
 	if input.Ossinput != nil {
 		var insecure bool
 		if input.Endpointinput.Insecure != nil {

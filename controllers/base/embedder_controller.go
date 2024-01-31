@@ -183,7 +183,7 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 	var msg string
 
 	// Check Auth availability
-	apiKey, err := instance.AuthAPIKey(ctx, r.Client, nil)
+	apiKey, err := instance.AuthAPIKey(ctx, r.Client)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, nil, err)
 	}

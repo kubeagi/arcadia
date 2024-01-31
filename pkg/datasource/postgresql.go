@@ -23,7 +23,6 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -36,7 +35,7 @@ var (
 	pools      = make(map[string]*PostgreSQL)
 )
 
-func GetPostgreSQLPool(ctx context.Context, c client.Client, dc dynamic.Interface, datasource *v1alpha1.Datasource) (*PostgreSQL, error) {
+func GetPostgreSQLPool(ctx context.Context, c client.Client, datasource *v1alpha1.Datasource) (*PostgreSQL, error) {
 	if datasource.Spec.Type() != v1alpha1.DatasourceTypePostgreSQL {
 		return nil, ErrUnknowDatasourceType
 	}
@@ -44,7 +43,7 @@ func GetPostgreSQLPool(ctx context.Context, c client.Client, dc dynamic.Interfac
 	if ok && pg.Ref.GetGeneration() == datasource.GetGeneration() {
 		return pg, nil
 	}
-	pg, err := newPostgreSQL(ctx, c, dc, datasource.Spec.PostgreSQL, &datasource.Spec.Endpoint)
+	pg, err := newPostgreSQL(ctx, c, datasource.Spec.PostgreSQL, &datasource.Spec.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +72,13 @@ type PostgreSQL struct {
 }
 
 // NewPostgreSQL creates a new PostgreSQL pool
-func newPostgreSQL(ctx context.Context, c client.Client, dc dynamic.Interface, config *v1alpha1.PostgreSQL, endpoint *v1alpha1.Endpoint) (*PostgreSQL, error) {
+func newPostgreSQL(ctx context.Context, c client.Client, config *v1alpha1.PostgreSQL, endpoint *v1alpha1.Endpoint) (*PostgreSQL, error) {
 	var pgUser, pgPassword, pgPassFile, pgSSLPassword string
 	if endpoint.AuthSecret != nil {
 		if endpoint.AuthSecret.Namespace == nil {
 			return nil, errors.New("no namespace found for endpoint.authsecret")
 		}
-		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c, dc)
+		data, err := endpoint.AuthData(ctx, *endpoint.AuthSecret.Namespace, c)
 		if err != nil {
 			return nil, err
 		}

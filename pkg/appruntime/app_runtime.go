@@ -23,9 +23,9 @@ import (
 	"fmt"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/agent"
@@ -64,7 +64,7 @@ type Application struct {
 //	return app.Namespace + "/" + app.Name
 //}
 
-func NewAppOrGetFromCache(ctx context.Context, cli dynamic.Interface, app *arcadiav1alpha1.Application) (*Application, error) {
+func NewAppOrGetFromCache(ctx context.Context, cli client.Client, app *arcadiav1alpha1.Application) (*Application, error) {
 	if app == nil || app.Name == "" || app.Namespace == "" {
 		return nil, errors.New("app has no name or namespace")
 	}
@@ -97,7 +97,7 @@ func NewAppOrGetFromCache(ctx context.Context, cli dynamic.Interface, app *arcad
 }
 
 // todo 防止无限循环，需要找一下是不是成环
-func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err error) {
+func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 	if a.Inited {
 		return
 	}
@@ -115,7 +115,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	}
 
 	for _, node := range a.Spec.Nodes {
-		n, err := InitNode(ctx, a.Namespace, node.Name, *node.Ref, cli)
+		n, err := InitNode(ctx, a.Namespace, node.Name, *node.Ref)
 		if err != nil {
 			return fmt.Errorf("initnode %s failed: %w", node.Name, err)
 		}
@@ -156,7 +156,7 @@ func (a *Application) Init(ctx context.Context, cli dynamic.Interface) (err erro
 	return nil
 }
 
-func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream chan string, input Input) (output Output, err error) {
+func (a *Application) Run(ctx context.Context, cli client.Client, respStream chan string, input Input) (output Output, err error) {
 	// make sure ns value set
 	if base.GetAppNamespace(ctx) == "" {
 		ctx = base.SetAppNamespace(ctx, a.Namespace)
@@ -217,7 +217,7 @@ func (a *Application) Run(ctx context.Context, cli dynamic.Interface, respStream
 	return output, nil
 }
 
-func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha1.TypedObjectReference, cli dynamic.Interface) (n base.Node, err error) {
+func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha1.TypedObjectReference) (n base.Node, err error) {
 	logger := klog.FromContext(ctx)
 	defer func() {
 		if err != nil {

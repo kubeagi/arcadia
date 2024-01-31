@@ -19,7 +19,7 @@ package base
 import (
 	"context"
 
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Input struct {
@@ -32,6 +32,6 @@ func NewInput(baseNode BaseNode) *Input {
 	}
 }
 
-func (c *Input) Run(ctx context.Context, _ dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (c *Input) Run(ctx context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
 	return args, nil
 }

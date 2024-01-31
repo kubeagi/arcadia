@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"io"
 
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
@@ -44,14 +44,14 @@ type RagasDataRow struct {
 
 // RagasDatasetGenerator generates datasets which adapts to the ragas framework
 type RagasDatasetGenerator struct {
-	cli dynamic.Interface
+	cli client.Client
 
 	app appruntime.Application
 
 	options *genOptions
 }
 
-func NewRagasDatasetGenerator(ctx context.Context, cli dynamic.Interface, app *v1alpha1.Application, genOptions ...GenOptions) (*RagasDatasetGenerator, error) {
+func NewRagasDatasetGenerator(ctx context.Context, cli client.Client, app *v1alpha1.Application, genOptions ...GenOptions) (*RagasDatasetGenerator, error) {
 	// set generation options
 	genOpts := defaultGenOptions()
 	for _, o := range genOptions {

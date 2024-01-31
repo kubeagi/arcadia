@@ -25,11 +25,9 @@ import (
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/prompts"
 	langchainschema "github.com/tmc/langchaingo/schema"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -49,23 +47,17 @@ func NewRetrievalQAChain(baseNode base.BaseNode) *RetrievalQAChain {
 	}
 }
 
-func (l *RetrievalQAChain) Init(ctx context.Context, cli dynamic.Interface, _ map[string]any) error {
+func (l *RetrievalQAChain) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.RetrievalQAChain{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "retrievalqachains"}).
-		Namespace(l.Ref.GetNamespace(ns)).Get(ctx, l.Ref.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.Ref.GetNamespace(ns), Name: l.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the chain in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return fmt.Errorf("can't convert obj to RetrievalQAChain: %w", err)
 	}
 	l.Instance = instance
 	return nil
 }
 
-func (l *RetrievalQAChain) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (outArgs map[string]any, err error) {
+func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")

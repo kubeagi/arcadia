@@ -125,7 +125,7 @@ func (r *VectorStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *VectorStoreReconciler) CheckVectorStore(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore) (err error) {
 	log.V(5).Info("check vectorstore")
 	vsRaw := vs.DeepCopy()
-	_, finish, err := vectorstore.NewVectorStore(ctx, vs, nil, "", r.Client, nil)
+	_, finish, err := vectorstore.NewVectorStore(ctx, vs, nil, "", r.Client)
 	if err != nil {
 		log.Error(err, "failed to connect to vectorstore")
 		r.setCondition(vs, vs.ErrorCondition(err.Error()))

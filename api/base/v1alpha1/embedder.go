@@ -21,17 +21,16 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 )
 
-func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
+func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
 	if e.Spec.Endpoint == nil {
 		return "", nil
 	}
-	return e.Spec.Endpoint.AuthAPIKey(ctx, e.GetNamespace(), c, cli)
+	return e.Spec.Endpoint.AuthAPIKey(ctx, e.GetNamespace(), c)
 }
 
 // GetEmbedderBaseUrl returns the embedder's url
