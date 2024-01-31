@@ -103,6 +103,11 @@ var (
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "embedders",
 		},
+		"vectorstore": {
+			Group:    v1alpha1.GroupVersion.Group,
+			Version:  v1alpha1.GroupVersion.Version,
+			Resource: "vectorstores",
+		},
 		"rag": {
 			Group:    evalv1alpha1.GroupVersion.Group,
 			Version:  evalv1alpha1.GroupVersion.Version,

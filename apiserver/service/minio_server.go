@@ -104,8 +104,8 @@ type (
 	}
 
 	WebCrawlerFileBody struct {
-		VersionedDataset string `json:"versioneddataset"`
-		Datasource       string `json:"datasource"`
+		VersionedDataset string `json:"versioneddataset" binding:"required"`
+		Datasource       string `json:"datasource" binding:"required"`
 
 		// Params to generate a web crawler file
 		Params struct {
@@ -135,7 +135,6 @@ const (
 	namespaceHeader = "namespace"
 )
 
-// @BasePath /bff
 // @Summary Get success chunks of a file
 // @Schemes
 // @Description Get success chunks of a file
@@ -150,7 +149,7 @@ const (
 // @Success 200 {object} SuccessChunksResult
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunks [get]
+// @Router /bff/model/files/chunks [get]
 func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	fildMD5 := ctx.Query(md5Query)
 	if fildMD5 == "" {
@@ -249,7 +248,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunks [post]
+// @Router /bff/model/files/chunks [post]
 func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 	var body NewMultipartBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -330,7 +329,7 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 // @Success 200 {object} GenChunkURLResult
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunk_url [post]
+// @Router /bff/model/files/chunk_url [post]
 func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	var body GenChunkURLBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -433,7 +432,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 // @Success 200 {object} string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunks [put]
+// @Router /bff/model/files/chunks [put]
 func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 	var body CompleteBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -479,7 +478,7 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 // @Success 200 {object} string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files [delete]
+// @Router /bff/model/files [delete]
 func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 	var body DelteFileBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -521,7 +520,7 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 // @Success 200 {object} string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunks/abort [put]
+// @Router /bff/model/files/chunks/abort [put]
 func (m *minioAPI) Abort(ctx *gin.Context) {
 	var body CompleteBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -565,7 +564,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/stat [get]
+// @Router /bff/model/files/stat [get]
 func (m *minioAPI) StatFile(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
 	bucket := ctx.GetHeader(namespaceHeader)
@@ -616,7 +615,7 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 // @Success 200
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/download [get]
+// @Router /bff/model/files/download [get]
 func (m *minioAPI) Download(ctx *gin.Context) {
 	fromStr := ctx.Query("from")
 	endStr := ctx.Query("end")
@@ -674,7 +673,7 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 // @Success 200 {object} common.ReadCSVResult
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /versioneddataset/files/csv [get]
+// @Router /bff/versioneddataset/files/csv [get]
 func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	var (
 		page       int64
@@ -768,7 +767,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/downloadlink [get]
+// @Router /bff/model/files/downloadlink [get]
 func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), nil, m.client)
 	if err != nil {
@@ -807,13 +806,13 @@ func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
 // @Success 200 {object} string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /model/files/chunks [post]
+// @Router /bff/versioneddataset/files/webcrawler [post]
 func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	var body WebCrawlerFileBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		klog.Errorf("failed to parse body error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "need content-type application/json",
+			"message": err.Error(),
 		})
 		return
 	}
@@ -825,7 +824,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	if err != nil {
 		klog.Errorf("failed to get versioneddataset error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+			"message": fmt.Sprintf("failed to get versioneddataset error %s", err.Error()),
 		})
 		return
 	}
@@ -834,7 +833,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	if err != nil {
 		klog.Errorf("failed to get datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+			"message": fmt.Sprintf("failed to get datasource error %s", err.Error()),
 		})
 		return
 	}
@@ -863,7 +862,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+			"message": fmt.Sprintf("failed to get system datasource error %s", err.Error()),
 		})
 		return
 	}
@@ -873,7 +872,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	if err != nil {
 		klog.Errorf("failed to put webcrawler file error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+			"message": fmt.Sprintf("failed to put webcrawler file error %s", err.Error()),
 		})
 		return
 	}
@@ -881,7 +880,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"bucket": namespace, "object": object})
 }
 
-func RegisterMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
+func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	c, err := client.GetClient(nil)
 	if err != nil {
 		panic(err)

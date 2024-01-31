@@ -37,15 +37,26 @@ const (
 
 type APPMetadata struct {
 	// AppName, the name of the application
-	APPName string `json:"app_name" binding:"required" example:"chat-with-llm"`
+	APPName string `json:"app_name" form:"app_name" binding:"required" example:"chat-with-llm"`
 	// AppNamespace, the namespace of the application
-	AppNamespace string `json:"app_namespace" binding:"required" example:"arcadia"`
+	AppNamespace string `json:"app_namespace" form:"app_namespace" binding:"required" example:"kubeagi-system"`
 }
 
 type ConversationReqBody struct {
-	APPMetadata `json:",inline"`
+	APPMetadata `json:",inline" form:",inline"`
 	// ConversationID, if it is empty, a new conversation will be created
-	ConversationID string `json:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+	ConversationID string `json:"conversation_id" form:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+}
+
+type ConversationDocsReqBody struct {
+	APPMetadata `json:",inline" form:",inline"`
+	// ConversationID, if it is empty, a new conversation will be created
+	ConversationID string `json:"conversation_id" form:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+
+	// ChunkSize for text splitter
+	ChunkSize int `json:"chunk_size" form:"chunk_size" example:"2048"`
+	// ChunkOverlap for text splitter
+	ChunkOverlap int `json:"chunk_overlap" form:"chunk_overlap" example:"200"`
 }
 
 type MessageReqBody struct {
@@ -86,4 +97,18 @@ type ErrorResp struct {
 
 type SimpleResp struct {
 	Message string `json:"message" example:"ok"`
+}
+
+type ConversationDocsRespBody struct {
+	Docs []*ConversatioSingleDocRespBody
+}
+
+type ConversatioSingleDocRespBody struct {
+	FileName          string `json:"file_name,omitempty"`
+	NumberOfDocuments int    `json:"number_of_documents,omitempty"`
+	// Embedding info
+	TimecostForEmbedding float64 `json:"timecost_for_embedding,omitempty"`
+	// Summary info
+	Summary                  string  `json:"summary,omitempty"`
+	TimecostForSummarization float64 `json:"timecost_for_summarization,omitempty"`
 }

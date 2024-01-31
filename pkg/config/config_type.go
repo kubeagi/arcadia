@@ -31,6 +31,9 @@ type Config struct {
 	// Gateway to access LLM api services
 	Gateway *Gateway `json:"gateway,omitempty"`
 
+	// Embedder specifies the default embedder for Arcadia to generate embeddings
+	Embedder *arcadiav1alpha1.TypedObjectReference `json:"embedder,omitempty"`
+
 	// VectorStore to access VectorStore api services
 	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
 

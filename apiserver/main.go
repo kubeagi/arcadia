@@ -28,6 +28,22 @@ import (
 // Permissions required for this apiserver
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 
+// @title           ApiServer Swagger API
+// @version         1.0
+// @description     This is a apiserver for KubeAGI.
+// @termsOfService  http://swagger.io/terms/
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8081
+// @BasePath  /
+
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						Authorization
+//	@description				API token for authorization
+
 func main() {
 	conf := config.NewServerFlags()
 

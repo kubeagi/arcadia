@@ -32,6 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
+	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
@@ -87,6 +88,49 @@ func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client, dynamicCl
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
 	return datasource.NewOSS(ctx, mgrClient, dynamicClient, endpoint)
+}
+
+// SystemEmbeddingSuite returns the embedder and vectorstore which are built-in in system config
+// Embedder and vectorstore are both required when generating a new embedding.That's why we call it a `EmbeddingSuit`
+func SystemEmbeddingSuite(ctx context.Context, dynamicClient dynamic.Interface) (*v1alpha1.Embedder, *v1alpha1.VectorStore, error) {
+	// get the built-in system embedder
+	emd, err := config.GetEmbedder(ctx, nil, dynamicClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	embedder := &v1alpha1.Embedder{}
+	unstructuredEmbedder, err := ResourceGet(ctx, dynamicClient, generated.TypedObjectReferenceInput{
+		APIGroup:  &ArcadiaAPIGroup,
+		Kind:      "Embedder",
+		Name:      emd.Name,
+		Namespace: emd.Namespace,
+	}, metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := utils.UnstructuredToStructured(unstructuredEmbedder, embedder); err != nil {
+		return nil, nil, err
+	}
+
+	// get the built-in system vectorstore
+	vs, err := config.GetVectorStore(ctx, nil, dynamicClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	vectorStore := &v1alpha1.VectorStore{}
+	unstructuredVectorStore, err := ResourceGet(ctx, dynamicClient, generated.TypedObjectReferenceInput{
+		APIGroup:  &ArcadiaAPIGroup,
+		Kind:      "VectorStore",
+		Name:      vs.Name,
+		Namespace: vs.Namespace,
+	}, metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := utils.UnstructuredToStructured(unstructuredVectorStore, vectorStore); err != nil {
+		return nil, nil, err
+	}
+	return embedder, vectorStore, nil
 }
 
 // GetAPIServer returns the api server url to access arcadia's worker

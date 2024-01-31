@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   chat.APPMetadata:
     properties:
@@ -7,7 +8,7 @@ definitions:
         type: string
       app_namespace:
         description: AppNamespace, the namespace of the application
-        example: arcadia
+        example: kubeagi-system
         type: string
     required:
     - app_name
@@ -21,7 +22,7 @@ definitions:
         type: string
       app_namespace:
         description: AppNamespace, the namespace of the application
-        example: arcadia
+        example: kubeagi-system
         type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
@@ -72,6 +73,28 @@ definitions:
           $ref: '#/definitions/retriever.Reference'
         type: array
     type: object
+  chat.ConversatioSingleDocRespBody:
+    properties:
+      file_name:
+        type: string
+      number_of_documents:
+        type: integer
+      summary:
+        description: Summary info
+        type: string
+      timecost_for_embedding:
+        description: Embedding info
+        type: number
+      timecost_for_summarization:
+        type: number
+    type: object
+  chat.ConversationDocsRespBody:
+    properties:
+      docs:
+        items:
+          $ref: '#/definitions/chat.ConversatioSingleDocRespBody'
+        type: array
+    type: object
   chat.ConversationReqBody:
     properties:
       app_name:
@@ -80,7 +103,7 @@ definitions:
         type: string
       app_namespace:
         description: AppNamespace, the namespace of the application
-        example: arcadia
+        example: kubeagi-system
         type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
@@ -104,7 +127,7 @@ definitions:
         type: string
       app_namespace:
         description: AppNamespace, the namespace of the application
-        example: arcadia
+        example: kubeagi-system
         type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
@@ -311,6 +334,9 @@ definitions:
         type: object
       versioneddataset:
         type: string
+    required:
+    - datasource
+    - versioneddataset
     type: object
   storage.Conversation:
     properties:
@@ -353,173 +379,18 @@ definitions:
           $ref: '#/definitions/retriever.Reference'
         type: array
     type: object
+host: localhost:8081
 info:
   contact: {}
+  description: This is a apiserver for KubeAGI.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: ApiServer Swagger API
+  version: "1.0"
 paths:
-  /:
-    post:
-      consumes:
-      - application/json
-      description: chat with application
-      parameters:
-      - description: Should the chat request be treated as debugging?
-        in: query
-        name: debug
-        type: boolean
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/chat.ChatReqBody'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: blocking mode, will return all field; streaming mode, only
-            conversation_id, message and created_at will be returned
-          schema:
-            $ref: '#/definitions/chat.ChatRespBody'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: chat with application
-      tags:
-      - application
-  /conversations:
-    post:
-      consumes:
-      - application/json
-      description: list all conversations
-      parameters:
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/chat.APPMetadata'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/storage.Conversation'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: list all conversations
-      tags:
-      - application
-  /conversations/:conversationID:
-    delete:
-      consumes:
-      - application/json
-      description: delete one conversation
-      parameters:
-      - description: conversationID
-        in: path
-        name: conversationID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/chat.SimpleResp'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: delete one conversation
-      tags:
-      - application
-  /messages:
-    post:
-      consumes:
-      - application/json
-      description: get all messages history for one conversation
-      parameters:
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/chat.ConversationReqBody'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/storage.Conversation'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: get all messages history for one conversation
-      tags:
-      - application
-  /messages/:messageID/references:
-    post:
-      consumes:
-      - application/json
-      description: get one message's references
-      parameters:
-      - description: messageID
-        in: path
-        name: messageID
-        required: true
-        type: string
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/chat.MessageReqBody'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/retriever.Reference'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: get one message references
-      tags:
-      - application
-  /model/files:
+  /bff/model/files:
     delete:
       consumes:
       - application/json
@@ -558,7 +429,7 @@ paths:
       summary: Delete files
       tags:
       - MinioAPI
-  /model/files/chunk_url:
+  /bff/model/files/chunk_url:
     post:
       consumes:
       - application/json
@@ -597,7 +468,7 @@ paths:
       summary: Get multipart upload URL
       tags:
       - MinioAPI
-  /model/files/chunks:
+  /bff/model/files/chunks:
     get:
       consumes:
       - application/json
@@ -653,14 +524,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a web crawler file which contains crawer params
+      description: create new multipart upload
       parameters:
-      - description: request params
+      - description: query params
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.WebCrawlerFileBody'
+          $ref: '#/definitions/service.NewMultipartBody'
       - description: Name of the bucket
         in: header
         name: namespace
@@ -672,7 +543,9 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -685,7 +558,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Create web cralwer file
+      summary: create new multipart upload
       tags:
       - MinioAPI
     put:
@@ -726,7 +599,7 @@ paths:
       summary: Complete multipart upload
       tags:
       - MinioAPI
-  /model/files/chunks/abort:
+  /bff/model/files/chunks/abort:
     put:
       consumes:
       - application/json
@@ -765,7 +638,7 @@ paths:
       summary: Abort a file upload
       tags:
       - MinioAPI
-  /model/files/download:
+  /bff/model/files/download:
     get:
       consumes:
       - application/json
@@ -816,7 +689,7 @@ paths:
       summary: Download files in chunks
       tags:
       - MinioAPI
-  /model/files/downloadlink:
+  /bff/model/files/downloadlink:
     get:
       consumes:
       - application/json
@@ -861,7 +734,7 @@ paths:
       summary: Get a download link
       tags:
       - MinioAPI
-  /model/files/stat:
+  /bff/model/files/stat:
     get:
       consumes:
       - application/json
@@ -906,43 +779,7 @@ paths:
       summary: Statistics file information
       tags:
       - MinioAPI
-  /prompt-starter:
-    post:
-      consumes:
-      - application/json
-      description: get app's prompt starters
-      parameters:
-      - description: how many prompts you need should > 0 and < 10
-        in: query
-        name: limit
-        type: integer
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/chat.APPMetadata'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              type: string
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/chat.ErrorResp'
-      summary: get app's prompt starters
-      tags:
-      - application
-  /versioneddataset/files/csv:
+  /bff/versioneddataset/files/csv:
     get:
       consumes:
       - application/json
@@ -995,4 +832,300 @@ paths:
       summary: Read a file line by line
       tags:
       - MinioAPI
+  /bff/versioneddataset/files/webcrawler:
+    post:
+      consumes:
+      - application/json
+      description: Create a web crawler file which contains crawer params
+      parameters:
+      - description: request params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.WebCrawlerFileBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create web cralwer file
+      tags:
+      - MinioAPI
+  /chat:
+    post:
+      consumes:
+      - application/json
+      description: chat with application
+      parameters:
+      - description: Should the chat request be treated as debugging?
+        in: query
+        name: debug
+        type: boolean
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.ChatReqBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: blocking mode, will return all field; streaming mode, only
+            conversation_id, message and created_at will be returned
+          schema:
+            $ref: '#/definitions/chat.ChatRespBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: chat with application
+      tags:
+      - application
+  /chat/conversations:
+    post:
+      consumes:
+      - application/json
+      description: list all conversations
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.APPMetadata'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storage.Conversation'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: list all conversations
+      tags:
+      - application
+  /chat/conversations/:conversationID:
+    delete:
+      consumes:
+      - application/json
+      description: delete one conversation
+      parameters:
+      - description: conversationID
+        in: path
+        name: conversationID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chat.SimpleResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: delete one conversation
+      tags:
+      - application
+  /chat/conversations/docs:
+    post:
+      consumes:
+      - multipart/form-data
+      description: receive and process uploaded documents(pdf, docx) for one conversation
+      parameters:
+      - description: The app namespace for this conversation
+        in: formData
+        name: app_namespace
+        required: true
+        type: string
+      - description: The app name for this conversation
+        in: formData
+        name: app_name
+        required: true
+        type: string
+      - description: The conversation id for this document
+        in: formData
+        name: conversation_id
+        required: true
+        type: string
+      - description: The chunk size when load and split the document
+        in: formData
+        name: chunk_size
+        type: integer
+      - description: The chunk overlap when load and split the document
+        in: formData
+        name: chunk_overlap
+        type: integer
+      - description: This is the docs for the conversation
+        in: formData
+        name: docs
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chat.ConversationDocsRespBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: receive and process uploaded documents(pdf, docx) for one conversation
+      tags:
+      - application
+  /chat/messages:
+    post:
+      consumes:
+      - application/json
+      description: get all messages history for one conversation
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.ConversationReqBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/storage.Conversation'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: get all messages history for one conversation
+      tags:
+      - application
+  /chat/messages/:messageID/references:
+    post:
+      consumes:
+      - application/json
+      description: get one message's references
+      parameters:
+      - description: messageID
+        in: path
+        name: messageID
+        required: true
+        type: string
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.MessageReqBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/retriever.Reference'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: get one message references
+      tags:
+      - application
+  /chat/prompt-starter:
+    post:
+      consumes:
+      - application/json
+      description: get app's prompt starters
+      parameters:
+      - description: how many prompts you need should > 0 and < 10
+        in: query
+        name: limit
+        type: integer
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.APPMetadata'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/chat.ErrorResp'
+      summary: get app's prompt starters
+      tags:
+      - application
+securityDefinitions:
+  ApiKeyAuth:
+    description: API token for authorization
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
