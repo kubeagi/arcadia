@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"net/http/pprof"
@@ -133,7 +132,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
+	ctx := ctrl.SetupSignalHandler()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -145,7 +144,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = clientset.CoreV1().ConfigMaps(utils.GetCurrentNamespace()).Get(context.Background(), config.EnvConfigDefaultValue, metav1.GetOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(utils.GetCurrentNamespace()).Get(ctx, config.EnvConfigDefaultValue, metav1.GetOptions{})
 	if err != nil {
 		setupLog.Error(err, "failed to find required configMap", utils.GetCurrentNamespace(), config.EnvConfigDefaultValue)
 		panic(err)
@@ -213,7 +212,7 @@ func main() {
 		Scheme:                mgr.GetScheme(),
 		HasHandledSuccessPath: make(map[string]bool),
 		ReadyMap:              make(map[string]bool),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KnowledgeBase")
 		os.Exit(1)
 	}
@@ -307,7 +306,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
