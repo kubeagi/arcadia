@@ -168,3 +168,29 @@ func runTools(ctx context.Context, args map[string]any, tools []agent.Tool) map[
 	}
 	return args
 }
+
+/*
+When using **stream** mode and an error occurs, **fastchat** returns http code 200 and returns an error message in json,
+but this json is inconsistent with the default format of openai, so it is silently **ignored** by langchaingo,
+so in this case, we need to re-request the blocking mode to find the correct error message.
+
+fastchat will return like this:
+
+data: {"id": "chatcmpl-3Lo28HviQo8949WkJyfFzJ", "model": "7597c2a3-b186-4bac-b2e4-21ff56413f7f", "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": null}]}
+data: {"text": "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**\n\n(\"addmm_impl_cpu_\" not implemented for 'Half')", "error_code": 50001}
+data: [DONE]
+*/
+func handleNoErrNoOut(ctx context.Context, needStream bool, oldOut string, oldErr error, chain chains.Chain, args map[string]any, options []chains.ChainCallOption) (out string, err error) {
+	if !needStream {
+		return oldOut, oldErr
+	}
+	if len(strings.TrimSpace(oldOut)) == 0 && oldErr == nil {
+		// Only the stream mode will encounter this problem. When in stream mode and the option length is 1, the option is the configuration parameter of the stream mode, and we can directly ignore it.
+		if len(options) <= 1 {
+			out, err = chains.Predict(ctx, chain, args)
+		} else {
+			out, err = chains.Predict(ctx, chain, args, options[:len(options)-1]...)
+		}
+	}
+	return out, err
+}

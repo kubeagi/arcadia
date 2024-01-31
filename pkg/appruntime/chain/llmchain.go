@@ -104,7 +104,9 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	l.LLMChain = *chain
 
 	var out string
-	if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+	needStream := false
+	needStream, ok = args["_need_stream"].(bool)
+	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
 	} else {
@@ -114,6 +116,7 @@ func (l *LLMChain) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 			out, err = chains.Predict(ctx, l.LLMChain, args)
 		}
 	}
+	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out
