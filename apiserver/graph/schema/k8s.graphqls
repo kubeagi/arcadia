@@ -30,7 +30,7 @@ input ResourceInput {
 }
 
 type PersistentVolumeClaimSpec {
-    accessModes: [String!]
+    accessModes: [String!]!
     selector: Selector
     resources:  Resource
     volumeName: String
@@ -41,10 +41,10 @@ type PersistentVolumeClaimSpec {
 }
 
 input PersistentVolumeClaimSpecInput {
-    accessModes: [String!]
+    accessModes: [String!]!
     selector: SelectorInput
     resources:  ResourceInput
-    volumeName: String!
+    volumeName: String
     storageClassName: String
     volumeMode: String
     datasource: TypedObjectReferenceInput

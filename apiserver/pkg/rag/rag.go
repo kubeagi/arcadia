@@ -23,7 +23,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,7 +38,8 @@ import (
 )
 
 const (
-	letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
+	letterBytes            = "abcdefghijklmnopqrstuvwxyz0123456789"
+	defaultStorageClassKey = "storageclass.kubernetes.io/is-default-class"
 )
 
 func generateRandomString(length int) string {
@@ -54,6 +55,7 @@ func generateKubernetesResourceName(prefix string, length int) string {
 	randomString := generateRandomString(length)
 	return fmt.Sprintf("%s-%s", prefix, randomString)
 }
+
 func setRAGSatus(rag *evav1alpha1.RAG, r *generated.Rag) {
 	status, phase, phaseMsg := evav1alpha1.RagStatus(rag)
 	*r.Phase = string(phase)
@@ -63,8 +65,9 @@ func setRAGSatus(rag *evav1alpha1.RAG, r *generated.Rag) {
 }
 
 func gen2storage(p generated.PersistentVolumeClaimSpecInput) *corev1.PersistentVolumeClaimSpec {
-	pvc := &corev1.PersistentVolumeClaimSpec{
-		VolumeName: p.VolumeName,
+	pvc := &corev1.PersistentVolumeClaimSpec{}
+	if p.VolumeName != nil {
+		pvc.VolumeName = *p.VolumeName
 	}
 	if len(p.AccessModes) > 0 {
 		pvc.AccessModes = make([]corev1.PersistentVolumeAccessMode, 0)
@@ -73,7 +76,7 @@ func gen2storage(p generated.PersistentVolumeClaimSpecInput) *corev1.PersistentV
 		}
 	}
 	if p.Selector != nil {
-		pvc.Selector = &v1.LabelSelector{}
+		pvc.Selector = &metav1.LabelSelector{}
 		if len(p.Selector.MatchLabels) > 0 {
 			pvc.Selector.MatchLabels = make(map[string]string)
 			for k, v := range p.Selector.MatchLabels {
@@ -81,12 +84,12 @@ func gen2storage(p generated.PersistentVolumeClaimSpecInput) *corev1.PersistentV
 			}
 		}
 		if len(p.Selector.MatchExpressions) > 0 {
-			pvc.Selector.MatchExpressions = make([]v1.LabelSelectorRequirement, 0)
+			pvc.Selector.MatchExpressions = make([]metav1.LabelSelectorRequirement, 0)
 			for _, item := range p.Selector.MatchExpressions {
-				i := v1.LabelSelectorRequirement{
+				i := metav1.LabelSelectorRequirement{
 					Key:      *item.Key,
 					Values:   make([]string, 0),
-					Operator: v1.LabelSelectorOperator(*item.Operator),
+					Operator: metav1.LabelSelectorOperator(*item.Operator),
 				}
 				for _, s := range item.Values {
 					i.Values = append(i.Values, *s)
@@ -123,6 +126,7 @@ func gen2storage(p generated.PersistentVolumeClaimSpecInput) *corev1.PersistentV
 	// TODO set datasource
 	return pvc
 }
+
 func storage2gen(pvcSpec *corev1.PersistentVolumeClaimSpec) generated.PersistentVolumeClaimSpec {
 	pvc := generated.PersistentVolumeClaimSpec{}
 	if pvcSpec.VolumeName != "" {
@@ -199,6 +203,38 @@ func storage2gen(pvcSpec *corev1.PersistentVolumeClaimSpec) generated.Persistent
 	return pvc
 }
 
+func get1GiPVC(ctx context.Context, c dynamic.Interface) (*corev1.PersistentVolumeClaimSpec, error) {
+	scList, err := c.Resource(schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}).
+		List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(scList.Items) == 0 {
+		return nil, fmt.Errorf("no storageclass found")
+	}
+
+	q, _ := resource.ParseQuantity("1Gi")
+	sc := &corev1.PersistentVolumeClaimSpec{
+		AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceStorage: q,
+			},
+		},
+		StorageClassName: new(string),
+	}
+	for _, s := range scList.Items {
+		if v, ok := s.GetAnnotations()[defaultStorageClassKey]; ok && v == "true" {
+			*sc.StorageClassName = s.GetName()
+			break
+		}
+	}
+	if *sc.StorageClassName == "" {
+		*sc.StorageClassName = scList.Items[0].GetName()
+	}
+	return sc, nil
+}
+
 func rag2modelConverter(u *unstructured.Unstructured) (generated.PageNode, error) {
 	return rag2model(u)
 }
@@ -247,11 +283,11 @@ func rag2model(o *unstructured.Unstructured) (*generated.Rag, error) {
 
 func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.CreateRAGInput) (*generated.Rag, error) {
 	rag := &evav1alpha1.RAG{
-		TypeMeta: v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "RAG",
 			APIVersion: evav1alpha1.GroupVersion.String(),
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   input.Namespace,
 			Labels:      make(map[string]string),
 			Annotations: make(map[string]string),
@@ -316,7 +352,16 @@ func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 		rag.Spec.Metrics = append(rag.Spec.Metrics, mm)
 	}
 
-	rag.Spec.Storage = gen2storage(input.Storage)
+	if input.Storage != nil {
+		rag.Spec.Storage = gen2storage(*input.Storage)
+	} else {
+		storage, err := get1GiPVC(ctx, kubeClient)
+		if err != nil {
+			return nil, err
+		}
+		rag.Spec.Storage = storage
+	}
+
 	if input.ServiceAccountName != nil {
 		rag.Spec.ServiceAccountName = *input.ServiceAccountName
 	}
@@ -328,7 +373,7 @@ func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 	if err != nil {
 		return nil, err
 	}
-	u1, err := kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, v1.CreateOptions{})
+	u1, err := kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +381,7 @@ func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 }
 
 func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.UpdateRAGInput) (*generated.Rag, error) {
-	obj, err := kubeClient.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "RAG")).Namespace(input.Namespace).Get(ctx, input.Name, v1.GetOptions{})
+	obj, err := kubeClient.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "RAG")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +471,7 @@ func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 		Kind:      "RAG",
 		Namespace: &rag.Namespace,
 		Name:      rag.Name,
-	}, unstructuredRag, v1.UpdateOptions{})
+	}, unstructuredRag, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +479,7 @@ func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 }
 
 func ListRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.ListRAGInput) (*generated.PaginatedResult, error) {
-	listOptions := v1.ListOptions{
+	listOptions := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", evav1alpha1.EvaluationApplicationLabel, input.AppName),
 	}
 	page, size := 1, 10
@@ -467,7 +512,7 @@ func GetRAG(ctx context.Context, kubeClient dynamic.Interface, name, namespace s
 		Group:    evav1alpha1.Group,
 		Version:  evav1alpha1.Version,
 		Resource: "rags",
-	}).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+	}).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +524,7 @@ func GetV1alpha1RAG(ctx context.Context, kubeClient dynamic.Interface, name, nam
 		Group:    evav1alpha1.Group,
 		Version:  evav1alpha1.Version,
 		Resource: "rags",
-	}).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+	}).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -589,11 +634,11 @@ func GetRAGDatasets(ctx context.Context, kubeClient dynamic.Interface, name, nam
 func DeleteRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.DeleteRAGInput) error {
 	if input.Name != "" {
 		return kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).
-			Namespace(input.Namespace).Delete(ctx, input.Name, v1.DeleteOptions{})
+			Namespace(input.Namespace).Delete(ctx, input.Name, metav1.DeleteOptions{})
 	}
 	if input.LabelSelector != nil {
 		return kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).
-			Namespace(input.Namespace).DeleteCollection(ctx, v1.DeleteOptions{}, v1.ListOptions{
+			Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 			LabelSelector: *input.LabelSelector,
 		})
 	}

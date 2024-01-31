@@ -132,7 +132,7 @@ input CreateRAGInput {
     datasets: [RAGDatasetInput!]!
     judgeLLM: TypedObjectReferenceInput!
     metrics: [RAGMetricInput!]!
-    storage: PersistentVolumeClaimSpecInput!
+    storage: PersistentVolumeClaimSpecInput
     serviceAccountName: String
     suspend: Boolean
 }
@@ -161,11 +161,14 @@ input DeleteRAGInput {
 input ListRAGInput {
     appName: String!
     namespace: String!
+
     """根据状态过滤"""
     status: String
+
     """根据名字，displayName字段获取"""
     keyword: String
-        """
+
+    """
     分页页码，
     规则: 从1开始，默认是1
     """
