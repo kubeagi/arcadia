@@ -59,12 +59,16 @@ const (
 	DefaultPromptTemplatForReduce       = `"{{.context}}"`
 	DefaultSummaryMaxNumberOfConcurrent = 2
 
-	DefaultDocumentChunkSize    = 2048
-	DefaultDocumentChunkOverlap = 200
+	DefaultDocumentChunkSize    = 1024
+	DefaultDocumentChunkOverlap = 100
 )
 
 // ReceiveConversationDocs receive and process docs for a conversation
-func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader) (*ConversationDocsRespBody, error) {
+func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, messageID string, req ConversationDocsReqBody, doc *multipart.FileHeader, respStream chan string) (*ConversationDocsRespBody, error) {
+	if messageID == "" {
+		messageID = string(uuid.NewUUID())
+	}
+
 	var conversation *storage.Conversation
 	var err error
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
@@ -94,7 +98,6 @@ func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, req Conversati
 	}
 
 	// process document with map-reduce
-	messageID := string(uuid.NewUUID())
 	message := storage.Message{
 		ID:        messageID,
 		Query:     req.Query,
@@ -103,7 +106,7 @@ func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, req Conversati
 	}
 
 	// summarize conversation doc
-	resp, err := cs.SummarizeConversationDoc(ctx, req, doc)
+	resp, err := cs.SummarizeConversationDoc(ctx, req, doc, respStream)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +139,7 @@ func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, req Conversati
 }
 
 // SummarizeConversationDoc receive a single document,then generate embeddings and summary for this document
-func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader) (*ConversatioSingleDocRespBody, error) {
+func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader, respStream chan string) (*ConversatioSingleDocRespBody, error) {
 	klog.V(5).Infof("Load and split the document %s size:%s for conversation %s", doc.Filename, utils.BytesToSizedStr(doc.Size), req.ConversationID)
 	resp := &ConversatioSingleDocRespBody{
 		FileName: doc.Filename,
@@ -225,7 +228,7 @@ func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req Conversa
 			<-semaphore
 		}()
 		klog.V(5).Infof("Generate summarization from file %s for conversation %s", doc.Filename, req.ConversationID)
-		summary, errSummary = cs.GenerateSingleDocSummary(ctx, req, doc, documents)
+		summary, errSummary = cs.GenerateSingleDocSummary(ctx, req, doc, documents, respStream)
 		if errSummary != nil {
 			// break once error occurs
 			errStr += fmt.Sprintf(" ErrSummary: %s", errEmbedding.Error())
@@ -264,7 +267,7 @@ func (cs *ChatServer) GenerateSingleDocEmbeddings(ctx context.Context, req Conve
 }
 
 // GenerateSingleDocSummary generate the summary of sinle document
-func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader, documents []schema.Document) (string, error) {
+func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader, documents []schema.Document, respStream chan string) (string, error) {
 	app, c, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app due to %s", err.Error())
@@ -299,7 +302,15 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 	// concurrent api call
 	mpChain.MaxNumberOfConcurrent = DefaultSummaryMaxNumberOfConcurrent
 
-	summary, err := chains.Run(ctx, mpChain, documents)
+	var summary string
+	if req.ResponseMode.IsStreaming() {
+		summary, err = chains.Run(ctx, mpChain, documents, chains.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+			respStream <- string(chunk)
+			return nil
+		}))
+	} else {
+		summary, err = chains.Run(ctx, mpChain, documents)
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary for %s due to %s", doc.Filename, err.Error())
 	}

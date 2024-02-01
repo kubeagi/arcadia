@@ -219,15 +219,103 @@ func (cs *ChatService) ChatDocs() gin.HandlerFunc {
 			return
 		}
 
-		// Upload the file to specific dst.
-		resp, err := cs.server.ReceiveConversationDoc(c, req, doc)
-		if err != nil {
-			klog.FromContext(c.Request.Context()).Error(err, "error receive and process uploaded documents(pdf, docx)")
-			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-			return
-		}
+		messageID := string(uuid.NewUUID())
+		var response *chat.ConversationDocsRespBody
+		if req.ResponseMode.IsStreaming() {
+			buf := strings.Builder{}
+			// handle chat streaming mode
+			respStream := make(chan string, 1)
+			go func() {
+				defer func() {
+					if e := recover(); e != nil {
+						err, ok := e.(error)
+						if ok {
+							klog.FromContext(c.Request.Context()).Error(err, "A panic occurred when run chat.ReceiveConversationDoc")
+						} else {
+							klog.FromContext(c.Request.Context()).Error(fmt.Errorf("get err:%#v", e), "A panic occurred when run chat.ReceiveConversationDoc")
+						}
+					}
+				}()
 
-		c.JSON(http.StatusOK, resp)
+				response, err = cs.server.ReceiveConversationDoc(c, messageID, req, doc, respStream)
+				if err != nil {
+					c.SSEvent("error", chat.ChatRespBody{
+						MessageID:      messageID,
+						ConversationID: req.ConversationID,
+						Message:        err.Error(),
+						CreatedAt:      time.Now(),
+						Latency:        time.Since(req.StartTime).Milliseconds(),
+					})
+					// c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
+					klog.FromContext(c.Request.Context()).Error(err, "error resp")
+					close(respStream)
+					return
+				}
+				if response != nil {
+					if str := buf.String(); response.Message == str || strings.TrimSpace(str) == strings.TrimSpace(response.Message) {
+						close(respStream)
+					}
+				}
+			}()
+
+			// Use a ticker to check if there is no data arrived and close the stream
+			// TODO: check if any better solution for this?
+			hasData := true
+			ticker := time.NewTicker(WaitTimeoutForChatStreaming * time.Second)
+			quit := make(chan struct{})
+			defer close(quit)
+			go func() {
+				for {
+					select {
+					case <-ticker.C:
+						// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
+						if !hasData {
+							close(respStream)
+						}
+						hasData = false
+					case <-quit:
+						ticker.Stop()
+						return
+					}
+				}
+			}()
+			c.Writer.Header().Set("Content-Type", "text/event-stream")
+			c.Writer.Header().Set("Cache-Control", "no-cache")
+			c.Writer.Header().Set("Connection", "keep-alive")
+			c.Writer.Header().Set("Transfer-Encoding", "chunked")
+			klog.FromContext(c.Request.Context()).Info("start to receive messages...")
+			clientDisconnected := c.Stream(func(w io.Writer) bool {
+				if msg, ok := <-respStream; ok {
+					c.SSEvent("", chat.ConversationDocsRespBody{
+						ChatRespBody: chat.ChatRespBody{
+							MessageID:      messageID,
+							ConversationID: req.ConversationID,
+							Message:        msg,
+							CreatedAt:      time.Now(),
+							Latency:        time.Since(req.StartTime).Milliseconds(),
+						},
+					})
+					hasData = true
+					buf.WriteString(msg)
+					return true
+				}
+				return false
+			})
+			if clientDisconnected {
+				klog.FromContext(c.Request.Context()).Info("chatHandler: the client is disconnected")
+			}
+			klog.FromContext(c.Request.Context()).Info("end to receive messages")
+		} else {
+			// Upload the file to specific dst.
+			resp, err := cs.server.ReceiveConversationDoc(c, messageID, req, doc, nil)
+			if err != nil {
+				klog.FromContext(c.Request.Context()).Error(err, "error receive and process uploaded documents(pdf, docx)")
+				c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, resp)
+		}
 		klog.FromContext(c.Request.Context()).V(3).Info("receive and process uploaded documents(pdf, docx) done", "req", req)
 	}
 }
