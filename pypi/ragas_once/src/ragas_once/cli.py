@@ -1,9 +1,21 @@
+# Copyright 2024 KubeAGI.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import argparse
 
-import pandas as pd
-import ragas_once.wrapper as pkg
-from datasets import Dataset, load_dataset
-from ragas import evaluate
+from ragas_once.eval import RagasEval
+
 
 def main():
     """
@@ -17,12 +29,6 @@ def main():
     """
     parser = argparse.ArgumentParser(description="RAGAS CLI")
     parser.add_argument(
-        "--model",
-        type=str,
-        default="gpt-3.5-turbo",
-        help="Specifies the model to use for evaluation. Defaults to gpt-3.5-turbo.",
-    )
-    parser.add_argument(
         "--apibase",
         type=str,
         default="https://api.openai.com/v1",
@@ -32,15 +38,22 @@ def main():
         "--apikey", type=str, help="Specifies the API key to authenticate requests."
     )
     parser.add_argument(
-        "--embeddings",
+        "--llm",
         type=str,
-        help="Specifies Huggingface embeddings model (or its path) to use for evaluation. Will use OpenAI embeddings if not set.",
+        default="gpt-3.5-turbo",
+        help="Specifies the model to use for evaluation. Defaults to gpt-3.5-turbo.",
+    )
+    parser.add_argument(
+        "--embedding",
+        type=str,
+        default="text-embedding-ada-002",
+        help="Specifies embeddings model (or its path) to use for evaluation. Will use OpenAI embeddings if not set.",
     )
     parser.add_argument(
         "--metrics",
-        type=list,
-        default=[],
-        help="Specifies the metrics to use for evaluation.",
+        type=str,
+        default="answer_relevancy,context_precision,context_recall,context_relevancy,faithfulness",
+        help="Specifies the metrics to use for evaluation. Comma-separated values.",
     )
     parser.add_argument(
         "--dataset",
@@ -49,44 +62,26 @@ def main():
     )
 
     args = parser.parse_args()
-    model = args.model
-    api_base = args.apibase
-    api_key = args.apikey
-    metrics = args.metrics
-    dataset = args.dataset
 
-    judge_model = pkg.wrap_langchain_llm(model, api_base, api_key)
+    # Initialize ragas_once with provided arguments
+    once = RagasEval(
+        api_base=args.apibase,
+        api_key=args.apikey,
+        llm_model=args.llm,
+        embedding_model=args.embedding,
+    )
 
-    embeddings_model_name = args.embeddings
+    # Prepare the dataset
+    dataset = once.prepare_dataset(args.dataset)
 
-    if embeddings_model_name:
-        embeddings = pkg.wrap_embeddings("huggingface", embeddings_model_name, None)
-    else:
-        embeddings = pkg.wrap_embeddings("openai", None, api_key)
+    if dataset is None:
+        raise ValueError("No dataset provided")
 
-    if dataset:
-        data = pd.read_csv(dataset)
-        if "ground_truths" in data.columns:
-            data["ground_truths"] = data["ground_truths"].astype(str).apply(lambda x: x.split(";")).to_list()
-        if "contexts" in data.columns:
-            data["contexts"] = data["contexts"].astype(str).apply(lambda x: x.split(";")).to_list()
-        test_set = Dataset.from_pandas(data)
-    else:
-        print("test_set not provided, using fiqa dataset")
-        fiqa = load_dataset("explodinggradients/fiqa", "ragas_eval")
-        test_set = fiqa["baseline"].select(range(5))
+    # Get the metrics to evaluate
+    metrics = once.get_ragas_metrics(args.metrics.split(","))
 
-
-    ms = pkg.set_metrics(metrics, judge_model, embeddings)
-
-    result = evaluate(test_set, ms)
-
-    
-    # count total score and avearge
-    summary = result.scores.to_pandas().mean()
-    summary["total_score"] = summary.mean()
-    summary.to_csv("summary.csv")
-    result.to_pandas().to_csv("result.csv")
+    # Run the evaluation
+    once.evaluate(dataset=dataset, metrics=metrics)
 
 
 if __name__ == "__main__":

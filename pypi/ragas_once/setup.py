@@ -2,7 +2,4 @@
 
 from setuptools import setup
 
-setup(
-    name='ragas_once',
-    version="0.0.1"
-)
+setup(name="ragas_once", version="0.0.1")

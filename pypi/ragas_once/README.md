@@ -16,19 +16,17 @@ pip install ragas_once
 
 ## Arguments
 
-- `--model`: Specifies the model to use for evaluation.
-    - Default value is "gpt-3.5-turbo". Langchain compatible.
 - `--apibase`: Specifies the base URL for the API.
     - Default value is "https://api.openai.com/v1".
 - `--apikey`: Specifies the API key to authenticate requests. 
     - Not required if using psuedo-openai API server, e.g. vLLM, Fastchat, etc.
-- `--embeddings`: Specifies the Huggingface embeddings model to use for evaluation. 
-    - Embeddings will run **locally**.
+- `--llm`: Specifies the lllm model to use for evaluation.
+    - Default value is "gpt-3.5-turbo". Langchain compatible.
+- `--embedding`: Specifies the embeddings model to use for evaluation. 
     - Will use OpenAI embeddings if not set.
-    - Better set if using psuedo-openai API server.
 - `--metrics`: Specifies the metrics to use for evaluation.
     - Will use Ragas default metrics if not set.
-    - Default metrics: `["answer_relevancy", "context_precision", "faithfulness", "context_recall", "context_relevancy"]`
+    - Default metrics: `answer_relevancy,context_precision,context_recall,context_relevancy,faithfulness`
     - Other metrics: `"answer_similarity", "answer_correctness"`
 - `--dataset`: Specifies the path to the dataset for evaluation.    
     - Dataset format must meet RAGAS requirements.
@@ -42,17 +40,18 @@ pip install ragas_once
 ro --apikey "YOUR_OPENAI_API_KEY"
 ```
 
-### Evaluate with GPT-4 and `BAAI/bge-small-en` embeddings
+### Evaluate with another OpenAI Compatible api services
 
-The huggingface embeddings will run locally, so **Make sure your machine works and have [sentence-transformers](https://pypi.org/project/sentence-transformers/) installed:**
+Say you have another openai-compatible api service like [fastchat](https://github.com/lm-sys/FastChat):
+
+- `apibase`: "http://fastchat-api.172.22.96.167.nip.io/v1"
+- `apikey`: "fake" 
+- `llm`: "9048a24f-b650-4197-be1c-77352bd67ead"  (The unique id of a lllm model)
+- `embedding`: "e1c3eed4-4ae1-4afd-98e3-a1bc57136ff7" (The unique id of a embedding model)
 
 ```bash
-pip install sentence-transformers
-```
-Then run:
-
-```bash
-ro --model "gpt-4" --apikey "YOUR_OPENAI_API_KEY" --embeddings "BAAI/bge-small-en" --dataset "path/to/dataset.csv"
+ro --apibase "http://fastchat-api.172.22.96.167.nip.io/v1" --apikey "fake" \
+    --llm "9048a24f-b650-4197-be1c-77352bd67ead" --embedding "e1c3eed4-4ae1-4afd-98e3-a1bc57136ff7" --dataset "path/to/dataset.csv"
 ```
 
 ### Prepare Dataset
