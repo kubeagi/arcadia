@@ -891,30 +891,30 @@ func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 
 	{
 		// model apis
-		group.GET("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetSuccessChunks)
-		group.POST("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.NewMultipart)
-		group.POST("/model/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetMultipartUploadURL)
-		group.PUT("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.CompleteMultipart)
-		group.PUT("/model/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "models"), api.Abort)
-		group.DELETE("/model/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "models"), api.DeleteFiles)
-		group.GET("/model/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.StatFile)
-		group.GET("/model/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.Download)
-		group.GET("/model/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "models"), api.GetDownloadLink)
+		group.GET("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.GetSuccessChunks)
+		group.POST("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.NewMultipart)
+		group.POST("/model/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.GetMultipartUploadURL)
+		group.PUT("/model/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "models"), api.CompleteMultipart)
+		group.PUT("/model/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "models"), api.Abort)
+		group.DELETE("/model/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "delete", "models"), api.DeleteFiles)
+		group.GET("/model/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.StatFile)
+		group.GET("/model/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.Download)
+		group.GET("/model/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "models"), api.GetDownloadLink)
 	}
 
 	{
 		// versioneddataset apis
-		group.GET("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetSuccessChunks)
-		group.POST("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.NewMultipart)
-		group.POST("/versioneddataset/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetMultipartUploadURL)
-		group.PUT("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.CompleteMultipart)
-		group.PUT("/versioneddataset/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.Abort)
-		group.DELETE("/versioneddataset/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "delete", "versioneddatasets"), api.DeleteFiles)
-		group.GET("/versioneddataset/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.StatFile)
-		group.GET("/versioneddataset/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.Download)
-		group.GET("/versioneddataset/files/csv", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.ReadCSVLines)
-		group.GET("/versioneddataset/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "get", "versioneddatasets"), api.GetDownloadLink)
+		group.GET("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.GetSuccessChunks)
+		group.POST("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.NewMultipart)
+		group.POST("/versioneddataset/files/chunk_url", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.GetMultipartUploadURL)
+		group.PUT("/versioneddataset/files/chunks", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "versioneddatasets"), api.CompleteMultipart)
+		group.PUT("/versioneddataset/files/chunks/abort", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "versioneddatasets"), api.Abort)
+		group.DELETE("/versioneddataset/files", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "delete", "versioneddatasets"), api.DeleteFiles)
+		group.GET("/versioneddataset/files/stat", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.StatFile)
+		group.GET("/versioneddataset/files/download", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.Download)
+		group.GET("/versioneddataset/files/csv", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.ReadCSVLines)
+		group.GET("/versioneddataset/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.GetDownloadLink)
 		// create a webcrawler file for versioneddataset
-		group.POST("/versioneddataset/files/webcrawler", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, "create", "versioneddatasets"), api.CreateWebCrawlerFile)
+		group.POST("/versioneddataset/files/webcrawler", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "versioneddatasets"), api.CreateWebCrawlerFile)
 	}
 }
