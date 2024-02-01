@@ -166,3 +166,17 @@ func (m *MemoryStorage) FindExistingConversation(conversationID string, opt ...S
 	}
 	return &v, nil
 }
+
+func (m *MemoryStorage) FindExistingDocument(conversationID string, messageID string, documentID string, opts ...SearchOption) (*Document, error) {
+	message, err := m.FindExistingMessage(conversationID, messageID, opts...)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range message.Documents {
+		v := v
+		if v.ID == documentID {
+			return &v, nil
+		}
+	}
+	return nil, nil
+}

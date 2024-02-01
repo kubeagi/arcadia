@@ -87,12 +87,38 @@ definitions:
         type: number
       timecost_for_summarization:
         type: number
+      total_time_cost:
+        type: number
     type: object
   chat.ConversationDocsRespBody:
     properties:
-      docs:
+      conversation_id:
+        example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
+        type: string
+      created_at:
+        description: CreatedAt is the time when the message is created
+        example: "2023-12-21T10:21:06.389359092+08:00"
+        type: string
+      doc:
+        allOf:
+        - $ref: '#/definitions/chat.ConversatioSingleDocRespBody'
+        description: Docs are the responbody for each document
+      latency:
+        description: Latency(ms) is how much time the server cost to process a certain
+          request.
+        example: 1000
+        type: integer
+      message:
+        description: Message is what AI say
+        example: 旷工最小计算单位为0.5天。
+        type: string
+      message_id:
+        example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
+        type: string
+      references:
+        description: References is the list of references
         items:
-          $ref: '#/definitions/chat.ConversatioSingleDocRespBody'
+          $ref: '#/definitions/retriever.Reference'
         type: array
     type: object
   chat.ConversationReqBody:
@@ -360,11 +386,28 @@ definitions:
         example: "2023-12-22T10:21:06.389359092+08:00"
         type: string
     type: object
+  storage.Document:
+    properties:
+      id:
+        example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
+        type: string
+      name:
+        example: kaoqin.pdf
+        type: string
+      summary:
+        example: kaoqin.pdf
+        type: string
+    type: object
   storage.Message:
     properties:
       answer:
         example: 旷工最小计算单位为0.5天。
         type: string
+      documents:
+        description: Docs uploaded in this message
+        items:
+          $ref: '#/definitions/storage.Document'
+        type: array
       id:
         example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
         type: string
@@ -982,11 +1025,25 @@ paths:
         name: app_name
         required: true
         type: string
+      - description: The query to this document
+        in: formData
+        name: query
+        required: true
+        type: string
       - description: The conversation id for this document
         in: formData
         name: conversation_id
+        type: string
+      - description: The response mode to this conversation
+        in: formData
+        name: response_mode
         required: true
         type: string
+      - description: This is the docs for the conversation
+        in: formData
+        name: docs
+        required: true
+        type: file
       - description: The chunk size when load and split the document
         in: formData
         name: chunk_size
@@ -995,11 +1052,6 @@ paths:
         in: formData
         name: chunk_overlap
         type: integer
-      - description: This is the docs for the conversation
-        in: formData
-        name: docs
-        required: true
-        type: file
       produces:
       - application/json
       responses:

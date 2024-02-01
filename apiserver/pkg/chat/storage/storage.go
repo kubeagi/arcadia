@@ -50,6 +50,16 @@ type Message struct {
 	References     References `gorm:"column:references;type:json;comment:references" json:"references,omitempty"`
 	ConversationID string     `gorm:"column:conversation_id;type:uuid;comment:conversation id" json:"-"`
 	Latency        int64      `gorm:"column:latency;type:int;comment:request latency, in ms" json:"latency" example:"1000"`
+
+	// Docs uploaded in this message
+	Documents []Document `gorm:"foreignKey:MessageID" json:"documents"`
+}
+
+type Document struct {
+	ID        string `gorm:"column:id;primaryKey;type:uuid;comment:document id" json:"id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
+	Name      string `gorm:"column:name;type:string;comment:document name" json:"name" example:"kaoqin.pdf"`
+	MessageID string `gorm:"column:message_id;type:uuid;comment:message id" json:"-"`
+	Summary   string `gorm:"column:summary;type:string;comment:document summary" json:"summary" example:"kaoqin.pdf"`
 }
 
 type References []retriever.Reference
@@ -60,6 +70,10 @@ func (Conversation) TableName() string {
 
 func (Message) TableName() string {
 	return "app_chat_message"
+}
+
+func (Document) TableName() string {
+	return "app_chat_document"
 }
 
 type Storage interface {
@@ -92,8 +106,15 @@ type ConversationStorage interface {
 type MessageStorage interface {
 	// FindExistingMessage finds a message in the conversation.
 	//
-	// It takes ConversationID, messageID string parameters and returns *Message, error.
-	FindExistingMessage(ConversationID, messageID string, opts ...SearchOption) (*Message, error)
+	// It takes conversationID, messageID string parameters and returns *Message, error.
+	FindExistingMessage(conversationID, messageID string, opts ...SearchOption) (*Message, error)
 	// CountMessages count how many messages is about this app
 	CountMessages(appName, appNamespace string) (int64, error)
+}
+
+type DocumentStorage interface {
+	// FindExistingDocuments finds a document in the message.
+	//
+	// It takes messageID, documentID string parameters and returns *Document, error.
+	FindExistingDocument(conversationID, messageID, documentID string, opts ...SearchOption) (*Document, error)
 }

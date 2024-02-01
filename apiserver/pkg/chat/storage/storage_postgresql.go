@@ -124,7 +124,7 @@ func NewPostgreSQLStorage(conn *pgx.Conn) (*PostgreSQLStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&Conversation{}, &Message{}); err != nil {
+	if err := db.AutoMigrate(&Conversation{}, &Message{}, &Document{}); err != nil {
 		return nil, err
 	}
 	customLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
@@ -220,4 +220,20 @@ func (p *PostgreSQLStorage) FindExistingMessage(conversationID string, messageID
 		return nil, err
 	}
 	return message, nil
+}
+
+func (p *PostgreSQLStorage) FindExistingDocument(conversationID, messageID string, documentID string, opts ...SearchOption) (*Document, error) {
+	message, err := p.FindExistingMessage(conversationID, messageID, opts...)
+	if err != nil {
+		return nil, err
+	}
+	document := &Document{}
+	association := p.db.Model(message).Association("Documents")
+	if association.Error != nil {
+		return nil, association.Error
+	}
+	if err := association.Find(document, Document{ID: documentID}); err != nil {
+		return nil, err
+	}
+	return document, nil
 }
