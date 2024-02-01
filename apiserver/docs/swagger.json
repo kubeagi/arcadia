@@ -906,8 +906,28 @@
                     },
                     {
                         "type": "string",
+                        "description": "The query to this document",
+                        "name": "query",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "The conversation id for this document",
                         "name": "conversation_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The response mode to this conversation",
+                        "name": "response_mode",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "This is the docs for the conversation",
+                        "name": "docs",
                         "in": "formData",
                         "required": true
                     },
@@ -922,13 +942,6 @@
                         "description": "The chunk overlap when load and split the document",
                         "name": "chunk_overlap",
                         "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "This is the docs for the conversation",
-                        "name": "docs",
-                        "in": "formData",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1225,16 +1238,51 @@
                 },
                 "timecost_for_summarization": {
                     "type": "number"
+                },
+                "total_time_cost": {
+                    "type": "number"
                 }
             }
         },
         "chat.ConversationDocsRespBody": {
             "type": "object",
             "properties": {
-                "docs": {
+                "conversation_id": {
+                    "type": "string",
+                    "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
+                },
+                "created_at": {
+                    "description": "CreatedAt is the time when the message is created",
+                    "type": "string",
+                    "example": "2023-12-21T10:21:06.389359092+08:00"
+                },
+                "doc": {
+                    "description": "Docs are the responbody for each document",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/chat.ConversatioSingleDocRespBody"
+                        }
+                    ]
+                },
+                "latency": {
+                    "description": "Latency(ms) is how much time the server cost to process a certain request.",
+                    "type": "integer",
+                    "example": 1000
+                },
+                "message": {
+                    "description": "Message is what AI say",
+                    "type": "string",
+                    "example": "旷工最小计算单位为0.5天。"
+                },
+                "message_id": {
+                    "type": "string",
+                    "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
+                },
+                "references": {
+                    "description": "References is the list of references",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/chat.ConversatioSingleDocRespBody"
+                        "$ref": "#/definitions/retriever.Reference"
                     }
                 }
             }
@@ -1619,12 +1667,36 @@
                 }
             }
         },
+        "storage.Document": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "kaoqin.pdf"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "kaoqin.pdf"
+                }
+            }
+        },
         "storage.Message": {
             "type": "object",
             "properties": {
                 "answer": {
                     "type": "string",
                     "example": "旷工最小计算单位为0.5天。"
+                },
+                "documents": {
+                    "description": "Docs uploaded in this message",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Document"
+                    }
                 },
                 "id": {
                     "type": "string",

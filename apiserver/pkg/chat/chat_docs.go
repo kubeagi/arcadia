@@ -33,8 +33,11 @@ import (
 	"github.com/tmc/langchaingo/prompts"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
 
+	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
+	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	runtimebase "github.com/kubeagi/arcadia/pkg/appruntime/base"
 	runtimellm "github.com/kubeagi/arcadia/pkg/appruntime/llm"
@@ -61,31 +64,88 @@ const (
 )
 
 // ReceiveConversationDocs receive and process docs for a conversation
-func (cs *ChatServer) ReceiveConversationDocs(ctx context.Context, req ConversationDocsReqBody, docs ...*multipart.FileHeader) (*ConversationDocsRespBody, error) {
-	if req.ChunkSize == 0 {
-		req.ChunkSize = DefaultDocumentChunkSize
-	}
-	if req.ChunkOverlap == 0 {
-		req.ChunkOverlap = DefaultDocumentChunkOverlap
-	}
-	resps := make([]*ConversatioSingleDocRespBody, 0)
-	for _, doc := range docs {
-		// Upload the file to specific dst
-		resp, err := cs.ReceiveConversationSingleDoc(ctx, req, doc)
+func (cs *ChatServer) ReceiveConversationDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader) (*ConversationDocsRespBody, error) {
+	var conversation *storage.Conversation
+	var err error
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	if !req.NewChat {
+		search := []storage.SearchOption{
+			storage.WithAppName(req.APPName),
+			storage.WithAppNamespace(req.AppNamespace),
+			storage.WithDebug(req.Debug),
+		}
+		if currentUser != "" {
+			search = append(search, storage.WithUser(currentUser))
+		}
+		conversation, err = cs.Storage().FindExistingConversation(req.ConversationID, search...)
 		if err != nil {
 			return nil, err
 		}
-		resps = append(resps, resp)
+	} else {
+		conversation = &storage.Conversation{
+			ID:           req.ConversationID,
+			AppName:      req.APPName,
+			AppNamespace: req.AppNamespace,
+			StartedAt:    req.StartTime,
+			Messages:     make([]storage.Message, 0),
+			User:         currentUser,
+			Debug:        req.Debug,
+		}
+	}
+
+	// process document with map-reduce
+	messageID := string(uuid.NewUUID())
+	message := storage.Message{
+		ID:        messageID,
+		Query:     req.Query,
+		Answer:    "",
+		Documents: make([]storage.Document, 0),
+	}
+
+	// summarize conversation doc
+	resp, err := cs.SummarizeConversationDoc(ctx, req, doc)
+	if err != nil {
+		return nil, err
+	}
+	message.Answer = resp.Summary
+	message.Latency = int64(resp.TimecostForSummarization)
+	message.Documents = append(message.Documents, storage.Document{
+		ID:        string(uuid.NewUUID()),
+		MessageID: messageID,
+		Name:      doc.Filename,
+		Summary:   resp.Summary,
+	})
+
+	// update conversat ion
+	conversation.Messages = append(conversation.Messages, message)
+	conversation.UpdatedAt = req.StartTime
+	// update the conversation with new message
+	if err := cs.Storage().UpdateConversation(conversation); err != nil {
+		return nil, err
 	}
 
 	return &ConversationDocsRespBody{
-		Docs: resps,
+		ChatRespBody: ChatRespBody{
+			ConversationID: req.ConversationID,
+			MessageID:      messageID,
+			CreatedAt:      time.Now(),
+			Message:        resp.Summary,
+		},
+		Doc: resp,
 	}, nil
 }
 
-// ReceiveConversationSingleDoc receive a single document,then generate embeddings and summary for this document
-func (cs *ChatServer) ReceiveConversationSingleDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader) (*ConversatioSingleDocRespBody, error) {
+// SummarizeConversationDoc receive a single document,then generate embeddings and summary for this document
+func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader) (*ConversatioSingleDocRespBody, error) {
 	klog.V(5).Infof("Load and split the document %s size:%s for conversation %s", doc.Filename, utils.BytesToSizedStr(doc.Size), req.ConversationID)
+	resp := &ConversatioSingleDocRespBody{
+		FileName: doc.Filename,
+	}
+	var summarizationStart = time.Now()
+	defer func() {
+		resp.TotalTimecost = time.Since(summarizationStart).Seconds()
+	}()
+
 	src, err := doc.Open()
 	if err != nil {
 		return nil, err
@@ -111,7 +171,14 @@ func (cs *ChatServer) ReceiveConversationSingleDoc(ctx context.Context, req Conv
 		return nil, fmt.Errorf("file with extension %s not supported yet", ext)
 	}
 
-	// TODO: expose the chunk parameters
+	// set document chunk parameters
+	if req.ChunkSize == 0 {
+		req.ChunkSize = DefaultDocumentChunkSize
+	}
+	if req.ChunkOverlap == 0 {
+		req.ChunkOverlap = DefaultDocumentChunkOverlap
+	}
+
 	split := textsplitter.NewRecursiveCharacter(
 		textsplitter.WithChunkSize(req.ChunkSize),
 		textsplitter.WithChunkOverlap(req.ChunkOverlap),
@@ -124,21 +191,22 @@ func (cs *ChatServer) ReceiveConversationSingleDoc(ctx context.Context, req Conv
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 2)
 
+	var errStr string
 	// For embedding generation
 	wg.Add(1)
 	var errEmbedding error
-	var timecostForEmbedding float64
 	go func() {
 		start := time.Now()
 		defer wg.Done()
-		semaphore <- struct{}{} // 获取一个信号量
+		semaphore <- struct{}{}
 		defer func() {
-			timecostForEmbedding = time.Since(start).Seconds()
-			<-semaphore // 释放信号量
+			resp.TimecostForEmbedding = time.Since(start).Seconds()
+			<-semaphore
 		}()
 		klog.V(5).Infof("Generate embeddings from file %s to vectorstore for conversation %s", doc.Filename, req.ConversationID)
 		errEmbedding = cs.GenerateSingleDocEmbeddings(ctx, req, doc, documents)
 		if errEmbedding != nil {
+			errStr += fmt.Sprintf(" ErrEmbedding: %s", errEmbedding.Error())
 			// break once error occurs
 			ctx.Done()
 		}
@@ -146,7 +214,6 @@ func (cs *ChatServer) ReceiveConversationSingleDoc(ctx context.Context, req Conv
 
 	// For summary generation
 	wg.Add(1)
-	var timecostForSummarization float64
 	var errSummary error
 	var summary string
 	go func() {
@@ -154,33 +221,28 @@ func (cs *ChatServer) ReceiveConversationSingleDoc(ctx context.Context, req Conv
 		defer wg.Done()
 		semaphore <- struct{}{}
 		defer func() {
-			timecostForSummarization = time.Since(start).Seconds()
+			resp.TimecostForSummarization = time.Since(start).Seconds()
 			<-semaphore
 		}()
 		klog.V(5).Infof("Generate summarization from file %s for conversation %s", doc.Filename, req.ConversationID)
 		summary, errSummary = cs.GenerateSingleDocSummary(ctx, req, doc, documents)
 		if errSummary != nil {
 			// break once error occurs
+			errStr += fmt.Sprintf(" ErrSummary: %s", errEmbedding.Error())
 			ctx.Done()
 		}
 	}()
 	// wait until all finished
 	wg.Wait()
 
-	if errEmbedding != nil {
-		return nil, errEmbedding
-	}
-	if errSummary != nil {
-		return nil, errSummary
+	if errEmbedding != nil || errSummary != nil {
+		return nil, errors.New(errStr)
 	}
 
-	return &ConversatioSingleDocRespBody{
-		FileName:                 doc.Filename,
-		NumberOfDocuments:        len(documents),
-		TimecostForEmbedding:     timecostForEmbedding,
-		Summary:                  summary,
-		TimecostForSummarization: timecostForSummarization,
-	}, nil
+	resp.NumberOfDocuments = len(documents)
+	resp.Summary = summary
+
+	return resp, nil
 }
 
 // GenerateSingleDocEmbeddings

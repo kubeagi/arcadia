@@ -49,9 +49,7 @@ type ConversationReqBody struct {
 }
 
 type ConversationDocsReqBody struct {
-	APPMetadata `json:",inline" form:",inline"`
-	// ConversationID, if it is empty, a new conversation will be created
-	ConversationID string `json:"conversation_id" form:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
+	ChatReqBody `json:",inline" form:",inline"`
 
 	// ChunkSize for text splitter
 	ChunkSize int `json:"chunk_size" form:"chunk_size" example:"2048"`
@@ -67,11 +65,11 @@ type MessageReqBody struct {
 
 type ChatReqBody struct {
 	// Query user query string
-	Query string `json:"query" binding:"required" example:"旷工最小计算单位为多少天？"`
+	Query string `json:"query" form:"query" binding:"required" example:"旷工最小计算单位为多少天？"`
 	// ResponseMode:
 	// * Blocking - means the response is returned in a blocking manner
 	// * Streaming - means the response will use Server-Sent Events
-	ResponseMode        ResponseMode `json:"response_mode" binding:"required" example:"blocking"`
+	ResponseMode        ResponseMode `json:"response_mode" form:"response_mode" binding:"required" example:"blocking"`
 	ConversationReqBody `json:",inline"`
 	Debug               bool      `json:"-"`
 	NewChat             bool      `json:"-"`
@@ -99,13 +97,18 @@ type SimpleResp struct {
 	Message string `json:"message" example:"ok"`
 }
 
+// ConversationDocsRespBody is the response body for a ConversationDocsReq
 type ConversationDocsRespBody struct {
-	Docs []*ConversatioSingleDocRespBody
+	ChatRespBody `json:",inline"`
+	// Docs are the responbody for each document
+	Doc *ConversatioSingleDocRespBody
 }
 
+// ConversatioSingleDocRespBody is the response body for a single conversation doc
 type ConversatioSingleDocRespBody struct {
-	FileName          string `json:"file_name,omitempty"`
-	NumberOfDocuments int    `json:"number_of_documents,omitempty"`
+	FileName          string  `json:"file_name,omitempty"`
+	NumberOfDocuments int     `json:"number_of_documents,omitempty"`
+	TotalTimecost     float64 `json:"total_time_cost,omitempty"`
 	// Embedding info
 	TimecostForEmbedding float64 `json:"timecost_for_embedding,omitempty"`
 	// Summary info
