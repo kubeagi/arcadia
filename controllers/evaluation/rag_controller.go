@@ -273,6 +273,7 @@ func (r *RAGReconciler) initPVC(ctx context.Context, instance *evaluationarcadia
 		pvc.Namespace = instance.Namespace
 		pvc.Spec = *instance.Spec.Storage
 		_ = controllerutil.SetOwnerReference(instance, &pvc, r.Scheme)
+		now := metav1.Now()
 		err = r.Client.Create(ctx, &pvc)
 		if err != nil {
 			logger.Error(err, "failed to create pvc", "PVCName", pvc.Name)
@@ -281,9 +282,10 @@ func (r *RAGReconciler) initPVC(ctx context.Context, instance *evaluationarcadia
 					Type:               batchv1.JobFailed,
 					Status:             corev1.ConditionTrue,
 					Message:            fmt.Sprintf("pvc creation failure. %s", err),
-					LastTransitionTime: metav1.Now(),
+					LastTransitionTime: now,
 				},
 			}
+			deepCopyInstance.Status.CompletionTime = &now
 			return r.Client.Status().Patch(ctx, deepCopyInstance, client.MergeFrom(instance))
 		}
 	}
@@ -291,6 +293,7 @@ func (r *RAGReconciler) initPVC(ctx context.Context, instance *evaluationarcadia
 		logger.Info("pvc is being deleted, need to wait for next process", "PVCname", pvc.Name)
 		return errors.New("pvc is being deleted, need to wait for next process")
 	}
+	deepCopyInstance.Status.CompletionTime = nil
 	deepCopyInstance.Status.Conditions = []batchv1.JobCondition{
 		{
 			Type:               batchv1.JobComplete,
@@ -442,6 +445,11 @@ func (r *RAGReconciler) WhenJobChanged(job *batchv1.Job) {
 				}
 			}
 			dp.Status.Conditions = []batchv1.JobCondition{cur}
+			dp.Status.CompletionTime = nil
+			if cur.Type == batchv1.JobFailed && cur.Status == corev1.ConditionTrue {
+				dp.Status.CompletionTime = &cur.LastProbeTime
+			}
+
 			if err := r.Client.Status().Patch(ctx, dp, client.MergeFrom(rag)); err != nil {
 				logger.Error(err, "set the status of a job to rag failure.", "RAG", owner.Name, "Condition", dp.Status.Conditions[0])
 			}
