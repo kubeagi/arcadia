@@ -191,6 +191,7 @@ func handleNoErrNoOut(ctx context.Context, needStream bool, oldOut string, oldEr
 		} else {
 			out, err = chains.Predict(ctx, chain, args, options[:len(options)-1]...)
 		}
+		return out, err
 	}
-	return out, err
+	return oldOut, oldErr
 }

@@ -91,6 +91,7 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 	cols := []string{c.questionColumn, c.answerColumn, c.fileNameColumn, c.pageNumberColumn, c.chunkContentColumn}
 
 	rd := csv.NewReader(c.r)
+	rd.LazyQuotes = true
 	for {
 		row, err := rd.Read()
 		if errors.Is(err, io.EOF) {

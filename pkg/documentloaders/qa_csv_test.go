@@ -47,4 +47,5 @@ func TestCSVLoader(t *testing.T) {
 		PageNumberCol:   "1",
 	}
 	assert.Equal(t, docs[1].Metadata, expected2Metadata)
+	t.Logf("last doc question:%s", docs[len(docs)-1].PageContent)
 }
