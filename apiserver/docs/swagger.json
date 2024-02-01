@@ -1122,6 +1122,158 @@
                     }
                 }
             }
+        },
+        "/rags/detail": {
+            "get": {
+                "description": "Get detail data of a rag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RAG"
+                ],
+                "summary": "Get detail data of a rag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "rag name",
+                        "name": "ragName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "application name",
+                        "name": "appName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "default is 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "default is 10",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "rag metrcis",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "desc or asc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rag.ReportDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/rags/report": {
+            "get": {
+                "description": "Get a summary of rag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RAG"
+                ],
+                "summary": "Get a summary of rag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "rag name",
+                        "name": "ragName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "application name",
+                        "name": "appName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rag.Report"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1383,6 +1535,118 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "rag.RadarData": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "rag.Report": {
+            "type": "object",
+            "properties": {
+                "radarChart": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rag.RadarData"
+                    }
+                },
+                "scatterChart": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rag.ScatterData"
+                    }
+                },
+                "summary": {
+                    "description": "TODO",
+                    "type": "string"
+                },
+                "totalScore": {
+                    "$ref": "#/definitions/rag.TotalScoreData"
+                }
+            }
+        },
+        "rag.ReportDetail": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rag.ReportLine"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "rag.ReportLine": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "contexts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "costTime": {
+                    "type": "number"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "groundTruths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "question": {
+                    "type": "string"
+                },
+                "totalScore": {
+                    "type": "number"
+                }
+            }
+        },
+        "rag.ScatterData": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "rag.TotalScoreData": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
                 }
             }
         },

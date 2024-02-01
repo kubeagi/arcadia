@@ -192,6 +192,79 @@ definitions:
       total:
         type: integer
     type: object
+  rag.RadarData:
+    properties:
+      color:
+        type: string
+      type:
+        type: string
+      value:
+        type: number
+    type: object
+  rag.Report:
+    properties:
+      radarChart:
+        items:
+          $ref: '#/definitions/rag.RadarData'
+        type: array
+      scatterChart:
+        items:
+          $ref: '#/definitions/rag.ScatterData'
+        type: array
+      summary:
+        description: TODO
+        type: string
+      totalScore:
+        $ref: '#/definitions/rag.TotalScoreData'
+    type: object
+  rag.ReportDetail:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/rag.ReportLine'
+        type: array
+      total:
+        type: integer
+    type: object
+  rag.ReportLine:
+    properties:
+      answer:
+        type: string
+      contexts:
+        items:
+          type: string
+        type: array
+      costTime:
+        type: number
+      data:
+        additionalProperties:
+          type: number
+        type: object
+      groundTruths:
+        items:
+          type: string
+        type: array
+      question:
+        type: string
+      totalScore:
+        type: number
+    type: object
+  rag.ScatterData:
+    properties:
+      color:
+        type: string
+      score:
+        type: number
+      type:
+        type: string
+    type: object
+  rag.TotalScoreData:
+    properties:
+      color:
+        type: string
+      score:
+        type: number
+    type: object
   retriever.Reference:
     properties:
       answer:
@@ -1173,6 +1246,108 @@ paths:
       summary: get app's prompt starters
       tags:
       - application
+  /rags/detail:
+    get:
+      consumes:
+      - application/json
+      description: Get detail data of a rag
+      parameters:
+      - description: rag name
+        in: query
+        name: ragName
+        required: true
+        type: string
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: application name
+        in: query
+        name: appName
+        required: true
+        type: string
+      - description: default is 1
+        in: query
+        name: page
+        type: integer
+      - description: default is 10
+        in: query
+        name: size
+        type: string
+      - description: rag metrcis
+        in: query
+        name: sortBy
+        type: string
+      - description: desc or asc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rag.ReportDetail'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get detail data of a rag
+      tags:
+      - RAG
+  /rags/report:
+    get:
+      consumes:
+      - application/json
+      description: Get a summary of rag
+      parameters:
+      - description: rag name
+        in: query
+        name: ragName
+        required: true
+        type: string
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: application name
+        in: query
+        name: appName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rag.Report'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a summary of rag
+      tags:
+      - RAG
 securityDefinitions:
   ApiKeyAuth:
     description: API token for authorization

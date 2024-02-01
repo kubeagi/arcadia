@@ -32,6 +32,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evaluationarcadiav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	gqlconfig "github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
@@ -917,4 +918,6 @@ func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		// create a webcrawler file for versioneddataset
 		group.POST("/versioneddataset/files/webcrawler", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "versioneddatasets"), api.CreateWebCrawlerFile)
 	}
+
+	group.GET("/rags/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, evaluationarcadiav1alpha1.GroupVersion, "get", "rags"), api.GetDownloadLink)
 }
