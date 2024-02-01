@@ -24,6 +24,7 @@ from common import log_tag_const
 
 from .custom_resources import (arcadia_resource_datasets,
                                arcadia_resource_datasources,
+                               arcadia_resource_embedding,
                                arcadia_resource_models,
                                arcadia_resource_versioneddatasets)
 
@@ -142,4 +143,13 @@ class KubeEnv:
             namespace=namespace,
             plural=arcadia_resource_datasources.get_name(),
             name=name,
+        )
+
+    def get_versionedembedding_status(self, namespace: str, name: str):
+        return CustomObjectsApi().get_namespaced_custom_object_status(
+            arcadia_resource_embedding.get_group(),
+            arcadia_resource_embedding.get_version(),
+            namespace,
+            arcadia_resource_embedding.get_name(),
+            name,
         )

@@ -27,7 +27,8 @@ from database_operate import (data_process_db_operate,
                               data_process_document_db_operate,
                               data_process_log_db_operate,
                               data_process_stage_log_db_operate)
-from file_handle import common_handle, pdf_handle, web_handle, word_handle
+from file_handle import common_handle, web_handle, word_handle
+from file_handle.pdf_handle import PDFHandle
 from kube import dataset_cr
 from utils import date_time_utils, file_utils, json_utils
 
@@ -147,7 +148,7 @@ async def text_manipulate(
             file_extension = file_utils.get_file_extension(file_name)
             if file_extension in ["pdf"]:
                 # 处理PDF文件
-                result = pdf_handle.pdf_manipulate(
+                pdf_handle = PDFHandle(
                     chunk_size=req_json.get("chunk_size"),
                     chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
@@ -157,6 +158,7 @@ async def text_manipulate(
                     task_id=id,
                     create_user=req_json["creator"],
                 )
+                result = pdf_handle.handle()
 
             elif file_extension in ["docx"]:
                 # 处理.docx文件
@@ -999,7 +1001,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
         document_type = document.get("document_type")
         if document_type in ["pdf"]:
             # 处理PDF文件
-            result = pdf_handle.pdf_manipulate(
+            pdf_handle = PDFHandle(
                 file_name=file_name,
                 document_id=document.get("id"),
                 support_type=support_type,
@@ -1007,6 +1009,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
                 task_id=task_id,
                 create_user=creator,
             )
+            result = pdf_handle.handle()
 
         elif document_type in ["docx"]:
             # 处理.docx文件

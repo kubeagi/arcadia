@@ -37,7 +37,7 @@ class OpenAIEmbeddings(Embeddings):
         Raises:
             ImportError: If the required 'openai' package is not installed.
         """
-        
+
         self.base_url = base_url
         self.api_key = api_key
         self.model = model
@@ -53,7 +53,7 @@ class OpenAIEmbeddings(Embeddings):
             base_url=base_url,
             api_key=api_key
         )
- 
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search texts."""
         logger.debug(texts)

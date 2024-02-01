@@ -17,7 +17,6 @@ import time
 import traceback
 from typing import List
 
-import playwright
 from langchain_community.document_transformers import Html2TextTransformer
 from langchain_core.documents import Document
 from playwright.async_api import async_playwright
@@ -46,9 +45,6 @@ class AsyncPlaywrightLoader(BaseLoader):
             max_count (int): Maximum Number of Website URLs.
             max_depth (int): Website Crawling Depth.
             interval_time (int): Interval Time.
-
-        Raises:
-            ImportError: If the required 'playwright' package is not installed.
         """
         if max_count is None:
             max_count = 100
@@ -73,8 +69,8 @@ class AsyncPlaywrightLoader(BaseLoader):
             str: The scraped HTML content or an error message if an exception occurs.
 
         """
-
         logger.info("Starting scraping...")
+
         results = ""
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
@@ -97,11 +93,13 @@ class AsyncPlaywrightLoader(BaseLoader):
             containing the scraped content from each URL.
 
         """
+        logger.info(f"{log_tag_const.WEB_LOADER} Async start to load Website data")
+
         docs = []
         all_url = await self.get_all_url()
         for url in all_url:
             html_content = await self.ascrape_playwright(url)
-            metadata = {"source": url}
+            metadata = {"source": url, "page": 0}
             docs.append(Document(page_content=html_content, metadata=metadata))
 
         html2text = Html2TextTransformer()
@@ -131,7 +129,7 @@ class AsyncPlaywrightLoader(BaseLoader):
         all_url = [self._url]
         sub_urls = [self._url]
         try:
-            for i in range(1, self._max_depth):
+            for _ in range(1, self._max_depth):
                 for sub_url in sub_urls:
                     children_urls = await self._get_children_url(
                         url=sub_url,

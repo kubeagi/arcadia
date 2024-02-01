@@ -24,10 +24,12 @@ from common.config import config
 from database_operate import (data_process_detail_db_operate,
                               data_process_document_chunk_db_operate,
                               data_process_document_db_operate)
+from embeddings.openai_embeddings import OpenAIEmbeddings
 from kube import model_cr
 from llm_api_service.qa_provider_open_ai import QAProviderOpenAI
 from llm_api_service.qa_provider_zhi_pu_ai_online import \
     QAProviderZhiPuAIOnline
+from service.data_process_qa_remove_duplicate import QARemoveDuplicate
 from transform.text import clean_transform, privacy_transform
 from utils import csv_utils, date_time_utils, file_utils, json_utils
 
@@ -119,48 +121,67 @@ def text_manipulate(
             id=document_id, status="success", conn_pool=conn_pool
         )
 
-        # 通过documentId查询生成的所有QA数据
-        qa_list = data_process_detail_db_operate.query_question_answer_list(
-            document_id=document_id, pool=conn_pool
-        )
+        if support_type_map.get("qa_split"):
+            # 是否选择了QA拆分
+            qa_list_dict = support_type_map.get("qa_split")
+            remove_duplicate_config = qa_list_dict.get("remove_duplicate_config")
+            if remove_duplicate_config:
+                # 进行了QA去重配置
+                logger.debug(f"{log_tag_const.QA_SPLIT} Start to QA remove duplicate.")
+                remove_duplicate_response = _remove_duplicate(
+                    document_id=document_id,
+                    remove_duplicate_config=remove_duplicate_config,
+                    conn_pool=conn_pool,
+                    create_user=create_user
+                )
 
-        qa_data_dict = [["q", "a", "file_name", "page_number", "chunk_content"]]
-        for item in qa_list.get("data"):
-            meta_info = item.get("meta_info")
-            if meta_info:
-                meta_json = json_utils.loads(meta_info)
-                meta_source = meta_json.get("source")
-            else:
-                meta_source = item.get("file_name")
+                if remove_duplicate_response.get("status") != 200:
+                    return remove_duplicate_response
 
-            qa_data_dict.append(
-                [
-                    item.get("question"),
-                    item.get("answer"),
-                    meta_source,
-                    item.get("page_number"),
-                    item.get("content"),
-                ]
+            # 通过documentId查询生成的所有QA数据
+            qa_list = data_process_detail_db_operate.query_question_answer_clean_list(
+                document_id=document_id, pool=conn_pool
             )
 
-        # Save the csv file.
-        file_name_without_extension = file_utils.get_file_name_without_extension(
-            file_name
-        )
-        file_name_csv = file_name_without_extension + ".csv"
-        csv_utils.save_csv(
-            file_name=file_name_csv, phase_value="final", data=qa_data_dict
-        )
+            qa_data_dict = [["q", "a", "file_name", "page_number", "chunk_content"]]
+            for item in qa_list.get("data"):
+                meta_info = item.get("meta_info")
+                if meta_info:
+                    meta_json = json_utils.loads(meta_info)
+                    meta_source = meta_json.get("source")
+                else:
+                    meta_source = item.get("file_name")
 
-        logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
-        return {
-            "status": 200,
-            "message": "",
-            "data": {
-                "object_name": file_name_csv,
-                "object_count": len(qa_list.get("data")),
-            },
-        }
+                qa_data_dict.append(
+                    [
+                        item.get("question"),
+                        item.get("answer"),
+                        meta_source,
+                        item.get("page_number"),
+                        item.get("content"),
+                    ]
+                )
+
+            # Save the csv file.
+            file_name_without_extension = file_utils.get_file_name_without_extension(
+                file_name
+            )
+            file_name_csv = file_name_without_extension + ".csv"
+            csv_utils.save_csv(
+                file_name=file_name_csv, phase_value="final", data=qa_data_dict
+            )
+
+            logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
+            return {
+                "status": 200,
+                "message": "",
+                "data": {
+                    "object_name": file_name_csv,
+                    "object_count": len(qa_list.get("data")),
+                },
+            }
+
+        return {"status": 200, "message": "", "data": ""}
     except Exception as ex:
         logger.error(
             "".join(
@@ -883,10 +904,6 @@ def _qa_split(
                 qa_insert_item, pool=conn_pool
             )
 
-            data_process_detail_db_operate.insert_question_answer_clean_info(
-                qa_insert_item, pool=conn_pool
-            )
-
         # 更新data_process_task_document_chunk中的状态
         _updata_document_chunk_status_and_end_time(
             id=document_chunk_id,
@@ -1172,3 +1189,111 @@ def _updata_document_chunk_status_and_end_time(id, status, update_user, conn_poo
             )
         )
         return {"status": 1000, "message": str(ex), "data": traceback.format_exc()}
+
+
+def _remove_duplicate(document_id, remove_duplicate_config, conn_pool, create_user):
+    # 通过documentId查询生成的所有QA数据
+    qa_list = data_process_detail_db_operate.query_question_answer_list(
+        document_id=document_id, pool=conn_pool
+    )
+
+    remove_duplicate_res = _qa_remove_duplicate(
+        qa_list=qa_list.get("data"),
+        remove_duplicate_config=remove_duplicate_config,
+        conn_pool=conn_pool,
+    )
+    if remove_duplicate_res.get("status") != 200:
+        # 更新data_process_task_document中的文件状态
+        _updata_document_status_and_end_time(
+            id=document_id, status="fail", conn_pool=conn_pool
+        )
+        return remove_duplicate_res
+
+    # 将QA去重的数据存入question_answer_clean表中
+    qa_data = remove_duplicate_res.get("data")
+    for _, item in enumerate(qa_data):
+        duplicated_flag = 1
+        if item.get("duplicated_flag") is not None:
+            duplicated_flag = item.get("duplicated_flag")
+        qa_insert_item = {
+                "id": item.get("id"),
+                "task_id": item.get("task_id"),
+                "document_id": item.get("document_id"),
+                "document_chunk_id": item.get("document_chunk_id"),
+                "file_name": item.get("file_name"),
+                "question": item.get("question"),
+                "answer": item.get("answer"),
+                "question_score": item.get("question_distance"),
+                "answer_score": item.get("answer_distance"),
+                "duplicated_flag": duplicated_flag,
+                "compare_with_id": item.get("compare_with_id"),
+                "create_user": create_user,
+            }
+        data_process_detail_db_operate.insert_question_answer_clean_info(
+            qa_insert_item, pool=conn_pool
+        )
+    return remove_duplicate_res
+
+def _qa_remove_duplicate(qa_list, remove_duplicate_config, conn_pool):
+    name = remove_duplicate_config.get("embedding_name")
+    namespace = remove_duplicate_config.get("embedding_namespace")
+    model = remove_duplicate_config.get("embedding_model")
+    provider = remove_duplicate_config.get("embedding_provider")
+    similarity = float(remove_duplicate_config.get("similarity"))
+
+    # llms cr 中模型相关信息
+    llm_spec_info = model_cr.get_spec_for_embedding_k8s_cr(name=name, namespace=namespace)
+
+    if provider == "worker":
+        # get base url for configmap
+        base_url = model_cr.get_worker_base_url_k8s_configmap(
+            name=config.k8s_default_config, namespace=config.k8s_pod_namespace
+        )
+        logger.debug(
+            "".join(
+                [
+                    f"worker embedding \n",
+                    f"name: {name}\n",
+                    f"namespace: {namespace}\n",
+                    f"model: {model}\n",
+                    f"base_url: {base_url}\n",
+                ]
+            )
+        )
+
+        qa_embeddings = OpenAIEmbeddings(
+            api_key="fake",
+            base_url=base_url,
+            model=model,
+        )
+
+        remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
+        return remove_duplicate_loader.qa_remove_duplicate(qa_list, similarity)
+    else:
+        endpoint = llm_spec_info.get("data").get("provider").get("endpoint")
+        base_url = endpoint.get("url")
+        llm_type = llm_spec_info.get("data").get("type")
+
+        logger.debug(
+            "".join(
+                [
+                    f"3rd_party embedding \n",
+                    f"name: {name}\n",
+                    f"namespace: {namespace}\n",
+                    f"model: {model}\n",
+                    f"llm_type: {llm_type}\n",
+                ]
+            )
+        )
+
+        if llm_type == "openai":
+            qa_embeddings = OpenAIEmbeddings(
+                api_key="fake",
+                base_url=base_url,
+                model=model,
+            )
+
+            remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
+            return remove_duplicate_loader.qa_remove_duplicate(qa_list, similarity)
+        else:
+            return {"status": 1000, "message": f"暂时不支持{llm_type}类型的向量化模型模型", "data": ""}

@@ -44,3 +44,5 @@ arcadia_resource_datasets = CustomResource(arcadia_group, "datasets")
 arcadia_resource_models = CustomResource(arcadia_group, "llms")
 # CRD Versioneddataset
 arcadia_resource_versioneddatasets = CustomResource(arcadia_group, "versioneddatasets")
+# CRD Embedding
+arcadia_resource_embedding = CustomResource(arcadia_group, "embedders")

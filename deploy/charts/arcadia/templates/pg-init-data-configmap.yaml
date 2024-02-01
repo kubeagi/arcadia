@@ -233,6 +233,10 @@ data:
             file_name character varying(512) COLLATE pg_catalog."default",
             question text COLLATE pg_catalog."default",
             answer text COLLATE pg_catalog."default",
+            question_score character varying(32) COLLATE pg_catalog."default",
+            answer_score character varying(32) COLLATE pg_catalog."default",
+            duplicated_flag character varying(32) COLLATE pg_catalog."default",
+            compare_with_id character varying(32) COLLATE pg_catalog."default",
             create_datetime character varying(32) COLLATE pg_catalog."default",
             create_user character varying(32) COLLATE pg_catalog."default",
             create_program character varying(64) COLLATE pg_catalog."default",
@@ -250,6 +254,10 @@ data:
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.file_name IS '文件名称';
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.question IS '问题';
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.answer IS '答案';
+        COMMENT ON COLUMN public.data_process_task_question_answer_clean.question_score IS 'question向量化后比对分数';
+        COMMENT ON COLUMN public.data_process_task_question_answer_clean.answer_score IS 'answer向量化后比对分数';
+        COMMENT ON COLUMN public.data_process_task_question_answer_clean.duplicated_flag IS '是否重复';
+        COMMENT ON COLUMN public.data_process_task_question_answer_clean.compare_with_id IS '和那条数据进行的比较';
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.create_datetime IS '创建时间';
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.create_user IS '创建用户';
         COMMENT ON COLUMN public.data_process_task_question_answer_clean.create_program IS '创建程序';
@@ -376,6 +384,8 @@ data:
             id varchar(32),
             task_id varchar(32),
             document_id varchar(32),
+            document_chunk_id varchar(32),
+            file_name varchar(64),
             question text,
             answer text,
             question_vector vector,

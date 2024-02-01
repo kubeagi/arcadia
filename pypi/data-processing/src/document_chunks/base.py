@@ -15,10 +15,12 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from langchain_core.documents import Document
 
-class Embeddings(ABC):
-    """Interface for embedding models."""
+
+class TextSplitter(ABC):
+    """Interface for splitting text into chunks."""
 
     @abstractmethod
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
+    def split_documents(self, documents: List[Document]) -> List[Document]:
+        """Split document."""

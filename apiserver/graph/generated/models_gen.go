@@ -408,8 +408,9 @@ type DataProcessConfigChildren struct {
 }
 
 type DataProcessConfigItem struct {
-	Type      string         `json:"type"`
-	LlmConfig *LLMConfigItem `json:"llm_config,omitempty"`
+	Type                  string                 `json:"type"`
+	LlmConfig             *LLMConfigItem         `json:"llm_config,omitempty"`
+	RemoveDuplicateConfig *RemoveDuplicateConfig `json:"remove_duplicate_config,omitempty"`
 }
 
 type DataProcessConfigpreFileProgress struct {
@@ -1383,6 +1384,14 @@ func (RayCluster) IsPageNode() {}
 
 type RayClusterQuery struct {
 	ListRayClusters PaginatedResult `json:"listRayClusters"`
+}
+
+type RemoveDuplicateConfig struct {
+	EmbeddingName      string `json:"embedding_name"`
+	EmbeddingNamespace string `json:"embedding_namespace"`
+	EmbeddingModel     string `json:"embedding_model"`
+	EmbeddingProvider  string `json:"embedding_provider"`
+	Similarity         string `json:"similarity"`
 }
 
 type Resource struct {

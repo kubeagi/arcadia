@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import logging
+import traceback
+
 from database_operate import dp_document_qa_remove_duplicate_db_operate
 from utils import date_time_utils
 
@@ -44,28 +46,44 @@ class QARemoveDuplicate():
             qa_pairs: QA datasets
         """
         logger.debug(f"Starting to QA vectorize: {qa_pairs}")
-        texts = []
-        for qa in qa_pairs:
-            texts.append(qa["question"])
-            texts.append(qa["answer"])
-        embeddings = self.embeddings.embed_documents(texts)
-        logger.debug(f"completed QA vectorize")
-        for index, qa_pair in enumerate(qa_pairs):
-            create_datetime = date_time_utils.now_str()
-            params = {
-                "id": qa_pair.get("id"),
-                "task_id": qa_pair.get("task_id"),
-                "document_id": qa_pair.get("document_id"),
-                "question": qa_pair.get("question"),
-                "question_vector": embeddings.data[index * 2].embedding,
-                "answer": qa_pair.get("answer"),
-                "answer_vector": embeddings.data[index * 2 + 1].embedding,
-                "create_datetime": create_datetime
-            }
-            dp_document_qa_remove_duplicate_db_operate.add(
-                params,
-                self.pool
+
+        try:
+            texts = []
+            for qa in qa_pairs:
+                texts.append(qa["question"])
+                texts.append(qa["answer"])
+            embeddings = self.embeddings.embed_documents(texts)
+            logger.debug(f"completed QA vectorize")
+            for index, qa_pair in enumerate(qa_pairs):
+                create_datetime = date_time_utils.now_str()
+                params = {
+                    "id": qa_pair.get("id"),
+                    "task_id": qa_pair.get("task_id"),
+                    "document_id": qa_pair.get("document_id"),
+                    "document_chunk_id": qa_pair.get("document_chunk_id"),
+                    "file_name": qa_pair.get("file_name"),
+                    "question": qa_pair.get("question"),
+                    "question_vector": embeddings.data[index * 2].embedding,
+                    "answer": qa_pair.get("answer"),
+                    "answer_vector": embeddings.data[index * 2 + 1].embedding,
+                    "create_datetime": create_datetime
+                }
+                dp_document_qa_remove_duplicate_db_operate.add(
+                    params,
+                    self.pool
+                )
+
+            return {"status": 200, "message": "", "data": ""}
+        except Exception as ex:
+            logger.error(
+                "".join(
+                    [
+                        f"qa embedding fail\n",
+                        f"The tracing error is: \n{traceback.format_exc()}\n",
+                    ]
+                )
             )
+            return {"status": 1000, "message": "QA数据向量化失败，请检查向量化模型是否正常！", "data": ""}
 
     def _remove_qa_embedding_data_by_id(
         self,
@@ -108,35 +126,47 @@ class QARemoveDuplicate():
             qa_pairs (list): QA datasets
             distance (float): similarity threshold
         """
-        qa_pairs_dict = {}
-        for qa in qa_pairs:
-            qa_pairs_dict[qa["id"]] = qa
-        for id, qa_pair in qa_pairs_dict.items():
-            logger.debug(f"Querying similarity of QA item: {qa_pair}")
-            if qa_pair.get("duplicated_flag") is not None and qa_pair.get("duplicated_flag"):
-                logger.debug(f"QA Duplicate Skip")
-                continue
-            params = {
-                "task_id": qa_pair.get("task_id"),
-                "document_id": qa_pair.get("document_id"),
-                "id": qa_pair.get("id"),
-            }
-            res = dp_document_qa_remove_duplicate_db_operate.filter_by_distance(
-                params,
-                self.pool
+        try:
+            qa_pairs_dict = {}
+            for qa in qa_pairs:
+                qa_pairs_dict[qa["id"]] = qa
+            for id, qa_pair in qa_pairs_dict.items():
+                logger.debug(f"Querying similarity of QA item: {qa_pair}")
+                if qa_pair.get("duplicated_flag") is not None and qa_pair.get("duplicated_flag"):
+                    logger.debug(f"QA Duplicate Skip")
+                    continue
+                params = {
+                    "task_id": qa_pair.get("task_id"),
+                    "document_id": qa_pair.get("document_id"),
+                    "id": qa_pair.get("id"),
+                }
+                res = dp_document_qa_remove_duplicate_db_operate.filter_by_distance(
+                    params,
+                    self.pool
+                )
+                self._remove_qa_embedding_data_by_id(
+                    qa_pair["id"]
+                )
+                logger.debug(f"Querying similarity of QA result: {res}")
+                for qa in res["data"]:
+                    if qa["question_distance"] > distance and qa["answer_distance"] > distance:
+                        qa["duplicated_flag"] = 0
+                        qa["compare_with_id"] = id
+                        qa_pairs_dict[qa["id"]] = qa
+                        self._remove_qa_embedding_data_by_id(
+                            qa["id"]
+                        )
+            return {"status": 200, "message": "", "data": list(qa_pairs_dict.values())}
+        except Exception as ex:
+            logger.error(
+                "".join(
+                    [
+                        f"qa remove duplicate fail\n",
+                        f"The tracing error is: \n{traceback.format_exc()}\n",
+                    ]
+                )
             )
-            self._remove_qa_embedding_data_by_id(
-                qa_pair["id"]
-            )
-            logger.debug(f"Querying similarity of QA result: {res}")
-            for qa in res["data"]:
-                if qa["question_distance"] > distance and qa["answer_distance"] > distance:
-                    qa["duplicated_flag"] = True
-                    qa_pairs_dict[qa["id"]] = qa
-                    self._remove_qa_embedding_data_by_id(
-                        qa["id"]
-                    )
-        return list(qa_pairs_dict.values())
+            return {"status": 1000, "message": "QA去重失败，未知原因，请联系管理员！", "data": ""}
 
     def qa_remove_duplicate(
         self,
@@ -203,9 +233,13 @@ class QARemoveDuplicate():
               }
             ]
         """
-        self._import_qa_embedding_data(
+        qa_embedding_res = self._import_qa_embedding_data(
             qa_pairs
         )
+
+        if qa_embedding_res.get("status") != 200:
+            return qa_embedding_res
+
         return self._remove_duplicate_qa_data(
             qa_pairs,
             distance

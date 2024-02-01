@@ -17,11 +17,11 @@ import traceback
 
 import ujson
 import ulid
-from langchain.text_splitter import SpacyTextSplitter
 
 from common import log_tag_const
 from common.config import config
 from database_operate import data_process_document_chunk_db_operate
+from document_chunks.spacy_text_splitter import SpacyTextSplitter
 from document_loaders.async_playwright import AsyncPlaywrightLoader
 from file_handle import common_handle
 from utils import file_utils, json_utils
@@ -54,7 +54,7 @@ async def web_manipulate(
         file_path = pdf_file_path + "original/" + file_name
 
         # Text splitter
-        documents = await _get_documents_by_langchain(
+        documents = await _get_documents(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap, file_path=file_path
         )
 
@@ -71,7 +71,7 @@ async def web_manipulate(
                 "status": "not_start",
                 "content": content,
                 "meta_info": json_utils.dumps(document.metadata),
-                "page_number": "1",
+                "page_number": document.metadata.get("page") + 1,
                 "creator": create_user,
             }
             all_document_for_process.append(chunk_insert_item)
@@ -102,7 +102,7 @@ async def web_manipulate(
         return {"status": 400, "message": str(ex), "data": traceback.format_exc()}
 
 
-async def _get_documents_by_langchain(chunk_size, chunk_overlap, file_path):
+async def _get_documents(chunk_size, chunk_overlap, file_path):
     # Split the text.
     if chunk_size is None:
         chunk_size = config.knowledge_chunk_size

@@ -4441,6 +4441,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPersistentVolumeClaimSpecInput,
 		ec.unmarshalInputRAGDatasetInput,
 		ec.unmarshalInputRAGMetricInput,
+		ec.unmarshalInputRemoveDuplicateConfig,
 		ec.unmarshalInputResourceInput,
 		ec.unmarshalInputResourcesInput,
 		ec.unmarshalInputSelectorInput,
@@ -4984,6 +4985,7 @@ input FileItem {
 input DataProcessConfigItem {
   type: String!
   llm_config: LLMConfigItem
+  remove_duplicate_config: RemoveDuplicateConfig
 }
 
 # LLM for 数据处理配置条目 
@@ -4996,6 +4998,14 @@ input LLMConfigItem {
   max_tokens: String
   prompt_template: String
   provider: String
+}
+
+input RemoveDuplicateConfig {
+  embedding_name: String!
+  embedding_namespace: String!
+  embedding_model: String!
+  embedding_provider: String!
+  similarity: String!
 }
 
 input DeleteDataProcessInput {
@@ -33534,7 +33544,7 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"type", "llm_config"}
+	fieldsInOrder := [...]string{"type", "llm_config", "remove_duplicate_config"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33559,6 +33569,15 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 				return it, err
 			}
 			it.LlmConfig = data
+		case "remove_duplicate_config":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove_duplicate_config"))
+			data, err := ec.unmarshalORemoveDuplicateConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRemoveDuplicateConfig(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveDuplicateConfig = data
 		}
 	}
 
@@ -35199,6 +35218,71 @@ func (ec *executionContext) unmarshalInputRAGMetricInput(ctx context.Context, ob
 				return it, err
 			}
 			it.ToleranceThreshbold = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRemoveDuplicateConfig(ctx context.Context, obj interface{}) (RemoveDuplicateConfig, error) {
+	var it RemoveDuplicateConfig
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"embedding_name", "embedding_namespace", "embedding_model", "embedding_provider", "similarity"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "embedding_name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embedding_name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingName = data
+		case "embedding_namespace":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embedding_namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingNamespace = data
+		case "embedding_model":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embedding_model"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingModel = data
+		case "embedding_provider":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("embedding_provider"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmbeddingProvider = data
+		case "similarity":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("similarity"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Similarity = data
 		}
 	}
 
@@ -45944,6 +46028,14 @@ func (ec *executionContext) marshalORayClusterQuery2ᚖgithubᚗcomᚋkubeagiᚋ
 		return graphql.Null
 	}
 	return ec._RayClusterQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORemoveDuplicateConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRemoveDuplicateConfig(ctx context.Context, v interface{}) (*RemoveDuplicateConfig, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRemoveDuplicateConfig(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOResource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResource(ctx context.Context, sel ast.SelectionSet, v *Resource) graphql.Marshaler {
