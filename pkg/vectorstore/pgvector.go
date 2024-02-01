@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v5"
@@ -147,21 +146,33 @@ func (s *PGVectorStore) RemoveExist(ctx context.Context, log logr.Logger, docume
 	for _, d := range document {
 		in = append(in, d.PageContent)
 	}
-	sql = fmt.Sprintf(`SELECT document, cmetadata FROM %s WHERE collection_id = $1 AND document in ('%s')`, s.PGVector.EmbeddingTableName, strings.Join(in, "', '"))
-	rows, err := s.Conn.Query(ctx, sql, collectionUUID)
-	if err != nil {
-		return nil, err
-	}
+	// Build a query every 100 entries to prevent the sql from being too large and causing errors
+	step := 100
+	start, end := 0, step
 	res := make(map[string]lanchaingoschema.Document, 0)
-	for rows.Next() {
-		doc := lanchaingoschema.Document{}
-		if err := rows.Scan(&doc.PageContent, &doc.Metadata); err != nil {
+	for i := 0; ; i++ {
+		if start >= len(in) {
+			break
+		}
+		if end > len(in) {
+			end = len(in)
+		}
+		sql = fmt.Sprintf(`SELECT document, cmetadata FROM %s WHERE collection_id = $1 AND document = ANY($2)`, s.PGVector.EmbeddingTableName)
+		rows, err := s.Conn.Query(ctx, sql, collectionUUID, in[start:end])
+		if err != nil {
 			return nil, err
 		}
-		res[doc.PageContent] = doc
-	}
-	if len(res) == 0 {
-		return document, nil
+		for rows.Next() {
+			doc := lanchaingoschema.Document{}
+			if err := rows.Scan(&doc.PageContent, &doc.Metadata); err != nil {
+				return nil, err
+			}
+			res[doc.PageContent] = doc
+		}
+		if len(res) == 0 {
+			return document, nil
+		}
+		start, end = end, end+step
 	}
 	if len(res) == len(document) {
 		return nil, nil
