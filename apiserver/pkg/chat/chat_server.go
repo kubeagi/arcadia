@@ -211,6 +211,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	if err != nil {
 		return nil, err
 	}
+	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
 	var kb *v1alpha1.KnowledgeBase
 	var chainOptions []chains.ChainCallOption
 	var model langchainllms.LLM
@@ -297,7 +298,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			}
 			info := &v1alpha1.OSS{Bucket: versionedDataset.Namespace}
 			for _, fileDetails := range detail.FileDetails {
-				info.Object = filepath.Join("dataset", versionedDataset.Name, versionedDataset.Spec.Version, fileDetails.Path)
+				info.Object = filepath.Join("dataset", versionedDataset.Spec.Dataset.Name, versionedDataset.Spec.Version, fileDetails.Path)
 				file, err := ds.ReadFile(ctx, info)
 				if err != nil {
 					klog.Infof("failed to read file: %s, try next one", err)
@@ -316,7 +317,8 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 					continue
 				}
 				for i := 0; i < remains && i < len(doc); i++ {
-					promptStarters = append(promptStarters, doc[i].PageContent)
+					content := strings.TrimPrefix(doc[i].PageContent, "q: ")
+					promptStarters = append(promptStarters, content)
 				}
 				remains = limit - len(promptStarters)
 				if remains == 0 {

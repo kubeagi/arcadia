@@ -582,7 +582,12 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 		log.Error(err, "reconcile delete: get vector store error, may leave garbage data")
 		return
 	}
-	_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName(), r.Client, nil)
+	// Sometimes the deletion action can jam the reconciler goroutine, the deletion is a best effort and we don't want it to block the current goroutine
+	go func() {
+		log.V(3).Info("remove vector store collection start")
+		_ = vectorstore.RemoveCollection(ctx, log, vectorStore, kb.VectorStoreCollectionName(), r.Client, nil)
+		log.V(3).Info("remove vector store collection done")
+	}()
 }
 
 func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {
