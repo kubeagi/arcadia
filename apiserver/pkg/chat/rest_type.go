@@ -101,7 +101,7 @@ type SimpleResp struct {
 type ConversationDocsRespBody struct {
 	ChatRespBody `json:",inline"`
 	// Docs are the responbody for each document
-	Doc *ConversatioSingleDocRespBody
+	Doc *ConversatioSingleDocRespBody `json:"doc,omitempty"`
 }
 
 // ConversatioSingleDocRespBody is the response body for a single conversation doc
