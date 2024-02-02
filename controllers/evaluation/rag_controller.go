@@ -58,6 +58,7 @@ type RAGReconciler struct {
 //+kubebuilder:rbac:groups=evaluation.arcadia.kubeagi.k8s.com.cn,resources=rags/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=*
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=*
+//+kubebuilder:rbac:groups="storage.k8s.io",resources=storageclasses,verbs=get;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
