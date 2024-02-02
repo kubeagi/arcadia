@@ -15,17 +15,20 @@
 
 from database_clients import postgresql_pool_client
 
+
 def add(
     params,
     pool
 ):
     """Add a new record"""
-    
+
     sql = """
         insert into public.data_process_task_question_answer_remove_duplicate_tmp (  
           id,
           task_id,
           document_id,
+          document_chunk_id,
+          file_name,
           question,
           question_vector,
           answer,
@@ -36,6 +39,8 @@ def add(
           %(id)s,
           %(task_id)s,
           %(document_id)s,
+          %(document_chunk_id)s,
+          %(file_name)s,
           %(question)s,
           %(question_vector)s,
           %(answer)s,
@@ -58,18 +63,20 @@ def filter_by_distance(
             id,
             task_id,
             document_id,
+            document_chunk_id,
+            file_name,
             question,
             answer,
-            (q1.question_vector <#> q2.question_vector) * -1 as question_distance,
-            (q1.answer_vector <#> q2.answer_vector) * -1 as answer_distance
+            1 - (q1.question_vector <=> q2.question_vector) as question_distance,
+            1 - (q1.answer_vector <=> q2.answer_vector) as answer_distance
         from 
-            data_process_task_question_answer_remove_duplicate_tmp q1, 
-              (select
+            data_process_task_question_answer_remove_duplicate_tmp q1,
+            (select
                 question_vector,
-                answer_vector 
-              from 
+                answer_vector
+              from
                  data_process_task_question_answer_remove_duplicate_tmp
-              where 
+              where
                  id = %(id)s 
               limit 1) q2 
         where

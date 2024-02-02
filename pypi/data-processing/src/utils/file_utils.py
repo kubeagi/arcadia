@@ -54,3 +54,11 @@ def get_file_name_without_extension(file_name):
     file_name_without_extension = path.stem
 
     return file_name_without_extension
+
+
+def get_file_name(file_path):
+    """Get file name"""
+    path = Path(file_path)
+    file_name = path.name
+
+    return file_name

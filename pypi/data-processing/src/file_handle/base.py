@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import List
 
 
-class Embeddings(ABC):
-    """Interface for embedding models."""
+class BaseHandle(ABC):
+    """Interface for Document Handle.
+
+    The `handle` method will remain as is for backwards compatibility.
+    """
 
     @abstractmethod
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
+    def handle(self):
+        """handle document."""

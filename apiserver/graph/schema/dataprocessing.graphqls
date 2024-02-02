@@ -63,6 +63,7 @@ input FileItem {
 input DataProcessConfigItem {
   type: String!
   llm_config: LLMConfigItem
+  remove_duplicate_config: RemoveDuplicateConfig
 }
 
 # LLM for 数据处理配置条目 
@@ -75,6 +76,14 @@ input LLMConfigItem {
   max_tokens: String
   prompt_template: String
   provider: String
+}
+
+input RemoveDuplicateConfig {
+  embedding_name: String!
+  embedding_namespace: String!
+  embedding_model: String!
+  embedding_provider: String!
+  similarity: String!
 }
 
 input DeleteDataProcessInput {

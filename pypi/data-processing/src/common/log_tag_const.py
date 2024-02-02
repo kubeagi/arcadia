@@ -42,3 +42,7 @@ OPEN_AI = "Open AI"
 CONFIG = "Config"
 
 WEB_CRAWLING = "Web Url Utils"
+
+PDF_LOADER = "PDF Loader"
+DOCX_LOADER = "Docx Loader"
+WEB_LOADER = "Web Loader"

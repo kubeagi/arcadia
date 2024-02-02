@@ -107,3 +107,21 @@ def get_llm_qa_retry_count_in_k8s_configmap(namespace, config_map_name):
         )
 
         return None
+
+def get_spec_for_embedding_k8s_cr(name, namespace):
+    """get embedding.
+
+    name: model name;
+    namespace: namespace;
+    """
+    try:
+        kube = client.KubeEnv()
+
+        one_cr_llm = kube.get_versionedembedding_status(namespace=namespace, name=name)
+
+        provider = one_cr_llm["spec"]
+
+        return {"status": 200, "message": "获取embedding中的provider成功", "data": provider}
+    except Exception as ex:
+        logger.error(str(ex))
+        return {"status": 400, "message": "获取embedding中的provider失败", "data": ""}

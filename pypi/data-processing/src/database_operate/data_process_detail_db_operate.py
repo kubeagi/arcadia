@@ -264,9 +264,10 @@ def top_n_list_qa_for_preview(req_json, pool):
           update_user,
           update_program
         from
-          public.data_process_task_question_answer
+          public.data_process_task_question_answer_clean
         where
-          task_id = %(task_id)s
+          task_id = %(task_id)s and
+          duplicated_flag = '1'
         order by random()
         limit 10
     """.strip()
@@ -356,6 +357,10 @@ def insert_question_answer_clean_info(req_json, pool):
         "file_name": req_json["file_name"],
         "question": req_json["question"],
         "answer": req_json["answer"],
+        "question_score": req_json["question_score"],
+        "answer_score": req_json["answer_score"],
+        "duplicated_flag": req_json["duplicated_flag"],
+        "compare_with_id": req_json["compare_with_id"],
         "create_datetime": now,
         "create_user": user,
         "create_program": program,
@@ -373,6 +378,10 @@ def insert_question_answer_clean_info(req_json, pool):
           file_name,
           question,
           answer,
+          question_score,
+          answer_score,
+          duplicated_flag,
+          compare_with_id,
           create_datetime,
           create_user,
           create_program,
@@ -388,6 +397,10 @@ def insert_question_answer_clean_info(req_json, pool):
           %(file_name)s,
           %(question)s,
           %(answer)s,
+          %(question_score)s,
+          %(answer_score)s,
+          %(duplicated_flag)s,
+          %(compare_with_id)s,
           %(create_datetime)s,
           %(create_program)s,
           %(create_user)s,
@@ -414,22 +427,16 @@ def query_question_answer_list(document_id, pool):
 
     sql = """
       select
-        dptqa.id,
-        dptqa.task_id,
-        dptqa.document_id,
-        dptqa.document_chunk_id,
-        dptqa.file_name,
-        dptqa.question,
-        dptqa.answer,
-        dptdc.content,
-        dptdc.meta_info,
-        dptdc.page_number
-      from public.data_process_task_question_answer dptqa
-      left join public.data_process_task_document_chunk dptdc
-      on
-        dptdc.id = dptqa.document_chunk_id
+        id,
+        task_id,
+        document_id,
+        document_chunk_id,
+        file_name,
+        question,
+        answer
+      from public.data_process_task_question_answer
       where 
-        dptqa.document_id = %(document_id)s
+        document_id = %(document_id)s
     """.strip()
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
@@ -538,4 +545,39 @@ def delete_transform_by_document_chunk(req_json, pool):
     """.strip()
 
     res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+def query_question_answer_clean_list(document_id, pool):
+    """List question answer with document id.
+
+    req_json is a dictionary object. for example:
+    {
+        "document_id": "01HGWBE48DT3ADE9ZKA62SW4WS"
+    }
+    pool: databasec connection pool;
+    """
+    params = {"document_id": document_id}
+
+    sql = """
+      select
+        dptqac.id,
+        dptqac.task_id,
+        dptqac.document_id,
+        dptqac.document_chunk_id,
+        dptqac.file_name,
+        dptqac.question,
+        dptqac.answer,
+        dptdc.content,
+        dptdc.meta_info,
+        dptdc.page_number
+      from public.data_process_task_question_answer_clean dptqac
+      left join public.data_process_task_document_chunk dptdc
+      on
+        dptdc.id = dptqac.document_chunk_id
+      where 
+        dptqac.document_id = %(document_id)s and
+        dptqac.duplicated_flag = '1'
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
