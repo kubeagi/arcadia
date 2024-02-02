@@ -18,6 +18,7 @@ rules:
   - versioneddatasets
   - applications
   - llms
+  - knowledgebases
   verbs:
   - get
   - list
@@ -32,6 +33,7 @@ rules:
   - chain.arcadia.kubeagi.k8s.com.cn
   resources:
   - llmchains
+  - retrievalqachains
   verbs:
   - get
   - list
