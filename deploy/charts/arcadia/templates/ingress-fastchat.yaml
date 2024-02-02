@@ -15,7 +15,12 @@ metadata:
     nginx.ingress.kubernetes.io/load-balance: round_robin
     nginx.ingress.kubernetes.io/proxy-body-size: ""
     nginx.ingress.kubernetes.io/proxy-buffering: "on"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    # It may take too long when call embedding/llm model,so we increase the proxy-connect-timeout to 600 seoncds 
+    # WIth suggeststion https://stackoverflow.com/questions/24453388/nginx-reverse-proxy-causing-504-gateway-timeout
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: 600s
+    nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: 600s
+    nginx.ingress.kubernetes.io/proxy-read-timeout: 600s
+    nginx.ingress.kubernetes.io/proxy-send-timeout: 600s
     nginx.ingress.kubernetes.io/server-alias: ""
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/upstream-vhost: $host
