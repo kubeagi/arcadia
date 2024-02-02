@@ -429,6 +429,12 @@ if [[ $resp == *"err"* ]]; then
 	echo "failed"
 	exit 1
 fi
+resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+echo $resp | jq .
+if [[ $resp == *"err"* ]]; then
+	echo "failed"
+	exit 1
+fi
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
