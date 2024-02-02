@@ -32,7 +32,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	client1 "github.com/kubeagi/arcadia/apiserver/pkg/client"
 )
 
@@ -68,7 +67,8 @@ func isBearerToken(token string) (string, bool) {
 	return payload, head == "bearer" && len(payload) > 0
 }
 
-func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespace string) (bool, string, error) {
+// TODO: We could consider abstracting a validation function, that way we could have multiple validation methods.
+func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resourceAttributes *av1.ResourceAttributes) (bool, string, error) {
 	u := &User{}
 	if err := oidcToken.Claims(u); err != nil {
 		klog.Errorf("parse user info from idToken, error %v", err)
@@ -77,15 +77,9 @@ func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespac
 
 	av := av1.SubjectAccessReview{
 		Spec: av1.SubjectAccessReviewSpec{
-			ResourceAttributes: &av1.ResourceAttributes{
-				Verb:      verb,
-				Group:     v1alpha1.GroupVersion.Group,
-				Version:   v1alpha1.GroupVersion.Version,
-				Resource:  resource,
-				Namespace: namespace,
-			},
-			Groups: u.Groups,
-			User:   u.Name,
+			ResourceAttributes: resourceAttributes,
+			Groups:             u.Groups,
+			User:               u.Name,
 		},
 	}
 	obj, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&av)
@@ -105,7 +99,7 @@ func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resource, verb, namespac
 	return ok, u.Name, nil
 }
 
-func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, resources string) gin.HandlerFunc {
+func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, groupVersion schema.GroupVersion, verb, resources string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if !needAuth {
 			ctx.Next()
@@ -140,7 +134,8 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, verb, re
 			return
 		}
 		if verb != "" {
-			allowed, userName, err := cani(client, oidcIDtoken, resources, verb, namespace)
+			ra := &av1.ResourceAttributes{Group: groupVersion.Group, Version: groupVersion.Version, Verb: verb, Resource: resources, Namespace: namespace}
+			allowed, userName, err := cani(client, oidcIDtoken, ra)
 			if err != nil {
 				klog.Errorf("auth error: failed to checkout permission. error %s", err)
 				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
