@@ -113,7 +113,7 @@ jobs:
       - name: setting token to npmrc
         if: (( github.event_name == 'push' && steps.gql-changes.outputs.gql == 'true') || github.event_name == 'workflow_dispatch') && matrix.no == 1
         run: |
-          echo '//dev-npm.tenxcloud.net/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
+          echo '//dev-npm.k8s.com.cn/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
           echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
       - name: Set variable on Merge pull request
         if: github.event_name == 'push' && matrix.no == 1

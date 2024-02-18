@@ -21,31 +21,26 @@
 
 **Arcadia** comes from [Greek mythology](https://www.greekmythology.com/Myths/Places/Arcadia/arcadia.html)(a tranquil and idyllic region, representing harmony, serenity, and natural beauty). We aim to help everyone find a more perfect integration between humans and AI.
 
-To achieve this goal, we provide this one-stop LLMOps solution:
+To achieve this goal, we provide this one-stop LLMOps solution. Furthermore, we can easily host **Arcadia** at any Kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(Kubernetes building blocks).
 
-- Dataset Management: storage/real-time data,multimodal,pre-processing,vectorization
-- Models Management: local/online LLMs(development,training,deployment),inference acceleration
-- Application Management: development,optimization,deployment with visual editor
-
-Furthermore, we can easily host **Arcadia** at any kubernetes cluster as production ready by integrating [kubebb](https://github.com/kubebb)(A kubernetes building blocks).
+## Features
+* Multi-tenant isolation (data, model services), built-in OIDC, RBAC, and auditing, supporting different companies and departments to develop through a unified platform
+* Kubernetes native AGI agent orchestration
+* Built on langchaingo(golang), has better performance and maintainability
+* Support distributed inference using Ray
+* Support quality and performance evaluation of AGI agent under different configurations
+* A development and operational platform for AI agents, along with an AI agent portal for end-users
+* Developed based on micro frontends and low-code approach, allowing for quick scalability and integration
 
 ## Architecture
 
-Our design and development in Arcadia design follows operator pattern which extends kubernetes APIs.
+Our design and development in Arcadia design follows operator pattern which extends Kubernetes APIs.
 
 ![Arch](./docs/images/kubeagi.drawio.png)
 
+For details, check [Architecture Overview](http://kubeagi.k8s.com.cn/docs/Concepts/architecture-overview)
+
 ## Quick Start
-
-### Pre-requisites
-
-1. [helm](https://helm.sh/docs/intro/install/)
-
-2. [Kubernetes](https://kubernetes.io/)
-
-If you don't have a kubernetes cluster, you can schedule a [kind cluster](https://kind.sigs.k8s.io/). Depends on your choice on CPU or GPU when running LLM worker, you can choose to:
-
-- [Create a kind cluster with/without GPU enabled](http://kubeagi.k8s.com.cn/docs/Quick%20Start/create-cluster-using-kind)
 
 ### Documentation
 
@@ -53,12 +48,33 @@ Visit our [online documents](http://kubeagi.k8s.com.cn/docs/intro)
 
 Read [user guide](http://kubeagi.k8s.com.cn/docs/UserGuide/intro)
 
-## CLI
+### LLMs
 
-We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](./pkg/arctl/README.md) for more details.
+List of supported(tested) LLMs
+* baichuan2-7b
+* chatglm2-6b
+* qwen-7b-chat / qwen-14b-chat / qwen-72b-chat
+* llama2-7b
+* mistral-7b
+* bge-large-zh  ***embedding***
+* m3e ***embedding***
+* [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
+  - [example](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
+  - [embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
+* [DashScope(灵积模型服务)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope)
+  - [example](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go)
+  - [text-embedding-v1(通用文本向量 同步接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details)
 
-- ✅ datasource management
-- ✅ local dataset management
+### Embeddings
+
+> Fully compatible with [langchain embeddings](https://github.com/tmc/langchaingo/tree/main/embeddings)
+
+### VectorStores
+
+> Fully compatible with [langchain vectorstores](https://github.com/tmc/langchaingo/tree/main/vectorstores)
+
+- ✅ [PG Vector](https://github.com/tmc/langchaingo/tree/main/vectorstores/pgvector), KubeAGI adds the PG vector support to [langchaingo](https://github.com/tmc/langchaingo) project.
+- ✅ [ChromaDB](https://docs.trychroma.com/)
 
 ## Pure Go Toolchains
 
@@ -70,25 +86,15 @@ To enhance the AI capability in Golang, we developed some packages.Here are the 
 - [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
 - [dashscope](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go) shows how to use this [dashscope client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope) to chat with qwen-7b-chat / qwen-14b-chat / llama2-7b-chat-v2 / llama2-13b-chat-v2 and use embedding with dashscope text-embedding-v1 / text-embedding-async-v1
 
-### LLMs
+## CLI
 
-- ✅ [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
-  - [example](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go)
-- ✅ [DashScope(灵积模型服务)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope)
-  - see [example](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go)
+We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](http://kubeagi.k8s.com.cn/docs/Tools/arctl-tool) for more details.
 
-### Embeddings
-
-> Fully compatible with [langchain embeddings](https://github.com/tmc/langchaingo/tree/main/embeddings)
-
-- ✅ [ZhiPuAI(智谱 AI) Embedding](https://github.com/kubeagi/arcadia/tree/main/pkg/embeddings/zhipuai)
-- ✅ [DashScope(灵积模型服务) text-embedding-v1(通用文本向量 同步接口)](https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details)
-
-### VectorStores
-
-> Fully compatible with [langchain vectorstores](https://github.com/tmc/langchaingo/tree/main/vectorstores)
-
-- ✅ [ChromaDB](https://docs.trychroma.com/)
+- ✅ datasource management
+- ✅ local dataset management
+- ✅ chat & completion
+- ✅ download files from datasource
+- ✅ RAG evaluation
 
 ## Contribute to Arcadia
 
