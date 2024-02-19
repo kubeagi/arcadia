@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -53,6 +54,19 @@ const (
 
 func PhaseJobName(instance *evav1alpha1.RAG, phase evav1alpha1.RAGPhase) string {
 	return fmt.Sprintf("%s-phase-%s", instance.Name, phase)
+}
+func systemEmbeddingSuite(ctx context.Context, mgrClient client.Client) (*v1alpha1.Embedder, error) {
+	// get the built-in system embedder
+	emd, err := config.GetEmbedder(ctx, mgrClient, nil)
+	if err != nil {
+		return nil, err
+	}
+	embedder := &v1alpha1.Embedder{}
+	err = mgrClient.Get(ctx, types.NamespacedName{Namespace: *emd.Namespace, Name: emd.Name}, embedder)
+	if err != nil {
+		return nil, err
+	}
+	return embedder, nil
 }
 
 func DownloadJob(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
@@ -208,6 +222,18 @@ func JudgeJobGenerator(ctx context.Context, c client.Client) func(*evav1alpha1.R
 			model = r[0]
 		}
 
+		metrics := make([]string, 0)
+		for _, m := range instance.Spec.Metrics {
+			metrics = append(metrics, string(m.Kind))
+		}
+		systemEmbedder, err := systemEmbeddingSuite(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		embedderModelList := systemEmbedder.GetModelList()
+		if len(embedderModelList) == 0 {
+			return nil, fmt.Errorf("embedder don't have a model")
+		}
 		job := &batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: instance.Namespace,
@@ -234,9 +260,11 @@ func JudgeJobGenerator(ctx context.Context, c client.Client) func(*evav1alpha1.R
 									"-m",
 									"ragas_once.cli",
 									fmt.Sprintf("--apibase=%s", apiBase),
-									fmt.Sprintf("--model=%s", model),
+									fmt.Sprintf("--llm=%s", model),
 									fmt.Sprintf("--apikey=%s", apiKey),
 									fmt.Sprintf("--dataset=%s", filepath.Join(defaultPVCMountPath, defaultTestRagFile)),
+									fmt.Sprintf("--metrics=%s", strings.Join(metrics, ",")),
+									fmt.Sprintf("--embedding=%s", embedderModelList[0]),
 								},
 								VolumeMounts: []v1.VolumeMount{
 									{
