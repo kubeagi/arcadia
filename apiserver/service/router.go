@@ -61,6 +61,9 @@ func NewServerAndRun(conf config.ServerConfig) {
 	// for ops apis with graphql
 	registerGraphQL(r, bffGroup, conf)
 
+	ragGroup := r.Group("/rags")
+	registerRAG(ragGroup, conf)
+
 	// for chat server with Restful apis
 	chatGroup := r.Group("/chat")
 	registerChat(chatGroup, conf)

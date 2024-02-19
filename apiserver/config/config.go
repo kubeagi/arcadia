@@ -19,8 +19,14 @@ import (
 	"flag"
 	"os"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
 
+	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evaluationarcadiav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/dataprocessing"
 )
 
@@ -39,6 +45,8 @@ type ServerConfig struct {
 	IssuerURL, MasterURL, ClientID, ClientSecret string
 
 	DataProcessURL string
+
+	Scheme *runtime.Scheme
 }
 
 func NewServerFlags() ServerConfig {
@@ -57,6 +65,12 @@ func NewServerFlags() ServerConfig {
 
 	klog.InitFlags(nil)
 	flag.Parse()
+
+	s.Scheme = runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(s.Scheme))
+	utilruntime.Must(v1.AddToScheme(s.Scheme))
+	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(s.Scheme))
+	utilruntime.Must(v1alpha1.AddToScheme(s.Scheme))
 
 	dataprocessing.Init(s.DataProcessURL)
 	return *s
