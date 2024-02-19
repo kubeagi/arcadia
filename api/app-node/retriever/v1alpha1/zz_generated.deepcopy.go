@@ -22,6 +22,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -45,7 +46,7 @@ func (in *KnowledgeBaseRetriever) DeepCopyInto(out *KnowledgeBaseRetriever) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	out.Spec = in.Spec
+	in.Spec.DeepCopyInto(&out.Spec)
 	in.Status.DeepCopyInto(&out.Status)
 }
 
@@ -103,6 +104,11 @@ func (in *KnowledgeBaseRetrieverList) DeepCopyObject() runtime.Object {
 func (in *KnowledgeBaseRetrieverSpec) DeepCopyInto(out *KnowledgeBaseRetrieverSpec) {
 	*out = *in
 	out.CommonSpec = in.CommonSpec
+	if in.Knowledgebase != nil {
+		in, out := &in.Knowledgebase, &out.Knowledgebase
+		*out = new(basev1alpha1.TypedObjectReference)
+		(*in).DeepCopyInto(*out)
+	}
 	out.CommonRetrieverConfig = in.CommonRetrieverConfig
 }
 

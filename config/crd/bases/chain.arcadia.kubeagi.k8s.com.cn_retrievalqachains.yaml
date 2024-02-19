@@ -47,6 +47,27 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              llm:
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
               maxLength:
                 default: 2048
                 description: MaxLength is the maximum length of the generated text
@@ -123,6 +144,8 @@ spec:
                 description: TopP is the cumulative probability for top-p sampling
                   in a llm call.
                 type: number
+            required:
+            - llm
             type: object
           status:
             description: RetrievalQAChainStatus defines the observed state of RetrievalQAChain

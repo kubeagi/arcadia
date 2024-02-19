@@ -28,6 +28,8 @@ import (
 type LLMChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
+	LLM *v1alpha1.TypedObjectReference `json:"llm"`
+
 	CommonChainConfig `json:",inline"`
 }
 

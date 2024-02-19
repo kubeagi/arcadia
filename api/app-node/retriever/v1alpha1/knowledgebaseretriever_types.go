@@ -25,7 +25,10 @@ import (
 
 // KnowledgeBaseRetrieverSpec defines the desired state of KnowledgeBaseRetriever
 type KnowledgeBaseRetrieverSpec struct {
-	v1alpha1.CommonSpec   `json:",inline"`
+	v1alpha1.CommonSpec `json:",inline"`
+
+	Knowledgebase *v1alpha1.TypedObjectReference `json:"knowledgebase"`
+
 	CommonRetrieverConfig `json:",inline"`
 }
 

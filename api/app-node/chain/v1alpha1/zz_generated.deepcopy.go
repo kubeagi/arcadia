@@ -23,6 +23,7 @@ package v1alpha1
 
 import (
 	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
+	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -89,6 +90,11 @@ func (in *APIChainList) DeepCopyObject() runtime.Object {
 func (in *APIChainSpec) DeepCopyInto(out *APIChainSpec) {
 	*out = *in
 	out.CommonSpec = in.CommonSpec
+	if in.LLM != nil {
+		in, out := &in.LLM, &out.LLM
+		*out = new(basev1alpha1.TypedObjectReference)
+		(*in).DeepCopyInto(*out)
+	}
 	in.CommonChainConfig.DeepCopyInto(&out.CommonChainConfig)
 }
 
@@ -209,6 +215,11 @@ func (in *LLMChainList) DeepCopyObject() runtime.Object {
 func (in *LLMChainSpec) DeepCopyInto(out *LLMChainSpec) {
 	*out = *in
 	out.CommonSpec = in.CommonSpec
+	if in.LLM != nil {
+		in, out := &in.LLM, &out.LLM
+		*out = new(basev1alpha1.TypedObjectReference)
+		(*in).DeepCopyInto(*out)
+	}
 	in.CommonChainConfig.DeepCopyInto(&out.CommonChainConfig)
 }
 
@@ -316,6 +327,11 @@ func (in *RetrievalQAChainList) DeepCopyObject() runtime.Object {
 func (in *RetrievalQAChainSpec) DeepCopyInto(out *RetrievalQAChainSpec) {
 	*out = *in
 	out.CommonSpec = in.CommonSpec
+	if in.LLM != nil {
+		in, out := &in.LLM, &out.LLM
+		*out = new(basev1alpha1.TypedObjectReference)
+		(*in).DeepCopyInto(*out)
+	}
 	in.CommonChainConfig.DeepCopyInto(&out.CommonChainConfig)
 }
 
