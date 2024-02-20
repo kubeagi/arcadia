@@ -88,7 +88,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	}
 	history, ok := v4.(langchainschema.ChatMessageHistory)
 	if !ok {
-		return args, errors.New("prompt not prompts.FormatPrompter")
+		return args, errors.New("history not memory.ChatMessageHistory")
 	}
 
 	instance := l.Instance
