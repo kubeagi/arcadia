@@ -198,7 +198,22 @@ type DataProcessDetailsItem {
   end_time: String!
   creator: String!
   error_msg: String
+  data_process_config_info: [DataProcessConfigInfo!]
   config: [DataProcessConfig!]
+}
+
+type DataProcessConfigInfo {
+  type: String!
+  llm_config: LLMConfig
+  remove_duplicate_config: RemoveDuplicateConfigItem
+}
+
+type RemoveDuplicateConfigItem {
+  embedding_name: String!
+  embedding_namespace: String!
+  embedding_model: String!
+  embedding_provider: String!
+  similarity: String!
 }
 
 # 数据处理配置项
