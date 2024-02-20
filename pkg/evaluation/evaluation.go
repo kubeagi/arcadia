@@ -28,7 +28,6 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
-	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	pkgdocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 )
 
@@ -152,7 +151,6 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 		}
 
 		// chat with application
-		ctx = base.SetAppNamespace(ctx, eval.app.Namespace)
 		out, err := eval.app.Run(ctx, eval.cli, nil, appruntime.Input{Question: ragasRow.Question, NeedStream: false, History: memory.NewChatMessageHistory()})
 		if err != nil {
 			klog.V(1).ErrorS(err, "failed to get the answer", "app", eval.app.Name, "namespace", eval.app.Namespace, "question", ragasRow.Question)

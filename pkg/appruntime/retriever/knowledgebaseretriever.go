@@ -89,6 +89,7 @@ type KnowledgeBaseRetriever struct {
 	base.BaseNode
 	DocNullReturn string
 	Instance      *apiretriever.KnowledgeBaseRetriever
+	Finish        func()
 }
 
 func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
@@ -150,13 +151,19 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 		return nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
 	}
 	var s vectorstores.VectorStore
-	s, _, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), cli)
+	s, l.Finish, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), cli)
 	if err != nil {
 		return nil, err
 	}
 	l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
 	args["retriever"] = l
 	return args, nil
+}
+
+func (l *KnowledgeBaseRetriever) Cleanup() {
+	if l.Finish != nil {
+		l.Finish()
+	}
 }
 
 // KnowledgeBaseStuffDocuments is similar to chains.StuffDocuments but with new joinDocuments method
