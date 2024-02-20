@@ -40,6 +40,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	runtimebase "github.com/kubeagi/arcadia/pkg/appruntime/base"
+	runtimechains "github.com/kubeagi/arcadia/pkg/appruntime/chain"
 	runtimellm "github.com/kubeagi/arcadia/pkg/appruntime/llm"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -210,13 +211,13 @@ func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req Conversa
 		klog.V(5).Infof("Generate embeddings from file %s to vectorstore for conversation %s", doc.Filename, req.ConversationID)
 		errEmbedding = cs.GenerateSingleDocEmbeddings(ctx, req, doc, documents)
 		if errEmbedding != nil {
+			klog.V(1).ErrorS(errEmbedding, "ErrEmbedding", "document", doc.Filename, "conversation", req.ConversationID)
 			errStr += fmt.Sprintf(" ErrEmbedding: %s", errEmbedding.Error())
 			// break once error occurs
 			ctx.Done()
 			return
 		}
-		klog.V(1).ErrorS(errEmbedding, "ErrEmbedding", "document", doc.Filename, "conversation", "")
-		klog.V(5).Infof("Generate embeddings for doc %s is successful!")
+		klog.V(5).Infof("Generate embeddings for doc %s is successful in conversation %s!", doc.Filename, req.ConversationID)
 	}()
 
 	// For summary generation
@@ -237,17 +238,20 @@ func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req Conversa
 			// break once error occurs
 			errStr += fmt.Sprintf(" ErrSummary: %s", errSummary.Error())
 			ctx.Done()
-			klog.V(1).ErrorS(errSummary, "ErrSummary", "document", doc.Filename, "conversation", "")
+			klog.V(1).ErrorS(errSummary, "ErrSummary", "document", doc.Filename, "conversation", req.ConversationID)
 			return
 		}
-		klog.V(5).Infof("Generate summarization is done! Summary: %s", summary)
+		klog.V(5).Infof("Generate summarization for doc %s in conversation %s is done! Summary: %s", doc.Filename, req.ConversationID, summary)
 	}()
+
 	// wait until all finished
 	wg.Wait()
 
 	if errEmbedding != nil || errSummary != nil {
 		return nil, errors.New(errStr)
 	}
+
+	// TODO: Save document to system datasource: ns/applications/:appname/conversations/:id/{filename}
 
 	resp.NumberOfDocuments = len(documents)
 	resp.Summary = summary
@@ -273,7 +277,7 @@ func (cs *ChatServer) GenerateSingleDocEmbeddings(ctx context.Context, req Conve
 	return nil
 }
 
-// GenerateSingleDocSummary generate the summary of sinle document
+// GenerateSingleDocSummary generate the summary of single document
 func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader, documents []schema.Document, respStream chan string) (string, error) {
 	app, c, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
@@ -281,21 +285,38 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 	}
 
 	var llm langchainllms.LLM
+	chainCallOptions := make([]chains.ChainCallOption, 0)
+	// find LLM along with chain call options
 	for _, n := range app.Spec.Nodes {
 		baseNode := runtimebase.NewBaseNode(app.Namespace, n.Name, *n.Ref)
-		if baseNode.Kind() == "llm" {
+		switch kind := baseNode.Kind(); kind {
+		case "llm":
 			l := runtimellm.NewLLM(baseNode)
 			if err := l.Init(ctx, c, nil); err != nil {
 				return "", fmt.Errorf("failed init llm due to %s", err.Error())
 			}
 			llm = l.LLM
+		case "llmchain":
+			llmchain := runtimechains.NewLLMChain(baseNode)
+			if err := llmchain.Init(ctx, cs.cli, nil); err != nil {
+				return "", err
+			}
+			chainCallOptions = runtimechains.GetChainOptions(llmchain.Instance.Spec.CommonChainConfig)
+		case "retrievalqachain":
+			retrivalQAChain := runtimechains.NewRetrievalQAChain(baseNode)
+			if err := retrivalQAChain.Init(ctx, cs.cli, nil); err != nil {
+				return "", err
+			}
+			chainCallOptions = runtimechains.GetChainOptions(retrivalQAChain.Instance.Spec.CommonChainConfig)
 		}
 	}
+
 	// If no LLM provided,we can't generate the summary
 	if llm == nil {
 		return "", ErrNoLLMProvidedInApplication
 	}
 
+	// initialize a MapReduceChain
 	mpChain := chains.NewMapReduceDocuments(
 		chains.NewLLMChain(llm, prompts.NewPromptTemplate(DefaultPromptTemplateForMap, []string{"context"})),
 		chains.NewStuffDocuments(
@@ -311,13 +332,12 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 
 	var summary string
 	if req.ResponseMode.IsStreaming() {
-		summary, err = chains.Run(ctx, mpChain, documents, chains.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+		chainCallOptions = append(chainCallOptions, chains.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
 			respStream <- string(chunk)
 			return nil
 		}))
-	} else {
-		summary, err = chains.Run(ctx, mpChain, documents)
 	}
+	summary, err = chains.Run(ctx, mpChain, documents, chainCallOptions...)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary for %s due to %s", doc.Filename, err.Error())
 	}
