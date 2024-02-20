@@ -21,10 +21,12 @@ type EmbeddingType string
 const (
 	OpenAI  EmbeddingType = "openai"
 	ZhiPuAI EmbeddingType = "zhipuai"
+	Gemini  EmbeddingType = "gemini"
 	Unknown EmbeddingType = "unknown"
 )
 
 var (
 	ZhiPuAIModels = []string{"text_embedding"}
 	OpenAIModels  = []string{"text-embedding-ada-002"}
+	GeminiModels  = []string{"embedding-001"}
 )

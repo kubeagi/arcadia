@@ -60,9 +60,9 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	if !ok {
 		return args, errors.New("no llm")
 	}
-	llm, ok := v1.(llms.LLM)
+	llm, ok := v1.(llms.Model)
 	if !ok {
-		return args, errors.New("llm not llms.LanguageModel")
+		return args, errors.New("llm not llms.Model")
 	}
 	v2, ok := args["prompt"]
 	if !ok {

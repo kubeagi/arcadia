@@ -202,7 +202,7 @@ function getRespInAppChat() {
 		if [ $testStream == "true" ]; then
 			info "just test stream mode"
 			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-			curl -s -XPOST http://127.0.0.1:8081/chat --data "$data"
+			curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data "$data"
 		fi
 		break
 		CURRENT_TIME=$(date +%s)
@@ -276,8 +276,16 @@ kubectl apply -f config/samples/arcadia_v1alpha1_versioneddataset.yaml
 waitCRDStatusReady "VersionedDataset" "arcadia" "dataset-playground-v1"
 
 info "7.3 create embedder and wait it ready"
-kubectl apply -f config/samples/arcadia_v1alpha1_embedders.yaml
-waitCRDStatusReady "Embedders" "arcadia" "zhipuai-embedders-sample"
+# TODO gemini embedding not support chinese now https://github.com/kubeagi/arcadia/issues/739#issuecomment-1960679242
+#if [[ $GITHUB_ACTIONS == "true" ]]; then
+#	info "in github action, use gemini"
+#	kubectl apply -f config/samples/arcadia_v1alpha1_embedders_gemini.yaml
+#else
+#	info "in local, use zhipu"
+#	kubectl apply -f config/samples/arcadia_v1alpha1_embedders_zhipu.yaml
+#fi
+kubectl apply -f config/samples/arcadia_v1alpha1_embedders_zhipu.yaml
+waitCRDStatusReady "Embedders" "arcadia" "embedders-sample"
 
 info "7.4 create knowledgebase and wait it ready"
 info "7.4.1 create knowledgebase based on chroma and wait it ready"
@@ -294,8 +302,8 @@ kubectl port-forward -n arcadia svc/arcadia-chromadb 8000:8000 >/dev/null 2>&1 &
 chroma_pid=$!
 info "port-forward chroma in pid: $chroma_pid"
 sleep 3
-collection_test_id=$(curl http://127.0.0.1:8000/api/v1/collections/arcadia_knowledgebase-sample | jq -r .id)
-collection_test_count=$(curl http://127.0.0.1:8000/api/v1/collections/${collection_test_id}/count)
+collection_test_id=$(curl --max-time $TimeoutSeconds http://127.0.0.1:8000/api/v1/collections/arcadia_knowledgebase-sample | jq -r .id)
+collection_test_count=$(curl --max-time $TimeoutSeconds http://127.0.0.1:8000/api/v1/collections/${collection_test_id}/count)
 if [[ $collection_test_count =~ ^[0-9]+$ ]]; then
 	info "collection test count: $collection_test_count"
 else
@@ -348,7 +356,15 @@ fi
 
 info "8 validate simple app can work normally"
 info "Prepare dependent LLM service"
-kubectl apply -f config/samples/app_shared_llm_service.yaml
+if [[ $GITHUB_ACTIONS == "true" ]]; then
+	info "in github action, use gemini"
+	sed -i 's/model: chatglm_turbo/model: gemini-pro/g' config/samples/*
+	sed -i 's/model: glm-4/model: gemini-pro/g' config/samples/*
+	kubectl apply -f config/samples/app_shared_llm_service_gemini.yaml
+else
+	info "in local, use zhipu"
+	kubectl apply -f config/samples/app_shared_llm_service_zhipu.yaml
+fi
 
 info "8.1 app of llmchain"
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
@@ -400,38 +416,38 @@ fi
 
 info "8.4 check other chat rest api"
 info "8.4.1 conversation list"
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 echo $resp | jq .
 delete_conversation_id=$(echo $resp | jq -r '.[0].id')
 info "8.4.2 message list"
 data=$(jq -n --arg conversationID "$delete_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/messages --data "$data")
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/messages --data "$data")
 echo $resp | jq .
 info "8.4.3 message references"
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
-message_id=$(echo $resp | jq -r '.[0].messages[0].id')
-conversation_id=$(echo $resp | jq -r '.[0].id')
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+message_id=$(echo $resp | jq -r '.[1].messages[0].id')
+conversation_id=$(echo $resp | jq -r '.[1].id')
 data=$(jq -n --arg conversationID "$conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/messages/$message_id/references --data "$data")
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/messages/$message_id/references --data "$data")
 echo $resp | jq .
 info "8.4.4 delete conversation"
-resp=$(curl -s -XDELETE http://127.0.0.1:8081/chat/conversations/$delete_conversation_id)
+resp=$(curl --max-time $TimeoutSeconds -s -XDELETE http://127.0.0.1:8081/chat/conversations/$delete_conversation_id)
 echo $resp | jq .
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 if [[ $resp == *"$delete_conversation_id"* ]]; then
 	echo "delete conversation failed"
 	exit 1
 fi
 info "8.4.5 get app prompt starters"
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 echo $resp | jq .
-if [[ $resp == *"err"* ]]; then
+if [[ $resp == *"error"* ]]; then
 	echo "failed"
 	exit 1
 fi
-resp=$(curl -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
 echo $resp | jq .
-if [[ $resp == *"err"* ]]; then
+if [[ $resp == *"error"* ]]; then
 	echo "failed"
 	exit 1
 fi
@@ -450,7 +466,7 @@ info "8.5 apichain test"
 kubectl apply -f config/samples/app_apichain_movie.yaml
 waitCRDStatusReady "Application" "arcadia" "movie-bot"
 sleep 3
-curl -s -XPOST http://127.0.0.1:8081/chat --data '{"query":"年会不能停的主演有谁？","response_mode":"blocking","conversation_id":"","app_name":"movie-bot", "app_namespace":"arcadia"}'
+curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data '{"query":"年会不能停的主演有谁？","response_mode":"blocking","conversation_id":"","app_name":"movie-bot", "app_namespace":"arcadia"}'
 #if [[ $resp != *"温度"* ]]; then
 #	echo "Because conversationWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 #	exit 1

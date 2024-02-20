@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-shared-llm-secret
+  namespace: arcadia
+type: Opaque
+data:
+  apiKey: "QUl6YVN5QVZOdGRYOHpkeU5pNWpubzNYSExUWGM0UnpJSGxIRUFz"
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: LLM
+metadata:
+  name: app-shared-llm-service
+  namespace: arcadia
+spec:
+  type: "gemini"
+  provider:
+    endpoint:
+      url: "https://generativelanguage.googleapis.com/"
+      authSecret:
+        kind: secret
+        name: app-shared-llm-secret

@@ -29,10 +29,14 @@ const (
 	OpenAI    LLMType = "openai"
 	ZhiPuAI   LLMType = "zhipuai"
 	DashScope LLMType = "dashscope"
+	Gemini    LLMType = "gemini"
 	Unknown   LLMType = "unknown"
 )
 
-var OpenAIModels = []string{"gpt-3.5", "gpt-3.5-turbo"}
+var (
+	OpenAIModels = []string{"gpt-3.5", "gpt-3.5-turbo"}
+	GeminiModels = []string{"gemini-pro"}
+)
 
 var (
 	ZhiPuAILite  string = "chatglm_lite"

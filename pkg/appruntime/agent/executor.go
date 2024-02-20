@@ -52,9 +52,9 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	if !ok {
 		return args, errors.New("no llm")
 	}
-	llm, ok := v1.(llms.LLM)
+	llm, ok := v1.(llms.Model)
 	if !ok {
-		return args, errors.New("llm not llms.LanguageModel")
+		return args, errors.New("llm not llms.Model")
 	}
 	instance := &v1alpha1.Agent{}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.RefNamespace(), Name: p.Ref.Name}, instance); err != nil {

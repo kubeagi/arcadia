@@ -8,7 +8,7 @@ spec:
   description: "测试 KnowledgeBase"
   embedder:
     kind: Embedders
-    name: zhipuai-embedders-sample
+    name: embedders-sample
     namespace: arcadia
   vectorStore:
     kind: VectorStores

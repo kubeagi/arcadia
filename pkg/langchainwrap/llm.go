@@ -23,6 +23,7 @@ import (
 	"os"
 
 	langchainllms "github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/googleai"
 	"github.com/tmc/langchaingo/llms/openai"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +38,7 @@ const (
 	GatewayUseExternalURLEnv = "GATEWAY_USE_EXTERNAL_URL"
 )
 
-func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, model string) (langchainllms.LLM, error) {
+func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, model string) (langchainllms.Model, error) {
 	switch llm.Spec.Provider.GetType() {
 	case v1alpha1.ProviderType3rdParty:
 		apiKey, err := llm.AuthAPIKey(ctx, c)
@@ -60,6 +61,15 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 				model = models[0]
 			}
 			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model))
+		case llms.Gemini:
+			if model == "" {
+				models := llm.GetModelList()
+				if len(models) == 0 {
+					return nil, errors.New("no valid models for this LLM")
+				}
+				model = models[0]
+			}
+			return googleai.New(ctx, googleai.WithAPIKey(apiKey), googleai.WithDefaultModel(model))
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c)

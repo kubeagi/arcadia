@@ -10,7 +10,7 @@ data:
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Embedder
 metadata:
-  name: zhipuai-embedders-sample
+  name: embedders-sample
   namespace: arcadia
 spec:
   type: "zhipuai"

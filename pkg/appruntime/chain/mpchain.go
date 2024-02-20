@@ -93,9 +93,9 @@ func (l *MapReduceChain) Init(ctx context.Context, cli client.Client, args map[s
 	if !ok {
 		return errors.New("no llm")
 	}
-	llm, ok := v1.(llms.LLM)
+	llm, ok := v1.(llms.Model)
 	if !ok {
-		return errors.New("llm not llms.LLM")
+		return errors.New("llm not llms.Model")
 	}
 
 	// only group `chain` is allowed

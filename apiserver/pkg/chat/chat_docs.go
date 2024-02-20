@@ -282,7 +282,7 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 		return "", fmt.Errorf("failed to get app due to %s", err.Error())
 	}
 
-	var llm langchainllms.LLM
+	var llm langchainllms.Model
 	var mpChainNode runtimebase.BaseNode
 	// find LLM along with chain call options
 	for _, n := range app.Spec.Nodes {

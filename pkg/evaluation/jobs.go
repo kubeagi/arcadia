@@ -215,6 +215,8 @@ func JudgeJobGenerator(ctx context.Context, c client.Client) func(*evav1alpha1.R
 			model = "gtp4"
 		case llms.ZhiPuAI:
 			model = "glm-4"
+		case llms.Gemini:
+			model = "gemini-pro"
 		default:
 			return nil, fmt.Errorf("not support type %s", llm.Spec.Type)
 		}

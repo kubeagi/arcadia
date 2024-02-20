@@ -210,7 +210,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	}
 	var kb *v1alpha1.KnowledgeBase
 	var chainOptions []chains.ChainCallOption
-	var model langchainllms.LLM
+	var model langchainllms.Model
 	for _, n := range app.Spec.Nodes {
 		baseNode := base.NewBaseNode(app.Namespace, n.Name, *n.Ref)
 		switch baseNode.Group() {

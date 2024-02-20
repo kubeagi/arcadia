@@ -88,7 +88,7 @@ func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	return options
 }
 
-func getMemory(llm llms.LLM, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
+func getMemory(llm llms.Model, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
 	if inputKey == "" {
 		inputKey = "question"
 	}

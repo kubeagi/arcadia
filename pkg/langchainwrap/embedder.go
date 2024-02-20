@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	langchaingoembeddings "github.com/tmc/langchaingo/embeddings"
+	"github.com/tmc/langchaingo/llms/googleai"
 	"github.com/tmc/langchaingo/llms/openai"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,6 +65,25 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			}
 
 			llm, err := openai.New(openai.WithModel(model), openai.WithBaseURL(e.Get3rdPartyEmbedderBaseURL()), openai.WithToken(apiKey))
+			if err != nil {
+				return nil, err
+			}
+			return langchaingoembeddings.NewEmbedder(llm, opts...)
+		case embeddings.Gemini:
+			apiKey, err := e.AuthAPIKey(ctx, c)
+			if err != nil {
+				return nil, err
+			}
+
+			if model == "" {
+				models := e.GetModelList()
+				if len(models) == 0 {
+					return nil, errors.New("no valid models for this Embedder")
+				}
+				model = models[0]
+			}
+
+			llm, err := googleai.New(ctx, googleai.WithAPIKey(apiKey), googleai.WithDefaultEmbeddingModel(model))
 			if err != nil {
 				return nil, err
 			}
