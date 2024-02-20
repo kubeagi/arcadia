@@ -142,7 +142,6 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 		Query:  req.Query,
 		Answer: "",
 	})
-	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
 	appRun, err := appruntime.NewAppOrGetFromCache(ctx, c, app)
 	if err != nil {
 		return nil, err

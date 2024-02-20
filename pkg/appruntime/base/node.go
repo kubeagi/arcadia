@@ -37,6 +37,7 @@ type Node interface {
 	SetNextNode(nodes ...Node)
 	GetPrevNode() []Node
 	GetNextNode() []Node
+	Cleanup()
 }
 
 func NewBaseNode(appNamespace, nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
@@ -106,4 +107,7 @@ func (c *BaseNode) Init(_ context.Context, _ client.Client, _ map[string]any) er
 
 func (c *BaseNode) Run(_ context.Context, _ client.Client, _ map[string]any) (map[string]any, error) {
 	return nil, nil
+}
+
+func (c *BaseNode) Cleanup() {
 }

@@ -195,6 +195,7 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 			if out, err = e.Run(ctx, cli, out); err != nil {
 				return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
 			}
+			defer e.Cleanup()
 			visited[e.Name()] = true
 		}
 		for _, n := range e.GetNextNode() {
