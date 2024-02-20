@@ -19,6 +19,8 @@ rules:
   - applications
   - llms
   - knowledgebases
+  - embedders
+  - vectorstores
   verbs:
   - get
   - list
@@ -44,6 +46,20 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - knowledgebaseretrievers
+  verbs:
+  - list
+  - get
+- apiGroups:
+  - prompts.prompt.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - prompts
+  verbs:
+  - list
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
