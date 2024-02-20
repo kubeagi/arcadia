@@ -22,118 +22,90 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 )
 
 // MakeEndpoint provides a common way to handle endpoint input
 // owner means the resource who owns this endpoint
-func MakeEndpoint(ctx context.Context, c dynamic.Interface, owner generated.TypedObjectReferenceInput, input generated.EndpointInput) (v1alpha1.Endpoint, error) {
+func MakeEndpoint(ctx context.Context, c client.Client, owner client.Object, input generated.EndpointInput) (v1alpha1.Endpoint, error) {
 	endpoint := v1alpha1.Endpoint{
 		URL: input.URL,
 	}
 
 	// parse secure check policy
-	if input.Insecure != nil {
-		endpoint.Insecure = *input.Insecure
-	}
+	endpoint.Insecure = pointer.BoolPtrDerefOr(input.Insecure, endpoint.Insecure)
 
 	// parse auth secret
 	if input.Auth != nil {
-		// create auth secret
-		secret := MakeAuthSecretName(owner.Name, owner.Kind)
+		// generate auth secret name
+		kind := ""
+		switch owner.(type) {
+		case *v1alpha1.Datasource:
+			kind = "Datasource"
+		case *v1alpha1.Embedder:
+			kind = "Embedder"
+		case *v1alpha1.LLM:
+			kind = "LLM"
+		}
+		secret := GenerateAuthSecretName(owner.GetName(), kind)
 		// retrieve owner to metav1.Object
 		// object is not nil if `Get` succeeded
-		var ownerObject metav1.Object
-		resource, err := ResourceGet(ctx, c, owner, metav1.GetOptions{})
-		if err == nil {
-			ownerObject = resource
+		ownerNamespace := owner.GetNamespace()
+		if err := c.Get(ctx, client.ObjectKeyFromObject(owner), owner); err != nil {
+			owner = nil
 		}
 		// when object is not nil, a owner reference will be set to this auth secret
-		err = MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
-			APIGroup:  &CoreV1APIGroup,
-			Kind:      "Secret",
-			Name:      secret,
-			Namespace: owner.Namespace,
-		}, input.Auth, ownerObject)
+		err := MakeAuthSecret(ctx, c, ownerNamespace, secret, input.Auth, owner)
 		if err != nil {
 			return endpoint, err
 		}
 		endpoint.AuthSecret = &v1alpha1.TypedObjectReference{
 			Kind:      "Secret",
 			Name:      secret,
-			Namespace: owner.Namespace,
+			Namespace: pointer.String(ownerNamespace),
 		}
 	}
 
 	return endpoint, nil
 }
 
-// MakeAuthSecretName returns a secret name based on its base name and owner's kind
-func MakeAuthSecretName(base string, ownerKind string) string {
+// GenerateAuthSecretName returns a secret name based on its base name and owner's kind
+func GenerateAuthSecretName(base string, ownerKind string) string {
 	return strings.ToLower(fmt.Sprintf("%s-%s-auth", base, ownerKind))
 }
 
 // MakeAuthSecret will create or update a secret based on auth input
 // When owner is not nil, owner reference will be set
-func MakeAuthSecret(ctx context.Context, c dynamic.Interface, secret generated.TypedObjectReferenceInput, input map[string]interface{}, owner metav1.Object) error {
-	// copy input map into data
-	data := map[string][]byte{}
-	for k, v := range input {
-		data[k] = []byte(fmt.Sprintf(v.(string)))
-	}
-
-	// initialize a auth secret
+func MakeAuthSecret(ctx context.Context, c client.Client, secretNamespace, secretName string, input map[string]interface{}, owner client.Object) error {
 	authSecret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: CoreV1APIGroup,
-		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secret.Name,
-			Namespace: *secret.Namespace,
+			Name:      secretName,
+			Namespace: secretNamespace,
 		},
-		Data: data,
 	}
 
-	// set owner reference
-	if owner != nil {
-		if err := controllerutil.SetControllerReference(owner, authSecret, scheme); err != nil {
-			return err
+	_, err := controllerutil.CreateOrUpdate(ctx, c, authSecret, func() error {
+		// copy input map into data
+		data := map[string][]byte{}
+		for k, v := range input {
+			data[k] = []byte(fmt.Sprintf(v.(string)))
 		}
-	}
+		authSecret.Data = data
 
-	unstructuredDatasource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&authSecret)
-	if err != nil {
-		return err
-	}
-
-	_, err = ResourceGet(ctx, c, secret, metav1.GetOptions{})
-	if err != nil {
-		// Create is not found
-		if apierrors.IsNotFound(err) {
-			_, err = c.Resource(schema.GroupVersionResource{Group: corev1.SchemeGroupVersion.Group, Version: corev1.SchemeGroupVersion.Version, Resource: "secrets"}).
-				Namespace(*secret.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.CreateOptions{})
-			if err != nil {
+		// set owner reference
+		if owner != nil {
+			if err := controllerutil.SetControllerReference(owner, authSecret, pkgclient.Scheme); err != nil {
 				return err
 			}
-			return nil
 		}
-		return err
-	}
-	// update if found
-	_, err = c.Resource(schema.GroupVersionResource{Group: corev1.SchemeGroupVersion.Group, Version: corev1.SchemeGroupVersion.Version, Resource: "secrets"}).
-		Namespace(*secret.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructuredDatasource}, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-	return nil
+		return nil
+	})
+	return err
 }

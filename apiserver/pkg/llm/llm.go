@@ -18,12 +18,11 @@ package llm
 
 import (
 	"context"
+	"errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -31,22 +30,20 @@ import (
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/apiserver/pkg/worker"
 	"github.com/kubeagi/arcadia/pkg/llms"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func LLM2modelConverter(ctx context.Context, c dynamic.Interface) func(*unstructured.Unstructured) (generated.PageNode, error) {
-	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
-		return LLM2model(ctx, c, u)
+func LLM2modelConverter(ctx context.Context, c client.Client) func(object client.Object) (generated.PageNode, error) {
+	return func(u client.Object) (generated.PageNode, error) {
+		llm, ok := u.(*v1alpha1.LLM)
+		if !ok {
+			return nil, errors.New("can't convert object to LLM")
+		}
+		return LLM2model(ctx, c, llm)
 	}
 }
 
 // LLM2model convert unstructured `CR LLM` to graphql model `Llm`
-func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured) (*generated.Llm, error) {
-	llm := &v1alpha1.LLM{}
-	if err := utils.UnstructuredToStructured(obj, llm); err != nil {
-		return nil, err
-	}
-
+func LLM2model(ctx context.Context, c client.Client, llm *v1alpha1.LLM) (*generated.Llm, error) {
 	id := string(llm.GetUID())
 	creationtimestamp := llm.GetCreationTimestamp().Time
 
@@ -82,12 +79,12 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 
 	md := generated.Llm{
 		ID:                &id,
-		Name:              obj.GetName(),
-		Namespace:         obj.GetNamespace(),
+		Name:              llm.GetName(),
+		Namespace:         llm.GetNamespace(),
 		Creator:           &llm.Spec.Creator,
 		CreationTimestamp: &creationtimestamp,
-		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		Labels:            graphqlutils.MapStr2Any(llm.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(llm.GetAnnotations()),
 		DisplayName:       &llm.Spec.DisplayName,
 		Description:       &llm.Spec.Description,
 		Type:              &llmType,
@@ -102,23 +99,16 @@ func LLM2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstr
 }
 
 // ListLLMs return a list of LLMs based on input params
-func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+func ListLLMs(ctx context.Context, c client.Client, input generated.ListCommonInput, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
 	opts := common.DefaultListOptions()
 	for _, optFunc := range listOpts {
 		optFunc(opts)
 	}
 
-	labelSelector, fieldSelector := "", ""
 	page, pageSize := 1, 10
 	filter := make([]common.ResourceFilter, 0)
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterLLMByKeyword(*input.Keyword))
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
 	}
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -127,14 +117,20 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 		pageSize = *input.PageSize
 	}
 
-	us, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "LLM")).Namespace(input.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	})
+	us := &v1alpha1.LLMList{}
+	options, err := common.NewListOptions(input)
 	if err != nil {
 		return nil, err
 	}
-	result, err := common.ListReources(us, page, pageSize, LLM2modelConverter(ctx, c), filter...)
+	err = c.List(ctx, us, options...)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]client.Object, len(us.Items))
+	for i := range us.Items {
+		items[i] = &us.Items[i]
+	}
+	result, err := common.ListReources(items, page, pageSize, LLM2modelConverter(ctx, c), filter...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,15 +142,16 @@ func ListLLMs(ctx context.Context, c dynamic.Interface, input generated.ListComm
 }
 
 // ReadLLM
-func ReadLLM(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Llm, error) {
-	resource, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "LLM")).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func ReadLLM(ctx context.Context, c client.Client, name, namespace string) (*generated.Llm, error) {
+	llm := &v1alpha1.LLM{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, llm)
 	if err != nil {
 		return nil, err
 	}
-	return LLM2model(ctx, c, resource)
+	return LLM2model(ctx, c, llm)
 }
 
-func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateLLMInput) (*generated.Llm, error) {
+func CreateLLM(ctx context.Context, c client.Client, input generated.CreateLLMInput) (*generated.Llm, error) {
 	displayName, description, APIType := "", "", ""
 	if input.DisplayName != nil {
 		displayName = *input.DisplayName
@@ -166,14 +163,10 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		APIType = *input.Type
 	}
 
-	llm := v1alpha1.LLM{
+	llm := &v1alpha1.LLM{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "LLM",
-			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.LLMSpec{
 			CommonSpec: v1alpha1.CommonSpec{
@@ -193,12 +186,8 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 
 	// create auth secret
 	if input.Endpointinput.Auth != nil {
-		secret := common.MakeAuthSecretName(llm.Name, "llm")
-		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
-			Kind:      "Secret",
-			Name:      secret,
-			Namespace: &input.Namespace,
-		}, input.Endpointinput.Auth, nil)
+		secret := common.GenerateAuthSecretName(llm.Name, "llm")
+		err := common.MakeAuthSecret(ctx, c, input.Namespace, secret, input.Endpointinput.Auth, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -209,13 +198,7 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 		}
 	}
 
-	unstructuredLLM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&llm)
-	if err != nil {
-		return nil, err
-	}
-
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"}).
-		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredLLM}, metav1.CreateOptions{})
+	err := c.Create(ctx, llm)
 	if err != nil {
 		return nil, err
 	}
@@ -223,34 +206,21 @@ func CreateLLM(ctx context.Context, c dynamic.Interface, input generated.CreateL
 	// update auth secret owner reference
 	if input.Endpointinput.Auth != nil {
 		// user obj as the owner
-		secret := common.MakeAuthSecretName(llm.Name, "LLM")
-		err := common.MakeAuthSecret(ctx, c, generated.TypedObjectReferenceInput{
-			Kind:      "Secret",
-			Name:      secret,
-			Namespace: &input.Namespace,
-		}, input.Endpointinput.Auth, obj)
+		secret := common.GenerateAuthSecretName(llm.Name, "LLM")
+		err := common.MakeAuthSecret(ctx, c, input.Namespace, secret, input.Endpointinput.Auth, llm)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// create *generated.Llm
-	return LLM2model(ctx, c, obj)
+	return LLM2model(ctx, c, llm)
 }
 
-func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.UpdateLLMInput) (*generated.Llm, error) {
-	obj, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "LLM",
-		Name:      input.Name,
-		Namespace: &input.Namespace,
-	}, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
+func UpdateLLM(ctx context.Context, c client.Client, input *generated.UpdateLLMInput) (*generated.Llm, error) {
 	updatedLLM := &v1alpha1.LLM{}
-	if err := utils.UnstructuredToStructured(obj, updatedLLM); err != nil {
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, updatedLLM)
+	if err != nil {
 		return nil, err
 	}
 
@@ -274,62 +244,25 @@ func UpdateLLM(ctx context.Context, c dynamic.Interface, input *generated.Update
 
 	// Update endpoint
 	if input.Endpointinput != nil {
-		endpoint, err := common.MakeEndpoint(ctx, c, generated.TypedObjectReferenceInput{
-			APIGroup:  &updatedLLM.APIVersion,
-			Kind:      updatedLLM.Kind,
-			Name:      updatedLLM.Name,
-			Namespace: &updatedLLM.Namespace,
-		}, *input.Endpointinput)
+		endpoint, err := common.MakeEndpoint(ctx, c, updatedLLM, *input.Endpointinput)
 		if err != nil {
 			return nil, err
 		}
 		updatedLLM.Spec.Provider.Endpoint = &endpoint
 	}
 
-	unstructuredLLM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&updatedLLM)
+	err = c.Update(ctx, updatedLLM)
 	if err != nil {
 		return nil, err
 	}
-
-	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "LLM",
-		Namespace: &updatedLLM.Namespace,
-		Name:      updatedLLM.Name,
-	}, unstructuredLLM, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return LLM2model(ctx, c, updatedObject)
+	return LLM2model(ctx, c, updatedLLM)
 }
 
-func DeleteLLMs(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
+func DeleteLLMs(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
+	opts, err := common.DeleteAllOptions(input)
+	if err != nil {
+		return nil, err
 	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "llms"})
-	if name != "" {
-		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: fieldSelector,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
+	err = c.DeleteAllOf(ctx, &v1alpha1.LLM{}, opts...)
+	return nil, err
 }

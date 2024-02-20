@@ -20,10 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -40,22 +38,16 @@ func NewKnowledgebase(baseNode base.BaseNode) *Knowledgebase {
 	}
 }
 
-func (k *Knowledgebase) Init(ctx context.Context, cli dynamic.Interface, _ map[string]any) error {
+func (k *Knowledgebase) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.KnowledgeBase{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(k.Ref.GetNamespace(ns)).Get(ctx, k.Ref.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: k.Ref.GetNamespace(ns), Name: k.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return fmt.Errorf("can't convert the knowledgebase in cluster: %w", err)
 	}
 	k.Instance = instance
 	return nil
 }
 
-func (k *Knowledgebase) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (k *Knowledgebase) Run(_ context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
 	return args, nil
 }

@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"sync"
 
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 )
@@ -38,7 +38,7 @@ func Init(dataprocessingURL string) {
 	})
 }
 
-func ListDataprocessing(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.AllDataProcessListByPageInput) (*generated.PaginatedDataProcessItem, error) {
+func ListDataprocessing(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.AllDataProcessListByPageInput) (*generated.PaginatedDataProcessItem, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -66,7 +66,7 @@ func ListDataprocessing(ctx context.Context, c dynamic.Interface, obj *generated
 	return pagedData, nil
 }
 
-func ListDataprocessingByCount(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.AllDataProcessListByCountInput) (*generated.CountDataProcessItem, error) {
+func ListDataprocessingByCount(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.AllDataProcessListByCountInput) (*generated.CountDataProcessItem, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -94,7 +94,7 @@ func ListDataprocessingByCount(ctx context.Context, c dynamic.Interface, obj *ge
 	return countData, nil
 }
 
-func DataProcessSupportType(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery) (*generated.DataProcessSupportType, error) {
+func DataProcessSupportType(_ context.Context, _ client.Client, _ *generated.DataProcessQuery) (*generated.DataProcessSupportType, error) {
 	// prepare http request
 	req, err := http.NewRequest("POST", url+"/text-process-type", nil)
 	if err != nil {
@@ -118,7 +118,7 @@ func DataProcessSupportType(ctx context.Context, c dynamic.Interface, obj *gener
 	return data, nil
 }
 
-func CreateDataProcessTask(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessMutation, input *generated.AddDataProcessInput) (*generated.DataProcessResponse, error) {
+func CreateDataProcessTask(_ context.Context, _ client.Client, _ *generated.DataProcessMutation, input *generated.AddDataProcessInput) (*generated.DataProcessResponse, error) {
 	// create complete http payload to data processing service
 
 	// prepare http request
@@ -148,7 +148,7 @@ func CreateDataProcessTask(ctx context.Context, c dynamic.Interface, obj *genera
 	return data, nil
 }
 
-func DeleteDataProcessTask(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessMutation, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
+func DeleteDataProcessTask(_ context.Context, _ client.Client, _ *generated.DataProcessMutation, input *generated.DeleteDataProcessInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -176,7 +176,7 @@ func DeleteDataProcessTask(ctx context.Context, c dynamic.Interface, obj *genera
 	return data, nil
 }
 
-func DataProcessDetails(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessDetails, error) {
+func DataProcessDetails(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessDetails, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -204,7 +204,7 @@ func DataProcessDetails(ctx context.Context, c dynamic.Interface, obj *generated
 	return data, nil
 }
 
-func CheckDataProcessTaskName(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.CheckDataProcessTaskNameInput) (*generated.DataProcessResponse, error) {
+func CheckDataProcessTaskName(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.CheckDataProcessTaskNameInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -232,7 +232,7 @@ func CheckDataProcessTaskName(ctx context.Context, c dynamic.Interface, obj *gen
 	return data, nil
 }
 
-func GetLogInfo(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessResponse, error) {
+func GetLogInfo(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.DataProcessDetailsInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -260,7 +260,7 @@ func GetLogInfo(ctx context.Context, c dynamic.Interface, obj *generated.DataPro
 	return data, nil
 }
 
-func DataProcessLogInfoByFileName(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessFileLogInput) (*generated.DataProcessResponse, error) {
+func DataProcessLogInfoByFileName(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.DataProcessFileLogInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {
@@ -288,7 +288,7 @@ func DataProcessLogInfoByFileName(ctx context.Context, c dynamic.Interface, obj 
 	return data, nil
 }
 
-func DataProcessRetry(ctx context.Context, c dynamic.Interface, obj *generated.DataProcessQuery, input *generated.DataProcessRetryInput) (*generated.DataProcessResponse, error) {
+func DataProcessRetry(_ context.Context, _ client.Client, _ *generated.DataProcessQuery, input *generated.DataProcessRetryInput) (*generated.DataProcessResponse, error) {
 	// prepare http request
 	jsonParams, err := json.Marshal(input)
 	if err != nil {

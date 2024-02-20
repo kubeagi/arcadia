@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -209,11 +208,12 @@ func DatasourceDeleteCmd(namespace *string) *cobra.Command {
 			}
 			// delete secrets
 			if ds.Endpoint != nil && ds.Endpoint.AuthSecret != nil {
-				err = kubeClient.Resource(schema.GroupVersionResource{
-					Group:    corev1.SchemeGroupVersion.Group,
-					Version:  corev1.SchemeGroupVersion.Version,
-					Resource: "secrets",
-				}).Namespace(*namespace).Delete(cmd.Context(), ds.Endpoint.AuthSecret.Name, metav1.DeleteOptions{})
+				err = kubeClient.Delete(cmd.Context(), &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      ds.Endpoint.AuthSecret.Name,
+						Namespace: *namespace,
+					},
+				})
 				if err != nil {
 					return fmt.Errorf("failed to delete auth secret: %w", err)
 				}

@@ -31,11 +31,9 @@ import (
 	langchainllms "github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/memory"
 	"github.com/tmc/langchaingo/prompts"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
@@ -53,12 +51,12 @@ import (
 )
 
 type ChatServer struct {
-	cli     dynamic.Interface
+	cli     runtimeclient.Client
 	storage storage.Storage
 	once    sync.Once
 }
 
-func NewChatServer(cli dynamic.Interface) *ChatServer {
+func NewChatServer(cli runtimeclient.Client) *ChatServer {
 	return &ChatServer{
 		cli: cli,
 	}
@@ -68,7 +66,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 	if cs.storage == nil {
 		cs.once.Do(func() {
 			ctx := context.TODO()
-			ds, err := pkgconfig.GetRelationalDatasource(ctx, nil, cs.cli)
+			ds, err := pkgconfig.GetRelationalDatasource(ctx, cs.cli)
 			if err != nil || ds == nil {
 				if err != nil {
 					klog.Infof("get relational datasource failed: %s, use memory storage for chat", err.Error())
@@ -78,7 +76,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 				cs.storage = storage.NewMemoryStorage()
 				return
 			}
-			pg, err := datasource.GetPostgreSQLPool(ctx, nil, cs.cli, ds)
+			pg, err := datasource.GetPostgreSQLPool(ctx, cs.cli, ds)
 			if err != nil {
 				klog.Errorf("get postgresql pool failed : %s", err.Error())
 				cs.storage = storage.NewMemoryStorage()
@@ -263,7 +261,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	promptStarters = make([]string, 0, limit)
 	remains := limit
 	if kb != nil {
-		system, err := pkgconfig.GetSystemDatasource(ctx, nil, c)
+		system, err := pkgconfig.GetSystemDatasource(ctx, c)
 		if err != nil {
 			return nil, err
 		}
@@ -271,7 +269,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 		if endpoint != nil && endpoint.AuthSecret != nil {
 			endpoint.AuthSecret.WithNameSpace(system.Namespace)
 		}
-		ds, err := datasource.NewLocal(ctx, nil, c, endpoint)
+		ds, err := datasource.NewLocal(ctx, c, endpoint)
 		if err != nil {
 			return nil, err
 		}
@@ -280,16 +278,9 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			if detail.Source == nil || detail.Source.Name == "" {
 				continue
 			}
-			obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "versioneddatasets"}).
-				Namespace(detail.Source.GetNamespace(kb.Namespace)).Get(ctx, detail.Source.Name, metav1.GetOptions{})
-			if err != nil {
-				klog.Infof("failed to get versionedDataset: %s, try next one", err)
-				continue
-			}
 			versionedDataset := &v1alpha1.VersionedDataset{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), versionedDataset)
-			if err != nil {
-				klog.Infof("failed to convert versionedDataset: %s, try next one", err)
+			if err := c.Get(ctx, types.NamespacedName{Namespace: detail.Source.GetNamespace(kb.Namespace), Name: detail.Source.Name}, versionedDataset); err != nil {
+				klog.Infof("failed to get versionedDataset: %s, try next one", err)
 				continue
 			}
 			if !versionedDataset.Status.IsReady() {
@@ -365,21 +356,15 @@ The description of the application is: {{.description}}
 
 The question you asked is:`
 
-func (cs *ChatServer) getApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, dynamic.Interface, error) {
+func (cs *ChatServer) getApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, runtimeclient.Client, error) {
 	token := auth.ForOIDCToken(ctx)
 	c, err := client.GetClient(token)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get a dynamic client: %w", err)
-	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "applications"}).
-		Namespace(appNamespace).Get(ctx, appName, metav1.GetOptions{})
-	if err != nil {
-		return nil, c, fmt.Errorf("failed to get application: %w", err)
+		return nil, nil, fmt.Errorf("failed to get a client: %w", err)
 	}
 	app := &v1alpha1.Application{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
-	if err != nil {
-		return nil, c, fmt.Errorf("failed to convert application: %w", err)
+	if err := c.Get(ctx, types.NamespacedName{Namespace: appNamespace, Name: appName}, app); err != nil {
+		return nil, c, fmt.Errorf("failed to get application: %w", err)
 	}
 	if !app.Status.IsReady() {
 		return nil, c, errors.New("application is not ready")

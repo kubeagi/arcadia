@@ -16,18 +16,19 @@ package rag
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	evav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
@@ -203,9 +204,9 @@ func storage2gen(pvcSpec *corev1.PersistentVolumeClaimSpec) generated.Persistent
 	return pvc
 }
 
-func get1GiPVC(ctx context.Context, c dynamic.Interface) (*corev1.PersistentVolumeClaimSpec, error) {
-	scList, err := c.Resource(schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}).
-		List(ctx, metav1.ListOptions{})
+func get1GiPVC(ctx context.Context, c client.Client) (*corev1.PersistentVolumeClaimSpec, error) {
+	scList := &v1.StorageClassList{}
+	err := c.List(ctx, scList)
 	if err != nil {
 		return nil, err
 	}
@@ -235,14 +236,18 @@ func get1GiPVC(ctx context.Context, c dynamic.Interface) (*corev1.PersistentVolu
 	return sc, nil
 }
 
-func rag2modelConverter(u *unstructured.Unstructured) (generated.PageNode, error) {
-	return rag2model(u)
+func rag2modelConverter(u client.Object) (generated.PageNode, error) {
+	rag, ok := u.(*evav1alpha1.RAG)
+	if !ok {
+		return nil, errors.New("can't convert object to RAG")
+	}
+	return rag2model(rag)
 }
 
-func rag2model(o *unstructured.Unstructured) (*generated.Rag, error) {
+func rag2model(structuredRag *evav1alpha1.RAG) (*generated.Rag, error) {
 	r := &generated.Rag{
-		Name:               o.GetName(),
-		Namespace:          o.GetNamespace(),
+		Name:               structuredRag.GetName(),
+		Namespace:          structuredRag.GetNamespace(),
 		Labels:             map[string]interface{}{},
 		Annotations:        map[string]interface{}{},
 		Creator:            new(string),
@@ -257,36 +262,27 @@ func rag2model(o *unstructured.Unstructured) (*generated.Rag, error) {
 		PhaseMessage:       new(string),
 	}
 
-	structuredRag := evav1alpha1.RAG{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.Object, &structuredRag)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range o.GetLabels() {
+	for k, v := range structuredRag.GetLabels() {
 		r.Labels[k] = v
 	}
-	for k, v := range o.GetAnnotations() {
+	for k, v := range structuredRag.GetAnnotations() {
 		r.Annotations[k] = v
 	}
 	*r.Creator = structuredRag.Spec.Creator
 	*r.DisplayName = structuredRag.Spec.DisplayName
 	*r.Description = structuredRag.Spec.Description
-	*r.CreationTimestamp = o.GetCreationTimestamp().Time
+	*r.CreationTimestamp = structuredRag.GetCreationTimestamp().Time
 	if structuredRag.Status.CompletionTime != nil {
 		*r.CompleteTimestamp = structuredRag.Status.CompletionTime.Time
 	}
 	r.ServiceAccountName = structuredRag.Spec.ServiceAccountName
 	r.Storage = storage2gen(structuredRag.Spec.Storage)
-	setRAGSatus(&structuredRag, r)
+	setRAGSatus(structuredRag, r)
 	return r, nil
 }
 
-func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.CreateRAGInput) (*generated.Rag, error) {
+func CreateRAG(ctx context.Context, kubeClient client.Client, input *generated.CreateRAGInput) (*generated.Rag, error) {
 	rag := &evav1alpha1.RAG{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RAG",
-			APIVersion: evav1alpha1.GroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   input.Namespace,
 			Labels:      make(map[string]string),
@@ -369,24 +365,17 @@ func CreateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 		rag.Spec.Suspend = *input.Suspend
 	}
 
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(rag)
+	err := kubeClient.Create(ctx, rag)
 	if err != nil {
 		return nil, err
 	}
-	u1, err := kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return rag2model(u1)
+	return rag2model(rag)
 }
 
-func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.UpdateRAGInput) (*generated.Rag, error) {
-	obj, err := kubeClient.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "RAG")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+func UpdateRAG(ctx context.Context, kubeClient client.Client, input *generated.UpdateRAGInput) (*generated.Rag, error) {
 	rag := &evav1alpha1.RAG{}
-	if err := utils.UnstructuredToStructured(obj, rag); err != nil {
+	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, rag)
+	if err != nil {
 		return nil, err
 	}
 
@@ -461,27 +450,14 @@ func UpdateRAG(ctx context.Context, kubeClient dynamic.Interface, input *generat
 	if input.Suspend != nil {
 		rag.Spec.Suspend = *input.Suspend
 	}
-
-	unstructuredRag, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&rag)
+	err = kubeClient.Update(ctx, rag)
 	if err != nil {
 		return nil, err
 	}
-	updatedRag, err := common.ResouceUpdate(ctx, kubeClient, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "RAG",
-		Namespace: &rag.Namespace,
-		Name:      rag.Name,
-	}, unstructuredRag, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return rag2model(updatedRag)
+	return rag2model(rag)
 }
 
-func ListRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.ListRAGInput) (*generated.PaginatedResult, error) {
-	listOptions := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", evav1alpha1.EvaluationApplicationLabel, input.AppName),
-	}
+func ListRAG(ctx context.Context, kubeClient client.Client, input *generated.ListRAGInput) (*generated.PaginatedResult, error) {
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -496,48 +472,48 @@ func ListRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated
 	if input.Status != nil {
 		filter = append(filter, common.FilterRAGByStatus(*input.Status))
 	}
-	list, err := kubeClient.Resource(schema.GroupVersionResource{
-		Group:    evav1alpha1.Group,
-		Version:  evav1alpha1.Version,
-		Resource: "rags",
-	}).Namespace(input.Namespace).List(ctx, listOptions)
+	list := &evav1alpha1.RAGList{}
+	opts, err := common.NewListOptions(generated.ListCommonInput{
+		Namespace:     input.Namespace,
+		Keyword:       input.Keyword,
+		Page:          input.Page,
+		PageSize:      input.PageSize,
+		LabelSelector: pointer.String(fmt.Sprintf("%s=%s", evav1alpha1.EvaluationApplicationLabel, input.AppName)),
+	})
 	if err != nil {
 		return nil, err
 	}
-	return common.ListReources(list, page, size, rag2modelConverter, filter...)
+
+	err = kubeClient.List(ctx, list, opts...)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]client.Object, len(list.Items))
+	for i := range list.Items {
+		items[i] = &list.Items[i]
+	}
+	return common.ListReources(items, page, size, rag2modelConverter, filter...)
 }
 
-func GetRAG(ctx context.Context, kubeClient dynamic.Interface, name, namespace string) (*generated.Rag, error) {
-	u, err := kubeClient.Resource(schema.GroupVersionResource{
-		Group:    evav1alpha1.Group,
-		Version:  evav1alpha1.Version,
-		Resource: "rags",
-	}).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func GetRAG(ctx context.Context, kubeClient client.Client, name, namespace string) (*generated.Rag, error) {
+	rag, err := GetV1alpha1RAG(ctx, kubeClient, name, namespace)
 	if err != nil {
 		return nil, err
 	}
-	return rag2model(u)
+	return rag2model(rag)
 }
 
-func GetV1alpha1RAG(ctx context.Context, kubeClient dynamic.Interface, name, namespace string) (*evav1alpha1.RAG, error) {
-	u, err := kubeClient.Resource(schema.GroupVersionResource{
-		Group:    evav1alpha1.Group,
-		Version:  evav1alpha1.Version,
-		Resource: "rags",
-	}).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func GetV1alpha1RAG(ctx context.Context, kubeClient client.Client, name, namespace string) (*evav1alpha1.RAG, error) {
+	rag := &evav1alpha1.RAG{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, rag)
 	if err != nil {
 		return nil, err
 	}
-	structuredRag := evav1alpha1.RAG{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &structuredRag)
-	if err != nil {
-		return nil, err
-	}
-	return &structuredRag, nil
+	return rag, nil
 }
 
-func getFiles(ctx context.Context, kubeClient dynamic.Interface, bucket string, files []string) ([]*generated.F, error) {
-	oss, err := common.SystemDatasourceOSS(ctx, nil, kubeClient)
+func getFiles(ctx context.Context, kubeClient client.Client, bucket string, files []string) ([]*generated.F, error) {
+	oss, err := common.SystemDatasourceOSS(ctx, kubeClient)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +545,7 @@ func getFiles(ctx context.Context, kubeClient dynamic.Interface, bucket string, 
 	}
 	return fs, nil
 }
-func GetRAGMetrics(ctx context.Context, kubeClient dynamic.Interface, name, namespace string) ([]*generated.RAGMetric, error) {
+func GetRAGMetrics(ctx context.Context, kubeClient client.Client, name, namespace string) ([]*generated.RAGMetric, error) {
 	rag, err := GetV1alpha1RAG(ctx, kubeClient, name, namespace)
 	if err != nil {
 		return nil, err
@@ -597,7 +573,7 @@ func GetRAGMetrics(ctx context.Context, kubeClient dynamic.Interface, name, name
 	return metrics, nil
 }
 
-func GetRAGDatasets(ctx context.Context, kubeClient dynamic.Interface, name, namespace string) ([]*generated.RAGDataset, error) {
+func GetRAGDatasets(ctx context.Context, kubeClient client.Client, name, namespace string) ([]*generated.RAGDataset, error) {
 	rag, err := GetV1alpha1RAG(ctx, kubeClient, name, namespace)
 	if err != nil {
 		return nil, err
@@ -631,16 +607,15 @@ func GetRAGDatasets(ctx context.Context, kubeClient dynamic.Interface, name, nam
 	return nodes, nil
 }
 
-func DeleteRAG(ctx context.Context, kubeClient dynamic.Interface, input *generated.DeleteRAGInput) error {
-	if input.Name != "" {
-		return kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).
-			Namespace(input.Namespace).Delete(ctx, input.Name, metav1.DeleteOptions{})
+func DeleteRAG(ctx context.Context, kubeClient client.Client, input *generated.DeleteRAGInput) error {
+	opts, err := common.DeleteAllOptions(&generated.DeleteCommonInput{
+		Name:          &input.Name,
+		Namespace:     input.Namespace,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: nil,
+	})
+	if err != nil {
+		return err
 	}
-	if input.LabelSelector != nil {
-		return kubeClient.Resource(schema.GroupVersionResource{Group: evav1alpha1.Group, Version: evav1alpha1.Version, Resource: "rags"}).
-			Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: *input.LabelSelector,
-		})
-	}
-	return nil
+	return kubeClient.DeleteAllOf(ctx, &evav1alpha1.RAG{}, opts...)
 }

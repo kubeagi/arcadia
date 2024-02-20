@@ -27,11 +27,9 @@ import (
 	"github.com/tmc/langchaingo/chains"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -90,28 +88,30 @@ type KnowledgeBaseRetriever struct {
 	langchaingoschema.Retriever
 	base.BaseNode
 	DocNullReturn string
+	Instance      *apiretriever.KnowledgeBaseRetriever
 }
 
 func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
 	return &KnowledgeBaseRetriever{
-		nil,
-		baseNode,
-		"",
+		Retriever:     nil,
+		BaseNode:      baseNode,
+		DocNullReturn: "",
 	}
 }
 
-func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (l *KnowledgeBaseRetriever) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	ns := base.GetAppNamespace(ctx)
 	instance := &apiretriever.KnowledgeBaseRetriever{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: apiretriever.GroupVersion.Group, Version: apiretriever.GroupVersion.Version, Resource: "knowledgebaseretrievers"}).
-		Namespace(l.BaseNode.Ref.GetNamespace(ns)).Get(ctx, l.BaseNode.Ref.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("can't find the retriever in cluster: %w", err)
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.BaseNode.Ref.GetNamespace(ns), Name: l.BaseNode.Ref.Name}, instance); err != nil {
+		return fmt.Errorf("can't find the retriever in cluster: %w", err)
 	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return nil, fmt.Errorf("can't convert the retriever in cluster: %w", err)
-	}
+	l.Instance = instance
+	return nil
+}
+
+func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
+	ns := base.GetAppNamespace(ctx)
+	instance := l.Instance
 	l.DocNullReturn = instance.Spec.DocNullReturn
 
 	var knowledgebaseName, knowledgebaseNamespace string
@@ -127,14 +127,8 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface,
 	}
 
 	knowledgebase := &v1alpha1.KnowledgeBase{}
-	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "knowledgebases"}).
-		Namespace(knowledgebaseNamespace).Get(ctx, knowledgebaseName, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: knowledgebaseNamespace, Name: knowledgebaseName}, knowledgebase); err != nil {
 		return nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), knowledgebase)
-	if err != nil {
-		return nil, fmt.Errorf("can't convert the knowledgebase in cluster: %w", err)
 	}
 
 	embedderReq := knowledgebase.Spec.Embedder
@@ -144,31 +138,19 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli dynamic.Interface,
 	}
 
 	embedder := &v1alpha1.Embedder{}
-	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "embedders"}).
-		Namespace(embedderReq.GetNamespace(ns)).Get(ctx, embedderReq.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: embedderReq.GetNamespace(ns), Name: embedderReq.Name}, embedder); err != nil {
 		return nil, fmt.Errorf("can't find the embedder in cluster: %w", err)
 	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), embedder)
-	if err != nil {
-		return nil, fmt.Errorf("can't convert the embedder in cluster: %w", err)
-	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, nil, cli, "")
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, cli, "")
 	if err != nil {
 		return nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
 	}
 	vectorStore := &v1alpha1.VectorStore{}
-	obj, err = cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "vectorstores"}).
-		Namespace(vectorStoreReq.GetNamespace(ns)).Get(ctx, vectorStoreReq.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: vectorStoreReq.GetNamespace(ns), Name: vectorStoreReq.Name}, vectorStore); err != nil {
 		return nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
 	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), vectorStore)
-	if err != nil {
-		return nil, fmt.Errorf("can't convert the vectorstore in cluster: %w", err)
-	}
 	var s vectorstores.VectorStore
-	s, _, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), nil, cli)
+	s, _, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), cli)
 	if err != nil {
 		return nil, err
 	}

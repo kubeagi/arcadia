@@ -17,17 +17,28 @@ limitations under the License.
 package client
 
 import (
-	"k8s.io/client-go/dynamic"
+	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/flowcontrol"
 	"k8s.io/utils/env"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
+	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
+	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	evaluationarcadiav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
 )
 
-func GetClient(idtoken *string) (dynamic.Interface, error) {
+func GetClient(idtoken *string) (client.Client, error) {
 	var (
 		cfg *rest.Config
 		err error
@@ -47,7 +58,29 @@ func GetClient(idtoken *string) (dynamic.Interface, error) {
 	if qps > 0 && burst > 0 {
 		cfg.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(float32(qps), burst)
 	}
+	cli, err := client.New(cfg, client.Options{
+		Scheme: Scheme,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return cli, nil
+}
 
-	cfg.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(50, 60)
-	return dynamic.NewForConfig(cfg)
+var (
+	Scheme = runtime.NewScheme()
+)
+
+// Note: like `init()` function in `main.go` for controllers, this `init()` function is for client in apiserver.
+// for example, If you want to use pod in apiserver client, you should add `v1.AddToScheme(Scheme)` here.
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
+	utilruntime.Must(arcadiav1alpha1.AddToScheme(Scheme))
+	utilruntime.Must(v1.AddToScheme(Scheme))
+	utilruntime.Must(apichain.AddToScheme(Scheme))
+	utilruntime.Must(apiprompt.AddToScheme(Scheme))
+	utilruntime.Must(apiretriever.AddToScheme(Scheme))
+	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(Scheme))
+	utilruntime.Must(batchv1.AddToScheme(Scheme))
+	utilruntime.Must(agentv1alpha1.AddToScheme(Scheme))
 }

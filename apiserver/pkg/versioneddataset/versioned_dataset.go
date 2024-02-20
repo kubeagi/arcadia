@@ -18,6 +18,7 @@ package versioneddataset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -25,45 +26,35 @@ import (
 
 	miniogo "github.com/minio/minio-go/v7"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-var (
-	versioneddatasetSchem = schema.GroupVersionResource{
-		Group:    v1alpha1.GroupVersion.Group,
-		Version:  v1alpha1.GroupVersion.Version,
-		Resource: "versioneddatasets",
+func versionedDataset2modelConverter(obj client.Object) (generated.PageNode, error) {
+	vd, ok := obj.(*v1alpha1.VersionedDataset)
+	if !ok {
+		return nil, errors.New("can't convert object to VersionedDataset")
 	}
-)
-
-func versionedDataset2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
-	return versionedDataset2model(obj)
+	return versionedDataset2model(vd)
 }
 
-func versionedDataset2model(obj *unstructured.Unstructured) (*generated.VersionedDataset, error) {
+func versionedDataset2model(versioneddataset *v1alpha1.VersionedDataset) (*generated.VersionedDataset, error) {
 	vds := &generated.VersionedDataset{}
-	id := string(obj.GetUID())
+	id := string(versioneddataset.GetUID())
 	vds.ID = &id
-	vds.Name = obj.GetName()
-	vds.Namespace = obj.GetNamespace()
-	vds.Labels = graphqlutils.MapStr2Any(obj.GetLabels())
-	vds.Annotations = graphqlutils.MapStr2Any(obj.GetAnnotations())
-	versioneddataset := &v1alpha1.VersionedDataset{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, versioneddataset); err != nil {
-		return nil, err
-	}
-	vds.CreationTimestamp = obj.GetCreationTimestamp().Time
+	vds.Name = versioneddataset.GetName()
+	vds.Namespace = versioneddataset.GetNamespace()
+	vds.Labels = graphqlutils.MapStr2Any(versioneddataset.GetLabels())
+	vds.Annotations = graphqlutils.MapStr2Any(versioneddataset.GetAnnotations())
+	vds.CreationTimestamp = versioneddataset.GetCreationTimestamp().Time
 	vds.UpdateTimestamp = &vds.CreationTimestamp
 	vds.Creator = &versioneddataset.Spec.Creator
 	vds.DisplayName = &versioneddataset.Spec.DisplayName
@@ -99,25 +90,25 @@ func versionedDataset2model(obj *unstructured.Unstructured) (*generated.Versione
 		}
 	}
 
-	if s := common.GetObjStatus(obj); s != "" {
+	if s := common.GetObjStatus(versioneddataset); s != "" {
 		*vds.SyncStatus = s
 	}
 	vds.Released = int(versioneddataset.Spec.Released)
 	return vds, nil
 }
 
-func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.VersionedDataset, filter *generated.FileFilter) (*generated.PaginatedResult, error) {
+func VersionFiles(ctx context.Context, _ client.Client, input *generated.VersionedDataset, filter *generated.FileFilter) (*generated.PaginatedResult, error) {
 	prefix := fmt.Sprintf("dataset/%s/%s/", input.Dataset.Name, input.Version)
 	keyword := ""
 	if filter != nil && filter.Keyword != nil {
 		keyword = *filter.Keyword
 	}
 
-	systemClient, err := client.GetClient(nil)
+	systemClient, err := pkgclient.GetClient(nil)
 	if err != nil {
 		return nil, err
 	}
-	oss, err := common.SystemDatasourceOSS(ctx, nil, systemClient)
+	oss, err := common.SystemDatasourceOSS(ctx, systemClient)
 	if err != nil {
 		return nil, err
 	}
@@ -194,18 +185,7 @@ func VersionFiles(ctx context.Context, c dynamic.Interface, input *generated.Ver
 	}, nil
 }
 
-func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
-	listOptions := metav1.ListOptions{}
-	if input.Name != nil {
-		listOptions.FieldSelector = fmt.Sprintf("metadata.name=%s", *input.Name)
-	} else {
-		if input.LabelSelector != nil {
-			listOptions.LabelSelector = *input.LabelSelector
-		}
-		if input.FieldSelector != nil {
-			listOptions.FieldSelector = *input.FieldSelector
-		}
-	}
+func ListVersionedDatasets(ctx context.Context, c client.Client, input *generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
 	page, size := 1, 10
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -224,60 +204,68 @@ func ListVersionedDatasets(ctx context.Context, c dynamic.Interface, input *gene
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterVersionedDatasetByKeyword(*input.Keyword))
 	}
-	list, err := c.Resource(versioneddatasetSchem).Namespace(ns).List(ctx, listOptions)
+
+	us := &v1alpha1.VersionedDatasetList{}
+	opts, err := common.NewListOptions(generated.ListCommonInput{
+		Namespace:     ns,
+		Keyword:       input.Keyword,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: input.FieldSelector,
+		Page:          input.Page,
+		PageSize:      input.PageSize,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return common.ListReources(list, page, size, versionedDataset2modelConverter, filter...)
+	err = c.List(ctx, us, opts...)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]client.Object, len(us.Items))
+	for i := range us.Items {
+		items[i] = &us.Items[i]
+	}
+	return common.ListReources(items, page, size, versionedDataset2modelConverter, filter...)
 }
 
-func GetVersionedDataset(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.VersionedDataset, error) {
-	obj, err := c.Resource(versioneddatasetSchem).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func GetVersionedDataset(ctx context.Context, c client.Client, name, namespace string) (*generated.VersionedDataset, error) {
+	obj := &v1alpha1.VersionedDataset{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, obj)
 	if err != nil {
 		return nil, err
 	}
 	return versionedDataset2model(obj)
 }
 
-func DeleteVersionedDatasets(ctx context.Context, c dynamic.Interface, input *generated.DeleteVersionedDatasetInput) (*string, error) {
+func DeleteVersionedDatasets(ctx context.Context, c client.Client, input *generated.DeleteVersionedDatasetInput) (*string, error) {
 	none := ""
-	listOptions := metav1.ListOptions{}
-	if input.Name == nil && input.LabelSelector == nil && input.FieldSelector == nil {
-		return &none, fmt.Errorf("no name, no labelselector, no fieldsleector, i don't know which one to delete")
+	opts, err := common.DeleteAllOptions(&generated.DeleteCommonInput{
+		Name:          input.Name,
+		Namespace:     input.Namespace,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: input.FieldSelector,
+	})
+	if err != nil {
+		return nil, err
 	}
-	if input.Name != nil {
-		listOptions.FieldSelector = fmt.Sprintf("metadata.name=%s", *input.Name)
-	} else {
-		if input.LabelSelector != nil {
-			listOptions.LabelSelector = *input.LabelSelector
-		}
-		if input.FieldSelector != nil {
-			listOptions.FieldSelector = *input.FieldSelector
-		}
-	}
-	err := c.Resource(versioneddatasetSchem).Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
+	err = c.DeleteAllOf(ctx, &v1alpha1.VersionedDataset{}, opts...)
 	return &none, err
 }
 
-func UpdateVersionedDataset(ctx context.Context, c dynamic.Interface, input *generated.UpdateVersionedDatasetInput) (*generated.VersionedDataset, error) {
-	obj, err := c.Resource(versioneddatasetSchem).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+func UpdateVersionedDataset(ctx context.Context, c client.Client, input *generated.UpdateVersionedDatasetInput) (*generated.VersionedDataset, error) {
+	obj := &v1alpha1.VersionedDataset{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, obj)
 	if err != nil {
 		return nil, err
 	}
 	obj.SetLabels(graphqlutils.MapAny2Str(input.Labels))
 	obj.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
 	if input.Released != nil {
-		_ = unstructured.SetNestedField(obj.Object, *input.Released, "spec", "released")
+		obj.Spec.Released = uint8(*input.Released)
 	}
-	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	if input.DisplayName != nil && *input.DisplayName != displayname {
-		_ = unstructured.SetNestedField(obj.Object, *input.DisplayName, "spec", "displayName")
-	}
-	if input.Description != nil && *input.Description != description {
-		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
-	}
-	fg := make([]any, 0)
+	obj.Spec.DisplayName = pointer.StringDeref(input.DisplayName, obj.Spec.DisplayName)
+	obj.Spec.Description = pointer.StringDeref(input.Description, obj.Spec.Description)
+	fg := make([]v1alpha1.FileGroup, 0)
 	for _, item := range input.FileGroups {
 		fg = append(fg, v1alpha1.FileGroup{
 			Source: &v1alpha1.TypedObjectReference{
@@ -288,23 +276,16 @@ func UpdateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 			Paths: item.Paths,
 		})
 	}
-	if err = unstructured.SetNestedSlice(obj.Object, fg, "spec", "fileGroups"); err != nil {
-		return nil, err
-	}
-	obj, err = c.Resource(versioneddatasetSchem).Namespace(input.Namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	obj.Spec.FileGroups = fg
+	err = c.Update(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
 	return versionedDataset2model(obj)
 }
 
-func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *generated.CreateVersionedDatasetInput) (*generated.VersionedDataset, error) {
-	vds := v1alpha1.VersionedDataset{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "VersionedDataset",
-			APIVersion: v1alpha1.GroupVersion.String(),
-		},
-	}
+func CreateVersionedDataset(ctx context.Context, c client.Client, input *generated.CreateVersionedDatasetInput) (*generated.VersionedDataset, error) {
+	vds := &v1alpha1.VersionedDataset{}
 	vds.Name = input.Name
 	vds.Namespace = input.Namespace
 	vds.Spec = v1alpha1.VersionedDatasetSpec{
@@ -316,12 +297,8 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 		},
 		Released: 0,
 	}
-	if input.DisplayName != nil {
-		vds.Spec.DisplayName = *input.DisplayName
-	}
-	if input.Description != nil {
-		vds.Spec.Description = *input.Description
-	}
+	vds.Spec.DisplayName = pointer.StringDeref(input.DisplayName, vds.Spec.DisplayName)
+	vds.Spec.Description = pointer.StringDeref(input.Description, vds.Spec.Description)
 	common.SetCreator(ctx, &vds.Spec.CommonSpec)
 	vds.SetLabels(graphqlutils.MapAny2Str(input.Labels))
 	vds.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
@@ -341,20 +318,14 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 	}
 	if input.InheritedFrom != nil {
 		vds.Spec.InheritedFrom = *input.InheritedFrom
-		labelSelector := fmt.Sprintf("%s=%s", v1alpha1.LabelVersionedDatasetVersionOwner, input.DatasetName)
 		// 选中目标的versionDataset
-		versionList, err := c.Resource(versioneddatasetSchem).Namespace(input.Namespace).List(ctx, metav1.ListOptions{
-			LabelSelector: labelSelector,
-		})
+		versionList := &v1alpha1.VersionedDatasetList{}
+		err := c.List(ctx, versionList, client.MatchingLabels{v1alpha1.LabelVersionedDatasetVersionOwner: input.DatasetName})
 		if err != nil {
 			return nil, err
 		}
 
-		for _, item := range versionList.Items {
-			v := &v1alpha1.VersionedDataset{}
-			if err = runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, v); err != nil {
-				return nil, err
-			}
+		for _, v := range versionList.Items {
 			if v.Spec.Version == *input.InheritedFrom {
 				isReady := false
 				var errMessage error
@@ -373,13 +344,9 @@ func CreateVersionedDataset(ctx context.Context, c dynamic.Interface, input *gen
 			}
 		}
 	}
-	o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&vds)
+	err := c.Create(ctx, vds)
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(versioneddatasetSchem).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: o}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return versionedDataset2model(obj)
+	return versionedDataset2model(vds)
 }

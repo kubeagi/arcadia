@@ -122,8 +122,9 @@ type (
 func ParseSummary(
 	ctx context.Context, c client.Client,
 	appName, ragName, namespace string,
-	metricThresholds map[string]float64) (Report, error) {
-	source, err := common.SystemDatasourceOSS(ctx, c, nil)
+	metricThresholds map[string]float64,
+) (Report, error) {
+	source, err := common.SystemDatasourceOSS(ctx, c)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		return Report{}, err
@@ -209,8 +210,9 @@ func ParseSummary(
 func ParseResult(
 	ctx context.Context, c client.Client,
 	page, pageSize int,
-	appName, ragName, namespace, sortBy, order string) (ReportDetail, error) {
-	source, err := common.SystemDatasourceOSS(ctx, c, nil)
+	appName, ragName, namespace, sortBy, order string,
+) (ReportDetail, error) {
+	source, err := common.SystemDatasourceOSS(ctx, c)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		return ReportDetail{}, err

@@ -26,10 +26,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/config"
@@ -37,26 +36,24 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	gqlmodel "github.com/kubeagi/arcadia/apiserver/pkg/model"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 const (
 	NvidiaGPU = "nvidia.com/gpu"
 )
 
-func worker2modelConverter(ctx context.Context, c dynamic.Interface, showModel bool) func(*unstructured.Unstructured) (generated.PageNode, error) {
-	return func(u *unstructured.Unstructured) (generated.PageNode, error) {
+func worker2modelConverter(ctx context.Context, c client.Client, showModel bool) func(object client.Object) (generated.PageNode, error) {
+	return func(object client.Object) (generated.PageNode, error) {
+		u, ok := object.(*v1alpha1.Worker)
+		if !ok {
+			return nil, errors.New("can't convert object to Worker")
+		}
 		return Worker2model(ctx, c, u, showModel)
 	}
 }
 
 // Worker2model convert unstructured `CR Worker` to graphql model
-func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Unstructured, showModel bool) (*generated.Worker, error) {
-	worker := &v1alpha1.Worker{}
-	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
-		return nil, err
-	}
-
+func Worker2model(ctx context.Context, c client.Client, worker *v1alpha1.Worker, showModel bool) (*generated.Worker, error) {
 	id := string(worker.GetUID())
 
 	creationtimestamp := worker.GetCreationTimestamp().Time
@@ -114,8 +111,8 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 		Name:              worker.Name,
 		Namespace:         worker.Namespace,
 		Creator:           &worker.Spec.Creator,
-		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		Labels:            graphqlutils.MapStr2Any(worker.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(worker.GetAnnotations()),
 		DisplayName:       &worker.Spec.DisplayName,
 		Description:       &worker.Spec.Description,
 		Type:              &workerType,
@@ -144,7 +141,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 			w.ModelTypes = model.Types
 		}
 		w.Model = generated.TypedObjectReference{
-			APIGroup:  &common.ArcadiaAPIGroup,
+			APIGroup:  typedModel.APIGroup,
 			Kind:      typedModel.Kind,
 			Name:      typedModel.Name,
 			Namespace: typedModel.Namespace,
@@ -154,7 +151,7 @@ func Worker2model(ctx context.Context, c dynamic.Interface, obj *unstructured.Un
 	return &w, nil
 }
 
-func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.CreateWorkerInput) (*generated.Worker, error) {
+func CreateWorker(ctx context.Context, c client.Client, input generated.CreateWorkerInput) (*generated.Worker, error) {
 	displayName, description := "", ""
 	if input.DisplayName != nil {
 		displayName = *input.DisplayName
@@ -201,14 +198,10 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 		}
 	}
 
-	worker := v1alpha1.Worker{
+	worker := &v1alpha1.Worker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Worker",
-			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.WorkerSpec{
 			CommonSpec: v1alpha1.CommonSpec{
@@ -240,19 +233,14 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	}
 	worker.Spec.Resources = resources
 
-	unstructuredWorker, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&worker)
-	if err != nil {
-		return nil, err
-	}
-	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).
-		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredWorker}, metav1.CreateOptions{})
+	err := c.Create(ctx, worker)
 	if err != nil {
 		return nil, err
 	}
 
 	api, _ := common.GetAPIServer(ctx, c, true)
 
-	w, err := Worker2model(ctx, c, obj, true)
+	w, err := Worker2model(ctx, c, worker, true)
 	if err != nil {
 		return nil, err
 	}
@@ -260,14 +248,10 @@ func CreateWorker(ctx context.Context, c dynamic.Interface, input generated.Crea
 	return w, nil
 }
 
-func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
-	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
+func UpdateWorker(ctx context.Context, c client.Client, input *generated.UpdateWorkerInput) (*generated.Worker, error) {
 	worker := &v1alpha1.Worker{}
-	if err := utils.UnstructuredToStructured(obj, worker); err != nil {
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, worker)
+	if err != nil {
 		return nil, err
 	}
 
@@ -340,23 +324,14 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 		worker.Spec.AdditionalEnvs = additionalEnvs
 	}
 
-	unstructuredWorker, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&worker)
+	err = c.Update(ctx, worker)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedObject, err := common.ResouceUpdate(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Worker",
-		Name:      input.Name,
-		Namespace: &input.Namespace,
-	}, unstructuredWorker, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
 	api, _ := common.GetAPIServer(ctx, c, true)
 
-	w, err := Worker2model(ctx, c, updatedObject, true)
+	w, err := Worker2model(ctx, c, worker, true)
 	if err != nil {
 		return nil, err
 	}
@@ -364,57 +339,28 @@ func UpdateWorker(ctx context.Context, c dynamic.Interface, input *generated.Upd
 	return w, nil
 }
 
-func DeleteWorkers(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
+func DeleteWorkers(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
+	opts, err := common.DeleteAllOptions(input)
+	if err != nil {
+		return nil, err
 	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	resource := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker"))
-	if name != "" {
-		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: fieldSelector,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
+	err = c.DeleteAllOf(ctx, &v1alpha1.Worker{}, opts...)
+	return nil, err
 }
 
-func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListWorkerInput, showWorkerModel bool, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
+func ListWorkers(ctx context.Context, c client.Client, input generated.ListWorkerInput, showWorkerModel bool, listOpts ...common.ListOptionsFunc) (*generated.PaginatedResult, error) {
 	opts := common.DefaultListOptions()
 	for _, optFunc := range listOpts {
 		optFunc(opts)
 	}
 
 	filter := make([]common.ResourceFilter, 0)
-	labelSelector, fieldSelector := "", ""
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterWorkerByKeyword(*input.Keyword))
 	}
 	if input.ModelTypes != nil {
 		filter = append(filter, common.FilterWorkerByType(c, input.Namespace, *input.ModelTypes))
-	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
 	}
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -423,15 +369,27 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 		pageSize = *input.PageSize
 	}
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	}
-	us, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "worker")).Namespace(input.Namespace).List(ctx, listOptions)
+	us := &v1alpha1.WorkerList{}
+	options, err := common.NewListOptions(generated.ListCommonInput{
+		Namespace:     input.Namespace,
+		Keyword:       input.Keyword,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: input.FieldSelector,
+		Page:          input.Page,
+		PageSize:      input.PageSize,
+	})
 	if err != nil {
 		return nil, err
 	}
-	list, err := common.ListReources(us, page, pageSize, worker2modelConverter(ctx, c, showWorkerModel), filter...)
+	err = c.List(ctx, us, options...)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]client.Object, len(us.Items))
+	for i := range us.Items {
+		items[i] = &us.Items[i]
+	}
+	list, err := common.ListReources(items, page, pageSize, worker2modelConverter(ctx, c, showWorkerModel), filter...)
 	if err != nil {
 		return nil, err
 	}
@@ -444,13 +402,9 @@ func ListWorkers(ctx context.Context, c dynamic.Interface, input generated.ListW
 	return list, nil
 }
 
-func ReadWorker(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Worker, error) {
-	u, err := common.ResourceGet(ctx, c, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Worker",
-		Name:      name,
-		Namespace: &namespace,
-	}, metav1.GetOptions{})
+func ReadWorker(ctx context.Context, c client.Client, name, namespace string) (*generated.Worker, error) {
+	u := &v1alpha1.Worker{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, u)
 	if err != nil {
 		return nil, err
 	}

@@ -18,12 +18,14 @@ package dataset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -31,23 +33,23 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 )
 
-func dataset2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
-	return dataset2model(obj)
+func dataset2modelConverter(obj client.Object) (generated.PageNode, error) {
+	dataset, ok := obj.(*v1alpha1.Dataset)
+	if !ok {
+		return nil, errors.New("convert client.Object to Dataset err")
+	}
+	return dataset2model(dataset)
 }
 
-func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
+func dataset2model(dataset *v1alpha1.Dataset) (*generated.Dataset, error) {
 	ds := &generated.Dataset{}
-	ds.Name = obj.GetName()
-	ds.Namespace = obj.GetNamespace()
-	n := obj.GetCreationTimestamp()
+	ds.Name = dataset.GetName()
+	ds.Namespace = dataset.GetNamespace()
+	n := dataset.GetCreationTimestamp()
 	ds.CreationTimestamp = &n.Time
 	ds.UpdateTimestamp = &n.Time
-	ds.Labels = utils.MapStr2Any(obj.GetLabels())
-	ds.Annotations = utils.MapStr2Any(obj.GetAnnotations())
-	dataset := &v1alpha1.Dataset{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, dataset); err != nil {
-		return nil, err
-	}
+	ds.Labels = utils.MapStr2Any(dataset.GetLabels())
+	ds.Annotations = utils.MapStr2Any(dataset.GetAnnotations())
 	ds.Creator = &dataset.Spec.Creator
 	ds.DisplayName = &dataset.Spec.DisplayName
 	ds.ContentType = dataset.Spec.ContentType
@@ -65,15 +67,11 @@ func dataset2model(obj *unstructured.Unstructured) (*generated.Dataset, error) {
 	return ds, nil
 }
 
-func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.CreateDatasetInput) (*generated.Dataset, error) {
+func CreateDataset(ctx context.Context, c client.Client, input *generated.CreateDatasetInput) (*generated.Dataset, error) {
 	dataset := &v1alpha1.Dataset{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
-		},
-		TypeMeta: v1.TypeMeta{
-			Kind:       "Dataset",
-			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.DatasetSpec{
 			ContentType: input.ContentType,
@@ -92,30 +90,39 @@ func CreateDataset(ctx context.Context, c dynamic.Interface, input *generated.Cr
 	dataset.Annotations = utils.MapAny2Str(input.Annotations)
 	common.SetCreator(ctx, &dataset.Spec.CommonSpec)
 
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dataset)
+	err := c.Create(ctx, dataset)
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, v1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return dataset2model(obj)
+	return dataset2model(dataset)
 }
 
-func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.ListDatasetInput) (*generated.PaginatedResult, error) {
-	listOptions := v1.ListOptions{}
+func ListDatasets(ctx context.Context, c client.Client, input *generated.ListDatasetInput) (*generated.PaginatedResult, error) {
+	listOptions := &client.ListOptions{Namespace: input.Namespace}
 	if input.Name != nil {
-		listOptions.FieldSelector = fmt.Sprintf("metadata.name=%s", *input.Name)
+		f, err := fields.ParseSelector(fmt.Sprintf("metadata.name=%s", *input.Name))
+		if err != nil {
+			return nil, err
+		}
+		listOptions.FieldSelector = f
 	} else {
 		if input.LabelSelector != nil {
-			listOptions.LabelSelector = *input.LabelSelector
+			l, err := labels.Parse(*input.LabelSelector)
+			if err != nil {
+				return nil, err
+			}
+			listOptions.LabelSelector = l
 		}
 		if input.FieldSelector != nil {
-			listOptions.FieldSelector = *input.FieldSelector
+			f, err := fields.ParseSelector(*input.FieldSelector)
+			if err != nil {
+				return nil, err
+			}
+			listOptions.FieldSelector = f
 		}
 	}
-	datastList, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).List(ctx, listOptions)
+	datasetList := &v1alpha1.DatasetList{}
+	err := c.List(ctx, datasetList, listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -133,55 +140,50 @@ func ListDatasets(ctx context.Context, c dynamic.Interface, input *generated.Lis
 	if input.Keyword != nil {
 		filters = append(filters, common.FilterDatasetByKeyword(*input.Keyword))
 	}
-	return common.ListReources(datastList, page, size, dataset2modelConverter, filters...)
+	items := make([]client.Object, len(datasetList.Items))
+	for i := range datasetList.Items {
+		items[i] = &datasetList.Items[i]
+	}
+	return common.ListReources(items, page, size, dataset2modelConverter, filters...)
 }
 
-func UpdateDataset(ctx context.Context, c dynamic.Interface, input *generated.UpdateDatasetInput) (*generated.Dataset, error) {
-	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Get(ctx, input.Name, v1.GetOptions{})
+func UpdateDataset(ctx context.Context, c client.Client, input *generated.UpdateDatasetInput) (*generated.Dataset, error) {
+	dataset := &v1alpha1.Dataset{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, dataset)
 	if err != nil {
 		return nil, err
 	}
-	obj.SetLabels(utils.MapAny2Str(input.Labels))
-	obj.SetAnnotations(utils.MapAny2Str(input.Annotations))
-	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
+	dataset.SetLabels(utils.MapAny2Str(input.Labels))
+	dataset.SetAnnotations(utils.MapAny2Str(input.Annotations))
+	displayname := dataset.Spec.DisplayName
+	description := dataset.Spec.Description
 	if input.DisplayName != nil && *input.DisplayName != displayname {
-		_ = unstructured.SetNestedField(obj.Object, input.DisplayName, "spec", "displayName")
+		dataset.Spec.DisplayName = *input.DisplayName
 	}
 	if input.Description != nil && *input.Description != description {
-		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
+		dataset.Spec.Description = *input.Description
 	}
-	obj, err = c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).Update(ctx, obj, v1.UpdateOptions{})
+	err = c.Update(ctx, dataset)
 	if err != nil {
 		return nil, err
 	}
-	return dataset2model(obj)
+	return dataset2model(dataset)
 }
 
-func DeleteDatasets(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	none := ""
-	listOptions := v1.ListOptions{}
-	if input.Name == nil && input.LabelSelector == nil && input.FieldSelector == nil {
-		return &none, fmt.Errorf("no name, no labelselector, no fieldsleector, i don't know which one to delete")
-	}
-	if input.Name != nil {
-		listOptions.FieldSelector = fmt.Sprintf("metadata.name=%s", *input.Name)
-	} else {
-		if input.LabelSelector != nil {
-			listOptions.LabelSelector = *input.LabelSelector
-		}
-		if input.FieldSelector != nil {
-			listOptions.FieldSelector = *input.FieldSelector
-		}
-	}
-	err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(input.Namespace).DeleteCollection(ctx, v1.DeleteOptions{}, listOptions)
-	return &none, err
-}
-
-func GetDataset(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Dataset, error) {
-	obj, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Dataset")).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
+func DeleteDatasets(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
+	opts, err := common.DeleteAllOptions(input)
 	if err != nil {
 		return nil, err
 	}
-	return dataset2model(obj)
+	err = c.DeleteAllOf(ctx, &v1alpha1.Dataset{}, opts...)
+	return nil, err
+}
+
+func GetDataset(ctx context.Context, c client.Client, name, namespace string) (*generated.Dataset, error) {
+	dataset := &v1alpha1.Dataset{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, dataset)
+	if err != nil {
+		return nil, err
+	}
+	return dataset2model(dataset)
 }

@@ -18,6 +18,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -25,29 +26,28 @@ import (
 
 	miniogo "github.com/minio/minio-go/v7"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
-func obj2modelConverter(obj *unstructured.Unstructured) (generated.PageNode, error) {
-	return obj2model(obj)
-}
-func obj2model(obj *unstructured.Unstructured) (*generated.Model, error) {
-	model := &v1alpha1.Model{}
-	if err := utils.UnstructuredToStructured(obj, model); err != nil {
-		return nil, err
+func obj2modelConverter(obj client.Object) (generated.PageNode, error) {
+	model, ok := obj.(*v1alpha1.Model)
+	if !ok {
+		return nil, errors.New("can't convert object to Model")
 	}
+	return obj2model(model)
+}
 
+func obj2model(model *v1alpha1.Model) (*generated.Model, error) {
 	id := string(model.GetUID())
 	creationtimestamp := model.GetCreationTimestamp().Time
 
@@ -58,18 +58,18 @@ func obj2model(obj *unstructured.Unstructured) (*generated.Model, error) {
 	message := string(condition.Message)
 
 	var systemModel bool
-	if obj.GetNamespace() == config.GetConfig().SystemNamespace {
+	if model.GetNamespace() == config.GetConfig().SystemNamespace {
 		systemModel = true
 	}
 
 	md := generated.Model{
 		ID:                &id,
-		Name:              obj.GetName(),
-		Namespace:         obj.GetNamespace(),
+		Name:              model.GetName(),
+		Namespace:         model.GetNamespace(),
 		Creator:           &model.Spec.Creator,
 		SystemModel:       &systemModel,
-		Labels:            graphqlutils.MapStr2Any(obj.GetLabels()),
-		Annotations:       graphqlutils.MapStr2Any(obj.GetAnnotations()),
+		Labels:            graphqlutils.MapStr2Any(model.GetLabels()),
+		Annotations:       graphqlutils.MapStr2Any(model.GetAnnotations()),
 		DisplayName:       &model.Spec.DisplayName,
 		Description:       &model.Spec.Description,
 		Types:             model.Spec.Types,
@@ -81,122 +81,60 @@ func obj2model(obj *unstructured.Unstructured) (*generated.Model, error) {
 	return &md, nil
 }
 
-func CreateModel(ctx context.Context, c dynamic.Interface, input generated.CreateModelInput) (*generated.Model, error) {
-	displayName, description, types := "", "", ""
-	if input.DisplayName != nil {
-		displayName = *input.DisplayName
-	}
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.Types != "" {
-		types = input.Types
-	}
-
-	model := v1alpha1.Model{
+func CreateModel(ctx context.Context, c client.Client, input generated.CreateModelInput) (*generated.Model, error) {
+	model := &v1alpha1.Model{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
 		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Model",
-			APIVersion: v1alpha1.GroupVersion.String(),
-		},
 		Spec: v1alpha1.ModelSpec{
-			CommonSpec: v1alpha1.CommonSpec{
-				DisplayName: displayName,
-				Description: description,
-			},
-			Types: types,
+			Types: input.Types,
 		},
 	}
+	model.Spec.DisplayName = pointer.StringDeref(input.DisplayName, model.Spec.DisplayName)
+	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
 	common.SetCreator(ctx, &model.Spec.CommonSpec)
-	unstructuredModel, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&model)
+	err := c.Create(ctx, model)
 	if err != nil {
 		return nil, err
 	}
-	obj, err := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"}).
-		Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: unstructuredModel}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return obj2model(obj)
+	return obj2model(model)
 }
 
-func UpdateModel(ctx context.Context, c dynamic.Interface, input *generated.UpdateModelInput) (*generated.Model, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
-	obj, err := resource.Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+func UpdateModel(ctx context.Context, c client.Client, input *generated.UpdateModelInput) (*generated.Model, error) {
+	model := &v1alpha1.Model{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, model)
 	if err != nil {
 		return nil, err
 	}
 
-	obj.SetLabels(graphqlutils.MapAny2Str(input.Labels))
-	obj.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+	model.SetLabels(graphqlutils.MapAny2Str(input.Labels))
+	model.SetAnnotations(graphqlutils.MapAny2Str(input.Annotations))
+	model.Spec.DisplayName = pointer.StringDeref(input.DisplayName, model.Spec.DisplayName)
+	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
+	model.Spec.Types = pointer.StringDeref(input.Types, model.Spec.Types)
 
-	displayname, _, _ := unstructured.NestedString(obj.Object, "spec", "displayName")
-	if input.DisplayName != nil && *input.DisplayName != displayname {
-		_ = unstructured.SetNestedField(obj.Object, *input.DisplayName, "spec", "displayName")
-	}
-	description, _, _ := unstructured.NestedString(obj.Object, "spec", "description")
-	if input.Description != nil && *input.Description != description {
-		_ = unstructured.SetNestedField(obj.Object, *input.Description, "spec", "description")
-	}
-	types, _, _ := unstructured.NestedString(obj.Object, "spec", "types")
-	if input.Types != nil && *input.Types != types {
-		_ = unstructured.SetNestedField(obj.Object, *input.Types, "spec", "types")
-	}
-
-	updatedObject, err := resource.Namespace(input.Namespace).Update(ctx, obj, metav1.UpdateOptions{})
+	err = c.Update(ctx, model)
 	if err != nil {
 		return nil, err
 	}
-	return obj2model(updatedObject)
+	return obj2model(model)
 }
 
-func DeleteModels(ctx context.Context, c dynamic.Interface, input *generated.DeleteCommonInput) (*string, error) {
-	name := ""
-	labelSelector, fieldSelector := "", ""
-	if input.Name != nil {
-		name = *input.Name
+func DeleteModels(ctx context.Context, c client.Client, input *generated.DeleteCommonInput) (*string, error) {
+	opts, err := common.DeleteAllOptions(input)
+	if err != nil {
+		return nil, err
 	}
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
-	}
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
-	if name != "" {
-		err := resource.Namespace(input.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: fieldSelector,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
+	err = c.DeleteAllOf(ctx, &v1alpha1.Model{}, opts...)
+	return nil, err
 }
 
-func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListModelInput) (*generated.PaginatedResult, error) {
+func ListModels(ctx context.Context, c client.Client, input generated.ListModelInput) (*generated.PaginatedResult, error) {
 	filter := make([]common.ResourceFilter, 0)
-	labelSelector, fieldSelector := "", ""
-
 	page, pageSize := 1, 10
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterModelByKeyword(*input.Keyword))
-	}
-
-	if input.FieldSelector != nil {
-		fieldSelector = *input.FieldSelector
-	}
-	if input.LabelSelector != nil {
-		labelSelector = *input.LabelSelector
 	}
 	if input.Page != nil && *input.Page > 0 {
 		page = *input.Page
@@ -205,48 +143,72 @@ func ListModels(ctx context.Context, c dynamic.Interface, input generated.ListMo
 		pageSize = *input.PageSize
 	}
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
+	models := &v1alpha1.ModelList{}
+	opts, err := common.NewListOptions(generated.ListCommonInput{
+		Namespace:     input.Namespace,
+		Keyword:       input.Keyword,
+		LabelSelector: input.LabelSelector,
+		FieldSelector: input.FieldSelector,
+		Page:          input.Page,
+		PageSize:      input.PageSize,
+	})
+	if err != nil {
+		return nil, err
 	}
-	models, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(input.Namespace).List(ctx, listOptions)
+	err = c.List(ctx, models, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	// list models in kubeagi system namespace
 	if input.SystemModel != nil && *input.SystemModel && input.Namespace != config.GetConfig().SystemNamespace {
-		systemModels, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "model")).Namespace(config.GetConfig().SystemNamespace).List(ctx, listOptions)
+		systemModels := &v1alpha1.ModelList{}
+		opts, err := common.NewListOptions(generated.ListCommonInput{
+			Namespace:     config.GetConfig().SystemNamespace,
+			Keyword:       input.Keyword,
+			LabelSelector: input.LabelSelector,
+			FieldSelector: input.FieldSelector,
+			Page:          input.Page,
+			PageSize:      input.PageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		err = c.List(ctx, systemModels, opts...)
 		if err != nil {
 			return nil, err
 		}
 		models.Items = append(systemModels.Items, models.Items...)
 	}
 
-	return common.ListReources(models, page, pageSize, obj2modelConverter, filter...)
+	items := make([]client.Object, len(models.Items))
+	for i := range models.Items {
+		items[i] = &models.Items[i]
+	}
+	return common.ListReources(items, page, pageSize, obj2modelConverter, filter...)
 }
 
-func ReadModel(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Model, error) {
-	resource := c.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "models"})
-	u, err := resource.Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+func ReadModel(ctx context.Context, c client.Client, name, namespace string) (*generated.Model, error) {
+	u := &v1alpha1.Model{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, u)
 	if err != nil {
 		return nil, err
 	}
 	return obj2model(u)
 }
 
-func ModelFiles(ctx context.Context, c dynamic.Interface, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {
+func ModelFiles(ctx context.Context, c client.Client, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {
 	prefix := fmt.Sprintf("model/%s/", modelName)
 	keyword := ""
 	if input != nil && input.Keyword != nil {
 		keyword = *input.Keyword
 	}
 
-	systemClient, err := client.GetClient(nil)
+	systemClient, err := pkgclient.GetClient(nil)
 	if err != nil {
 		return nil, err
 	}
-	oss, err := common.SystemDatasourceOSS(ctx, nil, systemClient)
+	oss, err := common.SystemDatasourceOSS(ctx, systemClient)
 	if err != nil {
 		return nil, err
 	}

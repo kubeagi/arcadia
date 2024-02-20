@@ -22,10 +22,8 @@ import (
 	"strings"
 
 	"github.com/tmc/langchaingo/prompts"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -38,26 +36,28 @@ const (
 type Prompt struct {
 	base.BaseNode
 	prompts.ChatPromptTemplate
+	Instance *v1alpha1.Prompt
 }
 
 func NewPrompt(baseNode base.BaseNode) *Prompt {
 	return &Prompt{
-		baseNode,
-		prompts.ChatPromptTemplate{},
+		BaseNode:           baseNode,
+		ChatPromptTemplate: prompts.ChatPromptTemplate{},
 	}
 }
-func (p *Prompt) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+
+func (p *Prompt) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.Prompt{}
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "prompts"}).
-		Namespace(p.Ref.GetNamespace(ns)).Get(ctx, p.Ref.Name, metav1.GetOptions{})
-	if err != nil {
-		return args, fmt.Errorf("can't find the prompt in cluster: %w", err)
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.Ref.GetNamespace(ns), Name: p.Ref.Name}, instance); err != nil {
+		return fmt.Errorf("can't find the prompt in cluster: %w", err)
 	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return args, fmt.Errorf("can't convert the prompt in cluster: %w", err)
-	}
+	p.Instance = instance
+	return nil
+}
+
+func (p *Prompt) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
+	instance := p.Instance
 	ps := make([]prompts.MessageFormatter, 0)
 	if instance.Spec.SystemMessage != "" {
 		ps = append(ps, prompts.NewSystemMessagePromptTemplate(instance.Spec.SystemMessage, []string{}))

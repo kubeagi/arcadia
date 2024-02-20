@@ -20,23 +20,26 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 )
 
-func filterByKeyWord(keyword string) func(*unstructured.Unstructured) bool {
-	return func(u *unstructured.Unstructured) bool {
+func filterByKeyWord(keyword string) func(object client.Object) bool {
+	return func(u client.Object) bool {
 		return strings.Contains(u.GetName(), keyword)
 	}
 }
 
-func converter(u *unstructured.Unstructured) (generated.PageNode, error) {
+func converter(u client.Object) (generated.PageNode, error) {
 	return &generated.F{Path: u.GetName()}, nil
 }
 
-func initResource() unstructured.UnstructuredList {
+func initResource() []client.Object {
 	// The reverse order should be
 	// name3, name7, name1, name5, name4, name2, name6,name9, name8
 	timeStrings := []string{
@@ -50,16 +53,15 @@ func initResource() unstructured.UnstructuredList {
 		"2023-01-12T11:57:26Z",
 		"2023-02-12T11:57:26Z",
 	}
-	l := unstructured.UnstructuredList{Items: make([]unstructured.Unstructured, 0)}
-	for i := 1; i < 10; i++ {
-		l.Items = append(l.Items, unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"name":              fmt.Sprintf("name%d", i),
-					"creationTimestamp": timeStrings[i-1],
-				},
+	l := make([]client.Object, len(timeStrings))
+	for i, t := range timeStrings {
+		tv, _ := time.Parse(time.RFC3339, t)
+		l[i] = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              fmt.Sprintf("name%d", i+1),
+				CreationTimestamp: metav1.NewTime(tv),
 			},
-		})
+		}
 	}
 	return l
 }
@@ -184,7 +186,7 @@ func TestListResources(t *testing.T) {
 	} {
 		// name3, name7, name1, name5, name4, name2, name6,name9, name8
 		data := initResource()
-		r, _ := ListReources(&data, tc.page, tc.pageSize, converter, filterByKeyWord(tc.keyword))
+		r, _ := ListReources(data, tc.page, tc.pageSize, converter, filterByKeyWord(tc.keyword))
 		r1 := toF(r.Nodes)
 		if !reflect.DeepEqual(tc.exp, r1) {
 			t.Fatalf("with keyword %s, page: %d, pageSize: %d , expect %v get %v", tc.keyword, tc.page, tc.pageSize, tc.exp, r1)

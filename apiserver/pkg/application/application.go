@@ -22,13 +22,12 @@ import (
 	"reflect"
 	"strings"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
@@ -134,15 +133,15 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	return gApp, nil
 }
 
-func app2metadataConverter(objApp *unstructured.Unstructured) (generated.PageNode, error) {
-	return app2metadata(objApp)
+func app2metadataConverter(objApp client.Object) (generated.PageNode, error) {
+	app, ok := objApp.(*v1alpha1.Application)
+	if !ok {
+		return nil, errors.New("can't convert client.Object to Application")
+	}
+	return app2metadata(app)
 }
 
-func app2metadata(objApp *unstructured.Unstructured) (*generated.ApplicationMetadata, error) {
-	app := &v1alpha1.Application{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(objApp.UnstructuredContent(), app); err != nil {
-		return nil, err
-	}
+func app2metadata(app *v1alpha1.Application) (*generated.ApplicationMetadata, error) {
 	condition := app.Status.GetCondition(v1alpha1.TypeReady)
 	UpdateTimestamp := &condition.LastTransitionTime.Time
 	status := common.GetObjStatus(app)
@@ -165,12 +164,8 @@ func app2metadata(objApp *unstructured.Unstructured) (*generated.ApplicationMeta
 	}, nil
 }
 
-func CreateApplication(ctx context.Context, c dynamic.Interface, input generated.CreateApplicationMetadataInput) (*generated.ApplicationMetadata, error) {
+func CreateApplication(ctx context.Context, c client.Client, input generated.CreateApplicationMetadataInput) (*generated.ApplicationMetadata, error) {
 	app := &v1alpha1.Application{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Application",
-			APIVersion: common.ArcadiaAPIGroup,
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        input.Name,
 			Namespace:   input.Namespace,
@@ -190,24 +185,15 @@ func CreateApplication(ctx context.Context, c dynamic.Interface, input generated
 	}
 	app = addCategory(app, input.Category)
 	common.SetCreator(ctx, &app.Spec.CommonSpec)
-	object, err := runtime.DefaultUnstructuredConverter.ToUnstructured(app)
-	if err != nil {
+	if err := c.Create(ctx, app); err != nil {
 		return nil, err
 	}
-	objApp, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(input.Namespace).Create(ctx, &unstructured.Unstructured{Object: object}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return app2metadata(objApp)
+	return app2metadata(app)
 }
 
-func UpdateApplication(ctx context.Context, c dynamic.Interface, input generated.UpdateApplicationMetadataInput) (*generated.ApplicationMetadata, error) {
-	objApp, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
+func UpdateApplication(ctx context.Context, c client.Client, input generated.UpdateApplicationMetadataInput) (*generated.ApplicationMetadata, error) {
 	app := &v1alpha1.Application{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(objApp.UnstructuredContent(), app); err != nil {
+	if err := c.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, app); err != nil {
 		return nil, err
 	}
 	oldApp := app.DeepCopy()
@@ -219,58 +205,70 @@ func UpdateApplication(ctx context.Context, c dynamic.Interface, input generated
 	app.Spec.Icon = input.Icon
 	app.Spec.IsPublic = pointer.BoolDeref(input.IsPublic, app.Spec.IsPublic)
 	if !reflect.DeepEqual(app, oldApp) {
-		object, err := runtime.DefaultUnstructuredConverter.ToUnstructured(app)
-		if err != nil {
-			return nil, err
-		}
-		objApp, err = c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(input.Namespace).Update(ctx, &unstructured.Unstructured{Object: object}, metav1.UpdateOptions{})
-		if err != nil {
+		if err := c.Update(ctx, app); err != nil {
 			return nil, err
 		}
 	}
-	return app2metadata(objApp)
+	return app2metadata(app)
 }
 
-func DeleteApplication(ctx context.Context, c dynamic.Interface, input generated.DeleteCommonInput) (*string, error) {
-	resources := []dynamic.NamespaceableResourceInterface{
-		c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt")),
-		c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "LLMChain")),
-		c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "RetrievalQAChain")),
-		c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever")),
-		c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")),
+func DeleteApplication(ctx context.Context, c client.Client, input generated.DeleteCommonInput) (*string, error) {
+	resources := []client.Object{
+		&apiprompt.Prompt{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
+		&apichain.LLMChain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
+		&apichain.RetrievalQAChain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
+		&apiretriever.KnowledgeBaseRetriever{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
+		&v1alpha1.Application{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
 	}
 	for _, resource := range resources {
-		if input.Name != nil {
-			err := resource.Namespace(input.Namespace).Delete(ctx, *input.Name, metav1.DeleteOptions{})
-			if err != nil && !k8serrors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			err := resource.Namespace(input.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-				LabelSelector: pointer.StringDeref(input.LabelSelector, ""),
-				FieldSelector: pointer.StringDeref(input.FieldSelector, ""),
-			})
-			if err != nil {
-				return nil, err
-			}
+		opts, err := common.DeleteAllOptions(&input)
+		if err != nil {
+			return nil, err
+		}
+		err = c.DeleteAllOf(ctx, resource, opts...)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return pointer.String("ok"), nil
 }
 
-func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace string) (*generated.Application, error) {
+func GetApplication(ctx context.Context, c client.Client, name, namespace string) (*generated.Application, error) {
+	key := types.NamespacedName{Namespace: namespace, Name: name}
 	// 1. get application cr, if not exist, return error
-	_, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
 	app := &v1alpha1.Application{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), namespace, name, app); err != nil {
+	err := c.Get(ctx, key, app)
+	if err != nil {
 		return nil, err
 	}
 
 	prompt := &apiprompt.Prompt{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), namespace, name, prompt); err != nil {
+	if err := c.Get(ctx, key, prompt); err != nil && !apierrors.IsNotFound(err) {
 		return nil, err
 	}
 	var (
@@ -286,19 +284,19 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 	}
 	if hasKnowledgeBaseRetriever {
 		qachain := &apichain.RetrievalQAChain{}
-		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "RetrievalQAChain"), namespace, name, qachain); err != nil {
+		if err := c.Get(ctx, key, qachain); err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 		if qachain.UID != "" {
 			chainConfig = &qachain.Spec.CommonChainConfig
 		}
 		retriever = &apiretriever.KnowledgeBaseRetriever{}
-		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever"), namespace, name, retriever); err != nil {
+		if err := c.Get(ctx, key, retriever); err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	} else {
 		llmchain := &apichain.LLMChain{}
-		if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "LLMChain"), namespace, name, llmchain); err != nil {
+		if err := c.Get(ctx, key, llmchain); err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 		if llmchain.UID != "" {
@@ -309,43 +307,40 @@ func GetApplication(ctx context.Context, c dynamic.Interface, name, namespace st
 	return cr2app(prompt, chainConfig, retriever, app)
 }
 
-func ListApplicationMeatadatas(ctx context.Context, c dynamic.Interface, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
+func ListApplicationMeatadatas(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	keyword := pointer.StringDeref(input.Keyword, "")
-	labelSelector := pointer.StringDeref(input.LabelSelector, "")
-	fieldSelector := pointer.StringDeref(input.FieldSelector, "")
 	page := pointer.IntDeref(input.Page, 1)
 	pageSize := pointer.IntDeref(input.PageSize, 10)
-	res, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(input.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-		FieldSelector: fieldSelector,
-	})
+	res := &v1alpha1.ApplicationList{}
+	opts, err := common.NewListOptions(input)
 	if err != nil {
+		return nil, err
+	}
+	if err := c.List(ctx, res, opts...); err != nil {
 		return nil, err
 	}
 	filter := make([]common.ResourceFilter, 0)
 	if keyword != "" {
 		filter = append(filter, common.FilterApplicationByKeyword(keyword))
 	}
-	return common.ListReources(res, page, pageSize, app2metadataConverter, filter...)
+	items := make([]client.Object, len(res.Items))
+	for i := range res.Items {
+		items[i] = &res.Items[i]
+	}
+	return common.ListReources(items, page, pageSize, app2metadataConverter, filter...)
 }
 
-func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {
+func UpdateApplicationConfig(ctx context.Context, c client.Client, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {
+	key := types.NamespacedName{Namespace: input.Namespace, Name: input.Name}
 	// 1. get application cr, if not exist, return error
-	_, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace(input.Namespace).Get(ctx, input.Name, metav1.GetOptions{})
+	app := &v1alpha1.Application{}
+	err := c.Get(ctx, key, app)
 	if err != nil {
 		return nil, err
-	}
-	chainKind := "LLMChain"
-	if utils.HasValue(input.Knowledgebase) {
-		chainKind = "RetrievalQAChain"
 	}
 
 	// 2. create or update prompt
 	prompt := &apiprompt.Prompt{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Prompt",
-			APIVersion: apiprompt.Group + "/" + apiprompt.Version,
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
@@ -357,7 +352,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			},
 		},
 	}
-	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Prompt"), input.Namespace, input.Name, func() {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c, prompt, func() error {
 		var userMessage string
 		if !utils.HasValue(input.UserPrompt) {
 			userMessage = apiprompt.DefaultUserPrompt
@@ -367,7 +362,8 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 		prompt.Spec.CommonPromptConfig = apiprompt.CommonPromptConfig{
 			UserMessage: userMessage,
 		}
-	}, prompt); err != nil {
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
@@ -378,10 +374,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 	)
 	if utils.HasValue(input.Knowledgebase) {
 		qachain := &apichain.RetrievalQAChain{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "RetrievalQAChain",
-				APIVersion: apichain.Group + "/" + apichain.Version,
-			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
 				Namespace: input.Namespace,
@@ -402,7 +394,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 				},
 			},
 		}
-		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, qachain, func() error {
 			qachain.Spec.Model = pointer.StringDeref(input.Model, qachain.Spec.Model)
 			qachain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, qachain.Spec.MaxLength)
 			qachain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, qachain.Spec.MaxTokens)
@@ -417,16 +409,13 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			if len(input.Tools) == 0 {
 				qachain.Spec.Tools = make([]agent.Tool, 0)
 			}
-		}, qachain); err != nil {
+			return nil
+		}); err != nil {
 			return nil, err
 		}
 		chainConfig = &qachain.Spec.CommonChainConfig
 	} else {
 		llmchain := &apichain.LLMChain{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "LLMChain",
-				APIVersion: apichain.Group + "/" + apichain.Version,
-			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
 				Namespace: input.Namespace,
@@ -447,7 +436,7 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 				},
 			},
 		}
-		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, strings.ToLower(chainKind)), input.Namespace, input.Name, func() {
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, llmchain, func() error {
 			llmchain.Spec.Model = pointer.StringDeref(input.Model, llmchain.Spec.Model)
 			llmchain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, llmchain.Spec.MaxLength)
 			llmchain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, llmchain.Spec.MaxTokens)
@@ -462,7 +451,8 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 			if len(input.Tools) == 0 {
 				llmchain.Spec.Tools = make([]agent.Tool, 0)
 			}
-		}, llmchain); err != nil {
+			return nil
+		}); err != nil {
 			return nil, err
 		}
 		chainConfig = &llmchain.Spec.CommonChainConfig
@@ -471,10 +461,6 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 	// 4. create or update retriever
 	if utils.HasValue(input.Knowledgebase) {
 		retriever = &apiretriever.KnowledgeBaseRetriever{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "KnowledgeBaseRetriever",
-				APIVersion: apiretriever.Group + "/" + apiretriever.Version,
-			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
 				Namespace: input.Namespace,
@@ -491,33 +477,31 @@ func UpdateApplicationConfig(ctx context.Context, c dynamic.Interface, input gen
 				},
 			},
 		}
-		if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "KnowledgeBaseRetriever"), input.Namespace, input.Name, func() {
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, retriever, func() error {
 			retriever.Spec.ScoreThreshold = float32(pointer.Float64Deref(input.ScoreThreshold, float64(retriever.Spec.ScoreThreshold)))
 			retriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, retriever.Spec.NumDocuments)
 			retriever.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, retriever.Spec.DocNullReturn)
-		}, retriever); err != nil {
+			return nil
+		}); err != nil {
 			return nil, err
 		}
 	}
 
 	// 5. update application
-	app := &v1alpha1.Application{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Application",
-			APIVersion: common.ArcadiaAPIGroup,
-		},
+	app = &v1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
 			Namespace: input.Namespace,
 		},
 	}
-	if err = createOrUpdateResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), input.Namespace, input.Name, func() {
+	if _, err = controllerutil.CreateOrUpdate(ctx, c, app, func() error {
 		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm)
 		app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
 		app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
 		app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
 		app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
-	}, app); err != nil {
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
@@ -633,48 +617,4 @@ func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha
 		},
 	})
 	return nodes
-}
-
-func createOrUpdateResource(ctx context.Context, c dynamic.Interface, resource schema.GroupVersionResource, namespace, name string, override func(), typedObj any) error {
-	needUpdate := true
-	resourceInterface := c.Resource(resource).Namespace(namespace)
-	obj, err := resourceInterface.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return err
-		}
-		needUpdate = false
-	}
-	if needUpdate {
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), typedObj); err != nil {
-			return err
-		}
-	}
-	override()
-	object, err := runtime.DefaultUnstructuredConverter.ToUnstructured(typedObj)
-	if err != nil {
-		return err
-	}
-	if needUpdate {
-		if obj, err = resourceInterface.Update(ctx, &unstructured.Unstructured{Object: object}, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
-	} else {
-		if obj, err = resourceInterface.Create(ctx, &unstructured.Unstructured{Object: object}, metav1.CreateOptions{}); err != nil {
-			return err
-		}
-	}
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), typedObj)
-}
-
-func getResource(ctx context.Context, c dynamic.Interface, resource schema.GroupVersionResource, namespace, name string, typedObj any) error {
-	resourceInterface := c.Resource(resource).Namespace(namespace)
-	obj, err := resourceInterface.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), typedObj)
 }

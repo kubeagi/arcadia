@@ -213,7 +213,7 @@ func (r *VersionedDatasetReconciler) preUpdate(ctx context.Context, logger logr.
 func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger logr.Logger, instance *v1alpha1.VersionedDataset) (bool, []v1alpha1.FileStatus, error) {
 	// TODO: Currently, we think there is only one default minio environment,
 	// so we get the minio client directly through the configuration.
-	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
 		logger.Error(err, "Failed to get system datasource")
 		return false, nil, err
@@ -222,7 +222,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
 	if err != nil {
 		logger.Error(err, "Failed to generate new minio client")
 		return false, nil, err
@@ -233,7 +233,7 @@ func (r *VersionedDatasetReconciler) checkStatus(ctx context.Context, logger log
 }
 
 func (r *VersionedDatasetReconciler) removeBucketFiles(ctx context.Context, logger logr.Logger, instance *v1alpha1.VersionedDataset) error {
-	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client, nil)
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
 	if err != nil {
 		logger.Error(err, "Failed to get system datasource")
 		return err
@@ -242,7 +242,7 @@ func (r *VersionedDatasetReconciler) removeBucketFiles(ctx context.Context, logg
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	oss, err := datasource.NewOSS(ctx, r.Client, nil, endpoint)
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
 	if err != nil {
 		logger.Error(err, "Failed to generate new minio client")
 		return err

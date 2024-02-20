@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/client-go/dynamic"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
@@ -16,7 +16,7 @@ import (
 
 type Resolver struct{}
 
-func getClientFromCtx(ctx context.Context) (dynamic.Interface, error) {
+func getClientFromCtx(ctx context.Context) (runtimeclient.Client, error) {
 	idtoken := auth.ForOIDCToken(ctx)
 	if idtoken == nil && auth.NeedAuth {
 		return nil, fmt.Errorf("need auth but can't get token from request, abort")
@@ -24,6 +24,6 @@ func getClientFromCtx(ctx context.Context) (dynamic.Interface, error) {
 	return client.GetClient(idtoken)
 }
 
-func getAdminClient() (dynamic.Interface, error) {
+func getAdminClient() (runtimeclient.Client, error) {
 	return client.GetClient(nil)
 }

@@ -65,7 +65,7 @@ func (st *StreamlitDeployer) Install() error {
 
 	namespace := st.namespace.Name
 	// lookup streamlit image from config
-	streamlitConfig, err := config.GetStreamlit(st.ctx, st.client, nil)
+	streamlitConfig, err := config.GetStreamlit(st.ctx, st.client)
 	if err != nil {
 		klog.Errorln("failed to get streamlit config", err)
 		return err

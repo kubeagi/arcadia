@@ -23,13 +23,10 @@ import (
 	"strings"
 	"sync"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
@@ -43,7 +40,7 @@ var (
 	chatStorage storage.Storage
 )
 
-func app2gpt(app *v1alpha1.Application, c dynamic.Interface) (*generated.Gpt, error) {
+func app2gpt(app *v1alpha1.Application, c client.Client) (*generated.Gpt, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
@@ -61,15 +58,7 @@ func app2gpt(app *v1alpha1.Application, c dynamic.Interface) (*generated.Gpt, er
 	return gpt, nil
 }
 
-func unstructred2gpt(objApp *unstructured.Unstructured, c dynamic.Interface) (*generated.Gpt, error) {
-	app := &v1alpha1.Application{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(objApp.UnstructuredContent(), app); err != nil {
-		return nil, err
-	}
-	return app2gpt(app, c)
-}
-
-func getHot(app *v1alpha1.Application, cli dynamic.Interface) int64 {
+func getHot(app *v1alpha1.Application, cli client.Client) int64 {
 	if chatStorage == nil {
 		once.Do(
 			func() {
@@ -86,14 +75,14 @@ func getHot(app *v1alpha1.Application, cli dynamic.Interface) int64 {
 	return res
 }
 
-func GetGPT(ctx context.Context, c dynamic.Interface, name string) (*generated.Gpt, error) {
+func GetGPT(ctx context.Context, c client.Client, name string) (*generated.Gpt, error) {
 	namespace, name, found := strings.Cut(name, "/")
 	if !found {
 		// TODO how to return 404 or something? not 500
 		return nil, fmt.Errorf("input arg name is not valid")
 	}
 	app := &v1alpha1.Application{}
-	if err := getResource(ctx, c, common.SchemaOf(&common.ArcadiaAPIGroup, "Application"), namespace, name, app); err != nil {
+	if err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, app); err != nil {
 		return nil, err
 	}
 	if !app.Spec.IsPublic {
@@ -103,15 +92,14 @@ func GetGPT(ctx context.Context, c dynamic.Interface, name string) (*generated.G
 	return app2gpt(app, c)
 }
 
-func ListGPT(ctx context.Context, c dynamic.Interface, input generated.ListGPTInput) (*generated.PaginatedResult, error) {
+func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput) (*generated.PaginatedResult, error) {
 	keyword := pointer.StringDeref(input.Keyword, "")
 	category := pointer.StringDeref(input.Category, "")
 	page := pointer.IntDeref(input.Page, 1)
 	pageSize := pointer.IntDeref(input.PageSize, 10)
-	res, err := c.Resource(common.SchemaOf(&common.ArcadiaAPIGroup, "Application")).Namespace("").List(ctx, metav1.ListOptions{
-		LabelSelector: v1alpha1.AppPublicLabelKey,
-	})
-	if err != nil {
+	res := &v1alpha1.ApplicationList{}
+	l := labels.Set{v1alpha1.AppPublicLabelKey: ""}
+	if err := c.List(ctx, res, &client.ListOptions{LabelSelector: l.AsSelector(), Namespace: ""}); err != nil {
 		return nil, err
 	}
 	filter := make([]common.ResourceFilter, 0)
@@ -121,19 +109,15 @@ func ListGPT(ctx context.Context, c dynamic.Interface, input generated.ListGPTIn
 	if category != "" {
 		filter = append(filter, common.FilterApplicationByCategory(category))
 	}
-	return common.ListReources(res, page, pageSize, func(obj *unstructured.Unstructured) (generated.PageNode, error) {
-		return unstructred2gpt(obj, c)
-	}, filter...)
-}
-
-func getResource(ctx context.Context, c dynamic.Interface, resource schema.GroupVersionResource, namespace, name string, typedObj any) error {
-	resourceInterface := c.Resource(resource).Namespace(namespace)
-	obj, err := resourceInterface.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-		return err
+	items := make([]client.Object, len(res.Items))
+	for i := range res.Items {
+		items[i] = &res.Items[i]
 	}
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), typedObj)
+	return common.ListReources(items, page, pageSize, func(obj client.Object) (generated.PageNode, error) {
+		app, ok := obj.(*v1alpha1.Application)
+		if !ok {
+			return nil, errors.New("can't convert obj to Application")
+		}
+		return app2gpt(app, c)
+	}, filter...)
 }

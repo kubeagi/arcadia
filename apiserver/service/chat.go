@@ -27,8 +27,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/config"
@@ -50,7 +50,7 @@ type ChatService struct {
 	server *chat.ChatServer
 }
 
-func NewChatService(cli dynamic.Interface) (*ChatService, error) {
+func NewChatService(cli runtimeclient.Client) (*ChatService, error) {
 	return &ChatService{chat.NewChatServer(cli)}, nil
 }
 

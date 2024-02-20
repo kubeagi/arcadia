@@ -21,17 +21,16 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/pkg/llms"
 )
 
-func (llm LLM) AuthAPIKey(ctx context.Context, c client.Client, cli dynamic.Interface) (string, error) {
+func (llm LLM) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
 	if llm.Spec.Endpoint == nil {
 		return "", nil
 	}
-	return llm.Spec.Endpoint.AuthAPIKey(ctx, llm.GetNamespace(), c, cli)
+	return llm.Spec.Endpoint.AuthAPIKey(ctx, llm.GetNamespace(), c)
 }
 
 func (llmStatus LLMStatus) LLMReady() (string, bool) {

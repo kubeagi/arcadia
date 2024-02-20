@@ -31,16 +31,13 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	basev1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	evalv1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
-	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
-	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	downloadutil "github.com/kubeagi/arcadia/pkg/arctl/download"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/evaluation"
@@ -75,7 +72,7 @@ Example:
 arctl -narcadia eval --rag=<rag-name>
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			kubeClient, err := client.GetClient(nil)
+			kubeClient, err := pkgclient.GetClient(nil)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to connect cluster error %s\n", err)
 				os.Exit(1)
@@ -84,25 +81,14 @@ arctl -narcadia eval --rag=<rag-name>
 			dir, _ := cmd.Flags().GetString("dir")
 			systemConfNamespace, _ := cmd.Flags().GetString("system-conf-namespace")
 			systemConfName, _ := cmd.Flags().GetString("system-conf-name")
-			rag := evalv1alpha1.RAG{}
-			gv := evalv1alpha1.GroupVersion.String()
-			u, err := common.ResourceGet(cmd.Context(), kubeClient, generated.TypedObjectReferenceInput{
-				APIGroup:  &gv,
-				Kind:      "RAG",
-				Name:      ragName,
-				Namespace: namespace,
-			}, metav1.GetOptions{})
+			rag := &evalv1alpha1.RAG{}
+			err = kubeClient.Get(context.TODO(), types.NamespacedName{Namespace: *namespace, Name: ragName}, rag)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to get rag %s error %s\n", ragName, err)
 				os.Exit(1)
 			}
 
-			if err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &rag); err != nil {
-				fmt.Fprintf(os.Stderr, "failed to convert rag %s, error %s\n", ragName, err)
-				os.Exit(1)
-			}
-
-			download(cmd.Context(), &rag, kubeClient, dir, systemConfName, systemConfNamespace)
+			download(cmd.Context(), rag, kubeClient, dir, systemConfName, systemConfNamespace)
 		},
 	}
 	cmd.Flags().String("rag", "", "rag name")
@@ -135,23 +121,14 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 			}
 
 			// init kubeclient
-			kubeClient, err := client.GetClient(nil)
+			kubeClient, err := pkgclient.GetClient(nil)
 			if err != nil {
 				return err
 			}
 
 			// read files
 			app := &basev1alpha1.Application{}
-			obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
-				APIGroup:  &common.ArcadiaAPIGroup,
-				Kind:      "Application",
-				Namespace: namespace,
-				Name:      *appName,
-			}, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), app)
+			err = kubeClient.Get(ctx, types.NamespacedName{Namespace: *namespace, Name: *appName}, app)
 			if err != nil {
 				return err
 			}
@@ -227,7 +204,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 	return cmd
 }
 
-func GenDatasetOnSingleFile(ctx context.Context, kubeClient dynamic.Interface, app *basev1alpha1.Application, file string, genOpts ...evaluation.GenOptions) error {
+func GenDatasetOnSingleFile(ctx context.Context, kubeClient client.Client, app *basev1alpha1.Application, file string, genOpts ...evaluation.GenOptions) error {
 	klog.V(3).Infof("GenDatasetOnSingleFile for application %s in namespace %s from file %s", app.Name, app.Namespace, file)
 	// read file content
 	f, err := os.Open(file)
@@ -259,24 +236,16 @@ func GenDatasetOnSingleFile(ctx context.Context, kubeClient dynamic.Interface, a
 
 func GetCustomDefineDatasource(
 	ctx context.Context,
-	kubeClient dynamic.Interface,
-	datasourceName, datasourceNamespace string) (*basev1alpha1.Datasource, error) {
-	obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
-		APIGroup:  &common.ArcadiaAPIGroup,
-		Kind:      "Datasource",
-		Namespace: &datasourceNamespace,
-		Name:      datasourceName,
-	}, metav1.GetOptions{})
+	kubeClient client.Client,
+	datasourceName, datasourceNamespace string,
+) (*basev1alpha1.Datasource, error) {
+	datasource := &basev1alpha1.Datasource{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: datasourceNamespace, Name: datasourceName}, datasource)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get datasource %s/%s error %s\n", datasourceNamespace, datasourceName, err)
 		return nil, err
 	}
-	datasource := basev1alpha1.Datasource{}
-	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &datasource); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to convert obj to datasource error %s\n", err)
-		return nil, err
-	}
-	return &datasource, nil
+	return datasource, nil
 }
 
 var (
@@ -285,41 +254,31 @@ var (
 	systemError      error
 )
 
-func SysatemDatasource(ctx context.Context, kubeClient dynamic.Interface) (*basev1alpha1.Datasource, error) {
+func SysatemDatasource(ctx context.Context, kubeClient client.Client) (*basev1alpha1.Datasource, error) {
 	once.Do(func() {
-		systemDatasource, systemError = config.GetSystemDatasource(ctx, nil, kubeClient)
+		systemDatasource, systemError = config.GetSystemDatasource(ctx, kubeClient)
 	})
 	return systemDatasource, systemError
 }
 
 func parseOptions(
 	ctx context.Context,
-	kubeClient dynamic.Interface,
-	datasource *basev1alpha1.Datasource) []downloadutil.DownloadOptionFunc {
+	kubeClient client.Client,
+	datasource *basev1alpha1.Datasource,
+) []downloadutil.DownloadOptionFunc {
 	options := make([]downloadutil.DownloadOptionFunc, 0)
 	options = append(options, downloadutil.WithEndpoint(datasource.Spec.Endpoint.URL),
 		downloadutil.WithSecure(datasource.Spec.Endpoint.Insecure))
 
 	if as := datasource.Spec.Endpoint.AuthSecret; as != nil {
-		secret := v1.Secret{}
+		secret := &v1.Secret{}
 		ns := datasource.Namespace
 		if as.Namespace != nil {
 			ns = *as.Namespace
 		}
-		apiGroup := "v1"
-
-		obj, err := common.ResourceGet(ctx, kubeClient, generated.TypedObjectReferenceInput{
-			APIGroup:  &apiGroup,
-			Kind:      "Secret",
-			Namespace: &ns,
-			Name:      as.Name,
-		}, metav1.GetOptions{})
+		err := kubeClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: as.Name}, secret)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to get auth secret %s error %s\n", as.Name, err)
-			return nil
-		}
-		if err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &secret); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to convert obj to secret error %s\n", err)
 			return nil
 		}
 		pwd := secret.Data["rootPassword"]
@@ -330,7 +289,7 @@ func parseOptions(
 	return options
 }
 
-func fromDatasource(ctx context.Context, kubeClient dynamic.Interface, dsName, dsNamespace string, clientCache map[string]*downloadutil.Download) error {
+func fromDatasource(ctx context.Context, kubeClient client.Client, dsName, dsNamespace string, clientCache map[string]*downloadutil.Download) error {
 	key := fmt.Sprintf("%s/%s", dsNamespace, dsName)
 	_, ok := clientCache[key]
 	if ok {
@@ -355,7 +314,7 @@ const (
 	systemDatasourceKey = "system-datasource"
 )
 
-func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, bucket string, clientCache map[string]*downloadutil.Download) error {
+func fromVersionedDataset(ctx context.Context, kubeClient client.Client, bucket string, clientCache map[string]*downloadutil.Download) error {
 	datasource, err := SysatemDatasource(ctx, kubeClient)
 	if err != nil {
 		return err
@@ -379,8 +338,9 @@ func fromVersionedDataset(ctx context.Context, kubeClient dynamic.Interface, buc
 func download(
 	ctx context.Context,
 	rag *evalv1alpha1.RAG,
-	kubeClient dynamic.Interface,
-	baseDir, systemConfName, systemConfNamespace string) {
+	kubeClient client.Client,
+	baseDir, systemConfName, systemConfNamespace string,
+) {
 	curNamespace := rag.Namespace
 	clientCache := make(map[string]*downloadutil.Download)
 

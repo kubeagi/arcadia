@@ -16,12 +16,12 @@ limitations under the License.
 package common
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/apiserver/config"
 )
 
-type PageNodeSorter []unstructured.Unstructured
+type PageNodeSorter []client.Object
 
 func (p *PageNodeSorter) Len() int {
 	return len(*p)
@@ -55,7 +55,7 @@ func (p *PageNodeSorter) Swap(i, j int) {
 }
 
 func (p *PageNodeSorter) Push(x any) {
-	*p = append(*p, x.(unstructured.Unstructured))
+	*p = append(*p, x.(client.Object))
 }
 
 func (p *PageNodeSorter) Pop() any {

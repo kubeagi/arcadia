@@ -22,7 +22,6 @@ import (
 	"io"
 
 	"github.com/minio/minio-go/v7"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -173,8 +172,8 @@ type Local struct {
 	oss *OSS
 }
 
-func NewLocal(ctx context.Context, c client.Client, dc dynamic.Interface, endpoint *v1alpha1.Endpoint) (*Local, error) {
-	oss, err := NewOSS(ctx, c, dc, endpoint)
+func NewLocal(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*Local, error) {
+	oss, err := NewOSS(ctx, c, endpoint)
 	if err != nil {
 		return nil, err
 	}

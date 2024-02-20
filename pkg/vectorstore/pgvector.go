@@ -28,17 +28,12 @@ import (
 	lanchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"github.com/tmc/langchaingo/vectorstores/pgvector"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var _ vectorstores.VectorStore = (*PGVectorStore)(nil)
@@ -49,7 +44,7 @@ type PGVectorStore struct {
 	*arcadiav1alpha1.PGVector
 }
 
-func NewPGVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, c client.Client, dc dynamic.Interface, embedder embeddings.Embedder, collectionName string) (v *PGVectorStore, finish func(), err error) {
+func NewPGVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, c client.Client, embedder embeddings.Embedder, collectionName string) (v *PGVectorStore, finish func(), err error) {
 	v = &PGVectorStore{PGVector: vs.Spec.PGVector}
 	ops := []pgvector.Option{
 		pgvector.WithPreDeleteCollection(vs.Spec.PGVector.PreDeleteCollection),
@@ -65,27 +60,12 @@ func NewPGVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, c cl
 		v.PGVector.EmbeddingTableName = pgvector.DefaultEmbeddingStoreTableName
 	}
 	if ref := vs.Spec.PGVector.DataSourceRef; ref != nil {
-		if err := utils.ValidateClient(c, dc); err != nil {
+		ds := &arcadiav1alpha1.Datasource{}
+		if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.GetNamespace(vs.GetNamespace())}, ds); err != nil {
 			return nil, nil, err
 		}
-		ds := &arcadiav1alpha1.Datasource{}
-		if c != nil {
-			if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.GetNamespace(vs.GetNamespace())}, ds); err != nil {
-				return nil, nil, err
-			}
-		} else {
-			obj, err := dc.Resource(schema.GroupVersionResource{Group: "arcadia.kubeagi.k8s.com.cn", Version: "v1alpha1", Resource: "datasources"}).
-				Namespace(ref.GetNamespace(vs.GetNamespace())).Get(ctx, ref.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, nil, err
-			}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), ds)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
 		vs.Spec.Endpoint = ds.Spec.Endpoint.DeepCopy()
-		pool, err := datasource.GetPostgreSQLPool(ctx, c, dc, ds)
+		pool, err := datasource.GetPostgreSQLPool(ctx, c, ds)
 		if err != nil {
 			return nil, nil, err
 		}

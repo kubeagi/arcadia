@@ -26,7 +26,6 @@ import (
 	lanchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"github.com/tmc/langchaingo/vectorstores/chroma"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -36,7 +35,7 @@ var (
 	ErrUnsupportedVectorStoreType = errors.New("unsupported vectorstore type")
 )
 
-func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedder embeddings.Embedder, collectionName string, c client.Client, dc dynamic.Interface) (v vectorstores.VectorStore, finish func(), err error) {
+func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedder embeddings.Embedder, collectionName string, c client.Client) (v vectorstores.VectorStore, finish func(), err error) {
 	switch vs.Spec.Type() {
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		ops := []chroma.Option{
@@ -53,7 +52,7 @@ func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedd
 		}
 		v, err = chroma.New(ops...)
 	case arcadiav1alpha1.VectorStoreTypePGVector:
-		v, finish, err = NewPGVectorStore(ctx, vs, c, dc, embedder, collectionName)
+		v, finish, err = NewPGVectorStore(ctx, vs, c, embedder, collectionName)
 	case arcadiav1alpha1.VectorStoreTypeUnknown:
 		fallthrough
 	default:
@@ -62,7 +61,7 @@ func NewVectorStore(ctx context.Context, vs *arcadiav1alpha1.VectorStore, embedd
 	return v, finish, err
 }
 
-func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, collectionName string, c client.Client, dc dynamic.Interface) (err error) {
+func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, collectionName string, c client.Client) (err error) {
 	switch vs.Spec.Type() {
 	case arcadiav1alpha1.VectorStoreTypeChroma:
 		ops := []chroma.Option{
@@ -83,7 +82,7 @@ func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.
 			return err
 		}
 	case arcadiav1alpha1.VectorStoreTypePGVector:
-		v, finish, err := NewPGVectorStore(ctx, vs, c, dc, nil, collectionName)
+		v, finish, err := NewPGVectorStore(ctx, vs, c, nil, collectionName)
 		defer func() {
 			if finish != nil {
 				finish()
@@ -106,8 +105,8 @@ func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.
 	return err
 }
 
-func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, embedder embeddings.Embedder, collectionName string, c client.Client, dc dynamic.Interface, documents []lanchaingoschema.Document) (err error) {
-	s, finish, err := NewVectorStore(ctx, vs, embedder, collectionName, c, dc)
+func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.VectorStore, embedder embeddings.Embedder, collectionName string, c client.Client, documents []lanchaingoschema.Document) (err error) {
+	s, finish, err := NewVectorStore(ctx, vs, embedder, collectionName, c)
 	if err != nil {
 		return err
 	}

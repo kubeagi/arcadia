@@ -1203,6 +1203,9 @@ type ModelServiceQuery struct {
 	CheckModelService ModelService    `json:"checkModelService"`
 }
 
+type Mutation struct {
+}
+
 type NodeSelectorRequirement struct {
 	Key      string   `json:"key"`
 	Operator string   `json:"operator"`
@@ -1273,6 +1276,9 @@ type PersistentVolumeClaimSpecInput struct {
 	VolumeMode       *string                    `json:"volumeMode,omitempty"`
 	Datasource       *TypedObjectReferenceInput `json:"datasource,omitempty"`
 	DataSourceRef    *TypedObjectReferenceInput `json:"dataSourceRef,omitempty"`
+}
+
+type Query struct {
 }
 
 // RAG评估结构

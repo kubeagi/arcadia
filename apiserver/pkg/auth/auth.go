@@ -25,14 +25,11 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	av1 "k8s.io/api/authorization/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	client1 "github.com/kubeagi/arcadia/apiserver/pkg/client"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 )
 
 var NeedAuth bool
@@ -68,35 +65,28 @@ func isBearerToken(token string) (string, bool) {
 }
 
 // TODO: We could consider abstracting a validation function, that way we could have multiple validation methods.
-func cani(c dynamic.Interface, oidcToken *oidc.IDToken, resourceAttributes *av1.ResourceAttributes) (bool, string, error) {
+func cani(c runtimeclient.Client, oidcToken *oidc.IDToken, resourceAttributes *av1.ResourceAttributes) (bool, string, error) {
 	u := &User{}
 	if err := oidcToken.Claims(u); err != nil {
 		klog.Errorf("parse user info from idToken, error %v", err)
 		return false, "", fmt.Errorf("can't parse user info")
 	}
 
-	av := av1.SubjectAccessReview{
+	av := &av1.SubjectAccessReview{
 		Spec: av1.SubjectAccessReviewSpec{
 			ResourceAttributes: resourceAttributes,
 			Groups:             u.Groups,
 			User:               u.Name,
 		},
 	}
-	obj, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&av)
-	u1, err := c.Resource(schema.GroupVersionResource{Group: "authorization.k8s.io", Version: "v1", Resource: "subjectaccessreviews"}).
-		Create(context.TODO(), &unstructured.Unstructured{Object: obj}, v1.CreateOptions{})
+	err := c.Create(context.TODO(), av)
 	if err != nil {
 		err = fmt.Errorf("auth can-i failed, error %w", err)
 		klog.Error(err)
 		return false, "", err
 	}
 
-	ok, found, err := unstructured.NestedBool(u1.Object, "status", "allowed")
-	if err != nil || !found {
-		klog.Warning("not found allowed filed or some errors occurred.")
-		return false, "", err
-	}
-	return ok, u.Name, nil
+	return av.Status.Allowed, u.Name, nil
 }
 
 func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, groupVersion schema.GroupVersion, verb, resources string) gin.HandlerFunc {
@@ -125,7 +115,7 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, groupVer
 		}
 
 		// Use operator permissions to determine if a user has permission to perform an operation.
-		client, err := client1.GetClient(nil)
+		client, err := pkgclient.GetClient(nil)
 		if err != nil {
 			klog.Errorf("auth error: failed to connect cluster error %s", err)
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{

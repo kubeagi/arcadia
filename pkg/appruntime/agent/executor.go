@@ -25,11 +25,9 @@ import (
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/tools"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -46,7 +44,7 @@ func NewExecutor(baseNode base.BaseNode) *Executor {
 	}
 }
 
-func (p *Executor) Run(ctx context.Context, cli dynamic.Interface, args map[string]any) (map[string]any, error) {
+func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -57,15 +55,8 @@ func (p *Executor) Run(ctx context.Context, cli dynamic.Interface, args map[stri
 	}
 	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.Agent{}
-
-	obj, err := cli.Resource(schema.GroupVersionResource{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Resource: "agents"}).
-		Namespace(p.Ref.GetNamespace(ns)).Get(ctx, p.Ref.Name, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.Ref.GetNamespace(ns), Name: p.Ref.Name}, instance); err != nil {
 		return args, fmt.Errorf("can't find the agent in cluster: %w", err)
-	}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), instance)
-	if err != nil {
-		return args, fmt.Errorf("can't convert the agent in cluster: %w", err)
 	}
 	var allowedTools []tools.Tool
 	// prepare tools that can be used by this agent

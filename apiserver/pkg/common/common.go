@@ -19,11 +19,13 @@ package common
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,7 +34,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
-	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
 var (
@@ -51,35 +52,8 @@ var (
 	ModelTypeEmbedding = "embedding"
 )
 
-// Resource operations
-
-// ResourceGet provides a common way to get a resource
-func ResourceGet(ctx context.Context, c dynamic.Interface, resource generated.TypedObjectReferenceInput, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
-	if resource.Namespace == nil {
-		resource.Namespace = &DefaultNamespace
-	}
-	if resource.Kind == "" {
-		return nil, ErrNoResourceKind
-	}
-	return c.Resource(SchemaOf(resource.APIGroup, resource.Kind)).Namespace(*resource.Namespace).Get(ctx, resource.Name, options, subresources...)
-}
-
-// ResourceUpdate provides a common way to update a resource
-// - resource defines the new object 's apigroup and kind
-func ResouceUpdate(ctx context.Context, c dynamic.Interface, resource generated.TypedObjectReferenceInput, newObject map[string]interface{}, options metav1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error) {
-	if resource.Namespace == nil {
-		resource.Namespace = &DefaultNamespace
-	}
-	if resource.Kind == "" {
-		return nil, ErrNoResourceKind
-	}
-	return c.Resource(SchemaOf(resource.APIGroup, resource.Kind)).Namespace(*resource.Namespace).Update(ctx, &unstructured.Unstructured{
-		Object: newObject,
-	}, options, subresources...)
-}
-
-func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client, dynamicClient dynamic.Interface) (*datasource.OSS, error) {
-	systemDatasource, err := config.GetSystemDatasource(ctx, mgrClient, dynamicClient)
+func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
+	systemDatasource, err := config.GetSystemDatasource(ctx, mgrClient)
 	if err != nil {
 		return nil, err
 	}
@@ -87,47 +61,28 @@ func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client, dynamicCl
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	return datasource.NewOSS(ctx, mgrClient, dynamicClient, endpoint)
+	return datasource.NewOSS(ctx, mgrClient, endpoint)
 }
 
 // SystemEmbeddingSuite returns the embedder and vectorstore which are built-in in system config
 // Embedder and vectorstore are both required when generating a new embedding.That's why we call it a `EmbeddingSuit`
-func SystemEmbeddingSuite(ctx context.Context, dynamicClient dynamic.Interface) (*v1alpha1.Embedder, *v1alpha1.VectorStore, error) {
+func SystemEmbeddingSuite(ctx context.Context, cli client.Client) (*v1alpha1.Embedder, *v1alpha1.VectorStore, error) {
 	// get the built-in system embedder
-	emd, err := config.GetEmbedder(ctx, nil, dynamicClient)
+	emd, err := config.GetEmbedder(ctx, cli)
 	if err != nil {
 		return nil, nil, err
 	}
 	embedder := &v1alpha1.Embedder{}
-	unstructuredEmbedder, err := ResourceGet(ctx, dynamicClient, generated.TypedObjectReferenceInput{
-		APIGroup:  &ArcadiaAPIGroup,
-		Kind:      "Embedder",
-		Name:      emd.Name,
-		Namespace: emd.Namespace,
-	}, metav1.GetOptions{})
-	if err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: *emd.Namespace, Name: emd.Name}, embedder); err != nil {
 		return nil, nil, err
 	}
-	if err := utils.UnstructuredToStructured(unstructuredEmbedder, embedder); err != nil {
-		return nil, nil, err
-	}
-
 	// get the built-in system vectorstore
-	vs, err := config.GetVectorStore(ctx, nil, dynamicClient)
+	vs, err := config.GetVectorStore(ctx, cli)
 	if err != nil {
 		return nil, nil, err
 	}
 	vectorStore := &v1alpha1.VectorStore{}
-	unstructuredVectorStore, err := ResourceGet(ctx, dynamicClient, generated.TypedObjectReferenceInput{
-		APIGroup:  &ArcadiaAPIGroup,
-		Kind:      "VectorStore",
-		Name:      vs.Name,
-		Namespace: vs.Namespace,
-	}, metav1.GetOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := utils.UnstructuredToStructured(unstructuredVectorStore, vectorStore); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: *vs.Namespace, Name: vs.Name}, vectorStore); err != nil {
 		return nil, nil, err
 	}
 	return embedder, vectorStore, nil
@@ -135,8 +90,8 @@ func SystemEmbeddingSuite(ctx context.Context, dynamicClient dynamic.Interface) 
 
 // GetAPIServer returns the api server url to access arcadia's worker
 // if external is true,then this func will return the external api server
-func GetAPIServer(ctx context.Context, dynamicClient dynamic.Interface, external bool) (string, error) {
-	gateway, err := config.GetGateway(ctx, nil, dynamicClient)
+func GetAPIServer(ctx context.Context, cli client.Client, external bool) (string, error) {
+	gateway, err := config.GetGateway(ctx, cli)
 	if err != nil {
 		return "", err
 	}
@@ -163,26 +118,20 @@ func GetObjStatus(obj client.Object) string {
 	var (
 		condition v1alpha1.Condition
 	)
-	switch obj.GetObjectKind().GroupVersionKind().Kind {
-	case "Datasource":
-		v := obj.(*v1alpha1.Datasource)
+	switch v := obj.(type) {
+	case *v1alpha1.Datasource:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-	case "Embedder":
-		v := obj.(*v1alpha1.Embedder)
+	case *v1alpha1.Embedder:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-	case "KnowledgeBase":
-		v := obj.(*v1alpha1.KnowledgeBase)
+	case *v1alpha1.KnowledgeBase:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-	case "LLM":
-		v := obj.(*v1alpha1.LLM)
+	case *v1alpha1.LLM:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-	case "Model":
-		v := obj.(*v1alpha1.Model)
+	case *v1alpha1.Model:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
-	case "Worker":
+	case *v1alpha1.Worker:
+		condition = v.Status.GetCondition(v1alpha1.TypeReady)
 		// Worker can better represent the state of resources through Reason.
-		v := obj.(*v1alpha1.Worker)
-		condition = v.Status.GetCondition(v1alpha1.TypeReady)
 		status := string(condition.Reason)
 		// When replicas is zero but status is not `Offline`, it must be in `OfflineInProgress`
 		if v.Spec.Replicas == nil || *v.Spec.Replicas == 0 {
@@ -191,8 +140,7 @@ func GetObjStatus(obj client.Object) string {
 			}
 		}
 		return status
-	case "Application":
-		v := obj.(*v1alpha1.Application)
+	case *v1alpha1.Application:
 		condition = v.Status.GetCondition(v1alpha1.TypeReady)
 	default:
 		return ""
@@ -287,4 +235,62 @@ func GetAppCategory(app *v1alpha1.Application) []*string {
 		}
 	}
 	return category
+}
+
+func DeleteAllOptions(input *generated.DeleteCommonInput) ([]client.DeleteAllOfOption, error) {
+	if input.Namespace == "" {
+		return nil, errors.New("namespace is empty, please check your request args")
+	}
+	if pointer.StringDeref(input.Name, "") == "" && pointer.StringDeref(input.LabelSelector, "") == "" && pointer.StringDeref(input.FieldSelector, "") == "" {
+		return nil, errors.New("no name, no LabelSelector, no FieldSelector, please check your request args")
+	}
+	opts := []client.DeleteAllOfOption{
+		client.InNamespace(input.Namespace),
+	}
+	fieldsSelector := ""
+	if pointer.StringDeref(input.Name, "") != "" {
+		fieldsSelector = fmt.Sprintf("metadata.name=%s", *input.Name)
+	}
+	if pointer.StringDeref(input.FieldSelector, "") != "" {
+		fieldsSelector = *input.FieldSelector
+	}
+	if fieldsSelector != "" {
+		f, err := fields.ParseSelector(fieldsSelector)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, client.MatchingFieldsSelector{Selector: f})
+	}
+	if pointer.StringDeref(input.LabelSelector, "") != "" {
+		l, err := labels.Parse(*input.LabelSelector)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, client.MatchingLabelsSelector{Selector: l})
+	}
+	return opts, nil
+}
+
+func NewListOptions(input generated.ListCommonInput) ([]client.ListOption, error) {
+	if input.Namespace == "" {
+		input.Namespace = metav1.NamespaceDefault
+	}
+	opts := []client.ListOption{
+		client.InNamespace(input.Namespace),
+	}
+	if pointer.StringDeref(input.LabelSelector, "") != "" {
+		l, err := labels.Parse(*input.LabelSelector)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, client.MatchingLabelsSelector{Selector: l})
+	}
+	if pointer.StringDeref(input.FieldSelector, "") != "" {
+		f, err := fields.ParseSelector(*input.FieldSelector)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, client.MatchingFieldsSelector{Selector: f})
+	}
+	return opts, nil
 }
