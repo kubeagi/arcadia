@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'deploy/evaluation/Dockerfile'
-      - 'pkg/arctl'
+      - 'pkg'
       - 'pypi/ragas_once'
   workflow_dispatch:
 env:
