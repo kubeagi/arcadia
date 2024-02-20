@@ -65,6 +65,26 @@ query dataProcessDetails($input: DataProcessDetailsInput){
         end_time
         creator
         error_msg
+        data_process_config_info {
+          type
+          llm_config {
+            name
+            namespace
+            model
+            temperature
+            top_p
+            max_tokens
+            prompt_template
+            provider
+          }
+          remove_duplicate_config {
+            similarity
+            embedding_name
+            embedding_model
+            embedding_provider
+            embedding_namespace
+          }
+        }
         config {
           name
           description

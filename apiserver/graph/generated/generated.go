@@ -148,6 +148,12 @@ type ComplexityRoot struct {
 		ZhName       func(childComplexity int) int
 	}
 
+	DataProcessConfigInfo struct {
+		LlmConfig             func(childComplexity int) int
+		RemoveDuplicateConfig func(childComplexity int) int
+		Type                  func(childComplexity int) int
+	}
+
 	DataProcessConfigpreFileProgress struct {
 		EndTime   func(childComplexity int) int
 		FileName  func(childComplexity int) int
@@ -174,20 +180,21 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessDetailsItem struct {
-		Config             func(childComplexity int) int
-		Creator            func(childComplexity int) int
-		EndTime            func(childComplexity int) int
-		ErrorMsg           func(childComplexity int) int
-		FileNum            func(childComplexity int) int
-		FileType           func(childComplexity int) int
-		ID                 func(childComplexity int) int
-		Name               func(childComplexity int) int
-		PostDatasetName    func(childComplexity int) int
-		PostDatasetVersion func(childComplexity int) int
-		PreDatasetName     func(childComplexity int) int
-		PreDatasetVersion  func(childComplexity int) int
-		StartTime          func(childComplexity int) int
-		Status             func(childComplexity int) int
+		Config                func(childComplexity int) int
+		Creator               func(childComplexity int) int
+		DataProcessConfigInfo func(childComplexity int) int
+		EndTime               func(childComplexity int) int
+		ErrorMsg              func(childComplexity int) int
+		FileNum               func(childComplexity int) int
+		FileType              func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		PostDatasetName       func(childComplexity int) int
+		PostDatasetVersion    func(childComplexity int) int
+		PreDatasetName        func(childComplexity int) int
+		PreDatasetVersion     func(childComplexity int) int
+		StartTime             func(childComplexity int) int
+		Status                func(childComplexity int) int
 	}
 
 	DataProcessItem struct {
@@ -623,6 +630,14 @@ type ComplexityRoot struct {
 
 	RayClusterQuery struct {
 		ListRayClusters func(childComplexity int, input ListCommonInput) int
+	}
+
+	RemoveDuplicateConfigItem struct {
+		EmbeddingModel     func(childComplexity int) int
+		EmbeddingName      func(childComplexity int) int
+		EmbeddingNamespace func(childComplexity int) int
+		EmbeddingProvider  func(childComplexity int) int
+		Similarity         func(childComplexity int) int
 	}
 
 	Resource struct {
@@ -1322,6 +1337,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DataProcessConfigChildren.ZhName(childComplexity), true
 
+	case "DataProcessConfigInfo.llm_config":
+		if e.complexity.DataProcessConfigInfo.LlmConfig == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigInfo.LlmConfig(childComplexity), true
+
+	case "DataProcessConfigInfo.remove_duplicate_config":
+		if e.complexity.DataProcessConfigInfo.RemoveDuplicateConfig == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigInfo.RemoveDuplicateConfig(childComplexity), true
+
+	case "DataProcessConfigInfo.type":
+		if e.complexity.DataProcessConfigInfo.Type == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigInfo.Type(childComplexity), true
+
 	case "DataProcessConfigpreFileProgress.end_time":
 		if e.complexity.DataProcessConfigpreFileProgress.EndTime == nil {
 			break
@@ -1426,6 +1462,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessDetailsItem.Creator(childComplexity), true
+
+	case "DataProcessDetailsItem.data_process_config_info":
+		if e.complexity.DataProcessDetailsItem.DataProcessConfigInfo == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.DataProcessConfigInfo(childComplexity), true
 
 	case "DataProcessDetailsItem.end_time":
 		if e.complexity.DataProcessDetailsItem.EndTime == nil {
@@ -3823,6 +3866,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RayClusterQuery.ListRayClusters(childComplexity, args["input"].(ListCommonInput)), true
 
+	case "RemoveDuplicateConfigItem.embedding_model":
+		if e.complexity.RemoveDuplicateConfigItem.EmbeddingModel == nil {
+			break
+		}
+
+		return e.complexity.RemoveDuplicateConfigItem.EmbeddingModel(childComplexity), true
+
+	case "RemoveDuplicateConfigItem.embedding_name":
+		if e.complexity.RemoveDuplicateConfigItem.EmbeddingName == nil {
+			break
+		}
+
+		return e.complexity.RemoveDuplicateConfigItem.EmbeddingName(childComplexity), true
+
+	case "RemoveDuplicateConfigItem.embedding_namespace":
+		if e.complexity.RemoveDuplicateConfigItem.EmbeddingNamespace == nil {
+			break
+		}
+
+		return e.complexity.RemoveDuplicateConfigItem.EmbeddingNamespace(childComplexity), true
+
+	case "RemoveDuplicateConfigItem.embedding_provider":
+		if e.complexity.RemoveDuplicateConfigItem.EmbeddingProvider == nil {
+			break
+		}
+
+		return e.complexity.RemoveDuplicateConfigItem.EmbeddingProvider(childComplexity), true
+
+	case "RemoveDuplicateConfigItem.similarity":
+		if e.complexity.RemoveDuplicateConfigItem.Similarity == nil {
+			break
+		}
+
+		return e.complexity.RemoveDuplicateConfigItem.Similarity(childComplexity), true
+
 	case "Resource.limits":
 		if e.complexity.Resource.Limits == nil {
 			break
@@ -5120,7 +5198,22 @@ type DataProcessDetailsItem {
   end_time: String!
   creator: String!
   error_msg: String
+  data_process_config_info: [DataProcessConfigInfo!]
   config: [DataProcessConfig!]
+}
+
+type DataProcessConfigInfo {
+  type: String!
+  llm_config: LLMConfig
+  remove_duplicate_config: RemoveDuplicateConfigItem
+}
+
+type RemoveDuplicateConfigItem {
+  embedding_name: String!
+  embedding_namespace: String!
+  embedding_model: String!
+  embedding_provider: String!
+  similarity: String!
 }
 
 # 数据处理配置项
@@ -11125,6 +11218,162 @@ func (ec *executionContext) fieldContext_DataProcessConfigChildren_file_progress
 	return fc, nil
 }
 
+func (ec *executionContext) _DataProcessConfigInfo_type(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigInfo_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigInfo_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigInfo_llm_config(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigInfo_llm_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LlmConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LLMConfig)
+	fc.Result = res
+	return ec.marshalOLLMConfig2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐLLMConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigInfo_llm_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_LLMConfig_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_LLMConfig_namespace(ctx, field)
+			case "model":
+				return ec.fieldContext_LLMConfig_model(ctx, field)
+			case "temperature":
+				return ec.fieldContext_LLMConfig_temperature(ctx, field)
+			case "top_p":
+				return ec.fieldContext_LLMConfig_top_p(ctx, field)
+			case "max_tokens":
+				return ec.fieldContext_LLMConfig_max_tokens(ctx, field)
+			case "prompt_template":
+				return ec.fieldContext_LLMConfig_prompt_template(ctx, field)
+			case "provider":
+				return ec.fieldContext_LLMConfig_provider(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigInfo_remove_duplicate_config(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigInfo_remove_duplicate_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemoveDuplicateConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RemoveDuplicateConfigItem)
+	fc.Result = res
+	return ec.marshalORemoveDuplicateConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRemoveDuplicateConfigItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigInfo_remove_duplicate_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "embedding_name":
+				return ec.fieldContext_RemoveDuplicateConfigItem_embedding_name(ctx, field)
+			case "embedding_namespace":
+				return ec.fieldContext_RemoveDuplicateConfigItem_embedding_namespace(ctx, field)
+			case "embedding_model":
+				return ec.fieldContext_RemoveDuplicateConfigItem_embedding_model(ctx, field)
+			case "embedding_provider":
+				return ec.fieldContext_RemoveDuplicateConfigItem_embedding_provider(ctx, field)
+			case "similarity":
+				return ec.fieldContext_RemoveDuplicateConfigItem_similarity(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoveDuplicateConfigItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataProcessConfigpreFileProgress_id(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigpreFileProgress) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataProcessConfigpreFileProgress_id(ctx, field)
 	if err != nil {
@@ -11650,6 +11899,8 @@ func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Con
 				return ec.fieldContext_DataProcessDetailsItem_creator(ctx, field)
 			case "error_msg":
 				return ec.fieldContext_DataProcessDetailsItem_error_msg(ctx, field)
+			case "data_process_config_info":
+				return ec.fieldContext_DataProcessDetailsItem_data_process_config_info(ctx, field)
 			case "config":
 				return ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
 			}
@@ -12267,6 +12518,55 @@ func (ec *executionContext) fieldContext_DataProcessDetailsItem_error_msg(ctx co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessDetailsItem_data_process_config_info(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_data_process_config_info(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataProcessConfigInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DataProcessConfigInfo)
+	fc.Result = res
+	return ec.marshalODataProcessConfigInfo2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_data_process_config_info(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_DataProcessConfigInfo_type(ctx, field)
+			case "llm_config":
+				return ec.fieldContext_DataProcessConfigInfo_llm_config(ctx, field)
+			case "remove_duplicate_config":
+				return ec.fieldContext_DataProcessConfigInfo_remove_duplicate_config(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataProcessConfigInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -26809,6 +27109,226 @@ func (ec *executionContext) fieldContext_RayClusterQuery_listRayClusters(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _RemoveDuplicateConfigItem_embedding_name(ctx context.Context, field graphql.CollectedField, obj *RemoveDuplicateConfigItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveDuplicateConfigItem_embedding_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbeddingName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveDuplicateConfigItem_embedding_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveDuplicateConfigItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveDuplicateConfigItem_embedding_namespace(ctx context.Context, field graphql.CollectedField, obj *RemoveDuplicateConfigItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveDuplicateConfigItem_embedding_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbeddingNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveDuplicateConfigItem_embedding_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveDuplicateConfigItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveDuplicateConfigItem_embedding_model(ctx context.Context, field graphql.CollectedField, obj *RemoveDuplicateConfigItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveDuplicateConfigItem_embedding_model(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbeddingModel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveDuplicateConfigItem_embedding_model(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveDuplicateConfigItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveDuplicateConfigItem_embedding_provider(ctx context.Context, field graphql.CollectedField, obj *RemoveDuplicateConfigItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveDuplicateConfigItem_embedding_provider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbeddingProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveDuplicateConfigItem_embedding_provider(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveDuplicateConfigItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoveDuplicateConfigItem_similarity(ctx context.Context, field graphql.CollectedField, obj *RemoveDuplicateConfigItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoveDuplicateConfigItem_similarity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Similarity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoveDuplicateConfigItem_similarity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoveDuplicateConfigItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Resource_limits(ctx context.Context, field graphql.CollectedField, obj *Resource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Resource_limits(ctx, field)
 	if err != nil {
@@ -36788,6 +37308,49 @@ func (ec *executionContext) _DataProcessConfigChildren(ctx context.Context, sel 
 	return out
 }
 
+var dataProcessConfigInfoImplementors = []string{"DataProcessConfigInfo"}
+
+func (ec *executionContext) _DataProcessConfigInfo(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataProcessConfigInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataProcessConfigInfo")
+		case "type":
+			out.Values[i] = ec._DataProcessConfigInfo_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "llm_config":
+			out.Values[i] = ec._DataProcessConfigInfo_llm_config(ctx, field, obj)
+		case "remove_duplicate_config":
+			out.Values[i] = ec._DataProcessConfigInfo_remove_duplicate_config(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var dataProcessConfigpreFileProgressImplementors = []string{"DataProcessConfigpreFileProgress"}
 
 func (ec *executionContext) _DataProcessConfigpreFileProgress(ctx context.Context, sel ast.SelectionSet, obj *DataProcessConfigpreFileProgress) graphql.Marshaler {
@@ -37032,6 +37595,8 @@ func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast
 			}
 		case "error_msg":
 			out.Values[i] = ec._DataProcessDetailsItem_error_msg(ctx, field, obj)
+		case "data_process_config_info":
+			out.Values[i] = ec._DataProcessDetailsItem_data_process_config_info(ctx, field, obj)
 		case "config":
 			out.Values[i] = ec._DataProcessDetailsItem_config(ctx, field, obj)
 		default:
@@ -41669,6 +42234,65 @@ func (ec *executionContext) _RayClusterQuery(ctx context.Context, sel ast.Select
 	return out
 }
 
+var removeDuplicateConfigItemImplementors = []string{"RemoveDuplicateConfigItem"}
+
+func (ec *executionContext) _RemoveDuplicateConfigItem(ctx context.Context, sel ast.SelectionSet, obj *RemoveDuplicateConfigItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, removeDuplicateConfigItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RemoveDuplicateConfigItem")
+		case "embedding_name":
+			out.Values[i] = ec._RemoveDuplicateConfigItem_embedding_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "embedding_namespace":
+			out.Values[i] = ec._RemoveDuplicateConfigItem_embedding_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "embedding_model":
+			out.Values[i] = ec._RemoveDuplicateConfigItem_embedding_model(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "embedding_provider":
+			out.Values[i] = ec._RemoveDuplicateConfigItem_embedding_provider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "similarity":
+			out.Values[i] = ec._RemoveDuplicateConfigItem_similarity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var resourceImplementors = []string{"Resource"}
 
 func (ec *executionContext) _Resource(ctx context.Context, sel ast.SelectionSet, obj *Resource) graphql.Marshaler {
@@ -43171,6 +43795,16 @@ func (ec *executionContext) marshalNDataProcessConfig2ᚖgithubᚗcomᚋkubeagi�
 	return ec._DataProcessConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDataProcessConfigInfo2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigInfo(ctx context.Context, sel ast.SelectionSet, v *DataProcessConfigInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DataProcessConfigInfo(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDataProcessConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigItem(ctx context.Context, v interface{}) (*DataProcessConfigItem, error) {
 	res, err := ec.unmarshalInputDataProcessConfigItem(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -44194,6 +44828,53 @@ func (ec *executionContext) marshalODataProcessConfigChildren2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._DataProcessConfigChildren(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODataProcessConfigInfo2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*DataProcessConfigInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDataProcessConfigInfo2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalODataProcessConfigItem2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDataProcessConfigItemᚄ(ctx context.Context, v interface{}) ([]*DataProcessConfigItem, error) {
@@ -45270,6 +45951,13 @@ func (ec *executionContext) unmarshalORemoveDuplicateConfig2ᚖgithubᚗcomᚋku
 	}
 	res, err := ec.unmarshalInputRemoveDuplicateConfig(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORemoveDuplicateConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRemoveDuplicateConfigItem(ctx context.Context, sel ast.SelectionSet, v *RemoveDuplicateConfigItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RemoveDuplicateConfigItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOResource2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐResource(ctx context.Context, sel ast.SelectionSet, v *Resource) graphql.Marshaler {

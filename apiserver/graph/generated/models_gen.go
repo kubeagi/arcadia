@@ -407,6 +407,12 @@ type DataProcessConfigChildren struct {
 	FileProgress []*DataProcessConfigpreFileProgress `json:"file_progress,omitempty"`
 }
 
+type DataProcessConfigInfo struct {
+	Type                  string                     `json:"type"`
+	LlmConfig             *LLMConfig                 `json:"llm_config,omitempty"`
+	RemoveDuplicateConfig *RemoveDuplicateConfigItem `json:"remove_duplicate_config,omitempty"`
+}
+
 type DataProcessConfigItem struct {
 	Type                  string                 `json:"type"`
 	LlmConfig             *LLMConfigItem         `json:"llm_config,omitempty"`
@@ -443,20 +449,21 @@ type DataProcessDetailsInput struct {
 }
 
 type DataProcessDetailsItem struct {
-	ID                 string               `json:"id"`
-	Status             string               `json:"status"`
-	Name               string               `json:"name"`
-	FileType           string               `json:"file_type"`
-	PreDatasetName     string               `json:"pre_dataset_name"`
-	PreDatasetVersion  string               `json:"pre_dataset_version"`
-	PostDatasetName    string               `json:"post_dataset_name"`
-	PostDatasetVersion string               `json:"post_dataset_version"`
-	FileNum            int                  `json:"file_num"`
-	StartTime          string               `json:"start_time"`
-	EndTime            string               `json:"end_time"`
-	Creator            string               `json:"creator"`
-	ErrorMsg           *string              `json:"error_msg,omitempty"`
-	Config             []*DataProcessConfig `json:"config,omitempty"`
+	ID                    string                   `json:"id"`
+	Status                string                   `json:"status"`
+	Name                  string                   `json:"name"`
+	FileType              string                   `json:"file_type"`
+	PreDatasetName        string                   `json:"pre_dataset_name"`
+	PreDatasetVersion     string                   `json:"pre_dataset_version"`
+	PostDatasetName       string                   `json:"post_dataset_name"`
+	PostDatasetVersion    string                   `json:"post_dataset_version"`
+	FileNum               int                      `json:"file_num"`
+	StartTime             string                   `json:"start_time"`
+	EndTime               string                   `json:"end_time"`
+	Creator               string                   `json:"creator"`
+	ErrorMsg              *string                  `json:"error_msg,omitempty"`
+	DataProcessConfigInfo []*DataProcessConfigInfo `json:"data_process_config_info,omitempty"`
+	Config                []*DataProcessConfig     `json:"config,omitempty"`
 }
 
 type DataProcessFileLogInput struct {
@@ -1393,6 +1400,14 @@ type RayClusterQuery struct {
 }
 
 type RemoveDuplicateConfig struct {
+	EmbeddingName      string `json:"embedding_name"`
+	EmbeddingNamespace string `json:"embedding_namespace"`
+	EmbeddingModel     string `json:"embedding_model"`
+	EmbeddingProvider  string `json:"embedding_provider"`
+	Similarity         string `json:"similarity"`
+}
+
+type RemoveDuplicateConfigItem struct {
 	EmbeddingName      string `json:"embedding_name"`
 	EmbeddingNamespace string `json:"embedding_namespace"`
 	EmbeddingModel     string `json:"embedding_model"`
