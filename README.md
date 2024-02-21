@@ -8,9 +8,6 @@
     <a href="https://goreportcard.com/report/github.com/kubeagi/arcadia">
       <img alt="Go Report Card" src="https://goreportcard.com/badge/kubeagi/arcadia?style=flat-square" />
     </a>
-    <a href="https://github.com/pylint-dev/pylint">
-      <img alt="Pylint Card" src="https://github.com/kubeagi/arcadia/actions/workflows/pypi_lint/badge.svg" />
-    </a>
     <a href="https://github.com/psf/black">
       <img alt="CodeStyle" src="https://img.shields.io/badge/code%20style-black-000000.svg" />
     </a>
@@ -78,22 +75,20 @@ List of supported(tested) LLMs
 
 ## Pure Go Toolchains
 
-To enhance the AI capability in Golang, we developed some packages.Here are the examples of how to use them.
+Thanks to [langchaingo](https://github.com/tmc/langchaingo),we can have comprehensive AI capability in Golang!But in order to meet our own unique needs, we have further developed a number of other toolchains:
 
-- [chat_with_document](https://github.com/kubeagi/arcadia/tree/main/examples/chat_with_document): a chat server which allows you to chat with your document
-- [embedding](https://github.com/kubeagi/arcadia/tree/main/examples/embedding) shows how to embedes your document to vector store with embedding service
-- [rbac](https://github.com/kubeagi/arcadia/blob/main/examples/rbac/main.go) shows how to inquiry the security risks in your RBAC with AI.
-- [zhipuai](https://github.com/kubeagi/arcadia/blob/main/examples/zhipuai/main.go) shows how to use this [zhipuai client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)
-- [dashscope](https://github.com/kubeagi/arcadia/blob/main/examples/dashscope/main.go) shows how to use this [dashscope client](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/dashscope) to chat with qwen-7b-chat / qwen-14b-chat / llama2-7b-chat-v2 / llama2-13b-chat-v2 and use embedding with dashscope text-embedding-v1 / text-embedding-async-v1
+- [Optimized DocumentLoaders](https://github.com/kubeagi/arcadia/tree/main/pkg/documentloaders): optimized csv,etc...
+- [Extended LLMs](https://github.com/kubeagi/arcadia/tree/main/pkg/llms): zhipuai,dashscope,etc...
+- [Tools](https://github.com/kubeagi/arcadia/tree/main/pkg/tools): bingsearch,weather,etc...
+- [AppRuntime](https://github.com/kubeagi/arcadia/tree/main/pkg/appruntime): powerful node(LLM,Chain,KonwledgeBase,vectorstore,Agent,etc...) orchestration runtime for arcadia
+
+We have provided some examples on how to use them. See more details at [here](https://github.com/kubeagi/arcadia/tree/main/examples)
 
 ## CLI
 
 We provide a Command Line Tool `arctl` to interact with `arcadia`. See [here](http://kubeagi.k8s.com.cn/docs/Tools/arctl-tool) for more details.
 
 - ✅ datasource management
-- ✅ local dataset management
-- ✅ chat & completion
-- ✅ download files from datasource
 - ✅ RAG evaluation
 
 ## Contribute to Arcadia
