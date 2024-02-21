@@ -61,7 +61,7 @@ fastchat:
     enabled: true
     host: fastchat-api.<replaced-ingress-nginx-ip>.nip.io
 
-# @section oss is used as default Object-Storage-Service for arcadia
+# @section minio is used as default Object-Storage-Service for arcadia
 minio:
   image:
     repository: kubeagi/minio
@@ -71,7 +71,7 @@ minio:
   rootPassword: "Passw0rd!"
   persistence:
     enabled: true
-    storageClass: "openebs-hostpath"
+    storageClass: "standard"
     size: 30Gi
   ingress:
     enabled: true
@@ -104,19 +104,6 @@ minio:
       # bucket [true|false] NOTE: versioning is enabled by default if you use locking
       objectlocking: false
 
-# @section chromadb is used to deploy a chromadb instance
-chromadb:
-  enabled: false
-  image:
-    repository: kubeagi/chromadb
-  chromadb:
-    apiVersion: "0.4.18"
-    auth:
-      enabled: false
-    serverHttpPort: 8000
-    dataVolumeStorageClass: "openebs-hostpath"
-    dataVolumeSize: "1Gi"
-
 # @section dataprocess is used to configure data processing service
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
@@ -131,11 +118,11 @@ dataprocess:
 # Posgresql service will be used in two parts:
 # - dataprocessing
 # - llm application
-# - used as vector store with pgvector enabled
+# - used as vector store with pgvector enabled(Recommended)
 postgresql:
   enabled: true
   global:
-    storageClass: "openebs-hostpath"
+    storageClass: "standard"
     postgresql:
       auth:
         # default username and password
@@ -152,6 +139,19 @@ postgresql:
   primary:
     initdb:
       scriptsConfigMap: pg-init-data
+
+# @section chromadb is used to deploy a chromadb instance
+chromadb:
+  enabled: false
+  image:
+    repository: kubeagi/chromadb
+  chromadb:
+    apiVersion: "0.4.18"
+    auth:
+      enabled: false
+    serverHttpPort: 8000
+    dataVolumeStorageClass: "standard"
+    dataVolumeSize: "1Gi"
 
 # @section ray is a unified framework for scaling AI and Python applications.In kubeagi,we use ray for distributed inference
 ray:
