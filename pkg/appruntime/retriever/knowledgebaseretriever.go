@@ -70,6 +70,10 @@ func (reference Reference) String() string {
 	return string(bytes)
 }
 
+func (reference Reference) SimpleString() string {
+	return fmt.Sprintf("%s %s", reference.Question, reference.Answer)
+}
+
 func AddReferencesToArgs(args map[string]any, refs []Reference) map[string]any {
 	if len(refs) == 0 {
 		return args

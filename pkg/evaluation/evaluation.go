@@ -161,7 +161,7 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 		// handle context
 		contexts := make([]string, len(out.References))
 		for refIndex, reference := range out.References {
-			contexts[refIndex] = reference.String()
+			contexts[refIndex] = reference.SimpleString()
 		}
 		ragasRow.Contexts = contexts
 
