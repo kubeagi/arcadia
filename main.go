@@ -275,7 +275,7 @@ func main() {
 	if err = (&evaluationcontrollers.RAGReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RAG")
 		os.Exit(1)
 	}
