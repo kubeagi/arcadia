@@ -37,6 +37,7 @@ type Node interface {
 	SetNextNode(nodes ...Node)
 	GetPrevNode() []Node
 	GetNextNode() []Node
+	Ready() (bool, string)
 	Cleanup()
 }
 
@@ -107,6 +108,10 @@ func (c *BaseNode) Init(_ context.Context, _ client.Client, _ map[string]any) er
 
 func (c *BaseNode) Run(_ context.Context, _ client.Client, _ map[string]any) (map[string]any, error) {
 	return nil, nil
+}
+
+func (c *BaseNode) Ready() (bool, string) {
+	return true, ""
 }
 
 func (c *BaseNode) Cleanup() {

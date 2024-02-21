@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
@@ -250,4 +251,14 @@ func (s *ConditionedStatus) ReadyCondition() []Condition {
 		LastSuccessfulTime: metav1.Now(),
 		Message:            "Success",
 	}}
+}
+
+func (s *ConditionedStatus) IsReadyOrGetReadyMessage() (isReady bool, msg string) {
+	if s.IsReady() {
+		return true, ""
+	}
+	for _, cond := range s.Conditions {
+		msg += fmt.Sprintf("%s:%s", cond.Reason, cond.Message)
+	}
+	return false, msg
 }

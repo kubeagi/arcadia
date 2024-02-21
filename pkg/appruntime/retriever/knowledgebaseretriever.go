@@ -160,6 +160,10 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 	return args, nil
 }
 
+func (l *KnowledgeBaseRetriever) Ready() (isReady bool, msg string) {
+	return l.Instance.Status.IsReadyOrGetReadyMessage()
+}
+
 func (l *KnowledgeBaseRetriever) Cleanup() {
 	if l.Finish != nil {
 		l.Finish()
