@@ -53,13 +53,6 @@ rules:
   verbs:
   - list
   - get
-- apiGroups:
-  - prompts.prompt.arcadia.kubeagi.k8s.com.cn
-  resources:
-  - prompts
-  verbs:
-  - list
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

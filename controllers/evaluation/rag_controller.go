@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/minio/minio-go/v7"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	evaluationarcadiav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/evaluation"
 )
 
@@ -102,7 +105,7 @@ func (r *RAGReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RAGReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RAGReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&evaluationarcadiav1alpha1.RAG{}, builder.WithPredicates(predicate.Funcs{
 			UpdateFunc: func(ue event.UpdateEvent) bool {
@@ -122,6 +125,11 @@ func (r *RAGReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				if !reflect.DeepEqual(n.Labels, o.Labels) {
 					return true
 				}
+				return false
+			},
+			DeleteFunc: func(de event.DeleteEvent) bool {
+				o := de.Object.(*evaluationarcadiav1alpha1.RAG)
+				r.RemoveRAGFiles(ctx, o)
 				return false
 			},
 		})).
@@ -454,6 +462,34 @@ func (r *RAGReconciler) WhenJobChanged(job *batchv1.Job) {
 			if err := r.Client.Status().Patch(ctx, dp, client.MergeFrom(rag)); err != nil {
 				logger.Error(err, "set the status of a job to rag failure.", "RAG", owner.Name, "Condition", dp.Status.Conditions[0])
 			}
+		}
+	}
+}
+
+func (r *RAGReconciler) RemoveRAGFiles(ctx context.Context, rag *evaluationarcadiav1alpha1.RAG) {
+	logger := log.FromContext(ctx, "RAG", rag.Name, "Namespace", rag.Namespace, "Action", "DeleteRAGFiles")
+	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
+	if err != nil {
+		logger.Error(err, "failed to get system datasource")
+		return
+	}
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+
+	oss, err := datasource.NewOSS(ctx, r.Client, endpoint)
+	if err != nil {
+		logger.Error(err, "failed to get oss client")
+		return
+	}
+
+	for c := range oss.Client.ListObjects(ctx, rag.Namespace, minio.ListObjectsOptions{
+		Prefix:    fmt.Sprintf("evals/%s/%s/", rag.Spec.Application.Name, rag.Name),
+		Recursive: true,
+	}) {
+		if err = oss.Client.RemoveObject(ctx, rag.Namespace, c.Key, minio.RemoveObjectOptions{}); err != nil {
+			logger.Error(err, "Failed to remove minio object", "Bucket", rag.Namespace, "ObjectKey", c.Key)
 		}
 	}
 }
