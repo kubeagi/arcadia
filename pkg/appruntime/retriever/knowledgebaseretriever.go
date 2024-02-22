@@ -34,6 +34,7 @@ import (
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/log"
 	"github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	pkgvectorstore "github.com/kubeagi/arcadia/pkg/vectorstore"
@@ -159,7 +160,9 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 	if err != nil {
 		return nil, err
 	}
-	l.Retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
+	retriever := vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
+	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
+	l.Retriever = retriever
 	args["retriever"] = l
 	return args, nil
 }
