@@ -26,6 +26,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -71,6 +72,7 @@ func init() {
 	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(batchv1.AddToScheme(scheme))
 	utilruntime.Must(agentv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(rbacv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

@@ -81,7 +81,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return reconcile.Result{RequeueAfter: waitSmaller}, err
 			}
 			if err = r.removeRagRBAC(ctx, logger, req.Name); err != nil {
-				return reconcile.Result{RequeueAfter: waitSmaller}, err
+				return reconcile.Result{RequeueAfter: waitSmaller}, nil
 			}
 
 			return reconcile.Result{}, nil
@@ -112,7 +112,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// 2. checkout rag serviceaccount and rolebing
 	if err := r.ensureRagRBAC(ctx, logger, instance); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: waitSmaller}, nil
 	}
 	// 3. Reconcile for MinIO bucket, we will create a separate bucket for each namespace
 	skip, err := r.checkSkippedNamespace(ctx, instance.Name)
@@ -245,10 +245,14 @@ func (r *NamespaceReconciler) ensureRagRBAC(ctx context.Context, logger logr.Log
 	idx := sort.Search(len(crb.Subjects), func(i int) bool {
 		s := crb.Subjects[i]
 		if s.Namespace == instance.Name {
-			return s.Name > saName
+			return s.Name >= saName
 		}
 		return s.Namespace > instance.Name
 	})
+	if idx < len(crb.Subjects) && crb.Subjects[idx].Namespace == instance.Name && crb.Subjects[idx].Name == saName {
+		// found record
+		return nil
+	}
 	crb.Subjects = append(crb.Subjects[:idx], append([]v1.Subject{{
 		Kind:      "ServiceAccount",
 		Name:      saName,
