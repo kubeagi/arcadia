@@ -33,6 +33,7 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	evav1alpha1 "github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -282,13 +283,21 @@ func rag2model(structuredRag *evav1alpha1.RAG) (*generated.Rag, error) {
 }
 
 func CreateRAG(ctx context.Context, kubeClient client.Client, input *generated.CreateRAGInput) (*generated.Rag, error) {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	rag := &evav1alpha1.RAG{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   input.Namespace,
 			Labels:      make(map[string]string),
 			Annotations: make(map[string]string),
 		},
-		Spec: evav1alpha1.RAGSpec{},
+		Spec: evav1alpha1.RAGSpec{
+			CommonSpec: v1alpha1.CommonSpec{
+				Creator: currentUser,
+			},
+		},
+	}
+	if input.Creator != nil {
+		rag.Spec.CommonSpec.Creator = *input.Creator
 	}
 	name := generateKubernetesResourceName("rag", 10)
 	if input.Name != nil {
