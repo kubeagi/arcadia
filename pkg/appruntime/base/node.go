@@ -27,6 +27,7 @@ import (
 
 type Node interface {
 	Name() string
+	Namespace() string
 	Group() string
 	Kind() string
 	RefName() string
@@ -41,26 +42,30 @@ type Node interface {
 	Cleanup()
 }
 
-func NewBaseNode(appNamespace, nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
+func NewBaseNode(namespace, nodeName string, ref arcadiav1alpha1.TypedObjectReference) BaseNode {
 	return BaseNode{
-		appNamespace: appNamespace,
-		name:         nodeName,
-		Ref:          ref,
-		prev:         make([]Node, 0),
-		next:         make([]Node, 0),
+		namespace: namespace,
+		name:      nodeName,
+		Ref:       ref,
+		prev:      make([]Node, 0),
+		next:      make([]Node, 0),
 	}
 }
 
 type BaseNode struct {
-	appNamespace string
-	name         string
-	Ref          arcadiav1alpha1.TypedObjectReference
-	prev         []Node
-	next         []Node
+	namespace string
+	name      string
+	Ref       arcadiav1alpha1.TypedObjectReference
+	prev      []Node
+	next      []Node
 }
 
 func (c *BaseNode) Name() string {
 	return c.name
+}
+
+func (c *BaseNode) Namespace() string {
+	return c.namespace
 }
 
 func (c *BaseNode) Group() string {
@@ -84,7 +89,7 @@ func (c *BaseNode) RefName() string {
 }
 
 func (c *BaseNode) RefNamespace() string {
-	return c.Ref.GetNamespace(c.appNamespace)
+	return c.Ref.GetNamespace(c.namespace)
 }
 func (c *BaseNode) GetPrevNode() []Node {
 	return c.prev

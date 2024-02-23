@@ -47,9 +47,8 @@ func NewLLMChain(baseNode base.BaseNode) *LLMChain {
 }
 
 func (l *LLMChain) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
-	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.LLMChain{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.Ref.GetNamespace(ns), Name: l.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.RefNamespace(), Name: l.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the chain in cluster: %w", err)
 	}
 	l.Instance = instance

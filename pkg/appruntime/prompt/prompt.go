@@ -47,9 +47,8 @@ func NewPrompt(baseNode base.BaseNode) *Prompt {
 }
 
 func (p *Prompt) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
-	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.Prompt{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.Ref.GetNamespace(ns), Name: p.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.RefNamespace(), Name: p.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the prompt in cluster: %w", err)
 	}
 	p.Instance = instance

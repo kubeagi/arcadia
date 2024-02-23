@@ -105,9 +105,8 @@ func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
 }
 
 func (l *KnowledgeBaseRetriever) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
-	ns := base.GetAppNamespace(ctx)
 	instance := &apiretriever.KnowledgeBaseRetriever{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.BaseNode.Ref.GetNamespace(ns), Name: l.BaseNode.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.RefNamespace(), Name: l.BaseNode.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the retriever in cluster: %w", err)
 	}
 	l.Instance = instance
@@ -115,7 +114,6 @@ func (l *KnowledgeBaseRetriever) Init(ctx context.Context, cli client.Client, _ 
 }
 
 func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
-	ns := base.GetAppNamespace(ctx)
 	instance := l.Instance
 	l.DocNullReturn = instance.Spec.DocNullReturn
 
@@ -143,7 +141,7 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 	}
 
 	embedder := &v1alpha1.Embedder{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: embedderReq.GetNamespace(ns), Name: embedderReq.Name}, embedder); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: embedderReq.GetNamespace(knowledgebaseNamespace), Name: embedderReq.Name}, embedder); err != nil {
 		return nil, fmt.Errorf("can't find the embedder in cluster: %w", err)
 	}
 	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, cli, "")
@@ -151,7 +149,7 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 		return nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
 	}
 	vectorStore := &v1alpha1.VectorStore{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: vectorStoreReq.GetNamespace(ns), Name: vectorStoreReq.Name}, vectorStore); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: vectorStoreReq.GetNamespace(knowledgebaseNamespace), Name: vectorStoreReq.Name}, vectorStore); err != nil {
 		return nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
 	}
 	var s vectorstores.VectorStore

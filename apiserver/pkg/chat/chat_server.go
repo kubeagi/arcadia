@@ -208,7 +208,6 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	if err != nil {
 		return nil, err
 	}
-	ctx = base.SetAppNamespace(ctx, req.AppNamespace)
 	var kb *v1alpha1.KnowledgeBase
 	var chainOptions []chains.ChainCallOption
 	var model langchainllms.LLM
