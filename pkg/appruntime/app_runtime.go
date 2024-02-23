@@ -59,41 +59,20 @@ type Application struct {
 	EndingNode    base.Node
 }
 
-// var cache = map[string]*Application{}
-
-// func cacheKey(app *arcadiav1alpha1.Application) string {
-//	return app.Namespace + "/" + app.Name
-//}
-
 func NewAppOrGetFromCache(ctx context.Context, cli client.Client, app *arcadiav1alpha1.Application) (*Application, error) {
 	if app == nil || app.Name == "" || app.Namespace == "" {
 		return nil, errors.New("app has no name or namespace")
 	}
-	// TODO: disable cache for now.
-	// https://github.com/kubeagi/arcadia/issues/391
-	// a, ok := cache[cacheKey(app)]
-	// if !ok {
-	//	a = &Application{
-	//		Spec: app.Spec,
-	//	}
-	//	cache[cacheKey(app)] = a
-	//	return a, a.Init(ctx, cli)
-	// }
-	// if reflect.DeepEqual(a.Spec, app.Spec) {
-	//	return a, nil
-	// }
 	a := &Application{
 		Namespace: app.GetNamespace(),
 		Name:      app.Name,
 		Spec:      app.Spec,
 		Inited:    false,
 	}
-	// a.Spec = app.Spec
-	// a.Inited = false
 	return a, a.Init(ctx, cli)
 }
 
-// todo 防止无限循环，需要找一下是不是成环
+// TODO: 防止无限循环，需要找一下是不是成环
 func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 	if a.Inited {
 		return

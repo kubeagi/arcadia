@@ -27,10 +27,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/documentloaders"
 	langchainllms "github.com/tmc/langchaingo/llms"
-	"github.com/tmc/langchaingo/prompts"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -40,7 +38,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	runtimebase "github.com/kubeagi/arcadia/pkg/appruntime/base"
-	runtimechains "github.com/kubeagi/arcadia/pkg/appruntime/chain"
+	runtimechain "github.com/kubeagi/arcadia/pkg/appruntime/chain"
 	runtimellm "github.com/kubeagi/arcadia/pkg/appruntime/llm"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	"github.com/kubeagi/arcadia/pkg/utils"
@@ -233,7 +231,7 @@ func (cs *ChatServer) SummarizeConversationDoc(ctx context.Context, req Conversa
 			<-semaphore
 		}()
 		klog.V(5).Infof("Generate summarization from file %s for conversation %s", doc.Filename, req.ConversationID)
-		summary, errSummary = cs.GenerateSingleDocSummary(ctx, req, doc, documents, respStream)
+		summary, errSummary = cs.GenerateSingleDocSummary(ctx, req, documents, respStream)
 		if errSummary != nil {
 			// break once error occurs
 			errStr += fmt.Sprintf(" ErrSummary: %s", errSummary.Error())
@@ -278,14 +276,14 @@ func (cs *ChatServer) GenerateSingleDocEmbeddings(ctx context.Context, req Conve
 }
 
 // GenerateSingleDocSummary generate the summary of single document
-func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req ConversationDocsReqBody, doc *multipart.FileHeader, documents []schema.Document, respStream chan string) (string, error) {
+func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req ConversationDocsReqBody, documents []schema.Document, respStream chan string) (string, error) {
 	app, c, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
 		return "", fmt.Errorf("failed to get app due to %s", err.Error())
 	}
 
 	var llm langchainllms.LLM
-	chainCallOptions := make([]chains.ChainCallOption, 0)
+	var mpChainNode runtimebase.BaseNode
 	// find LLM along with chain call options
 	for _, n := range app.Spec.Nodes {
 		baseNode := runtimebase.NewBaseNode(app.Namespace, n.Name, *n.Ref)
@@ -297,17 +295,9 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 			}
 			llm = l.LLM
 		case "llmchain":
-			llmchain := runtimechains.NewLLMChain(baseNode)
-			if err := llmchain.Init(ctx, cs.cli, nil); err != nil {
-				return "", err
-			}
-			chainCallOptions = runtimechains.GetChainOptions(llmchain.Instance.Spec.CommonChainConfig)
+			mpChainNode = baseNode
 		case "retrievalqachain":
-			retrivalQAChain := runtimechains.NewRetrievalQAChain(baseNode)
-			if err := retrivalQAChain.Init(ctx, cs.cli, nil); err != nil {
-				return "", err
-			}
-			chainCallOptions = runtimechains.GetChainOptions(retrivalQAChain.Instance.Spec.CommonChainConfig)
+			mpChainNode = baseNode
 		}
 	}
 
@@ -315,32 +305,31 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 	if llm == nil {
 		return "", ErrNoLLMProvidedInApplication
 	}
-
-	// initialize a MapReduceChain
-	mpChain := chains.NewMapReduceDocuments(
-		chains.NewLLMChain(llm, prompts.NewPromptTemplate(DefaultPromptTemplateForMap, []string{"context"})),
-		chains.NewStuffDocuments(
-			chains.NewLLMChain(
-				llm,
-				prompts.NewPromptTemplate(DefaultPromptTemplatForReduce, []string{"context"}),
-			),
-		),
-	)
-
-	// concurrent api call
-	mpChain.MaxNumberOfConcurrent = DefaultSummaryMaxNumberOfConcurrent
-
-	var summary string
-	if req.ResponseMode.IsStreaming() {
-		chainCallOptions = append(chainCallOptions, chains.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
-			respStream <- string(chunk)
-			return nil
-		}))
+	out := map[string]any{
+		"question":       req.Query,
+		"_answer_stream": respStream,
+		"llm":            llm,
+		"documents":      documents,
 	}
-	summary, err = chains.Run(ctx, mpChain, documents, chainCallOptions...)
+	if req.ResponseMode == "streaming" {
+		out["_need_stream"] = true
+	}
+	// initialize MapReduceChain
+	mpChain := runtimechain.NewMapReduceChain(mpChainNode)
+	if err = mpChain.Init(ctx, cs.cli, out); err != nil {
+		return "", err
+	}
+	out, err = mpChain.Run(ctx, cs.cli, out)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate summary for %s due to %s", doc.Filename, err.Error())
+		return "", fmt.Errorf("failed to generate summary due to %s", err.Error())
 	}
-
-	return summary, nil
+	a, ok := out["_answer"]
+	if !ok {
+		return "", errors.New("empty answer")
+	}
+	answer, ok := a.(string)
+	if !ok && len(answer) > 0 {
+		return "", errors.New("invalid answer.not a string")
+	}
+	return answer, nil
 }
