@@ -259,27 +259,6 @@ func (cs *ChatService) ChatDocs() gin.HandlerFunc {
 				}
 			}()
 
-			// Use a ticker to check if there is no data arrived and close the stream
-			// TODO: check if any better solution for this?
-			hasData := true
-			ticker := time.NewTicker(WaitTimeoutForChatStreaming * time.Second)
-			quit := make(chan struct{})
-			defer close(quit)
-			go func() {
-				for {
-					select {
-					case <-ticker.C:
-						// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
-						if !hasData {
-							close(respStream)
-						}
-						hasData = false
-					case <-quit:
-						ticker.Stop()
-						return
-					}
-				}
-			}()
 			c.Writer.Header().Set("Content-Type", "text/event-stream")
 			c.Writer.Header().Set("Cache-Control", "no-cache")
 			c.Writer.Header().Set("Connection", "keep-alive")
@@ -296,7 +275,6 @@ func (cs *ChatService) ChatDocs() gin.HandlerFunc {
 							Latency:        time.Since(req.StartTime).Milliseconds(),
 						},
 					})
-					hasData = true
 					buf.WriteString(msg)
 					return true
 				}
