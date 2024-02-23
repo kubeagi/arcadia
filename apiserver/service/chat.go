@@ -199,7 +199,11 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 // @Router			/chat/conversations/docs [post]
 func (cs *ChatService) ChatDocs() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		req := chat.ConversationDocsReqBody{}
+		req := chat.ConversationDocsReqBody{
+			ChatReqBody: chat.ChatReqBody{
+				StartTime: time.Now(),
+			},
+		}
 		if err := c.ShouldBind(&req); err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "conversationDocsHandler: error binding json")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
