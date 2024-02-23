@@ -88,6 +88,8 @@ type genOptions struct {
 	output Output
 
 	writeHeader bool
+	// maxContextLength is the limit of total lengths of all contexts
+	maxContextLength int
 }
 
 func defaultGenOptions() *genOptions {
@@ -118,6 +120,12 @@ func WithGroundTruthsColumn(groundTruthsColumn string) GenOptions {
 func WithOutput(output Output) GenOptions {
 	return func(genOpts *genOptions) {
 		genOpts.output = output
+	}
+}
+
+func WithMaxContextLength(maxContextLength int) GenOptions {
+	return func(genOpts *genOptions) {
+		genOpts.maxContextLength = maxContextLength
 	}
 }
 
@@ -160,8 +168,23 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 
 		// handle context
 		contexts := make([]string, len(out.References))
+		contextLength := 0
 		for refIndex, reference := range out.References {
-			contexts[refIndex] = reference.SimpleString()
+			contextLength += len(reference.SimpleString())
+			refString := reference.SimpleString()
+			// If the next context will cause the context total length to exceed the maxContentLength, break and stop adding them.
+			if contextLength >= eval.options.maxContextLength {
+				if refIndex == 0 {
+					// If the first context exceeds the maxContentLength, truncate it and use only the first 500 words.
+					refString = reference.SimpleString()[:eval.options.maxContextLength]
+					klog.V(5).Infof("1st context length exceeds maxContentLength %d, using only the first %d words", eval.options.maxContextLength, eval.options.maxContextLength)
+					contexts[refIndex] = refString
+				} else {
+					klog.V(5).Infof("Context length exceeds maxContentLength %d, using only the first %d context(s)", eval.options.maxContextLength, refIndex)
+				}
+				break
+			}
+			contexts[refIndex] = refString
 		}
 		ragasRow.Contexts = contexts
 
