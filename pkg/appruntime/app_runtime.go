@@ -69,10 +69,6 @@ func NewAppOrGetFromCache(ctx context.Context, cli client.Client, app *arcadiav1
 	if app == nil || app.Name == "" || app.Namespace == "" {
 		return nil, errors.New("app has no name or namespace")
 	}
-	// make sure namespace value exists in context
-	if base.GetAppNamespace(ctx) == "" {
-		ctx = base.SetAppNamespace(ctx, app.Namespace)
-	}
 	// TODO: disable cache for now.
 	// https://github.com/kubeagi/arcadia/issues/391
 	// a, ok := cache[cacheKey(app)]
@@ -158,11 +154,6 @@ func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 }
 
 func (a *Application) Run(ctx context.Context, cli client.Client, respStream chan string, input Input) (output Output, err error) {
-	// make sure ns value set
-	if base.GetAppNamespace(ctx) == "" {
-		ctx = base.SetAppNamespace(ctx, a.Namespace)
-	}
-
 	out := map[string]any{
 		"question":       input.Question,
 		"_answer_stream": respStream,

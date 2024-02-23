@@ -53,9 +53,8 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	if !ok {
 		return args, errors.New("llm not llms.LanguageModel")
 	}
-	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.Agent{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.Ref.GetNamespace(ns), Name: p.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.RefNamespace(), Name: p.Ref.Name}, instance); err != nil {
 		return args, fmt.Errorf("can't find the agent in cluster: %w", err)
 	}
 	var allowedTools []tools.Tool

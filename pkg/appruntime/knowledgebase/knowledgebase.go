@@ -39,9 +39,8 @@ func NewKnowledgebase(baseNode base.BaseNode) *Knowledgebase {
 }
 
 func (k *Knowledgebase) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
-	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.KnowledgeBase{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: k.Ref.GetNamespace(ns), Name: k.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: k.RefNamespace(), Name: k.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
 	}
 	k.Instance = instance

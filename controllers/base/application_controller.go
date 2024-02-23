@@ -39,7 +39,6 @@ import (
 	retrieveralpha1 "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
-	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
 const (
@@ -217,7 +216,6 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logg
 		return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 	}
 
-	ctx = base.SetAppNamespace(ctx, app.Namespace)
 	for _, node := range app.Spec.Nodes {
 		n, err := appruntime.InitNode(ctx, app.Namespace, node.Name, *node.Ref)
 		if err != nil {

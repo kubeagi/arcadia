@@ -43,9 +43,8 @@ func NewLLM(baseNode base.BaseNode) *LLM {
 }
 
 func (z *LLM) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
-	ns := base.GetAppNamespace(ctx)
 	instance := &v1alpha1.LLM{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: z.Ref.GetNamespace(ns), Name: z.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: z.RefNamespace(), Name: z.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the llm in cluster: %w", err)
 	}
 	llm, err := langchainwrap.GetLangchainLLM(ctx, instance, cli, "")
@@ -60,8 +59,7 @@ func (z *LLM) Init(ctx context.Context, cli client.Client, _ map[string]any) err
 func (z *LLM) Run(ctx context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
 	args["llm"] = z
 	logger := klog.FromContext(ctx)
-	ns := base.GetAppNamespace(ctx)
-	logger.Info("use llm", "name", z.Ref.Name, "namespace", z.Ref.GetNamespace(ns))
+	logger.Info("use llm", "name", z.Ref.Name, "namespace", z.RefNamespace())
 	return args, nil
 }
 
