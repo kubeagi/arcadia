@@ -108,6 +108,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 		outputDir          string
 		mergeFileName      string
 		merge              bool
+		maxContentLength   int
 	)
 
 	cmd := &cobra.Command{
@@ -179,6 +180,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 					evaluation.WithGroundTruthsColumn(groundTruthsColumn),
 					evaluation.WithOutput(output),
 					evaluation.WithWriteHeader(!merge || writeHeader),
+					evaluation.WithMaxContextLength(maxContentLength),
 				)
 				if err != nil {
 					return err
@@ -200,6 +202,7 @@ func EvalGenTestDataset(home *string, namespace *string, appName *string) *cobra
 	cmd.Flags().StringVar(&outputMethod, "output", "", "The way to output the generated dataset rows.We support two ways: \n - stdout: print row \n - csv: save row to csv file")
 	cmd.Flags().BoolVar(&merge, "merge", false, "Whether to merge all generated test data into a single file")
 	cmd.Flags().StringVar(&mergeFileName, "merge-file", "ragas.csv", "name of the merged document")
+	cmd.Flags().IntVar(&maxContentLength, "max-context-length", 512, "The maximum length of the context")
 
 	return cmd
 }
