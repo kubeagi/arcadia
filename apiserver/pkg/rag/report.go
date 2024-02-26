@@ -48,7 +48,7 @@ const (
 	summarySuggestionTemplate = `通过此次评估，您的智能体得分偏低，主要体现在 <strong>%s</strong> 这 %d 项指标得分偏低。
 <br>
 <strong>建议您对特定场景应用的模型进行模型精调；%s。</strong>`
-	noSuggestionTempalte = `通过此次评估，您的 RAG 方案得分 <span style="color:orange">%.2f</span>`
+	noSuggestionTempalte = `通过此次评估，您的 RAG 方案得分 <span style="color:green">%.2f</span>`
 )
 
 var (
@@ -202,7 +202,7 @@ func ParseSummary(
 		report.TotalScore.Color = orange
 		report.Summary = fmt.Sprintf(summarySuggestionTemplate, strings.Join(metrics, "、"), len(metrics), strings.Join(metricSuggesstion, "、"))
 	} else {
-		report.Summary = fmt.Sprintf(noSuggestionTempalte, report.TotalScore.Score)
+		report.Summary = fmt.Sprintf(noSuggestionTempalte, report.TotalScore.Score*100.0)
 	}
 	return report, nil
 }
@@ -250,13 +250,16 @@ func ParseResult(
 			Contexts:     []string{line[4]},
 			Data:         make(map[string]float64),
 		}
+		item.CostTime, _ = strconv.ParseFloat(line[5], 64)
+
 		sum := float64(0)
-		for i := 5; i < len(line); i++ {
+		// TODO: Avoid direct hardcode. Mapping index via map
+		for i := 6; i < len(line); i++ {
 			f, _ := strconv.ParseFloat(line[i], 64)
 			item.Data[header[i]] = f
 			sum += f
 		}
-		item.TotalScore = sum / float64(len(line)-5)
+		item.TotalScore = sum / float64(len(line)-6)
 		result[i] = item
 	}
 
