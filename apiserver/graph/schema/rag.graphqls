@@ -152,6 +152,12 @@ input UpdateRAGInput {
     suspend: Boolean
 }
 
+input DuplicateRAGInput {
+    name: String!
+    namespace: String!
+    displayName: String
+}
+
 input DeleteRAGInput {
     name: String!
     namespace: String!
@@ -185,6 +191,7 @@ type RAGMutation {
     createRAG(input: CreateRAGInput!): RAG!
     updateRAG(input: UpdateRAGInput!): RAG!
     deleteRAG(input: DeleteRAGInput!): Void
+    duplicateRAG(input: DuplicateRAGInput!): RAG!
 }
 
 type RAGQuery {

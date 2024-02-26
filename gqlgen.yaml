@@ -284,6 +284,8 @@ models:
         resolver: true
       deleteRAG:
         resolver: true
+      duplicateRAG:
+        resolver: true
   RAGQuery:
     fields:
       getRAG:

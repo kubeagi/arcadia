@@ -628,3 +628,29 @@ func DeleteRAG(ctx context.Context, kubeClient client.Client, input *generated.D
 	}
 	return kubeClient.DeleteAllOf(ctx, &evav1alpha1.RAG{}, opts...)
 }
+
+func DuplicateRAG(ctx context.Context, kubeClient client.Client, input *generated.DuplicateRAGInput) (*generated.Rag, error) {
+	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	rag := &evav1alpha1.RAG{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: input.Namespace, Name: input.Name}, rag)
+	if err != nil {
+		return nil, err
+	}
+	rag.Name = generateKubernetesResourceName("rag", 10)
+	if input.DisplayName != nil {
+		rag.Spec.DisplayName = *input.DisplayName
+	}
+	labels := rag.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels["duplication"] = fmt.Sprintf("%s_%s", input.Namespace, input.Name)
+	rag.SetLabels(labels)
+	rag.ResourceVersion = ""
+	rag.Spec.Creator = currentUser
+	err = kubeClient.Create(ctx, rag)
+	if err != nil {
+		return nil, err
+	}
+	return rag2model(rag)
+}
