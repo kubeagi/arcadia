@@ -684,6 +684,12 @@ type DeleteVersionedDatasetInput struct {
 	FieldSelector *string `json:"fieldSelector,omitempty"`
 }
 
+type DuplicateRAGInput struct {
+	Name        string  `json:"name"`
+	Namespace   string  `json:"namespace"`
+	DisplayName *string `json:"displayName,omitempty"`
+}
+
 type Embedder struct {
 	ID          *string                `json:"id,omitempty"`
 	Name        string                 `json:"name"`
@@ -1367,9 +1373,10 @@ type RAGMetricInput struct {
 }
 
 type RAGMutation struct {
-	CreateRag Rag     `json:"createRAG"`
-	UpdateRag Rag     `json:"updateRAG"`
-	DeleteRag *string `json:"deleteRAG,omitempty"`
+	CreateRag    Rag     `json:"createRAG"`
+	UpdateRag    Rag     `json:"updateRAG"`
+	DeleteRag    *string `json:"deleteRAG,omitempty"`
+	DuplicateRag Rag     `json:"duplicateRAG"`
 }
 
 type RAGQuery struct {

@@ -102,6 +102,15 @@ func (r *rAGMutationResolver) DeleteRag(ctx context.Context, obj *generated.RAGM
 	return nil, rag.DeleteRAG(ctx, c, &input)
 }
 
+// DuplicateRag is the resolver for the duplicateRAG field.
+func (r *rAGMutationResolver) DuplicateRag(ctx context.Context, obj *generated.RAGMutation, input generated.DuplicateRAGInput) (*generated.Rag, error) {
+	c, err := getClientFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rag.DuplicateRAG(ctx, c, &input)
+}
+
 // GetRag is the resolver for the getRAG field.
 func (r *rAGQueryResolver) GetRag(ctx context.Context, obj *generated.RAGQuery, name string, namespace string) (*generated.Rag, error) {
 	c, err := getClientFromCtx(ctx)

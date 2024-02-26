@@ -610,9 +610,10 @@ type ComplexityRoot struct {
 	}
 
 	RAGMutation struct {
-		CreateRag func(childComplexity int, input CreateRAGInput) int
-		DeleteRag func(childComplexity int, input DeleteRAGInput) int
-		UpdateRag func(childComplexity int, input UpdateRAGInput) int
+		CreateRag    func(childComplexity int, input CreateRAGInput) int
+		DeleteRag    func(childComplexity int, input DeleteRAGInput) int
+		DuplicateRag func(childComplexity int, input DuplicateRAGInput) int
+		UpdateRag    func(childComplexity int, input UpdateRAGInput) int
 	}
 
 	RAGQuery struct {
@@ -894,6 +895,7 @@ type RAGMutationResolver interface {
 	CreateRag(ctx context.Context, obj *RAGMutation, input CreateRAGInput) (*Rag, error)
 	UpdateRag(ctx context.Context, obj *RAGMutation, input UpdateRAGInput) (*Rag, error)
 	DeleteRag(ctx context.Context, obj *RAGMutation, input DeleteRAGInput) (*string, error)
+	DuplicateRag(ctx context.Context, obj *RAGMutation, input DuplicateRAGInput) (*Rag, error)
 }
 type RAGQueryResolver interface {
 	GetRag(ctx context.Context, obj *RAGQuery, name string, namespace string) (*Rag, error)
@@ -3783,6 +3785,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RAGMutation.DeleteRag(childComplexity, args["input"].(DeleteRAGInput)), true
 
+	case "RAGMutation.duplicateRAG":
+		if e.complexity.RAGMutation.DuplicateRag == nil {
+			break
+		}
+
+		args, err := ec.field_RAGMutation_duplicateRAG_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.RAGMutation.DuplicateRag(childComplexity, args["input"].(DuplicateRAGInput)), true
+
 	case "RAGMutation.updateRAG":
 		if e.complexity.RAGMutation.UpdateRag == nil {
 			break
@@ -4498,6 +4512,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDeleteDataProcessInput,
 		ec.unmarshalInputDeleteRAGInput,
 		ec.unmarshalInputDeleteVersionedDatasetInput,
+		ec.unmarshalInputDuplicateRAGInput,
 		ec.unmarshalInputEndpointInput,
 		ec.unmarshalInputFileFilter,
 		ec.unmarshalInputFileGroup,
@@ -6921,6 +6936,12 @@ input UpdateRAGInput {
     suspend: Boolean
 }
 
+input DuplicateRAGInput {
+    name: String!
+    namespace: String!
+    displayName: String
+}
+
 input DeleteRAGInput {
     name: String!
     namespace: String!
@@ -6954,6 +6975,7 @@ type RAGMutation {
     createRAG(input: CreateRAGInput!): RAG!
     updateRAG(input: UpdateRAGInput!): RAG!
     deleteRAG(input: DeleteRAGInput!): Void
+    duplicateRAG(input: DuplicateRAGInput!): RAG!
 }
 
 type RAGQuery {
@@ -8443,6 +8465,21 @@ func (ec *executionContext) field_RAGMutation_deleteRAG_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNDeleteRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteRAGInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_RAGMutation_duplicateRAG_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 DuplicateRAGInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNDuplicateRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDuplicateRAGInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -23295,6 +23332,8 @@ func (ec *executionContext) fieldContext_Mutation_RAG(ctx context.Context, field
 				return ec.fieldContext_RAGMutation_updateRAG(ctx, field)
 			case "deleteRAG":
 				return ec.fieldContext_RAGMutation_deleteRAG(ctx, field)
+			case "duplicateRAG":
+				return ec.fieldContext_RAGMutation_duplicateRAG(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RAGMutation", field.Name)
 		},
@@ -26663,6 +26702,101 @@ func (ec *executionContext) fieldContext_RAGMutation_deleteRAG(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_RAGMutation_deleteRAG_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RAGMutation_duplicateRAG(ctx context.Context, field graphql.CollectedField, obj *RAGMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RAGMutation_duplicateRAG(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RAGMutation().DuplicateRag(rctx, obj, fc.Args["input"].(DuplicateRAGInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Rag)
+	fc.Result = res
+	return ec.marshalNRAG2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐRag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RAGMutation_duplicateRAG(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RAGMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_RAG_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_RAG_namespace(ctx, field)
+			case "labels":
+				return ec.fieldContext_RAG_labels(ctx, field)
+			case "annotations":
+				return ec.fieldContext_RAG_annotations(ctx, field)
+			case "creator":
+				return ec.fieldContext_RAG_creator(ctx, field)
+			case "displayName":
+				return ec.fieldContext_RAG_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_RAG_description(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_RAG_creationTimestamp(ctx, field)
+			case "completeTimestamp":
+				return ec.fieldContext_RAG_completeTimestamp(ctx, field)
+			case "application":
+				return ec.fieldContext_RAG_application(ctx, field)
+			case "datasets":
+				return ec.fieldContext_RAG_datasets(ctx, field)
+			case "judgeLLM":
+				return ec.fieldContext_RAG_judgeLLM(ctx, field)
+			case "metrics":
+				return ec.fieldContext_RAG_metrics(ctx, field)
+			case "storage":
+				return ec.fieldContext_RAG_storage(ctx, field)
+			case "serviceAccountName":
+				return ec.fieldContext_RAG_serviceAccountName(ctx, field)
+			case "suspend":
+				return ec.fieldContext_RAG_suspend(ctx, field)
+			case "status":
+				return ec.fieldContext_RAG_status(ctx, field)
+			case "phase":
+				return ec.fieldContext_RAG_phase(ctx, field)
+			case "phaseMessage":
+				return ec.fieldContext_RAG_phaseMessage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RAG", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_RAGMutation_duplicateRAG_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -34114,6 +34248,47 @@ func (ec *executionContext) unmarshalInputDeleteVersionedDatasetInput(ctx contex
 				return it, err
 			}
 			it.FieldSelector = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDuplicateRAGInput(ctx context.Context, obj interface{}) (DuplicateRAGInput, error) {
+	var it DuplicateRAGInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "namespace", "displayName"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "namespace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "displayName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("displayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisplayName = data
 		}
 	}
 
@@ -41985,6 +42160,42 @@ func (ec *executionContext) _RAGMutation(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "duplicateRAG":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RAGMutation_duplicateRAG(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43884,6 +44095,11 @@ func (ec *executionContext) unmarshalNDeleteRAGInput2githubᚗcomᚋkubeagiᚋar
 
 func (ec *executionContext) unmarshalNDeleteVersionedDatasetInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDeleteVersionedDatasetInput(ctx context.Context, v interface{}) (DeleteVersionedDatasetInput, error) {
 	res, err := ec.unmarshalInputDeleteVersionedDatasetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDuplicateRAGInput2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐDuplicateRAGInput(ctx context.Context, v interface{}) (DuplicateRAGInput, error) {
+	res, err := ec.unmarshalInputDuplicateRAGInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
