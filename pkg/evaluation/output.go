@@ -31,7 +31,7 @@ type PrintOutput struct{}
 
 // Output this row to standard output
 func (print *PrintOutput) Output(row RagasDataRow) error {
-	fmt.Printf("question:%s \nground_truths:%s \n answer:%s \n contexts:%v \n", row.Question, row.GroundTruths, row.Answer, row.Contexts)
+	fmt.Printf("question:%s \n ground_truths:%s \n answer:%s \n contexts:%v \n latency:%s \n", row.Question, row.GroundTruths, row.Answer, row.Contexts, row.Latency)
 	return nil
 }
 
@@ -42,5 +42,5 @@ type CSVOutput struct {
 
 // Output a row to csv
 func (csv *CSVOutput) Output(row RagasDataRow) error {
-	return csv.W.Write([]string{row.Question, strings.Join(row.GroundTruths, ";"), row.Answer, strings.Join(row.Contexts, ";")})
+	return csv.W.Write([]string{row.Question, strings.Join(row.GroundTruths, ";"), row.Answer, strings.Join(row.Contexts, ";"), row.Latency})
 }
