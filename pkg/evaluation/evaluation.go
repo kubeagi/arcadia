@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/tmc/langchaingo/memory"
 	"k8s.io/klog/v2"
@@ -41,6 +42,8 @@ type RagasDataRow struct {
 	Contexts []string `json:"contexts"`
 	// Answer by Application
 	Answer string `json:"answer"`
+	// Latency Q&A generation duration
+	Latency string `json:"latency"`
 }
 
 // RagasDatasetGenerator generates datasets which adapts to the ragas framework
@@ -66,6 +69,7 @@ func NewRagasDatasetGenerator(ctx context.Context, cli client.Client, app *v1alp
 			GroundTruths: []string{"ground_truths"},
 			Contexts:     []string{"contexts"},
 			Answer:       "answer",
+			Latency:      "latency",
 		})
 		if err != nil {
 			return nil, err
@@ -158,12 +162,14 @@ func (eval *RagasDatasetGenerator) Generate(ctx context.Context, csvData io.Read
 			GroundTruths: []string{groundTruths},
 		}
 
+		start := time.Now()
 		// chat with application
 		out, err := eval.app.Run(ctx, eval.cli, nil, appruntime.Input{Question: ragasRow.Question, NeedStream: false, History: memory.NewChatMessageHistory()})
 		if err != nil {
 			klog.V(1).ErrorS(err, "failed to get the answer", "app", eval.app.Name, "namespace", eval.app.Namespace, "question", ragasRow.Question)
 			return err
 		}
+		ragasRow.Latency = fmt.Sprintf("%.1f", time.Since(start).Seconds())
 		ragasRow.Answer = out.Answer
 
 		// handle context
