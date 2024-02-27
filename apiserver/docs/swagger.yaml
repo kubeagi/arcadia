@@ -207,10 +207,6 @@ definitions:
         items:
           $ref: '#/definitions/rag.RadarData'
         type: array
-      scatterChart:
-        items:
-          $ref: '#/definitions/rag.ScatterData'
-        type: array
       summary:
         description: TODO
         type: string
@@ -248,15 +244,6 @@ definitions:
         type: string
       totalScore:
         type: number
-    type: object
-  rag.ScatterData:
-    properties:
-      color:
-        type: string
-      score:
-        type: number
-      type:
-        type: string
     type: object
   rag.TotalScoreData:
     properties:
@@ -1346,6 +1333,49 @@ paths:
               type: string
             type: object
       summary: Get a summary of rag
+      tags:
+      - RAG
+  /rags/scatter:
+    get:
+      consumes:
+      - application/json
+      description: Get scatter data of a rag
+      parameters:
+      - description: rag name
+        in: query
+        name: ragName
+        required: true
+        type: string
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      - description: application name
+        in: query
+        name: appName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rag.ReportDetail'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get scatter data of a rag
       tags:
       - RAG
 securityDefinitions:

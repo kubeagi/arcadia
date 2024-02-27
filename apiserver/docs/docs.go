@@ -1280,6 +1280,70 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/rags/scatter": {
+            "get": {
+                "description": "Get scatter data of a rag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RAG"
+                ],
+                "summary": "Get scatter data of a rag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "rag name",
+                        "name": "ragName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "application name",
+                        "name": "appName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rag.ReportDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1567,12 +1631,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/rag.RadarData"
                     }
                 },
-                "scatterChart": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/rag.ScatterData"
-                    }
-                },
                 "summary": {
                     "description": "TODO",
                     "type": "string"
@@ -1628,20 +1686,6 @@ const docTemplate = `{
                 },
                 "totalScore": {
                     "type": "number"
-                }
-            }
-        },
-        "rag.ScatterData": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "number"
-                },
-                "type": {
-                    "type": "string"
                 }
             }
         },

@@ -20,6 +20,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,9 +36,16 @@ import (
 const (
 	totalScore = "total_score"
 
+	csvLatencyField      = "latency"
+	csvQuestionField     = "question"
+	csvGroundTruthsField = "ground_truths"
+	csvAnswerField       = "answer"
+	csvContextsField     = "contexts"
+
+	epsilon = 1e-6
 	// TODO: support for color change via env
-	blueColorEnv = "BLUE_ENV"
-	blue         = "blue" // 散点图的颜色
+	// blueColorEnv = "BLUE_ENV"
+	// blue         = "blue" // 散点图的颜色
 
 	orangeEnv = "ORANGE_RNV"
 	orange    = "orange" // 差
@@ -52,6 +60,15 @@ const (
 )
 
 var (
+	// NOTE: if other fields are added in the Generate Test Data section, they need to be updated here as well.
+	csvBasicFields = map[string]struct{}{
+		csvQuestionField:     {},
+		csvGroundTruthsField: {},
+		csvAnswerField:       {},
+		csvContextsField:     {},
+		csvLatencyField:      {},
+	}
+
 	metricChinese = map[string]string{
 		string(v1alpha1.AnswerRelevancy):   "答案相关度",
 		string(v1alpha1.AnswerSimilarity):  "答案相似度",
@@ -70,7 +87,7 @@ var (
 		string(v1alpha1.Faithfulness):      "调整模型配置或更换模型",
 		string(v1alpha1.ContextPrecision):  "调整 Embedding 模型",
 		string(v1alpha1.ContextRelevancy):  "调整 Embedding 模型",
-		string(v1alpha1.ContextRecall):     "调整 QA 数据", // 知识库相似度?
+		string(v1alpha1.ContextRecall):     "调整 QA 数据",
 		string(v1alpha1.AspectCritique):    "暂时没用到",
 	}
 )
@@ -88,22 +105,20 @@ type (
 	}
 
 	ScatterData struct {
-		Score float64 `json:"score"`
-		Type  string  `json:"type"`
-		Color string  `json:"color"`
+		Score    float64 `json:"score"`
+		CostTime float64 `json:"costTime"`
 	}
 
 	Report struct {
-		RadarChart   []RadarData    `json:"radarChart"`
-		TotalScore   TotalScoreData `json:"totalScore"`
-		ScatterChart []ScatterData  `json:"scatterChart"`
+		RadarChart []RadarData    `json:"radarChart"`
+		TotalScore TotalScoreData `json:"totalScore"`
 
 		// TODO
 		Summary string `json:"summary"`
 	}
 
 	// 忠实度、答案相关度、答案语义相似度、答案正确性、知识库相关度、知识库精度、知识库相似度
-	// question,ground_truths,answer,contexts
+	// question,ground_truths,answer,contexts,latency
 	ReportLine struct {
 		Question     string             `json:"question"`
 		GroundTruths []string           `json:"groundTruths"`
@@ -137,9 +152,8 @@ func ParseSummary(
 		return Report{}, err
 	}
 	csvReader := csv.NewReader(object)
-	report := Report{TotalScore: TotalScoreData{}, RadarChart: []RadarData{}, ScatterChart: []ScatterData{}}
+	report := Report{TotalScore: TotalScoreData{}, RadarChart: []RadarData{}}
 	radarChecker := make(map[string]int)
-	scatterChecker := make(map[string]int)
 
 	changeTotalScoreColor := false
 
@@ -187,15 +201,6 @@ func ParseSummary(
 			metricSuggesstion = append(metricSuggesstion, suggestionChinese[line[0]])
 			changeTotalScoreColor = true
 		}
-
-		nextScatterIndex := len(report.ScatterChart)
-		idx, ok = scatterChecker[line[0]]
-		if !ok {
-			scatterChecker[line[0]] = nextScatterIndex
-			report.ScatterChart = append(report.ScatterChart, ScatterData{Type: line[0], Color: blue})
-			idx = nextScatterIndex
-		}
-		report.ScatterChart[idx].Score = score
 	}
 
 	if changeTotalScoreColor {
@@ -205,6 +210,64 @@ func ParseSummary(
 		report.Summary = fmt.Sprintf(noSuggestionTempalte, report.TotalScore.Score*100.0)
 	}
 	return report, nil
+}
+
+func PraseScatterChart(ctx context.Context, c client.Client, appName, ragName, namespace string) ([]ScatterData, error) {
+	source, err := common.SystemDatasourceOSS(ctx, c)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		return nil, err
+	}
+
+	filePath := fmt.Sprintf("evals/%s/%s/result.csv", appName, ragName)
+	object, err := source.Client.GetObject(ctx, namespace, filePath, minio.GetObjectOptions{})
+	if err != nil {
+		klog.Errorf("failed to get result.csv file error %s", err)
+		return nil, err
+	}
+	csvReader := csv.NewReader(object)
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		klog.Error("failed to read csv error %s", err)
+		return nil, err
+	}
+
+	extra := make([]int, 0)
+	header := data[0]
+	latencyIndex := 0
+	for i := 1; i < len(header); i++ {
+		if header[i] == csvLatencyField {
+			latencyIndex = i
+			continue
+		}
+		if _, ok := csvBasicFields[header[i]]; !ok {
+			extra = append(extra, i)
+		}
+	}
+
+	result := make([]ScatterData, 0)
+	if len(extra) == 0 {
+		return result, nil
+	}
+
+	for _, line := range data[1:] {
+		costTime, _ := strconv.ParseFloat(line[latencyIndex], 64)
+		sum := float64(0)
+		for _, index := range extra {
+			f, _ := strconv.ParseFloat(line[index], 64)
+			sum += f
+		}
+		score := sum / float64(len(extra))
+		result = append(result, ScatterData{CostTime: costTime, Score: score})
+	}
+
+	sort.SliceStable(result, func(i, j int) bool {
+		if math.Abs(result[i].CostTime-result[j].CostTime) < epsilon {
+			return result[i].Score < result[j].Score
+		}
+		return result[i].CostTime < result[j].CostTime
+	})
+	return result, nil
 }
 
 func ParseResult(
@@ -240,26 +303,39 @@ func ParseResult(
 		return ReportDetail{}, nil
 	}
 
+	extra := make([]int, 0)
 	result := make([]ReportLine, len(data)-1)
+	csvBasicFieldIndies := make(map[string]int)
 	header := data[0]
+	for i := 1; i < len(header); i++ {
+		_, ok := csvBasicFields[header[i]]
+		if ok {
+			csvBasicFieldIndies[header[i]] = i
+			continue
+		}
+		extra = append(extra, i)
+	}
+	if len(extra) == 0 {
+		return ReportDetail{}, nil
+	}
+
 	for i, line := range data[1:] {
 		item := ReportLine{
-			Question:     line[1],
-			GroundTruths: []string{line[2]},
-			Answer:       line[3],
-			Contexts:     []string{line[4]},
+			Question:     line[csvBasicFieldIndies[csvQuestionField]],
+			GroundTruths: []string{line[csvBasicFieldIndies[csvGroundTruthsField]]},
+			Answer:       line[csvBasicFieldIndies[csvAnswerField]],
+			Contexts:     []string{line[csvBasicFieldIndies[csvContextsField]]},
 			Data:         make(map[string]float64),
 		}
-		item.CostTime, _ = strconv.ParseFloat(line[5], 64)
+		item.CostTime, _ = strconv.ParseFloat(line[csvBasicFieldIndies[csvLatencyField]], 64)
 
 		sum := float64(0)
-		// TODO: Avoid direct hardcode. Mapping index via map
-		for i := 6; i < len(line); i++ {
-			f, _ := strconv.ParseFloat(line[i], 64)
-			item.Data[header[i]] = f
+		for _, idx := range extra {
+			f, _ := strconv.ParseFloat(line[idx], 64)
+			item.Data[header[idx]] = f
 			sum += f
 		}
-		item.TotalScore = sum / float64(len(line)-6)
+		item.TotalScore = sum / float64(len(extra))
 		result[i] = item
 	}
 
