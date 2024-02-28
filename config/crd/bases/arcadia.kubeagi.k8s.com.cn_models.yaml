@@ -44,6 +44,18 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              huggingFaceRepo:
+                description: HuggingFaceRepo defines the huggingface repo which hosts
+                  this model
+                type: string
+              maxContextLength:
+                description: MaxContextLength defines the max context length allowed
+                  in this model
+                type: integer
+              modelScopeRepo:
+                description: ModelScopeRepo defines the modelscope repo which hosts
+                  this model
+                type: string
               source:
                 description: Source define the source of the model file
                 properties:

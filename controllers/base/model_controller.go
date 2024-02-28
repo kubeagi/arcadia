@@ -150,6 +150,11 @@ func (r *ModelReconciler) Initialize(ctx context.Context, logger logr.Logger, in
 		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelLLM] = isLLMModel
 		update = true
 	}
+	isReranking := strconv.FormatBool(instanceDeepCopy.IsRerankingModel())
+	if v := instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelReranking]; v != isReranking {
+		instanceDeepCopy.Labels[arcadiav1alpha1.LabelModelReranking] = isReranking
+		update = true
+	}
 
 	// Initialize annotations
 	if instanceDeepCopy.Annotations == nil {
