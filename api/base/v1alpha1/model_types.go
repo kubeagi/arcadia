@@ -33,6 +33,14 @@ type ModelSpec struct {
 
 	// Source define the source of the model file
 	Source *TypedObjectReference `json:"source,omitempty"`
+
+	// HuggingFaceRepo defines the huggingface repo which hosts this model
+	HuggingFaceRepo string `json:"huggingFaceRepo,omitempty"`
+	// ModelScopeRepo defines the modelscope repo which hosts this model
+	ModelScopeRepo string `json:"modelScopeRepo,omitempty"`
+
+	// MaxContextLength defines the max context length allowed in this model
+	MaxContextLength int `json:"maxContextLength,omitempty"`
 }
 
 // ModelStatus defines the observed state of Model
