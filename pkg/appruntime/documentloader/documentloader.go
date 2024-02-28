@@ -40,18 +40,27 @@ import (
 	arcadiadocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 )
 
-type Executor struct {
+type DocumentLoader struct {
 	base.BaseNode
+	Instance *v1alpha1.DocumentLoader
 }
 
-func NewExecutor(baseNode base.BaseNode) *Executor {
-	return &Executor{
-		baseNode,
+func NewDocumentLoader(baseNode base.BaseNode) *DocumentLoader {
+	return &DocumentLoader{
+		BaseNode: baseNode,
 	}
 }
 
-func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
+func (dl *DocumentLoader) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	instance := &v1alpha1.DocumentLoader{}
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, instance); err != nil {
+		return fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
+	}
+	dl.Instance = instance
+	return nil
+}
+
+func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
 	// Check if have docs as input
 	v1, ok := args["files"]
 	if !ok {
@@ -61,7 +70,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	if !ok || len(files) == 0 {
 		return args, errors.New("empty file list")
 	}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.RefNamespace(), Name: p.Ref.Name}, instance); err != nil {
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, dl.Instance); err != nil {
 		return args, fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
 
@@ -82,7 +91,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	var textArray []string
 
 	for _, file := range files {
-		ossInfo := &arcadiav1alpha1.OSS{Bucket: p.RefNamespace()}
+		ossInfo := &arcadiav1alpha1.OSS{Bucket: dl.RefNamespace()}
 		ossInfo.Object = filepath.Join("upload", file)
 		klog.Infoln("handling file", ossInfo.Object)
 		fileHandler, err := ossDatasource.ReadFile(ctx, ossInfo)
@@ -101,7 +110,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 
 		var loader documentloaders.Loader
 		// Use ext name in the spec first, and use real file ext name if it does not exist
-		extName := instance.Spec.FileExtName
+		extName := dl.Instance.Spec.FileExtName
 		if extName == "" {
 			extName = filepath.Ext(file)
 		}
@@ -114,14 +123,17 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		case ".html", ".htm":
 			dataReader := bytes.NewReader(data)
 			loader = documentloaders.NewHTML(dataReader)
+		case ".pdf":
+			dataReader := bytes.NewReader(data)
+			loader = documentloaders.NewPDF(dataReader, int64(len(data)))
 		default:
 			dataReader := bytes.NewReader(data)
 			loader = documentloaders.NewText(dataReader)
 		}
 
 		split := textsplitter.NewRecursiveCharacter(
-			textsplitter.WithChunkSize(instance.Spec.ChunkSize),
-			textsplitter.WithChunkOverlap(instance.Spec.ChunkOverlap),
+			textsplitter.WithChunkSize(dl.Instance.Spec.ChunkSize),
+			textsplitter.WithChunkOverlap(dl.Instance.Spec.ChunkOverlap),
 		)
 		docs, err := loader.LoadAndSplit(ctx, split)
 		if err != nil {
@@ -138,4 +150,9 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	args["docs"] = allDocs
 	args["context"] = strings.Join(textArray, "\n")
 	return args, nil
+}
+
+func (dl *DocumentLoader) Ready() (isReady bool, msg string) {
+	// TODO: use instance.Status.IsReadyOrGetReadyMessage() later if needed
+	return true, ""
 }

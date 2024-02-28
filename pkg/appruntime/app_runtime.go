@@ -244,7 +244,7 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 			return agent.NewExecutor(baseNode), nil
 		case "documentloader":
 			logger.V(3).Info("initnode agent - documentloader")
-			return documentloader.NewExecutor(baseNode), nil
+			return documentloader.NewDocumentLoader(baseNode), nil
 		default:
 			return nil, err
 		}

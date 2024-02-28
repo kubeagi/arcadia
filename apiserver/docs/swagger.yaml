@@ -28,6 +28,14 @@ definitions:
         description: ConversationID, if it is empty, a new conversation will be created
         example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
         type: string
+      files:
+        description: Files this conversation will use in the context
+        example:
+        - test.pdf
+        - song.mp3
+        items:
+          type: string
+        type: array
       query:
         description: Query user query string
         example: 旷工最小计算单位为多少天？
@@ -1249,11 +1257,6 @@ paths:
         name: namespace
         required: true
         type: string
-      - description: application name
-        in: query
-        name: appName
-        required: true
-        type: string
       - description: default is 1
         in: query
         name: page
@@ -1308,11 +1311,6 @@ paths:
         name: namespace
         required: true
         type: string
-      - description: application name
-        in: query
-        name: appName
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1349,11 +1347,6 @@ paths:
       - description: Name of the bucket
         in: header
         name: namespace
-        required: true
-        type: string
-      - description: application name
-        in: query
-        name: appName
         required: true
         type: string
       produces:
