@@ -31,6 +31,7 @@ import (
 
 	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	documentloaderv1alpha1 "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -83,4 +84,5 @@ func init() {
 	utilruntime.Must(evaluationarcadiav1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(batchv1.AddToScheme(Scheme))
 	utilruntime.Must(agentv1alpha1.AddToScheme(Scheme))
+	utilruntime.Must(documentloaderv1alpha1.AddToScheme(Scheme))
 }

@@ -32,6 +32,7 @@ import (
 	"github.com/kubeagi/arcadia/pkg/appruntime/agent"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	"github.com/kubeagi/arcadia/pkg/appruntime/chain"
+	"github.com/kubeagi/arcadia/pkg/appruntime/documentloader"
 	"github.com/kubeagi/arcadia/pkg/appruntime/knowledgebase"
 	"github.com/kubeagi/arcadia/pkg/appruntime/llm"
 	"github.com/kubeagi/arcadia/pkg/appruntime/prompt"
@@ -39,7 +40,11 @@ import (
 )
 
 type Input struct {
+	// User Query
 	Question string
+	// Files from user upload
+	// normally, the user will upload the files to s3 first and use the name of files here
+	Files []string
 	// overrideConfig
 	NeedStream bool
 	History    langchaingoschema.ChatMessageHistory
@@ -135,6 +140,7 @@ func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 func (a *Application) Run(ctx context.Context, cli client.Client, respStream chan string, input Input) (output Output, err error) {
 	out := map[string]any{
 		"question":       input.Question,
+		"files":          input.Files,
 		"_answer_stream": respStream,
 		"_history":       input.History,
 		// Use an empty context before run
@@ -236,6 +242,9 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		case "agent":
 			logger.V(3).Info("initnode agent - executor")
 			return agent.NewExecutor(baseNode), nil
+		case "documentloader":
+			logger.V(3).Info("initnode agent - documentloader")
+			return documentloader.NewExecutor(baseNode), nil
 		default:
 			return nil, err
 		}
@@ -248,7 +257,7 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("unknown group %s:%v", name, ref)
+		return nil, fmt.Errorf("unknown group %s/%s :%v", baseNode.Group(), baseNode.Kind(), ref)
 	}
 }
 

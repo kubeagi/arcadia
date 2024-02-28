@@ -301,7 +301,7 @@ func (cs *ChatServer) GenerateSingleDocSummary(ctx context.Context, req Conversa
 		}
 	}
 
-	// If no LLM provided,we can't generate the summary
+	// If no LLM provided, we can't generate the summary
 	if llm == nil {
 		return "", ErrNoLLMProvidedInApplication
 	}

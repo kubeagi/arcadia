@@ -66,6 +66,8 @@ type MessageReqBody struct {
 type ChatReqBody struct {
 	// Query user query string
 	Query string `json:"query" form:"query" binding:"required" example:"旷工最小计算单位为多少天？"`
+	// Files this conversation will use
+	Files []string `json:"files" form:"files" example:"test.pdf,song.mp3"`
 	// ResponseMode:
 	// * Blocking - means the response is returned in a blocking manner
 	// * Streaming - means the response will use Server-Sent Events
