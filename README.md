@@ -52,7 +52,7 @@ List of supported(tested) LLMs
 * chatglm2-6b
 * qwen-7b-chat / qwen-14b-chat / qwen-72b-chat
 * llama2-7b
-* mistral-7b
+* Mistral-7B-Instruct-v0.1
 * bge-large-zh  ***embedding***
 * m3e ***embedding***
 * [ZhiPuAI(智谱 AI)](https://github.com/kubeagi/arcadia/tree/main/pkg/llms/zhipuai)

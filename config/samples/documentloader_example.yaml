@@ -1,0 +1,14 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: DocumentLoader
+metadata:
+  name: ceshi
+  namespace: ainet
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
+spec:
+  displayName: "载入会议纪要的音频文件"
+  description: "测试音频文件载入"
+  chunkSize: 100
+  chunkOverlap: 20
+  fileExtName: .mp3

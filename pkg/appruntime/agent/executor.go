@@ -20,11 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/tools"
+	"github.com/tmc/langchaingo/tools/scraper"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,6 +68,43 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 			tool, err := weather.New(&toolSpec)
 			if err != nil {
 				klog.Errorf("failed to create a new weather tool:", err)
+				continue
+			}
+			allowedTools = append(allowedTools, tool)
+		case "scraper":
+			// prepare options from toolSpec
+			options := make([]scraper.Options, 0)
+			if toolSpec.Params["delay"] != "" {
+				delay, err := strconv.ParseInt(toolSpec.Params["delay"], 10, 64)
+				if err != nil {
+					klog.Errorln("failed to parse delay %s", toolSpec.Params["delay"])
+				} else {
+					options = append(options, scraper.WithDelay(delay))
+				}
+			}
+			if toolSpec.Params["async"] != "" {
+				async, err := strconv.ParseBool(toolSpec.Params["async"])
+				if err != nil {
+					klog.Errorln("failed to parse async %s", toolSpec.Params["async"])
+				} else {
+					options = append(options, scraper.WithAsync(async))
+				}
+			}
+			if toolSpec.Params["handleLinks"] != "" {
+				handleLinks, err := strconv.ParseBool(toolSpec.Params["handleLinks"])
+				if err != nil {
+					klog.Errorln("failed to parse handleLinks %s", toolSpec.Params["handleLinks"])
+				} else {
+					options = append(options, scraper.WithHandleLinks(handleLinks))
+				}
+			}
+			if toolSpec.Params["blacklist"] != "" {
+				blacklistArray := strings.Split(toolSpec.Params["blacklist"], ",")
+				options = append(options, scraper.WithBlacklist(blacklistArray))
+			}
+			tool, err := scraper.New(options...)
+			if err != nil {
+				klog.Errorf("failed to create a new scraper tool:", err)
 				continue
 			}
 			allowedTools = append(allowedTools, tool)

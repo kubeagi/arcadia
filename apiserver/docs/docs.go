@@ -1158,13 +1158,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "application name",
-                        "name": "appName",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "type": "integer",
                         "description": "default is 1",
                         "name": "page",
@@ -1244,13 +1237,6 @@ const docTemplate = `{
                         "name": "namespace",
                         "in": "header",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "application name",
-                        "name": "appName",
-                        "in": "query",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1307,13 +1293,6 @@ const docTemplate = `{
                         "description": "Name of the bucket",
                         "name": "namespace",
                         "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "application name",
-                        "name": "appName",
-                        "in": "query",
                         "required": true
                     }
                 ],
@@ -1389,6 +1368,17 @@ const docTemplate = `{
                     "description": "ConversationID, if it is empty, a new conversation will be created",
                     "type": "string",
                     "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
+                },
+                "files": {
+                    "description": "Files this conversation will use in the context",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "test.pdf",
+                        "song.mp3"
+                    ]
                 },
                 "query": {
                     "description": "Query user query string",

@@ -21,6 +21,7 @@ import (
 
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/tools"
+	"k8s.io/klog/v2"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/tools/weather/internal"
@@ -53,6 +54,7 @@ func (t Tool) Description() string {
 }
 
 func (t Tool) Call(ctx context.Context, input string) (string, error) {
+	klog.Infof("running tool %s", ToolName)
 	if t.CallbacksHandler != nil {
 		t.CallbacksHandler.HandleToolStart(ctx, input)
 	}

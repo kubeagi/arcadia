@@ -147,7 +147,7 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 		return nil, err
 	}
 	klog.FromContext(ctx).Info("begin to run application", "appName", req.APPName, "appNamespace", req.AppNamespace)
-	out, err := appRun.Run(ctx, c, respStream, appruntime.Input{Question: req.Query, NeedStream: req.ResponseMode.IsStreaming(), History: history})
+	out, err := appRun.Run(ctx, c, respStream, appruntime.Input{Question: req.Query, Files: req.Files, NeedStream: req.ResponseMode.IsStreaming(), History: history})
 	if err != nil {
 		return nil, err
 	}

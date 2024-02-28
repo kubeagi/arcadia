@@ -41,7 +41,7 @@ import (
 
 const (
 	// Time interval to check if the chat stream should be closed if no more message arrives
-	WaitTimeoutForChatStreaming = 5
+	WaitTimeoutForChatStreaming = 10
 	// default prompt starter
 	PromptLimit = 4
 )
@@ -121,6 +121,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 			// Use a ticker to check if there is no data arrived and close the stream
 			// TODO: check if any better solution for this?
 			hasData := true
+			beginStream := false
 			ticker := time.NewTicker(WaitTimeoutForChatStreaming * time.Second)
 			quit := make(chan struct{})
 			defer close(quit)
@@ -128,11 +129,14 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 				for {
 					select {
 					case <-ticker.C:
-						// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
-						if !hasData {
-							close(respStream)
+						// Only check if the stream is initialized
+						if beginStream {
+							// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
+							if !hasData {
+								close(respStream)
+							}
+							hasData = false
 						}
-						hasData = false
 					case <-quit:
 						ticker.Stop()
 						return
@@ -153,6 +157,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						CreatedAt:      time.Now(),
 						Latency:        time.Since(req.StartTime).Milliseconds(),
 					})
+					beginStream = true
 					hasData = true
 					buf.WriteString(msg)
 					return true
