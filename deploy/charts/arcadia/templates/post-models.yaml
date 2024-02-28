@@ -20,11 +20,13 @@ spec:
     官网: https://www.baichuan-ai.com/
     Github: https://github.com/baichuan-inc/Baichuan2
     HuggingFace: https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat
-    ModelScope: https://modelscope.cn/models/baichuan-inc/Baichuan2-7B-Chat/summary
+    ModelScope: https://modelscope.cn/models/baichuan-inc/Baichuan2-7B-Chat
     arXiv: https://arxiv.org/abs/2309.10305
 
     百川智能成立于2023年4月10日,由前搜狗公司CEO王小川创立。公司以帮助大众轻松、普惠地获取世界知识和专业服务为使命,致力于通过语言AI的突破,构建中国最优秀的大模型底座。
   types: "llm"
+  huggingFaceRepo: baichuan-inc/Baichuan2-7B-Chat
+  modelScopeRepo: baichuan-inc/Baichuan2-7B-Chat
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -56,6 +58,8 @@ spec:
 
     北京智谱华章科技有限公司由清华大学计算机系技术成果转化而来,致力于打造新一代认知智能大模型,专注于做大模型的中国创新。
   types: "llm"
+  huggingFaceRepo: THUDM/chatglm2-6b
+  modelScopeRepo: ZhipuAI/chatglm2-6b
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -88,6 +92,8 @@ spec:
 
     通义为阿里云大模型的统一品牌,覆盖语言、听觉、多模态等领域,致力于实现类人智慧的通用智能。
   types: "llm"
+  huggingFaceRepo: Qwen/Qwen-7B-Chat
+  modelScopeRepo: qwen/Qwen-7B-Chat
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -120,4 +126,26 @@ spec:
 
     北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
   types: "embedding"
+  huggingFaceRepo: BAAI/bge-large-zh-v1.5
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: bge-reranker-large
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+spec:
+  displayName: "bge-reranker-large"
+  description: |
+    bge-raranker-large 是一个通用reranking,由北京智源人工智能研究院(BAAI)推出,同时支持中英文
 
+    官网: https://www.baai.ac.cn/
+    Github: https://github.com/FlagOpen/FlagEmbedding
+    HuggingFace: https://huggingface.co/BAAI/bge-reranker-large
+    arXiv: https://arxiv.org/pdf/2309.07597
+
+    北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
+  types: "reranking"
+  huggingFaceRepo: BAAI/bge-reranker-large

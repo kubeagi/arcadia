@@ -12,7 +12,7 @@ global:
 # @param resources Resources to be used
 controller:
   loglevel: 3
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.2.0
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -27,7 +27,7 @@ controller:
 apiserver:
   bingKey: c30e4d7f3ec24c31a489f883616844b5
   loglevel: 3
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.2.0
   enableplayground: false
   port: 8081
   ingress:
@@ -45,7 +45,7 @@ apiserver:
 portal:
   enabled: true
   kubebbEnabled: true
-  image: kubeagi/ops-console:latest
+  image: kubeagi/ops-console:v0.2.0
   port: 80
   ingress:
     path: kubeagi-portal-public
@@ -108,7 +108,7 @@ minio:
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
   enabled: true
-  image: kubeagi/data-processing:latest
+  image: kubeagi/data-processing:v0.2.0
   port: 28888
   config:
     llm:

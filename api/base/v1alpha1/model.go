@@ -28,7 +28,10 @@ const (
 	// LabelModelEmbedding indicates this is a embedding model
 	LabelModelEmbedding = Group + "/embedding"
 	// LabelModelLLM indicates this is a llm model
-	LabelModelLLM      = Group + "/llm"
+	LabelModelLLM = Group + "/llm"
+	// LabelModelReranking indicates this is a reranking model
+	LabelModelReranking = Group + "/reranking"
+	// LabelModelFullPath indicates the full path in storage
 	LabelModelFullPath = Group + "/full-path"
 )
 
@@ -46,6 +49,16 @@ func (model Model) IsLLMModel() bool {
 func (model Model) IsEmbeddingModel() bool {
 	for _, t := range strings.Split(model.Spec.Types, ",") {
 		if strings.ToLower(t) == "embedding" {
+			return true
+		}
+	}
+	return false
+}
+
+// IsRerankingModel checks whether this model is a reranking model
+func (model Model) IsRerankingModel() bool {
+	for _, t := range strings.Split(model.Spec.Types, ",") {
+		if strings.ToLower(t) == "reranking" {
 			return true
 		}
 	}
