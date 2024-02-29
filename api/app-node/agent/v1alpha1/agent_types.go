@@ -42,6 +42,9 @@ type AgentConfig struct {
 
 // Options defines the options to be used by agent
 type Options struct {
+	// Whether to show tool action in the streaming output
+	// +kubebuilder:default=false
+	ShowToolAction bool `json:"showToolAction,omitempty"`
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=10
 	// +kubebuilder:default=5

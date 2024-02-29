@@ -54,7 +54,7 @@ func NewDocumentLoader(baseNode base.BaseNode) *DocumentLoader {
 func (dl *DocumentLoader) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
 	instance := &v1alpha1.DocumentLoader{}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, instance); err != nil {
-		return fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
+		return fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
 	dl.Instance = instance
 	return nil

@@ -67,6 +67,10 @@ spec:
                     maximum: 10
                     minimum: 1
                     type: integer
+                  showToolAction:
+                    default: false
+                    description: Whether to show tool action in the streaming output
+                    type: boolean
                 type: object
               type:
                 default: zeroShot
