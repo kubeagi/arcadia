@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -139,6 +140,8 @@ func (r *PromptReconciler) CallLLM(ctx context.Context, logger logr.Logger, prom
 		if err != nil {
 			return r.UpdateStatus(ctx, prompt, nil, err)
 		}
+	case llms.Gemini:
+		return r.UpdateStatus(ctx, prompt, nil, errors.New("not implemented yet"))
 	default:
 		llmClient = llms.NewUnknowLLM()
 	}

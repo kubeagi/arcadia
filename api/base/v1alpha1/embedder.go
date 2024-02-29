@@ -77,6 +77,8 @@ func (e Embedder) Get3rdPartyModels() []string {
 		return embeddings.ZhiPuAIModels
 	case embeddings.OpenAI:
 		return embeddings.OpenAIModels
+	case embeddings.Gemini:
+		return embeddings.GeminiModels
 	}
 
 	return []string{}

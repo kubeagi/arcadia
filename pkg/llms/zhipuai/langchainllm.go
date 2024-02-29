@@ -21,14 +21,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/rand"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/r3labs/sse/v2"
+	"github.com/tmc/langchaingo/callbacks"
 	langchainllm "github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
 )
@@ -39,11 +39,12 @@ var (
 )
 
 var (
-	_ langchainllm.LLM = (*ZhiPuAILLM)(nil)
+	_ langchainllm.Model = (*ZhiPuAILLM)(nil)
 )
 
 type options struct {
-	retryTimes int
+	retryTimes       int
+	callbacksHandler callbacks.Handler
 }
 
 type Option func(*options)
@@ -51,6 +52,12 @@ type Option func(*options)
 func WithRetryTimes(retryTimes int) Option {
 	return func(o *options) {
 		o.retryTimes = retryTimes
+	}
+}
+
+func WithCallback(callbacksHandler callbacks.Handler) Option {
+	return func(o *options) {
+		o.callbacksHandler = callbacksHandler
 	}
 }
 
@@ -78,22 +85,38 @@ func (z *ZhiPuAILLM) GetNumTokens(text string) int {
 }
 
 func (z *ZhiPuAILLM) Call(ctx context.Context, prompt string, options ...langchainllm.CallOption) (string, error) {
-	r, err := z.Generate(ctx, []string{prompt}, options...)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate: %w", err)
-	}
-	if len(r) == 0 {
-		return "", ErrEmptyResponse
-	}
-	return r[0].Text, nil
+	return langchainllm.GenerateFromSinglePrompt(ctx, z, prompt, options...)
 }
 
-func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...langchainllm.CallOption) ([]*langchainllm.Generation, error) {
+func (z *ZhiPuAILLM) GenerateContent(ctx context.Context, messages []langchainllm.MessageContent, options ...langchainllm.CallOption) (*langchainllm.ContentResponse, error) {
+	if z.options.callbacksHandler != nil {
+		z.options.callbacksHandler.HandleLLMGenerateContentStart(ctx, messages)
+	}
 	opts := langchainllm.CallOptions{}
 	for _, opt := range options {
 		opt(&opts)
 	}
-	generations := make([]*langchainllm.Generation, 0, len(prompts))
+	chatMsgs := make([]*openai.ChatMessage, 0, len(messages))
+	for _, mc := range messages {
+		msg := &openai.ChatMessage{MultiContent: mc.Parts}
+		switch mc.Role {
+		case schema.ChatMessageTypeAI:
+			msg.Role = string(Assistant)
+		case schema.ChatMessageTypeHuman:
+			msg.Role = string(User)
+		case schema.ChatMessageTypeGeneric:
+			msg.Role = string(User)
+		case schema.ChatMessageTypeSystem:
+			fallthrough
+		case schema.ChatMessageTypeFunction:
+			fallthrough
+		default:
+			klog.Infof("unsupported role: %s, just skip", mc.Role)
+			continue
+		}
+
+		chatMsgs = append(chatMsgs, msg)
+	}
 	params := DefaultModelParams()
 	if opts.TopP > 0 && opts.TopP < 1 {
 		params.TopP = float32(opts.TopP)
@@ -104,71 +127,79 @@ func (z *ZhiPuAILLM) Generate(ctx context.Context, prompts []string, options ...
 	if opts.Model != "" {
 		params.Model = opts.Model
 	}
-	if len(prompts) == 0 {
+	if len(messages) == 0 {
 		return nil, ErrEmptyPrompt
 	}
-	for _, prompt := range prompts {
-		params.Prompt = append(params.Prompt, Prompt{Role: User, Content: prompt})
-		needStream := opts.StreamingFunc != nil
-		if needStream {
-			res := bytes.NewBuffer(nil)
-			err := z.c.SSEInvoke(params, func(event *sse.Event) {
-				if string(event.Event) == "finish" {
-					return
+	for _, prompt := range chatMsgs {
+		content := prompt.Content
+		if content == "" {
+			for i := range prompt.MultiContent {
+				c, ok := prompt.MultiContent[i].(langchainllm.TextContent)
+				if ok {
+					content = c.Text
 				}
-				_, _ = res.Write(event.Data)
-				_ = opts.StreamingFunc(ctx, event.Data)
-			})
-			if err != nil {
-				return nil, err
 			}
-			return []*langchainllm.Generation{
-				{
-					Text: res.String(),
-				},
-			}, nil
 		}
-		var resp *Response
-		var err error
-		i := 0
-		for {
-			i++
-			resp, err = z.c.Invoke(params)
-			if err != nil {
-				return nil, err
+		params.Prompt = append(params.Prompt, Prompt{Role: User, Content: content})
+	}
+	needStream := opts.StreamingFunc != nil
+	if needStream {
+		res := bytes.NewBuffer(nil)
+		err := z.c.SSEInvoke(params, func(event *sse.Event) {
+			if string(event.Event) == "finish" {
+				return
 			}
-			if resp == nil {
-				return nil, ErrEmptyResponse
-			}
-			if resp.Data == nil {
-				klog.Errorf("empty response: msg:%s code:%d\n", resp.Msg, resp.Code)
-				if i <= z.options.retryTimes {
-					r := rand.Intn(5)
-					klog.Infof("retry[%d], sleep %d seconds, then recall...\n", i, r)
-					time.Sleep(time.Duration(r) * time.Second)
-					continue
-				}
-				return nil, ErrEmptyResponse
-			}
-			if len(resp.Data.Choices) == 0 {
-				return nil, ErrEmptyResponse
-			}
-			break
-		}
-		generationInfo := make(map[string]any, reflect.ValueOf(resp.Data.Usage).NumField())
-		generationInfo["TotalTokens"] = resp.Data.Usage.TotalTokens
-		var s string
-		if err := json.Unmarshal([]byte(resp.Data.Choices[0].Content), &s); err != nil {
+			_, _ = res.Write(event.Data)
+			_ = opts.StreamingFunc(ctx, event.Data)
+		})
+		if err != nil {
 			return nil, err
 		}
-		msg := &schema.AIChatMessage{
-			Content: strings.TrimSpace(s),
-		}
-		generations = append(generations, &langchainllm.Generation{
-			Message:        msg,
-			Text:           msg.Content,
-			GenerationInfo: generationInfo,
-		})
+		return &langchainllm.ContentResponse{Choices: []*langchainllm.ContentChoice{{Content: res.String()}}}, nil
 	}
-	return generations, nil
+	var resp *Response
+	var err error
+	i := 0
+	for {
+		i++
+		resp, err = z.c.Invoke(params)
+		if err != nil {
+			return nil, err
+		}
+		if resp == nil {
+			return nil, ErrEmptyResponse
+		}
+		if resp.Data == nil {
+			klog.Errorf("empty response: msg:%s code:%d\n", resp.Msg, resp.Code)
+			if i <= z.options.retryTimes {
+				r := rand.Intn(5)
+				klog.Infof("retry[%d], sleep %d seconds, then recall...\n", i, r)
+				time.Sleep(time.Duration(r) * time.Second)
+				continue
+			}
+			return nil, ErrEmptyResponse
+		}
+		if len(resp.Data.Choices) == 0 {
+			return nil, ErrEmptyResponse
+		}
+		break
+	}
+	generationInfo := make(map[string]any, reflect.ValueOf(resp.Data.Usage).NumField())
+	generationInfo["TotalTokens"] = resp.Data.Usage.TotalTokens
+	choices := make([]*langchainllm.ContentChoice, 0, len(resp.Data.Choices))
+	for _, c := range resp.Data.Choices {
+		var s string
+		if err := json.Unmarshal([]byte(c.Content), &s); err == nil {
+			choices = append(choices, &langchainllm.ContentChoice{
+				Content:        s,
+				GenerationInfo: generationInfo,
+			})
+		}
+	}
+
+	response := &langchainllm.ContentResponse{Choices: choices}
+	if z.options.callbacksHandler != nil {
+		z.options.callbacksHandler.HandleLLMGenerateContentEnd(ctx, response)
+	}
+	return response, nil
 }

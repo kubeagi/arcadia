@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-logr/logr"
 	langchainllms "github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/googleai"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -214,6 +215,19 @@ func (r *LLMReconciler) check3rdPartyLLM(ctx context.Context, logger logr.Logger
 				return r.UpdateStatus(ctx, instance, nil, err)
 			}
 			msg = strings.Join([]string{msg, res.String()}, "\n")
+		}
+	case llms.Gemini:
+		llmClient, err := googleai.New(ctx, googleai.WithAPIKey(apiKey))
+		if err != nil {
+			return r.UpdateStatus(ctx, instance, nil, err)
+		}
+		// validate against models
+		for _, model := range models {
+			res, err := llmClient.Call(ctx, "Hello", langchainllms.WithModel(model))
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			msg = strings.Join([]string{msg, res}, "\n")
 		}
 	default:
 		return r.UpdateStatus(ctx, instance, nil, fmt.Errorf("unsupported service type: %s", instance.Spec.Type))

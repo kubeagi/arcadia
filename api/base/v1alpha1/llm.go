@@ -87,6 +87,8 @@ func (llm LLM) Get3rdPartyModels() []string {
 		return llms.ZhiPuAIModels
 	case llms.OpenAI:
 		return llms.OpenAIModels
+	case llms.Gemini:
+		return llms.GeminiModels
 	}
 	return []string{}
 }

@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	langchainembeddings "github.com/tmc/langchaingo/embeddings"
+	"github.com/tmc/langchaingo/llms/googleai"
 	langchainopenai "github.com/tmc/langchaingo/llms/openai"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -213,6 +214,27 @@ func (r *EmbedderReconciler) check3rdPartyEmbedder(ctx context.Context, logger l
 				langchainopenai.WithBaseURL(instance.Spec.Endpoint.URL),
 				langchainopenai.WithToken(apiKey),
 				langchainopenai.WithModel(model),
+			)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			embedClient, err := langchainembeddings.NewEmbedder(llm)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			_, err = embedClient.EmbedQuery(ctx, embedingText)
+			if err != nil {
+				return r.UpdateStatus(ctx, instance, nil, err)
+			}
+			msg = "Success"
+		}
+	case embeddings.Gemini:
+		// validate all embedding models
+		for _, model := range models {
+			llm, err := googleai.New(
+				ctx,
+				googleai.WithAPIKey(apiKey),
+				googleai.WithDefaultEmbeddingModel(model),
 			)
 			if err != nil {
 				return r.UpdateStatus(ctx, instance, nil, err)

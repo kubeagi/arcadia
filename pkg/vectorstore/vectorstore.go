@@ -92,7 +92,12 @@ func RemoveCollection(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.
 			log.Error(err, "reconcile delete: init pgvector error, may leave garbage data")
 			return err
 		}
-		if err = v.RemoveCollection(ctx); err != nil {
+		tx, err := v.Conn.Begin(ctx)
+		if err != nil {
+			log.Error(err, "reconcile delete: get tx error, may leave garbage data")
+			return err
+		}
+		if err = v.RemoveCollection(ctx, tx); err != nil {
 			log.Error(err, "reconcile delete: remove vector store error, may leave garbage data")
 			return err
 		}
