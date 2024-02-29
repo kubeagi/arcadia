@@ -71,6 +71,9 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 				continue
 			}
 			allowedTools = append(allowedTools, tool)
+		case "calculator":
+			tool := tools.Calculator{}
+			allowedTools = append(allowedTools, tool)
 		case "scraper":
 			// prepare options from toolSpec
 			options := make([]scraper.Options, 0)
@@ -116,9 +119,12 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	// Initialize executor using langchaingo
 	executorOptions := func(o *agents.CreationOptions) {
 		agents.WithMaxIterations(instance.Spec.Options.MaxIterations)(o)
-		if needStream, ok := args["_need_stream"].(bool); ok && needStream {
-			streamHandler := StreamHandler{callbacks.SimpleHandler{}, args}
-			agents.WithCallbacksHandler(streamHandler)(o)
+		// Only show tool action in the streaming output if configured
+		if instance.Spec.Options.ShowToolAction {
+			if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+				streamHandler := StreamHandler{callbacks.SimpleHandler{}, args}
+				agents.WithCallbacksHandler(streamHandler)(o)
+			}
 		}
 	}
 	executor, err := agents.Initialize(llm, allowedTools, agents.ZeroShotReactDescription, executorOptions)

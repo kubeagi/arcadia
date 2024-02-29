@@ -85,6 +85,9 @@ type ApplicationReconciler struct {
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=agents,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=agents/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=agents/finalizers,verbs=update
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=documentloaders,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=documentloaders/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=arcadia.kubeagi.k8s.com.cn,resources=documentloaders/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
