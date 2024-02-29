@@ -44,6 +44,12 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
+              docNullReturn:
+                description: DocNullReturn is the return statement when the query
+                  result is empty from the retriever. If this field is not empty and
+                  no result is returned by retriever, the app chat api will return
+                  this value directly, without call LLM.
+                type: string
               icon:
                 description: Icon base64 image icon
                 type: string

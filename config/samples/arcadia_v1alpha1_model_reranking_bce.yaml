@@ -1,0 +1,15 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: bce-reranker
+  namespace: arcadia
+spec:
+  displayName: "bce-reranker-large"
+  description: |
+    BCEmbedding是由网易有道开发的中英双语和跨语种语义表征算法模型库，其中包含 EmbeddingModel和 RerankerModel两类基础模型。
+    EmbeddingModel专门用于生成语义向量，在语义搜索和问答中起着关键作用，而 RerankerModel擅长优化语义搜索结果和语义相关顺序精排。
+
+    Github: https://github.com/netease-youdao/BCEmbedding
+    HuggingFace: https://huggingface.co/maidalun1020/bce-reranker-base_v1
+  types: "reranking"
+  huggingFaceRepo: maidalun1020/bce-reranker-base_v1

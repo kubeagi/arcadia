@@ -56,7 +56,7 @@ func (l *LLMChain) Init(ctx context.Context, cli client.Client, args map[string]
 }
 
 func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
-	v1, ok := args["llm"]
+	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
 	}
@@ -98,7 +98,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	// _history is optional
 	// if set ,only ChatMessageHistory allowed
 	var history langchaingoschema.ChatMessageHistory
-	if v3, ok := args["_history"]; ok && v3 != nil {
+	if v3, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]; ok && v3 != nil {
 		history, ok = v3.(langchaingoschema.ChatMessageHistory)
 		if !ok {
 			return args, errors.New("history not memory.ChatMessageHistory")
@@ -106,9 +106,9 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	}
 
 	// Add the answer to the context if it's not empty
-	if args["_answer"] != nil {
-		klog.Infoln("get answer from upstream:", args["_answer"])
-		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args["_answer"])
+	if args[base.OutputAnserKeyInArg] != nil {
+		klog.Infoln("get answer from upstream:", args[base.OutputAnserKeyInArg])
+		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args[base.OutputAnserKeyInArg])
 	}
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
@@ -118,7 +118,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 
 	var out string
 	needStream := false
-	needStream, ok = args["_need_stream"].(bool)
+	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
 	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
@@ -132,7 +132,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
-		args["_answer"] = out
+		args[base.OutputAnserKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("llmchain run error: %w", err)

@@ -41,6 +41,8 @@ const (
 	WorkerPodSelectorLabel = "app.kubernetes.io/name"
 	WorkerPodLabel         = Group + "/worker"
 	WorkerModelTypesLabel  = Group + "/modeltypes"
+
+	DefaultWorkerPort = 21002
 )
 
 func DefaultWorkerType() WorkerType {

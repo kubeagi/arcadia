@@ -38,11 +38,8 @@ type CommonRetrieverConfig struct {
 	// NumDocuments is the max number of documents to return.
 	// +kubebuilder:default=5
 	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=10
+	// +kubebuilder:validation:Maximum=50
 	NumDocuments int `json:"numDocuments,omitempty"`
-	// DocNullReturn is the return statement when the query result is empty from the retriever.
-	// +kubebuilder:default="未找到您询问的内容，请详细描述您的问题"
-	DocNullReturn string `json:"docNullReturn,omitempty"`
 }
 
 // KnowledgeBaseRetrieverStatus defines the observed state of KnowledgeBaseRetriever

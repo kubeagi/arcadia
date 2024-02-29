@@ -179,7 +179,7 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 				arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
 			},
 			Ports: []corev1.ServicePort{
-				{Name: "http", Port: 21002, TargetPort: intstr.Parse("http"), Protocol: corev1.ProtocolTCP},
+				{Name: "http", Port: arcadiav1alpha1.DefaultWorkerPort, TargetPort: intstr.Parse("http"), Protocol: corev1.ProtocolTCP},
 			},
 		},
 	}

@@ -120,13 +120,13 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
 			{Name: "FASTCHAT_REGISTRATION_MODEL_NAME", Value: runner.w.MakeRegistrationModelName()},
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
-			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
+			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:%d", runner.w.Name+WokerCommonSuffix, runner.w.Namespace, arcadiav1alpha1.DefaultWorkerPort)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
 			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
 			{Name: "EXTRA_ARGS", Value: extraArgs},
 		},
 		Ports: []corev1.ContainerPort{
-			{Name: "http", ContainerPort: 21002},
+			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "models", MountPath: "/data/models"},
@@ -241,7 +241,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_WORKER_NAMESPACE", Value: runner.w.Namespace},
 			{Name: "FASTCHAT_REGISTRATION_MODEL_NAME", Value: runner.w.MakeRegistrationModelName()},
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
-			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
+			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:%d", runner.w.Name+WokerCommonSuffix, runner.w.Namespace, arcadiav1alpha1.DefaultWorkerPort)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
 			{Name: "EXTRA_ARGS", Value: extraAgrs},
 			// Need python version and ray address for distributed inference
@@ -249,7 +249,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
 		},
 		Ports: []corev1.ContainerPort{
-			{Name: "http", ContainerPort: 21002},
+			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "models", MountPath: "/data/models"},
@@ -326,14 +326,14 @@ func (runner *KubeAGIRunner) Build(ctx context.Context, model *arcadiav1alpha1.T
 		Image:           img,
 		ImagePullPolicy: runner.w.Spec.Runner.ImagePullPolicy,
 		Command: []string{
-			"python", "kubeagi_cli/cli.py", "serve", "--host", "0.0.0.0", "--port", "21002",
+			"python", "kubeagi_cli/cli.py", "serve", "--host", "0.0.0.0", "--port", fmt.Sprintf("%d", arcadiav1alpha1.DefaultWorkerPort),
 		},
 		Env: []corev1.EnvVar{
 			// Only reranking supported for now
 			{Name: "RERANKING_MODEL_PATH", Value: rerankModelPath},
 		},
 		Ports: []corev1.ContainerPort{
-			{Name: "http", ContainerPort: 21002},
+			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "models", MountPath: mountPath},

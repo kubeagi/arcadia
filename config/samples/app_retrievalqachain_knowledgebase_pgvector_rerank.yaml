@@ -1,7 +1,7 @@
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Application
 metadata:
-  name: base-chat-with-knowledgebase
+  name: base-chat-with-knowledgebase-pgvector-rerank
   namespace: arcadia
 spec:
   displayName: "知识库应用"
@@ -38,7 +38,7 @@ spec:
       ref:
         apiGroup: arcadia.kubeagi.k8s.com.cn
         kind: KnowledgeBase
-        name: knowledgebase-sample
+        name: knowledgebase-sample-pgvector
       nextNodeName: ["retriever-node"]
     - name: retriever-node
       displayName: "从知识库提取信息的retriever"
@@ -46,7 +46,15 @@ spec:
       ref:
         apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
         kind: KnowledgeBaseRetriever
-        name: base-chat-with-knowledgebase
+        name: base-chat-with-knowledgebase-pgvector-1
+      nextNodeName: ["rerank-retriever-node"]
+    - name: rerank-retriever-node
+      displayName: "rerank retriever"
+      description: "重排"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: RerankRetriever
+        name: base-chat-with-knowledgebase-pgvector-rerank
       nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "RetrievalQA chain"
@@ -63,47 +71,32 @@ spec:
         kind: Output
         name: Output
 ---
-apiVersion: prompt.arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: Prompt
-metadata:
-  name: base-chat-with-knowledgebase
-  namespace: arcadia
-  annotations:
-    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
-    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
-spec:
-  displayName: "设定知识库应用的prompt"
-  description: "设定知识库应用的prompt, 来自 https://github.com/tmc/langchaingo/blob/af36340149bbf35ae51c80357fa80bf648c33512/chains/question_answering.go#L9"
-  userMessage: |
-    Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.  
-    
-    {{.context}}
-    
-    Question: {{.question}}
-    
-    Helpful Answer:
----
-apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
-kind: RetrievalQAChain
-metadata:
-  name: base-chat-with-knowledgebase
-  namespace: arcadia
-  annotations:
-    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"LLM","group":"arcadia.kubeagi.k8s.com.cn","length":1},{"kind":"prompt","group":"prompt.arcadia.kubeagi.k8s.com.cn","length":1},{"group":"retriever.arcadia.kubeagi.k8s.com.cn","length":1}]'
-    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"Output","length":1}]'
-spec:
-  displayName: "RetrievalQAChain"
-  description: "用于搜索QA的Chain"
-  memory:
-    maxTokenLimit: 20480
----
 apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: KnowledgeBaseRetriever
 metadata:
-  name: base-chat-with-knowledgebase
+  name: base-chat-with-knowledgebase-pgvector-1
   namespace: arcadia
   annotations:
     arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"KnowledgeBase","group":"arcadia.kubeagi.k8s.com.cn","length":1}]'
     arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
 spec:
   displayName: "从知识库获取信息的Retriever"
+  scoreThreshold: 0.3
+  numDocuments: 50
+---
+apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: RerankRetriever
+metadata:
+  name: base-chat-with-knowledgebase-pgvector-rerank
+  namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"KnowledgeBase","group":"arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
+spec:
+  displayName: "rerank Retriever"
+  scoreThreshold: 0.1
+  numDocuments: 3
+  model:
+    kind: "Model"
+    name: bce-reranker
+    namespace: arcadia

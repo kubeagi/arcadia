@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/appruntime/log"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/llms"
 	"github.com/kubeagi/arcadia/pkg/llms/zhipuai"
@@ -47,7 +48,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 		}
 		switch llm.Spec.Type {
 		case llms.ZhiPuAI:
-			return zhipuai.NewZhiPuAILLM(apiKey, zhipuai.WithRetryTimes(3)), nil
+			return zhipuai.NewZhiPuAILLM(apiKey, zhipuai.WithRetryTimes(3), zhipuai.WithCallback(log.KLogHandler{LogLevel: 3})), nil
 		case llms.OpenAI:
 			// When apitype is OpenAI,there are two possible sources:
 			// 1. From official OpenAI
@@ -60,7 +61,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 				}
 				model = models[0]
 			}
-			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model))
+			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model), openai.WithCallback(log.KLogHandler{LogLevel: 3}))
 		case llms.Gemini:
 			if model == "" {
 				models := llm.GetModelList()
@@ -69,7 +70,12 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 				}
 				model = models[0]
 			}
-			return googleai.New(ctx, googleai.WithAPIKey(apiKey), googleai.WithDefaultModel(model))
+			googleLLM, err := googleai.New(ctx, googleai.WithAPIKey(apiKey), googleai.WithDefaultModel(model))
+			if err != nil {
+				return nil, err
+			}
+			googleLLM.CallbacksHandler = log.GeminiKLogHandler{KLogHandler: &log.KLogHandler{LogLevel: 3}}
+			return googleLLM, nil
 		}
 	case v1alpha1.ProviderTypeWorker:
 		gateway, err := config.GetGateway(ctx, c)
@@ -98,7 +104,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 		if os.Getenv(GatewayUseExternalURLEnv) == "true" {
 			gatewayURL = gateway.ExternalAPIServer
 		}
-		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatewayURL), openai.WithToken("fake"))
+		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatewayURL), openai.WithToken("fake"), openai.WithCallback(log.KLogHandler{LogLevel: 3}))
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }

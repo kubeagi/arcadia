@@ -59,7 +59,7 @@ const (
 
 	waitLonger  = time.Hour
 	waitSmaller = time.Second * 3
-	waitMedium  = time.Second * 30
+	waitMedium  = time.Minute
 )
 
 var (

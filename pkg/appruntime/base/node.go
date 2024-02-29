@@ -121,3 +121,9 @@ func (c *BaseNode) Ready() (bool, string) {
 
 func (c *BaseNode) Cleanup() {
 }
+
+type RetrieverGetNullDocError struct {
+	Msg string
+}
+
+func (e *RetrieverGetNullDocError) Error() string { return e.Msg }

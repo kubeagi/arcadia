@@ -22,6 +22,8 @@ import (
 
 	"github.com/tmc/langchaingo/callbacks"
 	"k8s.io/klog/v2"
+
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
 // StreamHandler is a callback handler that prints to the standard output streaming.
@@ -34,13 +36,13 @@ var _ callbacks.Handler = StreamHandler{}
 
 func (handler StreamHandler) HandleStreamingFunc(ctx context.Context, chunk []byte) {
 	logger := klog.FromContext(ctx)
-	if _, ok := handler.args["_answer_stream"]; !ok {
+	if _, ok := handler.args[base.OutputAnserStreamChanKeyInArg]; !ok {
 		logger.Info("no _answer_stream found, create a new one")
-		handler.args["_answer_stream"] = make(chan string)
+		handler.args[base.OutputAnserStreamChanKeyInArg] = make(chan string)
 	}
-	streamChan, ok := handler.args["_answer_stream"].(chan string)
+	streamChan, ok := handler.args[base.OutputAnserStreamChanKeyInArg].(chan string)
 	if !ok {
-		err := fmt.Errorf("answer_stream is not chan string, but %T", handler.args["_answer_stream"])
+		err := fmt.Errorf("answer_stream is not chan string, but %T", handler.args[base.OutputAnserStreamChanKeyInArg])
 		logger.Error(err, "answer_stream is not chan string")
 		return
 	}

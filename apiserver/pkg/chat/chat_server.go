@@ -255,7 +255,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 					klog.Infof("init llm err:%s, abort", err)
 					return nil, err
 				}
-				model = l.LLM
+				model = l.Model
 			case "knowledgebase":
 				k := knowledgebase.NewKnowledgebase(baseNode)
 				if err := k.Init(ctx, c, nil); err != nil {

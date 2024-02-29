@@ -99,6 +99,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		ShowNextGuide:     pointer.Bool(app.Spec.ShowNextGuide),
 		ShowRespInfo:      pointer.Bool(app.Spec.ShowRespInfo),
 		ShowRetrievalInfo: pointer.Bool(app.Spec.ShowRetrievalInfo),
+		DocNullReturn:     pointer.String(app.Spec.DocNullReturn),
 	}
 	if prompt != nil {
 		gApp.UserPrompt = pointer.String(prompt.Spec.UserMessage)
@@ -132,7 +133,6 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	if retriever != nil {
 		gApp.ScoreThreshold = pointer.Float64(float64(retriever.Spec.ScoreThreshold))
 		gApp.NumDocuments = pointer.Int(retriever.Spec.NumDocuments)
-		gApp.DocNullReturn = pointer.String(retriever.Spec.DocNullReturn)
 	}
 	addDefaultValue(gApp, app)
 	return gApp, nil
@@ -511,14 +511,12 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 				CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
 					ScoreThreshold: float32(pointer.Float64Deref(input.ScoreThreshold, 0)),
 					NumDocuments:   pointer.IntDeref(input.NumDocuments, 0),
-					DocNullReturn:  pointer.StringDeref(input.DocNullReturn, ""),
 				},
 			},
 		}
 		if _, err = controllerutil.CreateOrUpdate(ctx, c, retriever, func() error {
 			retriever.Spec.ScoreThreshold = float32(pointer.Float64Deref(input.ScoreThreshold, float64(retriever.Spec.ScoreThreshold)))
 			retriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, retriever.Spec.NumDocuments)
-			retriever.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, retriever.Spec.DocNullReturn)
 			return nil
 		}); err != nil {
 			return nil, err
@@ -580,6 +578,7 @@ func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfi
 	app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
 	app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
 	app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
+	app.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, app.Spec.DocNullReturn)
 	return nil
 }
 
