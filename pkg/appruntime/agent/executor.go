@@ -112,7 +112,8 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 			}
 			allowedTools = append(allowedTools, tool)
 		default:
-			return nil, fmt.Errorf("no tool found with name: %s", toolSpec.Name)
+			// Just continue if the tool does not exist
+			klog.Errorln("no tool found with name: %s", toolSpec.Name)
 		}
 	}
 
@@ -138,9 +139,6 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		return args, fmt.Errorf("error when call agent: %w", err)
 	}
 	klog.FromContext(ctx).V(5).Info("use agent, blocking out:", response["output"])
-	if err == nil {
-		args["_answer"] = response["output"]
-		return args, nil
-	}
+	args["_answer"] = response["output"]
 	return args, nil
 }

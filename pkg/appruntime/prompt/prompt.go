@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/tmc/langchaingo/prompts"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,7 +70,15 @@ func (p *Prompt) Run(ctx context.Context, cli client.Client, args map[string]any
 		}
 		ps = append(ps, prompts.NewHumanMessagePromptTemplate(instance.Spec.UserMessage, []string{"question"}))
 	}
-	template := prompts.NewChatPromptTemplate(ps)
+	template := prompts.ChatPromptTemplate{
+		Messages: ps,
+		// Add the date function to the prompt, and it'll be called when the prompt template is rendered
+		PartialVariables: map[string]any{
+			"date": func() string {
+				return fmt.Sprintf("%s %s", time.Now().Format("2006-01-02"), time.Now().Weekday())
+			},
+		},
+	}
 	// todo format
 	p.ChatPromptTemplate = template
 	args["prompt"] = p
