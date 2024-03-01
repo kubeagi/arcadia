@@ -16,17 +16,16 @@ from typing import Union
 
 import pandas as pd
 from datasets import Dataset
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from ragas import evaluate
-from ragas.embeddings import RagasEmbeddings
-from ragas.llms import LangchainLLM, RagasLLM
+from ragas.llms import BaseRagasLLM
+from ragas.embeddings import BaseRagasEmbeddings, LangchainEmbeddingsWrapper
 from ragas.metrics import (AnswerCorrectness, AnswerRelevancy,
                            AnswerSimilarity, ContextPrecision, ContextRecall,
                            ContextRelevancy, Faithfulness)
 from ragas.metrics.base import Metric
-from ragas.utils import NO_KEY
-from ragas_once.embeddings.openai import OpenAIEmbeddings
 
+NO_KEY = "NO_KEY"
 
 class RagasEval:
     """
@@ -42,16 +41,18 @@ class RagasEval:
 
     # use openai llm&embedding by default
     api_base: str = "https://api.openai.com/v1"
+    embedding_base: str
     api_key: str = "fake"
     llm_model: str = "gpt-3.5-turbo"
     embedding_model: str = "text-embedding-ada-002"
 
-    llm: RagasLLM
-    embeddings: RagasEmbeddings
+    llm: BaseRagasLLM
+    embeddings: BaseRagasEmbeddings
 
     def __init__(
         self,
         api_base: str = NO_KEY,
+        embedding_base: str = NO_KEY,
         api_key: str = NO_KEY,
         llm_model: str = NO_KEY,
         embedding_model: str = NO_KEY,
@@ -63,21 +64,25 @@ class RagasEval:
         self.embedding_model = (
             embedding_model if embedding_model != NO_KEY else self.embedding_model
         )
-
-        # Initialize judge llm
-        self.llm = LangchainLLM(
-            llm=ChatOpenAI(
-                model_name=self.llm_model,
-                openai_api_key=self.api_key,
-                openai_api_base=self.api_base,
-            )
+        # Using the same base as the LLM API if not set
+        self.embedding_base = (
+            embedding_base if embedding_base != NO_KEY else self.api_base
         )
 
+        # Initialize judge llm
+        self.llm = ChatOpenAI(
+                model=self.llm_model,
+                api_key=self.api_key,
+                base_url=self.api_base,
+            )
+
         # Initialize judge embedding
-        self.embeddings = OpenAIEmbeddings(
-            api_key=self.api_key,
-            api_base=self.api_base,
-            model_name=self.embedding_model,
+        self.embeddings = LangchainEmbeddingsWrapper(
+            OpenAIEmbeddings(
+                api_key=self.api_key,
+                base_url=self.embedding_base,
+                model=self.embedding_model,
+            )
         )
 
     def prepare_dataset(self, dataset: str = NO_KEY) -> Dataset:

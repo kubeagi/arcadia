@@ -14,13 +14,14 @@
 
 import os
 
-from langchain.embeddings import OpenAIEmbeddings as BaseOpenAIEmbeddings
-from ragas.embeddings import RagasEmbeddings
-from ragas.exceptions import OpenAIKeyNotFound
-from ragas.utils import NO_KEY
+from langchain_openai import OpenAIEmbeddings as BaseOpenAIEmbeddings
+from ragas.embeddings import BaseRagasEmbeddings
 
+NO_KEY = "NO_KEY"
 
-class OpenAIEmbeddings(BaseOpenAIEmbeddings, RagasEmbeddings):
+# DEPRECATED: using ragas.embeddings.LangchainEmbeddingsWrapper instead
+
+class OpenAIEmbeddings(BaseOpenAIEmbeddings, BaseRagasEmbeddings):
     api_key: str = NO_KEY
 
     def __init__(
@@ -43,4 +44,4 @@ class OpenAIEmbeddings(BaseOpenAIEmbeddings, RagasEmbeddings):
             if os_env_key != NO_KEY:
                 self.api_key = os_env_key
             else:
-                raise OpenAIKeyNotFound
+                raise ValueError("openai api key must be provided")

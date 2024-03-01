@@ -35,7 +35,14 @@ def main():
         help="Specifies the base URL for the API. Defaults to OpenAI.",
     )
     parser.add_argument(
-        "--apikey", type=str, help="Specifies the API key to authenticate requests."
+        "--embeddingbase",
+        type=str,
+        help="Specifies the base URL for the embedding API. Will use the same base as the LLM API if not set.",
+    )
+    parser.add_argument(
+        "--apikey",
+        type=str,
+        help="Specifies the API key to authenticate requests."
     )
     parser.add_argument(
         "--llm",
@@ -58,7 +65,8 @@ def main():
     parser.add_argument(
         "--dataset",
         type=str,
-        help="Specifies the path to the dataset for evaluation. Will use fiqa dataset if not set.",
+        help="Specifies the path to the dataset for evaluation.",
+        required=True,
     )
 
     args = parser.parse_args()
@@ -66,6 +74,7 @@ def main():
     # Initialize ragas_once with provided arguments
     once = RagasEval(
         api_base=args.apibase,
+        embedding_base=args.embeddingbase,
         api_key=args.apikey,
         llm_model=args.llm,
         embedding_model=args.embedding,
