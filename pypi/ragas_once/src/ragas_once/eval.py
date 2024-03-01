@@ -16,17 +16,16 @@ from typing import Union
 
 import pandas as pd
 from datasets import Dataset
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from ragas import evaluate
-from ragas.embeddings import RagasEmbeddings
-from ragas.llms import LangchainLLM, RagasLLM
+from ragas.llms import BaseRagasLLM, LangchainLLMWrapper
+from ragas.embeddings import BaseRagasEmbeddings, LangchainEmbeddingsWrapper
 from ragas.metrics import (AnswerCorrectness, AnswerRelevancy,
                            AnswerSimilarity, ContextPrecision, ContextRecall,
                            ContextRelevancy, Faithfulness)
 from ragas.metrics.base import Metric
-from ragas.utils import NO_KEY
-from ragas_once.embeddings.openai import OpenAIEmbeddings
 
+NO_KEY = "NO_KEY"
 
 class RagasEval:
     """
@@ -42,16 +41,18 @@ class RagasEval:
 
     # use openai llm&embedding by default
     api_base: str = "https://api.openai.com/v1"
+    embedding_base: str
     api_key: str = "fake"
     llm_model: str = "gpt-3.5-turbo"
     embedding_model: str = "text-embedding-ada-002"
 
-    llm: RagasLLM
-    embeddings: RagasEmbeddings
+    llm: BaseRagasLLM
+    embeddings: BaseRagasEmbeddings
 
     def __init__(
         self,
         api_base: str = NO_KEY,
+        embedding_base: str = NO_KEY,
         api_key: str = NO_KEY,
         llm_model: str = NO_KEY,
         embedding_model: str = NO_KEY,
@@ -63,21 +64,27 @@ class RagasEval:
         self.embedding_model = (
             embedding_model if embedding_model != NO_KEY else self.embedding_model
         )
+        # Using the same base as the LLM API if not set
+        self.embedding_base = (
+            embedding_base if embedding_base != NO_KEY else self.api_base
+        )
 
         # Initialize judge llm
-        self.llm = LangchainLLM(
-            llm=ChatOpenAI(
-                model_name=self.llm_model,
-                openai_api_key=self.api_key,
-                openai_api_base=self.api_base,
+        self.llm = LangchainLLMWrapper(
+            ChatOpenAI(
+                model=self.llm_model,
+                api_key=self.api_key,
+                base_url=self.api_base,
             )
         )
 
         # Initialize judge embedding
-        self.embeddings = OpenAIEmbeddings(
-            api_key=self.api_key,
-            api_base=self.api_base,
-            model_name=self.embedding_model,
+        self.embeddings = LangchainEmbeddingsWrapper(
+            OpenAIEmbeddings(
+                api_key=self.api_key,
+                base_url=self.embedding_base,
+                model=self.embedding_model,
+            )
         )
 
     def prepare_dataset(self, dataset: str = NO_KEY) -> Dataset:
@@ -99,7 +106,7 @@ class RagasEval:
             data = pd.read_csv(dataset)
         except Exception as e:
             print("An error occurred during prepare dataset:", str(e))
-            return
+            return Dataset.from_pandas(pd.DataFrame())
 
         columns_to_split = ["ground_truths", "contexts"]
         for column in columns_to_split:
@@ -122,20 +129,20 @@ class RagasEval:
         Returns:
             list[Metric]: A list of Metric objects representing the set metrics.
         """
-        context_precision = ContextPrecision(llm=self.llm, batch_size=batch_size)
-        context_recall = ContextRecall(llm=self.llm, batch_size=batch_size)
-        context_relevancy = ContextRelevancy(llm=self.llm, batch_size=batch_size)
+        context_precision = ContextPrecision(llm=self.llm)
+        context_recall = ContextRecall(llm=self.llm)
+        context_relevancy = ContextRelevancy(llm=self.llm)
 
         answer_relevancy = AnswerRelevancy(
-            llm=self.llm, embeddings=self.embeddings, batch_size=batch_size
+            llm=self.llm, embeddings=self.embeddings
         )
         answer_similarity = AnswerSimilarity(
-            llm=self.llm, embeddings=self.embeddings, batch_size=batch_size
+            llm=self.llm, embeddings=self.embeddings
         )
         answer_correctness = AnswerCorrectness(
-            llm=self.llm, answer_similarity=answer_similarity, batch_size=batch_size
+            llm=self.llm, answer_similarity=answer_similarity
         )
-        faithfulness = Faithfulness(llm=self.llm, batch_size=batch_size)
+        faithfulness = Faithfulness(llm=self.llm)
 
         ms = []
         for m in metrics:
@@ -174,7 +181,7 @@ class RagasEval:
             None
         """
         try:
-            result = evaluate(dataset, metrics, column_map)
+            result = evaluate(dataset, metrics, column_map=column_map)
         except Exception as e:
             print("An error occurred during evaluation:", str(e))
             return

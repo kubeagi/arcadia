@@ -2,8 +2,8 @@
 requires = [
     "setuptools>=61.0",
     "setuptools-scm",
-    "ragas==0.0.22",
-    "langchain==0.0.354"
+    "ragas",
+    "langchain"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -22,8 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "langchain==0.0.354",
-    "ragas==0.0.22",
+    "langchain",
+    "ragas",
 ]
 
 [project.scripts]
