@@ -1,8 +1,16 @@
-{{- if and (.Values.portal.enabled) (.Values.portal.kubebbEnabled) }}
+{{- if and (.Values.opsconsole.enabled) (.Values.opsconsole.kubebbEnabled) }}
+apiVersion: core.kubebb.k8s.com.cn/v1alpha1
+kind: Portal
+metadata:
+  name: kubeagi-portal
+spec:
+  entry: /kubeagi-portal-public/index.html
+  path: /kubeagi-portal
+
+---
 apiVersion: core.kubebb.k8s.com.cn/v1alpha1
 kind: Menu
 metadata:
-  creationTimestamp: null
   labels:
     portal: kubeagi-portal
   name: yunti-kubeagi-portal-model-app
@@ -319,5 +327,4 @@ spec:
   textEn: LLMOps
 status: {}
 
----
 {{- end }}
