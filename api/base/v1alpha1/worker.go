@@ -30,6 +30,7 @@ type WorkerType string
 const (
 	WorkerTypeFastchatNormal WorkerType = "fastchat"
 	WorkerTypeFastchatVLLM   WorkerType = "fastchat-vllm"
+	WorkerTypeKubeAGI        WorkerType = "kubeagi"
 	WorkerTypeUnknown        WorkerType = "unknown"
 )
 
