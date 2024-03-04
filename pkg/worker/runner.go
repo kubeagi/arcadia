@@ -35,12 +35,16 @@ const (
 	// tag is the same version as fastchat
 	defaultFastChatImage     = "kubeagi/arcadia-fastchat-worker:v0.2.36"
 	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.2.36"
+	// defaultKubeAGIImage for RunnerKubeAGI
+	defaultKubeAGIImage = "kubeagi/core-library-cli:v0.0.1"
 )
 
 // ModelRunner run a model service
 type ModelRunner interface {
 	// Device used when running model
 	Device() Device
+	// NumberOfGPUs used when running model
+	NumberOfGPUs() string
 	// Build a model runner instance
 	Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error)
 }
@@ -63,6 +67,7 @@ func NewRunnerFastchat(c client.Client, w *arcadiav1alpha1.Worker, modelFileFrom
 	}, nil
 }
 
+// Device utilized by this runner
 func (runner *RunnerFastchat) Device() Device {
 	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
 }
@@ -252,6 +257,68 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		Resources: runner.w.Spec.Resources,
 	}
 	container.Env = append(container.Env, additionalEnvs...)
+
+	return container, nil
+}
+
+var _ ModelRunner = (*KubeAGIRunner)(nil)
+
+// KubeAGIRunner utilizes  core-library-cli(https://github.com/kubeagi/core-library/tree/main/libs/cli) to run model services
+// Mainly for reranking,whisper,etc..
+type KubeAGIRunner struct {
+	c client.Client
+	w *arcadiav1alpha1.Worker
+}
+
+func NewKubeAGIRunner(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
+	return &KubeAGIRunner{
+		c: c,
+		w: w,
+	}, nil
+}
+
+// Device used when running model
+func (runner *KubeAGIRunner) Device() Device {
+	return DeviceBasedOnResource(runner.w.Spec.Resources.Limits)
+}
+
+// NumberOfGPUs utilized by this runner
+func (runner *KubeAGIRunner) NumberOfGPUs() string {
+	return NumberOfGPUs(runner.w.Spec.Resources.Limits)
+}
+
+// Build a model runner instance
+func (runner *KubeAGIRunner) Build(ctx context.Context, model *arcadiav1alpha1.TypedObjectReference) (any, error) {
+	if model == nil {
+		return nil, errors.New("nil model")
+	}
+
+	img := defaultKubeAGIImage
+	if runner.w.Spec.Runner.Image != "" {
+		img = runner.w.Spec.Runner.Image
+	}
+
+	// read worker address
+	mountPath := "/data/models"
+	container := &corev1.Container{
+		Name:            "runner",
+		Image:           img,
+		ImagePullPolicy: runner.w.Spec.Runner.ImagePullPolicy,
+		Command: []string{
+			"python", "kubeagi_cli/cli.py", "serve", "--host", "0.0.0.0", "--port", "21002",
+		},
+		Env: []corev1.EnvVar{
+			// Only reranking supported for now
+			{Name: "RERANKING_MODEL_PATH", Value: fmt.Sprintf("%s/%s", mountPath, model.Name)},
+		},
+		Ports: []corev1.ContainerPort{
+			{Name: "http", ContainerPort: 21002},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: "models", MountPath: mountPath},
+		},
+		Resources: runner.w.Spec.Resources,
+	}
 
 	return container, nil
 }

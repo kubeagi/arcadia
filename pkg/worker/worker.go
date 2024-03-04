@@ -228,7 +228,6 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 		return nil, fmt.Errorf("datasource %s with type %s not supported in worker", d.Name, d.Spec.Type())
 	}
 
-	// init runner
 	return podWorker, nil
 }
 
@@ -245,6 +244,12 @@ func (podWorker *PodWorker) Model() *arcadiav1alpha1.Model {
 // Now we have a pvc(if configured), service, LLM(if a llm model), Embedder(if a embedding model)
 func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 	var err error
+
+	// Capability Checks
+	if podWorker.Model().IsRerankingModel() && podWorker.Worker().Type() != arcadiav1alpha1.WorkerTypeKubeAGI {
+		return errors.New("only kubeagi runner can host reranking models")
+	}
+
 	// If the local directory is mounted, there is no need to create the pvc
 	if podWorker.Worker().Spec.Storage != nil && podWorker.storage.HostPath == nil {
 		pvc := &corev1.PersistentVolumeClaim{
@@ -383,6 +388,12 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 		podWorker.r = r
 	case arcadiav1alpha1.WorkerTypeFastchatNormal:
 		r, err := NewRunnerFastchat(podWorker.c, podWorker.w.DeepCopy(), loader == nil)
+		if err != nil {
+			return fmt.Errorf("failed to new a runner with %w", err)
+		}
+		podWorker.r = r
+	case arcadiav1alpha1.WorkerTypeKubeAGI:
+		r, err := NewKubeAGIRunner(podWorker.c, podWorker.w.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to new a runner with %w", err)
 		}

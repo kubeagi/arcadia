@@ -1,0 +1,32 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Model
+metadata:
+  name: bge-reranker-large
+  namespace: arcadia
+spec:
+  displayName: "bge-reranker-large"
+  description: |
+    bge-raranker-large 是一个通用reranking,由北京智源人工智能研究院(BAAI)推出,同时支持中英文
+
+    官网: https://www.baai.ac.cn/
+    Github: https://github.com/FlagOpen/FlagEmbedding
+    HuggingFace: https://huggingface.co/BAAI/bge-reranker-large
+    arXiv: https://arxiv.org/pdf/2309.07597
+
+    北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
+  types: "reranking"
+  huggingFaceRepo: BAAI/bge-reranker-large
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Worker
+metadata:
+  name: bge-reranker-large
+  namespace: arcadia
+spec:
+  displayName: BGE Reranking模型
+  description: "bge-raranker-large 是一个通用reranking,由北京智源人工智能研究院(BAAI)推出"
+  type: "kubeagi"
+  model:
+    kind: "Models"
+    name: "bge-reranker-large"
+  replicas: 1
