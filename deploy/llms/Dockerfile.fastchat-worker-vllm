@@ -1,4 +1,4 @@
-ARG BASE_IMAGE_VERSION="v0.2.0"
+ARG BASE_IMAGE_VERSION="v0.2.36"
 FROM kubeagi/arcadia-fastchat-worker:${BASE_IMAGE_VERSION}
 
 # Official: https://pypi.org/simple 

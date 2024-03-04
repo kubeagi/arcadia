@@ -12,17 +12,26 @@ RUN sed -i "s/archive.ubuntu.com/$PACKAGE_REGISTRY/g" /etc/apt/sources.list \
 ENV TZ=Asia/Shanghai
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
-    && apt-get install -y tzdata \
+    && apt-get install -y tzdata git \
     && ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && dpkg-reconfigure --frontend noninteractive tzdata
 
-# Official: https://pypi.org/simple 
+# Official: https://pypi.org/simple
 ARG PYTHON_INDEX_URL="https://pypi.mirrors.ustc.edu.cn/simple/"
 
 # Install fastchat along with its dependencies
 RUN apt-get install -y python3.9 python3.9-distutils curl python3-pip python3-dev
-RUN python3.9 -m pip install tomli setuptools_scm wavedrom -i ${PYTHON_INDEX_URL}
-RUN python3.9 -m pip install fschat fschat[model_worker] -i ${PYTHON_INDEX_URL}
+RUN python3.9 -m pip install tomli setuptools_scm wavedrom transformers==4.37.0 -i ${PYTHON_INDEX_URL}
+RUN python3.9 -m pip install --upgrade pip -i ${PYTHON_INDEX_URL}
+RUN git clone https://github.com/lm-sys/FastChat.git \
+    && cd FastChat \
+    && python3.9 -m pip install -e ".[model_worker]"  -i ${PYTHON_INDEX_URL} \
+    && git rev-parse HEAD > $HOME/.fastchat \
+    && cd ..
+
+# Configure the following environment variables to allow fastchat to pull model files from modelscope
+# export VLLM_USE_MODELSCOPE=True ,export FASTCHAT_USE_MODELSCOPE=True
+RUN python3.9 -m pip install modelscope pydantic==1.10.14 -i ${PYTHON_INDEX_URL}
 
 # Install requirements for QWen(https://huggingface.co/Qwen/Qwen-72B-Chat)
 RUN python3.9 -m pip install einops scipy transformers_stream_generator==0.0.4 deepspeed -i ${PYTHON_INDEX_URL}
