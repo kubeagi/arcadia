@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -31,8 +32,9 @@ import (
 )
 
 const (
-	defaultFastChatImage     = "kubeagi/arcadia-fastchat-worker:v0.2.0"
-	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.2.0"
+	// tag is the same version as fastchat
+	defaultFastChatImage     = "kubeagi/arcadia-fastchat-worker:v0.2.36"
+	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.2.36"
 )
 
 // ModelRunner run a model service
@@ -49,12 +51,15 @@ var _ ModelRunner = (*RunnerFastchat)(nil)
 type RunnerFastchat struct {
 	c client.Client
 	w *arcadiav1alpha1.Worker
+
+	modelFileFromRemote bool
 }
 
-func NewRunnerFastchat(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
+func NewRunnerFastchat(c client.Client, w *arcadiav1alpha1.Worker, modelFileFromRemote bool) (ModelRunner, error) {
 	return &RunnerFastchat{
-		c: c,
-		w: w,
+		c:                   c,
+		w:                   w,
+		modelFileFromRemote: modelFileFromRemote,
 	}, nil
 }
 
@@ -77,6 +82,25 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
+	modelFileDir := fmt.Sprintf("/data/models/%s", model.Name)
+	additionalEnvs := []corev1.EnvVar{}
+	extraArgs := fmt.Sprintf("--device %s", runner.Device().String())
+	if runner.modelFileFromRemote {
+		m := arcadiav1alpha1.Model{}
+		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
+			return nil, err
+		}
+		if m.Spec.HuggingFaceRepo != "" {
+			modelFileDir = m.Spec.HuggingFaceRepo
+		}
+		if m.Spec.ModelScopeRepo != "" {
+			modelFileDir = m.Spec.ModelScopeRepo
+			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"})
+			extraArgs += fmt.Sprintf(" --revision %s ", m.Spec.Revision)
+		}
+	}
+
+	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_MODEL_NAME_PATH", Value: modelFileDir})
 	img := defaultFastChatImage
 	if runner.w.Spec.Runner.Image != "" {
 		img = runner.w.Spec.Runner.Image
@@ -94,7 +118,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
 			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
-			{Name: "EXTRA_ARGS", Value: fmt.Sprintf("--device %s", runner.Device().String())},
+			{Name: "EXTRA_ARGS", Value: extraArgs},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},
@@ -105,6 +129,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		Resources: runner.w.Spec.Resources,
 	}
 
+	container.Env = append(container.Env, additionalEnvs...)
 	return container, nil
 }
 
@@ -114,12 +139,16 @@ var _ ModelRunner = (*RunnerFastchatVLLM)(nil)
 type RunnerFastchatVLLM struct {
 	c client.Client
 	w *arcadiav1alpha1.Worker
+
+	modelFileFromRemote bool
 }
 
-func NewRunnerFastchatVLLM(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
+func NewRunnerFastchatVLLM(c client.Client, w *arcadiav1alpha1.Worker, modelFileFromRemote bool) (ModelRunner, error) {
 	return &RunnerFastchatVLLM{
 		c: c,
 		w: w,
+
+		modelFileFromRemote: modelFileFromRemote,
 	}, nil
 }
 
@@ -175,6 +204,25 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
 	}
 
+	modelFileDir := fmt.Sprintf("/data/models/%s", model.Name)
+	additionalEnvs := []corev1.EnvVar{}
+	extraAgrs := "--trust-remote-code"
+	if runner.modelFileFromRemote {
+		m := arcadiav1alpha1.Model{}
+		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
+			return nil, err
+		}
+		if m.Spec.HuggingFaceRepo != "" {
+			modelFileDir = m.Spec.HuggingFaceRepo
+		}
+		if m.Spec.ModelScopeRepo != "" {
+			modelFileDir = m.Spec.ModelScopeRepo
+			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"}, corev1.EnvVar{Name: "VLLM_USE_MODELSCOPE", Value: "True"})
+			extraAgrs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
+		}
+	}
+
+	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_MODEL_NAME_PATH", Value: modelFileDir})
 	img := defaultFastchatVLLMImage
 	if runner.w.Spec.Runner.Image != "" {
 		img = runner.w.Spec.Runner.Image
@@ -190,7 +238,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:21002", runner.w.Name+WokerCommonSuffix, runner.w.Namespace)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
-			{Name: "EXTRA_ARGS", Value: "--trust-remote-code"},
+			{Name: "EXTRA_ARGS", Value: extraAgrs},
 			// Need python version and ray address for distributed inference
 			{Name: "PYTHON_VERSION", Value: pythonVersion},
 			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
@@ -203,6 +251,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		},
 		Resources: runner.w.Spec.Resources,
 	}
+	container.Env = append(container.Env, additionalEnvs...)
 
 	return container, nil
 }
