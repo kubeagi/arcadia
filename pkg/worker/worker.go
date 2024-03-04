@@ -229,23 +229,6 @@ func NewPodWorker(ctx context.Context, c client.Client, s *runtime.Scheme, w *ar
 	}
 
 	// init runner
-	switch w.Type() {
-	case arcadiav1alpha1.WorkerTypeFastchatVLLM:
-		r, err := NewRunnerFastchatVLLM(c, w.DeepCopy())
-		if err != nil {
-			return nil, fmt.Errorf("failed to new a runner with %w", err)
-		}
-		podWorker.r = r
-	case arcadiav1alpha1.WorkerTypeFastchatNormal:
-		r, err := NewRunnerFastchat(c, w.DeepCopy())
-		if err != nil {
-			return nil, fmt.Errorf("failed to new a runner with %w", err)
-		}
-		podWorker.r = r
-	default:
-		return nil, fmt.Errorf("worker %s with type %s not supported in worker", w.Name, w.Type())
-	}
-
 	return podWorker, nil
 }
 
@@ -391,7 +374,22 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to build loader with %w", err)
 	}
-	conLoader, _ := loader.(*corev1.Container)
+	switch podWorker.w.Type() {
+	case arcadiav1alpha1.WorkerTypeFastchatVLLM:
+		r, err := NewRunnerFastchatVLLM(podWorker.c, podWorker.w.DeepCopy(), loader == nil)
+		if err != nil {
+			return fmt.Errorf("failed to new a runner with %w", err)
+		}
+		podWorker.r = r
+	case arcadiav1alpha1.WorkerTypeFastchatNormal:
+		r, err := NewRunnerFastchat(podWorker.c, podWorker.w.DeepCopy(), loader == nil)
+		if err != nil {
+			return fmt.Errorf("failed to new a runner with %w", err)
+		}
+		podWorker.r = r
+	default:
+		return fmt.Errorf("worker %s with type %s not supported in worker", podWorker.w.Name, podWorker.w.Type())
+	}
 
 	// define the way to run model
 	runner, err := podWorker.r.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &podWorker.m.Namespace, Name: podWorker.m.Name})
@@ -422,11 +420,14 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 			},
 		},
 		Spec: corev1.PodSpec{
-			RestartPolicy:  corev1.RestartPolicyAlways,
-			InitContainers: []corev1.Container{*conLoader},
-			Containers:     []corev1.Container{*conRunner},
-			Volumes:        []corev1.Volume{podWorker.storage},
+			RestartPolicy: corev1.RestartPolicyAlways,
+			Containers:    []corev1.Container{*conRunner},
+			Volumes:       []corev1.Volume{podWorker.storage},
 		},
+	}
+	if loader != nil {
+		conLoader, _ := loader.(*corev1.Container)
+		podSpecTemplate.Spec.InitContainers = []corev1.Container{*conLoader}
 	}
 	if podWorker.storage.HostPath != nil {
 		podSpecTemplate.Spec.Affinity = &corev1.Affinity{

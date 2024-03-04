@@ -185,7 +185,7 @@ func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, in
 
 	// If source is empty, it means that the data is still sourced from the internal minio and a state check is required,
 	// otherwise we consider the model file for the trans-core service to be ready.
-	if instance.Spec.Source == nil {
+	if instance.Spec.Source == nil && (instance.Spec.HuggingFaceRepo == "" && instance.Spec.ModelScopeRepo == "") {
 		logger.V(5).Info(fmt.Sprintf("model %s source is empty, check minio status.", instance.Name))
 		system, err := config.GetSystemDatasource(ctx, r.Client)
 		if err != nil {

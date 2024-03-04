@@ -39,6 +39,10 @@ type ModelSpec struct {
 	// ModelScopeRepo defines the modelscope repo which hosts this model
 	ModelScopeRepo string `json:"modelScopeRepo,omitempty"`
 
+	// Revision it's required if download model file from modelscope
+	// It can be a tag, branch name.
+	Revision string `json:"revision,omitempty"`
+
 	// MaxContextLength defines the max context length allowed in this model
 	MaxContextLength int `json:"maxContextLength,omitempty"`
 }

@@ -20,7 +20,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 ARG PYTHON_INDEX_URL="https://pypi.mirrors.ustc.edu.cn/simple/"
 
 # Install fastchat along with its dependencies
-RUN apt-get install -y python3.9 python3.9-distutils curl python3-pip python3-dev
+RUN apt-get install -y python3.9 python3.9-distutils curl python3-pip python3-dev gcc
 RUN python3.9 -m pip install tomli setuptools_scm wavedrom transformers==4.37.0 -i ${PYTHON_INDEX_URL}
 RUN python3.9 -m pip install --upgrade pip -i ${PYTHON_INDEX_URL}
 RUN git clone https://github.com/lm-sys/FastChat.git \

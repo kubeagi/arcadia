@@ -56,6 +56,10 @@ spec:
                 description: ModelScopeRepo defines the modelscope repo which hosts
                   this model
                 type: string
+              revision:
+                description: Revision it's required if download model file from modelscope
+                  It can be a tag, branch name.
+                type: string
               source:
                 description: Source define the source of the model file
                 properties:
