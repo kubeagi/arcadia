@@ -1,4 +1,49 @@
-{{- if .Values.portal.enabled }}
+{{- if .Values.opsconsole.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-portal
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-portal
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-portal
+    spec:
+      containers:
+        - image: {{ .Values.opsconsole.image }}
+          imagePullPolicy: IfNotPresent
+          name: kubeagi-portal
+          ports:
+          - containerPort: 80
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-portal
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-portal
+  ports:
+    - name: api
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -27,14 +72,15 @@ metadata:
     nginx.ingress.kubernetes.io/upstream-vhost: $host
 spec:
   rules:
-    - host: {{ .Values.portal.ingress.host }}
+    - host: {{ .Values.opsconsole.ingress.host }}
       http:
         paths:
           - pathType: ImplementationSpecific
-            path: "/{{ .Values.portal.ingress.path }}"
+            path: "/{{ .Values.opsconsole.ingress.path }}"
             backend:
               service:
                 name: {{ .Release.Name }}-portal
                 port:
-                  number: {{ .Values.portal.port }}
+                  number: 80
 {{- end }}
+

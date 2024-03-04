@@ -1,0 +1,126 @@
+{{- if .Values.agentportal.enabled }}
+apiVersion: v1
+data:
+  .env.production: |
+    # oidc server client id && secret
+    CLIENT_ID={{ .Values.apiserver.oidc.clientID }}
+    CLIENT_SECRET={{ .Values.apiserver.oidc.clientSecret }}
+    # oidc server url, e.g. https://kubeagi.com/oidc
+    OIDC_SERVER_URL={{ .Values.apiserver.oidc.issuerURL }}
+    # bff-server origin, for SSR
+    BFF_SERVER_ORIGIN=http://localhost:3000
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-agentportal
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Release.Name }}-agentportal
+  name: {{ .Release.Name }}-agentportal
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-agentportal
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-agentportal
+    spec:
+      containers:
+      - image: {{ .Values.agentportal.image }}
+        imagePullPolicy: IfNotPresent
+        name: agentportal
+        env:
+          - name: NODE_TLS_REJECT_UNAUTHORIZED
+            value: '0'
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "5"
+            memory: 1280Mi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /etc/localtime
+          name: time-localtime
+          readOnly: true
+        - mountPath: /usr/src/app/.env.production
+          name: agentportal-config-volume
+          subPath: .env.production
+      restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: time-localtime
+      - configMap:
+          name: {{ .Release.Name }}-agentportal
+        name: agentportal-config-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Release.Name }}-agentportal
+  name: {{ .Release.Name }}-agentportal
+  namespace: {{ .Release.Namespace }}
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: {{ .Release.Name }}-agentportal
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    description: {{ .Release.Name }}-agentportal-ingress
+    displayName: {{ .Release.Name }}-agentportal-ingress
+    httpSend: /
+    ingress-lb: portal-ingress
+    kubernetes.io/ingress.class: portal-ingress
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_cache static-cache;
+      proxy_cache_valid 404 10m;
+      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+      proxy_cache_bypass $http_x_purge;
+      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+    nginx.ingress.kubernetes.io/proxy-body-size: 102400m
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/server-alias: ""
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: $host
+  labels:
+    ingress-lb: portal-ingress
+  name: {{ .Release.Name }}-agentportal-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+  - host: {{ .Values.agentportal.ingress.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ .Release.Name }}-agentportal
+            port:
+              number: 3000
+        path: "/{{ .Values.opsconsole.ingress.path }}"
+        pathType: ImplementationSpecific
+{{- end }}

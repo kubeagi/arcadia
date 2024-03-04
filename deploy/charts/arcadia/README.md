@@ -55,18 +55,29 @@ graphql and bff server
 | `oidc.issuerURL`    | URL of issuer portal         | `https://portal.<replaced-ingress-nginx-ip>.nip.io/oidc` |
 | `oidc.masterURL`    | URL of master                | `https://k8s.<replaced-ingress-nginx-ip>.nip.io`         |
 
-### portal
+### opsconsole
 
-portal for arcadia web console
+portal for arcadia operation console
 
 | Parameter       | Description                       | Default                                     |
 | --------------- | --------------------------------- | ------------------------------------------- |
 | `enabled`       | enable arcadia web portal console | `true`                                      |
 | `kubebbEnabled` | enable kubebb platform            | `true`                                      |
 | `image`         | image of web console pod          | `kubeagi/ops-console:latest`                |
-| `port`          | port of web console               | `80`                                        |
 | `ingress.path`  | ingress path of portal            | `kubeagi-portal-public`                     |
 | `ingress.host`  | host of ingress path              | `portal.<replaced-ingress-nginx-ip>.nip.io` |
+
+### agentportal
+
+portal for arcadia gpt service
+
+| Parameter       | Description                       | Default                                     |
+| --------------- | --------------------------------- | ------------------------------------------- |
+| `enabled`       | enable arcadia agent portal       | `true`                                      |
+| `kubebbEnabled` | enable kubebb platform            | `true`                                      |
+| `image`         | image of web console pod          | `kubeagi/agent-portal:latest`                |
+| `ingress.path`  | ingress path of portal            |      ``                                     |
+| `ingress.host`  | host of ingress path              | `gpts.<replaced-ingress-nginx-ip>.nip.io` |
 
 ### fastchat
 

@@ -32,15 +32,23 @@ apiserver:
     clientSecret: 61324af0-1234-4f61-b110-ef57013267d6
     masterURL: https://k8s.test.nip.io
 
-# @section portal for arcadia web console
-portal:
+# @section portal for arcadia operation console
+opsconsole:
   enabled: true
   kubebbEnabled: false
   image: kubeagi/ops-console:latest
-  port: 80
   ingress:
     path: kubeagi-portal-public
     host: portal.test.nip.io
+
+# @section portal for arcadia gpts
+agentportal:
+  enabled: true
+  kubebbEnabled: false
+  image: kubeagi/agent-portal:latest
+  ingress:
+    path: ""
+    host: gpts.test.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:

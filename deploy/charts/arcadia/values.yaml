@@ -41,15 +41,23 @@ apiserver:
     issuerURL: https://portal.<replaced-ingress-nginx-ip>.nip.io/oidc
     masterURL: https://k8s.<replaced-ingress-nginx-ip>.nip.io
 
-# @section portal for arcadia web console
-portal:
+# @section portal for arcadia operation console
+opsconsole:
   enabled: true
   kubebbEnabled: true
   image: kubeagi/ops-console:latest
-  port: 80
   ingress:
     path: kubeagi-portal-public
     host: portal.<replaced-ingress-nginx-ip>.nip.io
+  
+# @section portal for arcadia GPT store
+agentportal:
+  enabled: true
+  kubebbEnabled: true
+  image: kubeagi/agent-portal:latest
+  ingress:
+    path: ""
+    host: gpts.<replaced-ingress-nginx-ip>.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:

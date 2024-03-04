@@ -2,7 +2,7 @@ apiVersion: v2
 name: arcadia
 description: A Helm chart(Also a KubeBB Component) for KubeAGI Arcadia
 type: application
-version: 0.3.2
+version: 0.3.3
 appVersion: "0.2.0"
 
 keywords:
