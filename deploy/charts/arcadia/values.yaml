@@ -64,7 +64,7 @@ fastchat:
   enabled: true
   image:
     repository: kubeagi/arcadia-fastchat
-    tag: v0.2.0
+    tag: v0.2.36
   ingress:
     enabled: true
     host: fastchat-api.<replaced-ingress-nginx-ip>.nip.io
