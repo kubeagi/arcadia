@@ -39,7 +39,7 @@ spec:
           - name: NODE_TLS_REJECT_UNAUTHORIZED
             value: '0'
         ports:
-        - containerPort: 80
+        - containerPort: 3000
           protocol: TCP
         resources:
           limits:
@@ -121,6 +121,6 @@ spec:
             name: {{ .Release.Name }}-agentportal
             port:
               number: 3000
-        path: "/{{ .Values.opsconsole.ingress.path }}"
+        path: "/{{ .Values.agentportal.ingress.path }}"
         pathType: ImplementationSpecific
 {{- end }}
