@@ -19,7 +19,6 @@ package documentloader
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -34,9 +33,8 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
-	"github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/datasource"
 	arcadiadocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 )
 
@@ -64,25 +62,19 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	// Check if have docs as input
 	v1, ok := args["files"]
 	if !ok {
-		return args, errors.New("no input docs")
+		// skip if no files provided
+		return args, nil
 	}
 	files, ok := v1.([]string)
 	if !ok || len(files) == 0 {
-		return args, errors.New("empty file list")
+		// skip if no files provided
+		return args, nil
 	}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, dl.Instance); err != nil {
 		return args, fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
 
-	system, err := config.GetSystemDatasource(ctx, cli)
-	if err != nil {
-		return nil, err
-	}
-	endpoint := system.Spec.Endpoint.DeepCopy()
-	if endpoint != nil && endpoint.AuthSecret != nil {
-		endpoint.AuthSecret.WithNameSpace(system.Namespace)
-	}
-	ossDatasource, err := datasource.NewLocal(ctx, cli, endpoint)
+	ossDatasource, err := common.SystemDatasourceOSS(ctx, cli)
 	if err != nil {
 		return nil, err
 	}

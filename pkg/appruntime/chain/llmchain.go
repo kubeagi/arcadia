@@ -24,7 +24,6 @@ import (
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/prompts"
-	"github.com/tmc/langchaingo/schema"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -77,7 +76,7 @@ func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]a
 	// Check if have files as input
 	v3, ok := args["documents"]
 	if ok {
-		docs, ok := v3.([]schema.Document)
+		docs, ok := v3.([]langchaingoschema.Document)
 		// TOOD: call mpchain
 		if ok && len(docs) != 0 {
 			mpChain := NewMapReduceChain(l.BaseNode)

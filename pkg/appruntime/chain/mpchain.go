@@ -39,8 +39,6 @@ const (
 		With above content, please summarize it with only half content size of it.
 		`
 	DefaultPromptTemplatForReduce = `"{{.context}}"`
-
-	DefaultSummaryMaxNumberOfConcurrent = 1
 )
 
 type MapReduceChain struct {
@@ -113,7 +111,7 @@ func (l *MapReduceChain) Init(ctx context.Context, cli client.Client, args map[s
 	default:
 		return fmt.Errorf("invalid base node kind %s for MapReduceChain.not supported yet", kind)
 	}
-	l.chainCallOptions = append(l.chainCallOptions, chainCallOptions...)
+	l.chainCallOptions = chainCallOptions
 
 	// initialize MapReduceDocuments
 	l.MapReduceDocuments = chains.NewMapReduceDocuments(
@@ -142,7 +140,7 @@ func (l *MapReduceChain) Run(ctx context.Context, cli client.Client, args map[st
 		klog.V(5).Infof("skip MapReduceChain due to no documents found")
 		return args, nil
 	}
-	// run LLMChain
+
 	needStream := false
 	needStream, ok = args["_need_stream"].(bool)
 	if ok && needStream {
