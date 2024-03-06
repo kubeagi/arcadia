@@ -139,6 +139,7 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 	}
 	conversation.Messages = append(conversation.Messages, storage.Message{
 		ID:     messageID,
+		Action: "CHAT",
 		Query:  req.Query,
 		Answer: "",
 	})
@@ -162,6 +163,7 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 	return &ChatRespBody{
 		ConversationID: conversation.ID,
 		MessageID:      messageID,
+		Action:         "CHAT",
 		Message:        out.Answer,
 		CreatedAt:      time.Now(),
 		References:     out.References,

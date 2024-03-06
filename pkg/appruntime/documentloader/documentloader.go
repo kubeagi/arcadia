@@ -92,7 +92,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 
 	for _, file := range files {
 		ossInfo := &arcadiav1alpha1.OSS{Bucket: dl.RefNamespace()}
-		ossInfo.Object = filepath.Join("upload", file)
+		ossInfo.Object = file
 		klog.Infoln("handling file", ossInfo.Object)
 		fileHandler, err := ossDatasource.ReadFile(ctx, ossInfo)
 		if err != nil {
@@ -147,7 +147,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	}
 
 	// Set both docs and context for latter usage
-	args["docs"] = allDocs
+	args["documents"] = allDocs
 	args["context"] = strings.Join(textArray, "\n")
 	return args, nil
 }

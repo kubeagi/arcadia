@@ -40,22 +40,7 @@ const (
 		`
 	DefaultPromptTemplatForReduce = `"{{.context}}"`
 
-	// For post process the map-reduced summary
-	DefaultPromptTemplateForPostMapReduce = `
-		Here is the map-reduced summary of a document:
-
-		Summary: {{.summary}}
-
-		Now please answer the following question based on the above document summary. Make sure the answer is using same language with the question:
-
-		Question: {{.question}}
-
-		Answer:
-	`
-
-	DefaultSummaryMaxNumberOfConcurrent = 2
-	DefaultDocumentChunkSize            = 1024
-	DefaultDocumentChunkOverlap         = 100
+	DefaultSummaryMaxNumberOfConcurrent = 1
 )
 
 type MapReduceChain struct {
@@ -141,44 +126,36 @@ func (l *MapReduceChain) Init(ctx context.Context, cli client.Client, args map[s
 		),
 	)
 
-	l.LLMChain = *chains.NewLLMChain(llm, prompts.NewPromptTemplate(DefaultPromptTemplateForPostMapReduce, []string{"summary", "question"}))
-
 	return nil
 }
 
 func (l *MapReduceChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args["documents"]
 	if !ok {
-		return args, errors.New("no documents")
+		// skip if no documents
+		klog.V(5).Infof("skip MapReduceChain due to no documents found")
+		return args, nil
 	}
 	documents, ok := v1.([]schema.Document)
 	if !ok {
-		return args, errors.New("llm not llms.LanguageModel")
+		// skip if no documents
+		klog.V(5).Infof("skip MapReduceChain due to no documents found")
+		return args, nil
 	}
-	// run MapReduceDocuments
-	out, err := chains.Run(ctx, l.MapReduceDocuments, documents, l.chainCallOptions...)
-	if err != nil {
-		return args, fmt.Errorf("failed to run MapReduceChain due to %s", err.Error())
-	}
-	// set the summary with the output of MapReduceDocuments
-	args["summary"] = out
-
 	// run LLMChain
 	needStream := false
 	needStream, ok = args["_need_stream"].(bool)
 	if ok && needStream {
 		l.chainCallOptions = append(l.chainCallOptions, chains.WithStreamingFunc(stream(args)))
 	}
-	// call llmchain
-	out, err = chains.Predict(ctx, l.LLMChain, args, l.chainCallOptions...)
-	// handler out & error
-	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, l.chainCallOptions)
-	klog.FromContext(ctx).V(5).Info("use MapReduceChain, blocking out:" + out)
-	if err == nil {
-		args["_answer"] = out
-		return args, nil
+
+	// run MapReduceDocuments
+	out, err := chains.Run(ctx, l.MapReduceDocuments, documents, l.chainCallOptions...)
+	if err != nil {
+		return args, fmt.Errorf("failed to run MapReduceChain due to %s", err.Error())
 	}
-	return args, fmt.Errorf("mapreaducechain run error: %w", err)
+	args["_answer"] = out
+	return args, nil
 }
 
 func (l *MapReduceChain) Ready() (bool, string) {

@@ -24,6 +24,7 @@ import (
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/prompts"
+	"github.com/tmc/langchaingo/schema"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -55,7 +56,7 @@ func (l *LLMChain) Init(ctx context.Context, cli client.Client, _ map[string]any
 	return nil
 }
 
-func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
+func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -72,6 +73,27 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
+
+	// Check if have files as input
+	v3, ok := args["documents"]
+	if ok {
+		docs, ok := v3.([]schema.Document)
+		// TOOD: call mpchain
+		if ok && len(docs) != 0 {
+			mpChain := NewMapReduceChain(l.BaseNode)
+			err = mpChain.Init(ctx, cli, args)
+			if err != nil {
+				return args, err
+			}
+			_, err = mpChain.Run(ctx, cli, args)
+			if err != nil {
+				return args, err
+			}
+			// update document
+			// TODO:save out as a reference of following answer
+		}
+	}
+
 	// _history is optional
 	// if set ,only ChatMessageHistory allowed
 	var history langchaingoschema.ChatMessageHistory
