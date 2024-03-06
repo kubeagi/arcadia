@@ -111,10 +111,10 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 		}
 	}
 
-	// Add the answer to the context if it's not empty
-	if args[base.OutputAnserKeyInArg] != nil {
-		klog.Infoln("get answer from upstream:", args[base.OutputAnserKeyInArg])
-		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args[base.OutputAnserKeyInArg])
+	// Add the agent output to the context if it's not empty
+	if args[base.AgentOutputInArg] != nil {
+		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get answer from upstream: %s", args[base.AgentOutputInArg]))
+		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args[base.AgentOutputInArg])
 	}
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {

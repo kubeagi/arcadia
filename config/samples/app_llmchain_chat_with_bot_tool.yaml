@@ -89,7 +89,7 @@ spec:
   description: "llm chain"
   memory:
     conversionWindowSize: 2
-  model: chatglm_turbo # notice: default model chatglm_lite gets poor results in most cases, openai's gpt-3.5-turbo is also good enough
+  model: glm-4 # notice: default model chatglm_lite gets poor results in most cases, openai's gpt-3.5-turbo is also good enough
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Agent

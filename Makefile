@@ -284,22 +284,27 @@ bff-sdk-generator:
 config_rule_line_num = $(shell grep -n "rules:" config/rbac/role.yaml | cut -d: -f1)
 chart_rule_line_num = $(shell grep -n "rules:" deploy/charts/arcadia/templates/rbac.yaml | cut -d: -f1)
 prepare-push: manifests generate fmt vet gql-gen
+	@echo "go mod tidy..."
 	@go mod tidy
-	@echo "install golangci-lint"
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@echo "run golangci-lint with auto-fix"
+	@echo "check or install golangci-lint..."
+	@test -s golangci-lint || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "run golangci-lint with auto-fix..."
 	@golangci-lint run --fix -v ./...
-	@echo "copy crds to charts"
+	@echo "copy crds to charts..."
 	@cp config/crd/bases/* deploy/charts/arcadia/crds
-	@echo "copy role to charts"
+	@echo "copy role to charts..."
 	@sed -n '$(config_rule_line_num),$$p' config/rbac/role.yaml > tmp_role.yaml
-	@sed -i '' '$(chart_rule_line_num),$$d' deploy/charts/arcadia/templates/rbac.yaml
+	@sed -i.bak '$(chart_rule_line_num),$$d' deploy/charts/arcadia/templates/rbac.yaml
+	@rm -f deploy/charts/arcadia/templates/rbac.yaml.bak
 	@cat tmp_role.yaml >> deploy/charts/arcadia/templates/rbac.yaml
 	@rm -f tmp_role.yaml
-	@echo "install swag"
-	@go install github.com/swaggo/swag/cmd/swag@latest
+	@echo "check or install swag..."
+	@test -s swag || go install github.com/swaggo/swag/cmd/swag@latest
+	@echo "swag init..."
 	@swag init -g apiserver/main.go -o apiserver/docs .
+	@echo "swag fmt..."
 	@swag fmt
+	@echo "done"
 
 PYTHON_INDEX_URL ?=https://pypi.mirrors.ustc.edu.cn/simple/
 .PHONY: prepare-push-pypi

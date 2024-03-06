@@ -450,6 +450,10 @@ kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
 info "8.2.1.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
@@ -466,6 +470,10 @@ kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
 info "8.2.2.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get application -n arcadia base-chat-with-knowledgebase-pgvector -o json | jq -r .spec.docNullReturn)
@@ -486,6 +494,10 @@ kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_rera
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-rerank"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
 info "8.2.3.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank -o json | jq -r .spec.docNullReturn)
@@ -496,6 +508,46 @@ fi
 info "8.2.3.3 When no related doc is found and application.spec.docNullReturn is not set"
 kubectl patch applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank -p '{"spec":{"docNullReturn":""}}' --type='merge'
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "飞天的主演是谁？" "" "true"
+
+info "8.2.4 QA app using knowledgebase base on pgvector and rerank and multiquery"
+kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_rerank_multiquery.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-rerank-multiquery"
+sleep 3
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank-multiquery" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
+info "8.2.4.2 When no related doc is found, return application.spec.docNullReturn info, if set"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank-multiquery" "arcadia" "飞天的主演是谁？" "" "true"
+expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank-multiquery -o json | jq -r .spec.docNullReturn)
+if [[ $ai_data != $expected ]]; then
+	echo "when no related doc is found, return application.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	exit 1
+fi
+info "8.2.4.3 When no related doc is found and application.spec.docNullReturn is not set"
+kubectl patch applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank-multiquery -p '{"spec":{"docNullReturn":""}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank-multiquery" "arcadia" "飞天的主演是谁？" "" "true"
+
+info "8.2.5 QA app using knowledgebase base on pgvector and multiquery"
+kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_multiquery.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-multiquery"
+sleep 3
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-multiquery" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
+info "8.2.5.2 When no related doc is found, return application.spec.docNullReturn info, if set"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-multiquery" "arcadia" "飞天的主演是谁？" "" "true"
+expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-multiquery -o json | jq -r .spec.docNullReturn)
+if [[ $ai_data != $expected ]]; then
+	echo "when no related doc is found, return application.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	exit 1
+fi
+info "8.2.5.3 When no related doc is found and application.spec.docNullReturn is not set"
+kubectl patch applications -n arcadia base-chat-with-knowledgebase-pgvector-multiquery -p '{"spec":{"docNullReturn":""}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-multiquery" "arcadia" "飞天的主演是谁？" "" "true"
 
 info "8.3 conversation chat app"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
@@ -593,8 +645,20 @@ sleep 3
 info "8.6.1 conversation test"
 info "23*34 结果应该是 782, 结果再乘2是 1564, 再减去564是 1000"
 getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "false"
+if [[ $ai_data != *"782"* ]]; then
+	echo "resp should contains 782, but resp:"$resp
+	exit 1
+fi
 getRespInAppChat "base-chat-with-bot-tool" "arcadia" "结果再乘2" ${resp_conversation_id} "false"
+if [[ $ai_data != *"1564"* ]]; then
+	echo "resp should contains 1564, but resp:"$resp
+	exit 1
+fi
 getRespInAppChat "base-chat-with-bot-tool" "arcadia" "结果再减去564" ${resp_conversation_id} "false"
+if [[ $ai_data != *"1000"* ]]; then
+	echo "resp should contains 1000, but resp:"$resp
+	exit 1
+fi
 #	info "8.6.1 bingsearch test"
 #	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
 #	if [ -z "$references" ] || [ "$references" = "null" ]; then
@@ -605,6 +669,10 @@ sleep 3
 info "8.6.2 calculator test"
 info "23*34 结果应该是 782"
 getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "true"
+if [[ $ai_data != *"782"* ]]; then
+	echo "resp should contains 782, but resp:"$resp
+	exit 1
+fi
 sleep 3
 info "8.6.3 webpage test"
 info "说的是 kubeedge 在 cmcc 上的使用情况"
@@ -627,8 +695,12 @@ sleep 3
 #	fi
 sleep 3
 info "8.7.2 calculator test"
-info "23*34 结果应该是 782"
-getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "计算 23*34 的结果" "" "true"
+info "23*35 结果应该是 805"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "计算 23*35 的结果" "" "true"
+if [[ $ai_data != *"805"* ]]; then
+	echo "resp should contains 805, but resp:"$resp
+	exit 1
+fi
 sleep 3
 info "8.7.3 webpage test"
 info "说的是 kubeedge 在 cmcc 上的使用情况"
@@ -640,6 +712,10 @@ getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "北京�
 sleep 3
 info "8.7.5 knowledgebase test"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
 #fi
 
 info "9. show apiserver logs for debug"

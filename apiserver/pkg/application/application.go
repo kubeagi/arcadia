@@ -686,7 +686,7 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				NodeConfig: v1alpha1.NodeConfig{
 					Name:        "chain-node",
 					DisplayName: "RetrievalQA chain",
-					Description: "chain是langchain的核心概念RetrievalQAChain用于从retriver中提取信息，供llm调用",
+					Description: "chain是langchain的核心概念RetrievalQAChain用于从retriever中提取信息，供llm调用",
 					Ref: &v1alpha1.TypedObjectReference{
 						APIGroup: pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
 						Kind:     "RetrievalQAChain",

@@ -93,6 +93,6 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		// return args, fmt.Errorf("error when call agent: %w", err)
 	}
 	klog.FromContext(ctx).V(5).Info("use agent, blocking out:", response["output"])
-	args[base.OutputAnserKeyInArg] = response["output"]
+	args[base.AgentOutputInArg] = response["output"]
 	return args, nil
 }

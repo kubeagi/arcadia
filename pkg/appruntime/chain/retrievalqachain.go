@@ -31,6 +31,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	appruntimeretriever "github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 type RetrievalQAChain struct {
@@ -80,6 +81,18 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	if !ok {
 		return args, errors.New("retriever not schema.Retriever")
 	}
+	// Add the agent output to qachain context
+	if args[base.AgentOutputInArg] != nil {
+		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get answer from agent: %s", args[base.AgentOutputInArg]))
+		docs, err := retriever.GetRelevantDocuments(ctx, args["question"].(string))
+		if err != nil {
+			return args, fmt.Errorf("can't get doc from retriever: %w", err)
+		}
+		doc := langchainschema.Document{PageContent: fmt.Sprintf("q: %s\na: %s", args["question"].(string), args[base.AgentOutputInArg].(string))}
+		docs = append(docs, doc)
+		retriever = &appruntimeretriever.Fakeretriever{Docs: docs, Name: "AddAgentOutputRetriever"}
+	}
+
 	v4, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]
 	if !ok {
 		return args, errors.New("no history")
