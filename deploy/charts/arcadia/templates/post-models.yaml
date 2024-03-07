@@ -27,6 +27,7 @@ spec:
   types: "llm"
   huggingFaceRepo: baichuan-inc/Baichuan2-7B-Chat
   modelScopeRepo: baichuan-inc/Baichuan2-7B-Chat
+  revision: master
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -60,6 +61,7 @@ spec:
   types: "llm"
   huggingFaceRepo: THUDM/chatglm2-6b
   modelScopeRepo: ZhipuAI/chatglm2-6b
+  revision: master
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -94,6 +96,7 @@ spec:
   types: "llm"
   huggingFaceRepo: Qwen/Qwen-7B-Chat
   modelScopeRepo: qwen/Qwen-7B-Chat
+  revision: master
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -127,6 +130,7 @@ spec:
     北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
   types: "embedding"
   huggingFaceRepo: BAAI/bge-large-zh-v1.5
+  revision: main
 ---
 apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Model
@@ -149,3 +153,4 @@ spec:
     北京智源人工智能研究院是北京大学的直属研究机构,主要从事人工智能的数理基础、机器学习、智能信息检索与挖掘、智能体系架构与芯片、自然语言处理等领域研究。
   types: "reranking"
   huggingFaceRepo: BAAI/bge-reranker-large
+  revision: main
