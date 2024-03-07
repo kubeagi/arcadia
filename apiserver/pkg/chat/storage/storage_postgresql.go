@@ -157,7 +157,7 @@ func (p *PostgreSQLStorage) FindExistingConversation(conversationID string, opts
 	conversationQuery.Debug = false
 	conversationQuery.DeletedAt.Valid = false
 	res := &Conversation{}
-	tx := p.db.Preload("Messages").First(res, conversationQuery)
+	tx := p.db.Preload("Messages.Documents").First(res, conversationQuery)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

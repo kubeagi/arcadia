@@ -19,14 +19,13 @@ package chat
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"path/filepath"
 	"time"
-
-	"crypto/sha256"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
@@ -98,9 +97,9 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 		bytes.NewReader(data),
 		int64(len(data)),
 		minio.PutObjectOptions{
-			//			UserTags: map[string]string{
-			//				"FILE_NAME": file.Filename,
-			//			},
+			UserTags: map[string]string{
+				"FILE_NAME": file.Filename,
+			},
 		})
 	if err != nil {
 		klog.Errorf("failed to store file %s with error %s", file.Filename, err.Error())
@@ -113,15 +112,14 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 		Action:  "UPLOAD",
 		Query:   "UPLOAD",
 		Answer:  "DONE",
-		Latency: int64(time.Since(req.StartTime).Seconds()),
+		Latency: int64(time.Since(req.StartTime).Milliseconds()),
 		Documents: []storage.Document{
 			{
 				ID:             string(uuid.NewUUID()),
 				MessageID:      messageID,
 				ConversationID: req.ConversationID,
 				Name:           file.Filename,
-				// FullPath ???
-				Object: objectPath,
+				Object:         objectPath,
 			},
 		},
 	}

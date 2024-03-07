@@ -33,6 +33,12 @@ type LLMChainSpec struct {
 
 type CommonChainConfig struct {
 	Tools []agent.Tool `json:"tools,omitempty"`
+
+	// MaxNumberOfConcurrent represents the max number of concurrent calls done simultaneously to
+	// the llm chain.Only 1 by default
+	// +kubebuilder:default=1
+	MaxNumberOfConccurent int `json:"maxNumberOfConccurent,omitempty"`
+
 	// for memory
 	Memory Memory `json:"memory,omitempty"`
 

@@ -99,16 +99,21 @@ func (l *MapReduceChain) Run(ctx context.Context, _ client.Client, args map[stri
 			),
 		),
 	)
-	// TODO: able to configure this MaxNumberOfConcurrent
-	l.MapReduceDocuments.MaxNumberOfConcurrent = 1
+	v2, ok := args["max_number_of_conccurent"]
+	if ok {
+		maxNumberOfConcurrent, ok := v2.(int)
+		if ok {
+			l.MapReduceDocuments.MaxNumberOfConcurrent = maxNumberOfConcurrent
+		}
+	}
 
-	v2, ok := args["documents"]
+	v3, ok := args["documents"]
 	if !ok {
 		// skip if no documents
 		klog.V(5).Infof("skip MapReduceChain due to no documents found")
 		return args, nil
 	}
-	documents, ok := v2.([]schema.Document)
+	documents, ok := v3.([]schema.Document)
 	if !ok {
 		// skip if no documents
 		klog.V(5).Infof("skip MapReduceChain due to no documents found")

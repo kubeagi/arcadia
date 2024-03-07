@@ -81,6 +81,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	if ok {
 		docs, ok := v3.([]langchaingoschema.Document)
 		if ok && len(docs) != 0 {
+			args["max_number_of_conccurent"] = instance.Spec.MaxNumberOfConccurent
 			mpChain := NewMapReduceChain(l.BaseNode, options...)
 			err = mpChain.Init(ctx, nil, args)
 			if err != nil {
@@ -90,7 +91,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 			if err != nil {
 				return args, err
 			}
-			// TODO:save out as a reference of following answer
+			// TODO: save this summary to document with a callback handler???
 		}
 	}
 
