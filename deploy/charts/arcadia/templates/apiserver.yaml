@@ -34,6 +34,8 @@ spec:
               value: {{ .Release.Name }}-config
             - name: BING_KEY
               value: {{ .Values.apiserver.bingKey }}
+            - name: WEATHER_API_KEY
+              value: {{ .Values.apiserver.weatherKey }}
           command:
             - "./apiserver"
           args:

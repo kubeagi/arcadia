@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
@@ -28,10 +27,7 @@ import (
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
 
-	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
-	"github.com/kubeagi/arcadia/pkg/appruntime/retriever"
-	"github.com/kubeagi/arcadia/pkg/tools/bingsearch"
 )
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
@@ -102,71 +98,6 @@ func getMemory(llm llms.Model, config v1alpha1.Memory, history langchaingoschema
 		return memory.NewConversationWindowBuffer(config.ConversionWindowSize, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
 	}
 	return memory.NewSimple()
-}
-
-func runTools(ctx context.Context, args map[string]any, tools []agent.Tool) map[string]any {
-	if len(tools) == 0 {
-		return args
-	}
-	input, ok := args["question"].(string)
-	if !ok {
-		return args
-	}
-	result := make([]string, len(tools))
-	resultRef := make([][]retriever.Reference, len(tools))
-	for i := range resultRef {
-		resultRef[i] = make([]retriever.Reference, 0)
-	}
-	var wg sync.WaitGroup
-	wg.Add(len(tools))
-	for i, tool := range tools {
-		i, tool := i, tool
-		go func(int, agent.Tool) {
-			defer wg.Done()
-			switch tool.Name { // nolint:gocritic
-			case "bing":
-				klog.V(3).Infof("tools call bing search: %s", input)
-				client, err := bingsearch.NewFromToolSpec(&tool)
-				if err != nil {
-					klog.Errorf("failed to create bing client: %w", err)
-					return
-				}
-				data, _, err := client.SearchGetDetailData(ctx, input)
-				if err != nil {
-					klog.Errorf("failed to call bing search tool: %w", err)
-					return
-				}
-				ref := make([]retriever.Reference, len(data))
-				for j := range data {
-					ref[j] = retriever.Reference{
-						Title:   data[j].Title,
-						Content: data[j].Description,
-						URL:     data[j].URL,
-					}
-				}
-				resultRef[i] = ref
-				result[i] = bingsearch.FormatResults(data)
-				klog.V(3).Infof("tools call bing search done: %s", input)
-			}
-		}(i, tool)
-	}
-	wg.Wait()
-	res := make([]string, 0, len(result))
-	for i := range result {
-		if s := strings.TrimSpace(result[i]); s != "" {
-			res = append(res, s)
-		}
-	}
-	toolOut := strings.Join(res, "\n")
-	old, exist := args["context"]
-	if exist {
-		toolOut = old.(string) + "\n" + toolOut
-	}
-	args["context"] = toolOut
-	for i := range resultRef {
-		args = retriever.AddReferencesToArgs(args, resultRef[i])
-	}
-	return args
 }
 
 /*

@@ -1,0 +1,71 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: base-chat-with-knowledgebase-pgvector-tool
+  namespace: arcadia
+spec:
+  displayName: "知识库应用"
+  description: "最简单的和知识库对话的应用"
+  prologue: "Welcome to talk to the KnowledgeBase!🤖"
+  nodes:
+    - name: Input
+      displayName: "用户输入"
+      description: "用户输入节点，必须"
+      ref:
+        kind: Input
+        name: Input
+      nextNodeName: ["prompt-node"]
+    - name: prompt-node
+      displayName: "prompt"
+      description: "设定prompt，template中可以使用{{xx}}来替换变量"
+      ref:
+        apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+        kind: Prompt
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: llm-node
+      displayName: "zhipu大模型服务"
+      description: "设定大模型的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: LLM
+        name: app-shared-llm-service
+      nextNodeName: ["chain-node", "agent-node"]
+    - name: knowledgebase-node
+      displayName: "使用的知识库"
+      description: "要用哪个知识库"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBase
+        name: knowledgebase-sample-pgvector
+      nextNodeName: ["retriever-node"]
+    - name: retriever-node
+      displayName: "从知识库提取信息的retriever"
+      description: "连接应用和知识库"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBaseRetriever
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: chain-node
+      displayName: "RetrievalQA chain"
+      description: "chain是langchain的核心概念，RetrievalQAChain用于从 retriever 中提取信息，供llm调用"
+      ref:
+        apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+        kind: RetrievalQAChain
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["Output"]
+    - name: agent-node
+      displayName: "agent"
+      description: "设定agent的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: Agent
+        name: tool-agent
+      nextNodeName: ["chain-node"]
+    - name: Output
+      displayName: "最终输出"
+      description: "最终输出节点，必须"
+      ref:
+        kind: Output
+        name: Output

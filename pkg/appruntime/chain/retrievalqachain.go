@@ -112,7 +112,6 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 		}
 	}
 
-	args = runTools(ctx, args, instance.Spec.Tools)
 	llmChain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
 		llmChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")

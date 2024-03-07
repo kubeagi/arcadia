@@ -110,7 +110,6 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 		klog.Infoln("get answer from upstream:", args["_answer"])
 		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args["_answer"])
 	}
-	args = runTools(ctx, args, instance.Spec.Tools)
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
 		chain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")

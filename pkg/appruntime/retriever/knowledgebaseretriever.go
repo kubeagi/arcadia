@@ -310,7 +310,7 @@ func (c KnowledgeBaseStuffDocuments) GetOutputKeys() []string {
 }
 
 func (c KnowledgeBaseStuffDocuments) HandleChainEnd(ctx context.Context, outputValues map[string]any) {
-	if !c.isDocNullReturn {
+	if !c.isDocNullReturn || c.DocNullReturn == "" {
 		return
 	}
 	klog.FromContext(ctx).Info(fmt.Sprintf("raw llmChain output: %s, but there is no doc return, so set output to %s\n", outputValues[c.LLMChain.OutputKey], c.DocNullReturn))

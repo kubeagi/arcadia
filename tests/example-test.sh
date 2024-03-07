@@ -200,6 +200,8 @@ function getRespInAppChat() {
 		resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
 
 		if [ $testStream == "true" ]; then
+			info "sleep 3 seconds"
+			sleep 3
 			info "just test stream mode"
 			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
 			curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data "$data"
@@ -472,15 +474,54 @@ curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data '{"q
 #	exit 1
 #fi
 if [[ $GITHUB_ACTIONS != "true" ]]; then
-	info "8.6 bingsearch test"
-	kubectl apply -f config/samples/app_llmchain_chat_with_bot_bing.yaml
-	waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-bing"
+	info "8.6 tool test"
+	kubectl apply -f config/samples/app_llmchain_chat_with_bot_tool.yaml
+	waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-tool"
 	sleep 3
-	getRespInAppChat "base-chat-with-bot-bing" "arcadia" "介绍一下微软的产品" "" "false"
-	if [ -z "$references" ] || [ "$references" = "null" ]; then
-		echo $resp
-		exit 1
-	fi
+	info "8.6.1 bingsearch test"
+	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+	#	if [ -z "$references" ] || [ "$references" = "null" ]; then
+	#		echo $resp
+	#		exit 1
+	#	fi
+	sleep 3
+	info "8.6.2 calculator test"
+	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "true"
+	info "23*34 should be 782"
+	sleep 3
+	info "8.6.3 webpage test"
+	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
+	info "说的是kubeedge在cmcc上的使用情况"
+	sleep 3
+	info "8.6.4 weather test"
+	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "北京今天的天气如何？" "" "true"
+
+	info "8.7 tool test with knowledgebase"
+	kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_tool.yaml
+	waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-tool"
+	kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"docNullReturn":""}}' --type='merge'
+	kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.9}}' --type='merge'
+	sleep 3
+	info "8.7.1 bingsearch test"
+	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+	#	if [ -z "$references" ] || [ "$references" = "null" ]; then
+	#		echo $resp
+	#		exit 1
+	#	fi
+	sleep 3
+	info "8.7.2 calculator test"
+	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "计算 23*34 的结果" "" "true"
+	info "23*34 should be 782"
+	sleep 3
+	info "8.7.3 webpage test"
+	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
+	info "说的是kubeedge在cmcc上的使用情况"
+	sleep 3
+	info "8.7.4 weather test"
+	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "北京今天的天气如何？" "" "true"
+	sleep 3
+	info "8.7.5 knowledgebase test"
+	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
 fi
 
 info "9. show apiserver logs for debug"

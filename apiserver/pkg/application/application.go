@@ -19,6 +19,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -29,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
+	apiagent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apidocumentloader "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
@@ -69,7 +70,7 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	gApp.ConversionWindowSize = pointer.Int(5)
 }
 
-func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.KnowledgeBaseRetriever, app *v1alpha1.Application) (*generated.Application, error) {
+func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.KnowledgeBaseRetriever, app *v1alpha1.Application, agent *apiagent.Agent) (*generated.Application, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
@@ -107,7 +108,9 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		gApp.MaxLength = pointer.Int(chainConfig.MaxLength)
 		gApp.MaxTokens = pointer.Int(chainConfig.MaxTokens)
 		gApp.ConversionWindowSize = pointer.Int(chainConfig.Memory.ConversionWindowSize)
-		for _, v := range chainConfig.Tools {
+	}
+	if agent != nil && len(agent.Spec.AllowedTools) > 0 {
+		for _, v := range agent.Spec.AllowedTools {
 			gApp.Tools = append(gApp.Tools, &generated.Tool{
 				Name:   pointer.String(v.Name),
 				Params: utils.MapStr2Any(v.Params),
@@ -239,6 +242,12 @@ func DeleteApplication(ctx context.Context, c client.Client, input generated.Del
 				Namespace: input.Namespace,
 			},
 		},
+		&apiagent.Agent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      *input.Name,
+				Namespace: input.Namespace,
+			},
+		},
 		&v1alpha1.Application{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      *input.Name,
@@ -252,7 +261,7 @@ func DeleteApplication(ctx context.Context, c client.Client, input generated.Del
 			return nil, err
 		}
 		err = c.DeleteAllOf(ctx, resource, opts...)
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	}
@@ -304,8 +313,22 @@ func GetApplication(ctx context.Context, c client.Client, name, namespace string
 			chainConfig = &llmchain.Spec.CommonChainConfig
 		}
 	}
+	hasAgent := false
+	for _, node := range app.Spec.Nodes {
+		if node.Ref != nil && node.Ref.Kind == "Agent" {
+			hasAgent = true
+			break
+		}
+	}
+	var agent *apiagent.Agent
+	if hasAgent {
+		agent = &apiagent.Agent{}
+		if err := c.Get(ctx, key, agent); err != nil && !apierrors.IsNotFound(err) {
+			return nil, err
+		}
+	}
 
-	return cr2app(prompt, chainConfig, retriever, app)
+	return cr2app(prompt, chainConfig, retriever, app, agent)
 }
 
 func ListApplicationMeatadatas(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
@@ -332,6 +355,15 @@ func ListApplicationMeatadatas(ctx context.Context, c client.Client, input gener
 }
 
 func UpdateApplicationConfig(ctx context.Context, c client.Client, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {
+	if len(input.Tools) != 0 {
+		key := make(map[string]bool, len(input.Tools))
+		for _, tool := range input.Tools {
+			if _, exist := key[tool.Name]; exist {
+				return nil, fmt.Errorf("duplicated tool name: %s", tool.Name)
+			}
+			key[tool.Name] = true
+		}
+	}
 	key := types.NamespacedName{Namespace: input.Namespace, Name: input.Name}
 	// 1. get application cr, if not exist, return error
 	app := &v1alpha1.Application{}
@@ -423,15 +455,6 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			qachain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, qachain.Spec.MaxTokens)
 			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
 			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
-			for _, v := range input.Tools {
-				qachain.Spec.Tools = append(qachain.Spec.Tools, agent.Tool{
-					Name:   v.Name,
-					Params: utils.MapAny2Str(v.Params),
-				})
-			}
-			if len(input.Tools) == 0 {
-				qachain.Spec.Tools = make([]agent.Tool, 0)
-			}
 			return nil
 		}); err != nil {
 			return nil, err
@@ -465,15 +488,6 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			llmchain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, llmchain.Spec.MaxTokens)
 			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
 			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
-			for _, v := range input.Tools {
-				llmchain.Spec.Tools = append(llmchain.Spec.Tools, agent.Tool{
-					Name:   v.Name,
-					Params: utils.MapAny2Str(v.Params),
-				})
-			}
-			if len(input.Tools) == 0 {
-				llmchain.Spec.Tools = make([]agent.Tool, 0)
-			}
 			return nil
 		}); err != nil {
 			return nil, err
@@ -510,7 +524,36 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}
 	}
 
-	// 5. update application
+	// 5. create or update agent for tools
+	var agent *apiagent.Agent
+	if len(input.Tools) != 0 {
+		agent = &apiagent.Agent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+			Spec: apiagent.AgentSpec{
+				CommonSpec: v1alpha1.CommonSpec{
+					DisplayName: "agent",
+					Description: "agent",
+				},
+			},
+		}
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, agent, func() error {
+			agent.Spec.AgentConfig.AllowedTools = []apiagent.Tool{}
+			for _, v := range input.Tools {
+				agent.Spec.AllowedTools = append(agent.Spec.AllowedTools, apiagent.Tool{
+					Name:   v.Name,
+					Params: utils.MapAny2Str(v.Params),
+				})
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	// 6. update application
 	app = &v1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      input.Name,
@@ -518,7 +561,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		},
 	}
 	if _, err = controllerutil.CreateOrUpdate(ctx, c, app, func() error {
-		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm)
+		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm, input.Tools)
 		app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
 		app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
 		app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
@@ -528,10 +571,10 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		return nil, err
 	}
 
-	return cr2app(prompt, chainConfig, retriever, app)
+	return cr2app(prompt, chainConfig, retriever, app, agent)
 }
 
-func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha1.Node) {
+func redefineNodes(knowledgebase *string, name string, llmName string, tools []*generated.ToolInput) (nodes []v1alpha1.Node) {
 	nodes = []v1alpha1.Node{
 		{
 			NodeConfig: v1alpha1.NodeConfig{
@@ -584,6 +627,9 @@ func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha
 			},
 			NextNodeName: []string{"chain-node"},
 		},
+	}
+	if len(tools) != 0 {
+		nodes[len(nodes)-1].NextNodeName = []string{"chain-node", "agent-node"}
 	}
 	if knowledgebase == nil {
 		nodes = append(nodes, v1alpha1.Node{
@@ -640,6 +686,21 @@ func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha
 				},
 				NextNodeName: []string{"Output"},
 			})
+	}
+	if len(tools) != 0 {
+		nodes = append(nodes, v1alpha1.Node{
+			NodeConfig: v1alpha1.NodeConfig{
+				Name:        "agent-node",
+				DisplayName: "agent",
+				Description: "agent 调用复杂工具完成任务",
+				Ref: &v1alpha1.TypedObjectReference{
+					APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
+					Kind:     "Agent",
+					Name:     name,
+				},
+			},
+			NextNodeName: []string{"chain-node"},
+		})
 	}
 	nodes = append(nodes, v1alpha1.Node{
 		NodeConfig: v1alpha1.NodeConfig{

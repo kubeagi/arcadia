@@ -1463,17 +1463,49 @@ type SelectorInput struct {
 
 // Tool 应用和Agent中用到的工具
 type Tool struct {
-	// 名称，目前只有bing可选
+	// 名称，需要严格大小写一致，可选项为："Bing Search API","calculator","Weather Query API","Web Scraper"
+	// - "Bing Search API" bing搜索工具
+	// - "calculator" 计算器
+	// - "Weather Query API" 天气查询
+	// - "Web Scraper" 网页爬取
 	Name *string `json:"name,omitempty"`
-	// params 参数
+	// params 参数，需要严格大小写一致
+	// "Bing Search API"
+	// - apiKey：密钥，默认提供
+	// - count：返回数目，默认为5
+	// - scraperPage：是否抓取bing搜到的网页的内容，默认为true
+	// "calculator" 没有参数
+	// "Weather Query API"
+	// - apiKey：密钥，默认提供；
+	// "Web Scraper"
+	// - delay：抓取时间间隔，秒，默认3
+	// - async：是否异步抓取，是或者否，默认true
+	// - handleLinks：是否从网页内的链接，继续抓取，是或者否，默认false
+	// - blacklist：黑名单列表，用逗号隔开的字符串，默认是login,signup,signin,register,logout,download,redirect，表示这些页面都不抓取
 	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // ToolInput 应用和Agent中用到的工具
 type ToolInput struct {
-	// 名称(必填)，目前只有bing可选
+	// 名称，需要严格大小写一致，可选项为："Bing Search API","calculator","Weather Query API","Web Scraper"
+	// - "Bing Search API" bing搜索工具
+	// - "calculator" 计算器
+	// - "Weather Query API" 天气查询
+	// - "Web Scraper" 网页爬取
 	Name string `json:"name"`
-	// params 参数，可选
+	// params 参数，可选，需要严格大小写一致
+	// "Bing Search API"
+	// - apiKey：密钥，默认提供
+	// - count：返回数目，默认为5
+	// - scraperPage：是否抓取bing搜到的网页的内容，默认为true
+	// "calculator" 没有参数
+	// "Weather Query API"
+	// - apiKey：密钥，默认提供；
+	// "Web Scraper"
+	// - delay：抓取时间间隔，秒，默认3
+	// - async：是否异步抓取，是或者否，默认true
+	// - handleLinks：是否从网页内的链接，继续抓取，是或者否，默认false
+	// - blacklist：黑名单列表，用逗号隔开的字符串，默认是login,signup,signin,register,logout,download,redirect，表示这些页面都不抓取
 	Params map[string]interface{} `json:"params,omitempty"`
 }
 
