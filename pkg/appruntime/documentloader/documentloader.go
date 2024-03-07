@@ -33,8 +33,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
-	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	arcadiadocumentloaders "github.com/kubeagi/arcadia/pkg/documentloaders"
 )
 
@@ -73,8 +74,15 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, dl.Instance); err != nil {
 		return args, fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
-
-	ossDatasource, err := common.SystemDatasourceOSS(ctx, cli)
+	system, err := config.GetSystemDatasource(ctx, cli)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := system.Spec.Endpoint.DeepCopy()
+	if endpoint != nil && endpoint.AuthSecret != nil {
+		endpoint.AuthSecret.WithNameSpace(system.Namespace)
+	}
+	ossDatasource, err := datasource.NewLocal(ctx, cli, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +90,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	var allDocs []schema.Document
 	var allDocsContent []string
 
+	// TODO: skip if document already been processed,just return a abstract summary
 	for _, file := range files {
 		ossInfo := &arcadiav1alpha1.OSS{Bucket: dl.RefNamespace()}
 		ossInfo.Object = file
