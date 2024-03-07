@@ -39,5 +39,8 @@ RUN python3.9 -m pip install einops scipy transformers_stream_generator==0.0.4 d
 # Install requirements for Qutantization with auto-gptq
 RUN python3.9 -m pip install auto-gptq optimum -i ${PYTHON_INDEX_URL}
 
+# Install requirements for BGEReranking(https://stackoverflow.com/questions/65431837/transformers-v4-x-convert-slow-tokenizer-to-fast-tokenizer0)
+RUN python3.9 -m pip install sentencepiece -i ${PYTHON_INDEX_URL}
+
 COPY deploy/llms/start-worker.sh /
 ENTRYPOINT ["/start-worker.sh"]
