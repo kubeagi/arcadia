@@ -157,7 +157,7 @@ func (p *PostgreSQLStorage) FindExistingConversation(conversationID string, opts
 	conversationQuery.Debug = false
 	conversationQuery.DeletedAt.Valid = false
 	res := &Conversation{}
-	tx := p.db.Preload("Messages").First(res, conversationQuery)
+	tx := p.db.Preload("Messages.Documents").First(res, conversationQuery)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -208,7 +208,11 @@ func (p *PostgreSQLStorage) FindExistingMessage(conversationID string, messageID
 	conversationQuery.DeletedAt.Valid = false
 	conversation := &Conversation{}
 	message := &Message{}
-	tx := p.db.First(conversation, conversationQuery)
+	tx := p.db.Preload("Documents").First(message, Message{ID: messageID})
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	tx = p.db.First(conversation, conversationQuery)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -223,11 +227,13 @@ func (p *PostgreSQLStorage) FindExistingMessage(conversationID string, messageID
 }
 
 func (p *PostgreSQLStorage) FindExistingDocument(conversationID, messageID string, documentID string, opts ...SearchOption) (*Document, error) {
-	message, err := p.FindExistingMessage(conversationID, messageID, opts...)
-	if err != nil {
-		return nil, err
-	}
+	messageQuery := Message{ID: messageID}
+	message := &Message{}
 	document := &Document{}
+	tx := p.db.First(message, messageQuery)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
 	association := p.db.Model(message).Association("Documents")
 	if association.Error != nil {
 		return nil, association.Error

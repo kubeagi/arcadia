@@ -31,6 +31,7 @@ import (
 
 	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	apidocumentloader "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	apiprompt "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -367,6 +368,28 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		return nil, err
 	}
 
+	// 3. create or update documentloader
+	documentLoader := &apidocumentloader.DocumentLoader{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      input.Name,
+			Namespace: input.Namespace,
+		},
+		Spec: apidocumentloader.DocumentLoaderSpec{
+			CommonSpec: v1alpha1.CommonSpec{
+				DisplayName: "documentloader",
+				Description: "documentloader",
+			},
+			ChunkSize:    1024,
+			ChunkOverlap: 50,
+			LoaderConfig: apidocumentloader.LoaderConfig{},
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, c, documentLoader, func() error {
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
 	// 3. create or update chain
 	var (
 		chainConfig *apichain.CommonChainConfig
@@ -530,6 +553,19 @@ func redefineNodes(knowledgebase *string, name, llmName string) (nodes []v1alpha
 				Ref: &v1alpha1.TypedObjectReference{
 					APIGroup: pointer.String("prompt.arcadia.kubeagi.k8s.com.cn"),
 					Kind:     "Prompt",
+					Name:     name,
+				},
+			},
+			NextNodeName: []string{"documentloader-node"},
+		},
+		{
+			NodeConfig: v1alpha1.NodeConfig{
+				Name:        "documentloader-node",
+				DisplayName: "documentloader",
+				Description: "文档加载，可选",
+				Ref: &v1alpha1.TypedObjectReference{
+					APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
+					Kind:     "DocumentLoader",
 					Name:     name,
 				},
 			},

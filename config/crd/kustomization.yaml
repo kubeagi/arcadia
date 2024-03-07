@@ -13,6 +13,7 @@ resources:
 - bases/arcadia.kubeagi.k8s.com.cn_knowledgebases.yaml
 - bases/arcadia.kubeagi.k8s.com.cn_vectorstores.yaml
 - bases/arcadia.kubeagi.k8s.com.cn_applications.yaml
+- bases/arcadia.kubeagi.k8s.com.cn_documentloaders.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_llmchains.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_retrievalqachains.yaml
 - bases/chain.arcadia.kubeagi.k8s.com.cn_apichains.yaml

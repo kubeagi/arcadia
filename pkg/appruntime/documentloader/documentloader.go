@@ -19,7 +19,6 @@ package documentloader
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -64,16 +63,17 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	// Check if have docs as input
 	v1, ok := args["files"]
 	if !ok {
-		return args, errors.New("no input docs")
+		// skip if no files provided
+		return args, nil
 	}
 	files, ok := v1.([]string)
 	if !ok || len(files) == 0 {
-		return args, errors.New("empty file list")
+		// skip if no files provided
+		return args, nil
 	}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, dl.Instance); err != nil {
 		return args, fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
-
 	system, err := config.GetSystemDatasource(ctx, cli)
 	if err != nil {
 		return nil, err
@@ -88,11 +88,12 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	}
 
 	var allDocs []schema.Document
-	var textArray []string
+	var allDocsContent []string
 
+	// TODO: skip if document already been processed,just return a abstract summary
 	for _, file := range files {
 		ossInfo := &arcadiav1alpha1.OSS{Bucket: dl.RefNamespace()}
-		ossInfo.Object = filepath.Join("upload", file)
+		ossInfo.Object = file
 		klog.Infoln("handling file", ossInfo.Object)
 		fileHandler, err := ossDatasource.ReadFile(ctx, ossInfo)
 		if err != nil {
@@ -140,15 +141,16 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 			klog.Errorln("failed to load and split content", err)
 			return nil, err
 		}
+
 		allDocs = append(allDocs, docs...)
 		for _, doc := range docs {
-			textArray = append(textArray, doc.PageContent)
+			allDocsContent = append(allDocsContent, doc.PageContent)
 		}
 	}
 
 	// Set both docs and context for latter usage
-	args["docs"] = allDocs
-	args["context"] = strings.Join(textArray, "\n")
+	args["documents"] = allDocs
+	args["documents_content"] = strings.Join(allDocsContent, "\n")
 	return args, nil
 }
 

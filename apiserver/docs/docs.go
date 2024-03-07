@@ -882,9 +882,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/chat/conversations/docs": {
+        "/chat/conversations/file": {
             "post": {
-                "description": "receive and process uploaded documents(pdf, docx) for one conversation",
+                "description": "receive conversational files for one conversation",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -894,7 +894,7 @@ const docTemplate = `{
                 "tags": [
                     "application"
                 ],
-                "summary": "receive and process uploaded documents(pdf, docx) for one conversation",
+                "summary": "receive conversational files for one conversation",
                 "parameters": [
                     {
                         "type": "string",
@@ -912,49 +912,23 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "The query to this document",
-                        "name": "query",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "The conversation id for this document",
+                        "description": "The conversation id for this file",
                         "name": "conversation_id",
                         "in": "formData"
                     },
                     {
-                        "type": "string",
-                        "description": "The response mode to this conversation",
-                        "name": "response_mode",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
                         "type": "file",
-                        "description": "This is the docs for the conversation",
-                        "name": "docs",
+                        "description": "This is the file for the conversation",
+                        "name": "file",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "The chunk size when load and split the document",
-                        "name": "chunk_size",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "The chunk overlap when load and split the document",
-                        "name": "chunk_overlap",
-                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/chat.ConversationDocsRespBody"
+                            "$ref": "#/definitions/chat.ChatRespBody"
                         }
                     },
                     "400": {
@@ -1399,6 +1373,11 @@ const docTemplate = `{
         "chat.ChatRespBody": {
             "type": "object",
             "properties": {
+                "action": {
+                    "description": "Action indicates what is this chat for",
+                    "type": "string",
+                    "example": "CHAT"
+                },
                 "conversation_id": {
                     "type": "string",
                     "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
@@ -1407,74 +1386,6 @@ const docTemplate = `{
                     "description": "CreatedAt is the time when the message is created",
                     "type": "string",
                     "example": "2023-12-21T10:21:06.389359092+08:00"
-                },
-                "latency": {
-                    "description": "Latency(ms) is how much time the server cost to process a certain request.",
-                    "type": "integer",
-                    "example": 1000
-                },
-                "message": {
-                    "description": "Message is what AI say",
-                    "type": "string",
-                    "example": "旷工最小计算单位为0.5天。"
-                },
-                "message_id": {
-                    "type": "string",
-                    "example": "4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"
-                },
-                "references": {
-                    "description": "References is the list of references",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/retriever.Reference"
-                    }
-                }
-            }
-        },
-        "chat.ConversatioSingleDocRespBody": {
-            "type": "object",
-            "properties": {
-                "file_name": {
-                    "type": "string"
-                },
-                "number_of_documents": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "description": "Summary info",
-                    "type": "string"
-                },
-                "timecost_for_embedding": {
-                    "description": "Embedding info",
-                    "type": "number"
-                },
-                "timecost_for_summarization": {
-                    "type": "number"
-                },
-                "total_time_cost": {
-                    "type": "number"
-                }
-            }
-        },
-        "chat.ConversationDocsRespBody": {
-            "type": "object",
-            "properties": {
-                "conversation_id": {
-                    "type": "string",
-                    "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
-                },
-                "created_at": {
-                    "description": "CreatedAt is the time when the message is created",
-                    "type": "string",
-                    "example": "2023-12-21T10:21:06.389359092+08:00"
-                },
-                "doc": {
-                    "description": "Docs are the responbody for each document",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/chat.ConversatioSingleDocRespBody"
-                        }
-                    ]
                 },
                 "latency": {
                     "description": "Latency(ms) is how much time the server cost to process a certain request.",
@@ -1991,6 +1902,11 @@ const docTemplate = `{
         "storage.Message": {
             "type": "object",
             "properties": {
+                "action": {
+                    "description": "Action indicates what is this message for\nChat(by default),UPLOAD,etc...",
+                    "type": "string",
+                    "example": "UPLOAD"
+                },
                 "answer": {
                     "type": "string",
                     "example": "旷工最小计算单位为0.5天。"

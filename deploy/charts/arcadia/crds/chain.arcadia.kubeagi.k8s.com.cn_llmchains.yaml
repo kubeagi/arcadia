@@ -50,6 +50,11 @@ spec:
                   in a llm call.
                 minimum: 10
                 type: integer
+              maxNumberOfConccurent:
+                default: 1
+                description: MaxNumberOfConcurrent represents the max number of concurrent
+                  calls done simultaneously to the llm chain.Only 1 by default
+                type: integer
               maxTokens:
                 default: 2048
                 description: MaxTokens is the maximum number of tokens to generate

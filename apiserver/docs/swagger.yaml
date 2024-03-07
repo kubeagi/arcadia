@@ -56,6 +56,10 @@ definitions:
     type: object
   chat.ChatRespBody:
     properties:
+      action:
+        description: Action indicates what is this chat for
+        example: CHAT
+        type: string
       conversation_id:
         example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
         type: string
@@ -63,54 +67,6 @@ definitions:
         description: CreatedAt is the time when the message is created
         example: "2023-12-21T10:21:06.389359092+08:00"
         type: string
-      latency:
-        description: Latency(ms) is how much time the server cost to process a certain
-          request.
-        example: 1000
-        type: integer
-      message:
-        description: Message is what AI say
-        example: 旷工最小计算单位为0.5天。
-        type: string
-      message_id:
-        example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
-        type: string
-      references:
-        description: References is the list of references
-        items:
-          $ref: '#/definitions/retriever.Reference'
-        type: array
-    type: object
-  chat.ConversatioSingleDocRespBody:
-    properties:
-      file_name:
-        type: string
-      number_of_documents:
-        type: integer
-      summary:
-        description: Summary info
-        type: string
-      timecost_for_embedding:
-        description: Embedding info
-        type: number
-      timecost_for_summarization:
-        type: number
-      total_time_cost:
-        type: number
-    type: object
-  chat.ConversationDocsRespBody:
-    properties:
-      conversation_id:
-        example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
-        type: string
-      created_at:
-        description: CreatedAt is the time when the message is created
-        example: "2023-12-21T10:21:06.389359092+08:00"
-        type: string
-      doc:
-        allOf:
-        - $ref: '#/definitions/chat.ConversatioSingleDocRespBody'
-        description: Docs are the responbody for each document
       latency:
         description: Latency(ms) is how much time the server cost to process a certain
           request.
@@ -468,6 +424,12 @@ definitions:
     type: object
   storage.Message:
     properties:
+      action:
+        description: |-
+          Action indicates what is this message for
+          Chat(by default),UPLOAD,etc...
+        example: UPLOAD
+        type: string
       answer:
         example: 旷工最小计算单位为0.5天。
         type: string
@@ -1077,11 +1039,11 @@ paths:
       summary: delete one conversation
       tags:
       - application
-  /chat/conversations/docs:
+  /chat/conversations/file:
     post:
       consumes:
       - multipart/form-data
-      description: receive and process uploaded documents(pdf, docx) for one conversation
+      description: receive conversational files for one conversation
       parameters:
       - description: The app namespace for this conversation
         in: formData
@@ -1093,40 +1055,22 @@ paths:
         name: app_name
         required: true
         type: string
-      - description: The query to this document
-        in: formData
-        name: query
-        required: true
-        type: string
-      - description: The conversation id for this document
+      - description: The conversation id for this file
         in: formData
         name: conversation_id
         type: string
-      - description: The response mode to this conversation
+      - description: This is the file for the conversation
         in: formData
-        name: response_mode
-        required: true
-        type: string
-      - description: This is the docs for the conversation
-        in: formData
-        name: docs
+        name: file
         required: true
         type: file
-      - description: The chunk size when load and split the document
-        in: formData
-        name: chunk_size
-        type: integer
-      - description: The chunk overlap when load and split the document
-        in: formData
-        name: chunk_overlap
-        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/chat.ConversationDocsRespBody'
+            $ref: '#/definitions/chat.ChatRespBody'
         "400":
           description: Bad Request
           schema:
@@ -1135,7 +1079,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/chat.ErrorResp'
-      summary: receive and process uploaded documents(pdf, docx) for one conversation
+      summary: receive conversational files for one conversation
       tags:
       - application
   /chat/messages:

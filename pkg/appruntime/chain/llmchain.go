@@ -46,7 +46,7 @@ func NewLLMChain(baseNode base.BaseNode) *LLMChain {
 	}
 }
 
-func (l *LLMChain) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
+func (l *LLMChain) Init(ctx context.Context, cli client.Client, args map[string]any) error {
 	instance := &v1alpha1.LLMChain{}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.RefNamespace(), Name: l.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the chain in cluster: %w", err)
@@ -72,6 +72,29 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
+
+	instance := l.Instance
+	options := GetChainOptions(instance.Spec.CommonChainConfig)
+
+	// Check if have files as input
+	v3, ok := args["documents"]
+	if ok {
+		docs, ok := v3.([]langchaingoschema.Document)
+		if ok && len(docs) != 0 {
+			args["max_number_of_conccurent"] = instance.Spec.MaxNumberOfConccurent
+			mpChain := NewMapReduceChain(l.BaseNode, options...)
+			err = mpChain.Init(ctx, nil, args)
+			if err != nil {
+				return args, err
+			}
+			_, err = mpChain.Run(ctx, nil, args)
+			if err != nil {
+				return args, err
+			}
+			// TODO: save this summary to document with a callback handler???
+		}
+	}
+
 	// _history is optional
 	// if set ,only ChatMessageHistory allowed
 	var history langchaingoschema.ChatMessageHistory
@@ -81,8 +104,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 			return args, errors.New("history not memory.ChatMessageHistory")
 		}
 	}
-	instance := l.Instance
-	options := GetChainOptions(instance.Spec.CommonChainConfig)
+
 	// Add the answer to the context if it's not empty
 	if args["_answer"] != nil {
 		klog.Infoln("get answer from upstream:", args["_answer"])

@@ -112,6 +112,15 @@ resources:
   version: v1alpha1
 - api:
     crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubeagi.k8s.com.cn
+  group: arcadia
+  kind: DocumentLoader
+  path: github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
   controller: true
   domain: arcadia.kubeagi.k8s.com.cn
   group: chain

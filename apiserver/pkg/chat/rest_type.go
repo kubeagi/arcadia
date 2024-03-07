@@ -48,13 +48,11 @@ type ConversationReqBody struct {
 	ConversationID string `json:"conversation_id" form:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
 }
 
-type ConversationDocsReqBody struct {
-	ChatReqBody `json:",inline" form:",inline"`
-
-	// ChunkSize for text splitter
-	ChunkSize int `json:"chunk_size" form:"chunk_size" example:"2048"`
-	// ChunkOverlap for text splitter
-	ChunkOverlap int `json:"chunk_overlap" form:"chunk_overlap" example:"200"`
+type ConversationFilesReqBody struct {
+	ConversationReqBody `json:",inline"`
+	Debug               bool      `json:"-"`
+	NewChat             bool      `json:"-"`
+	StartTime           time.Time `json:"-"`
 }
 
 type MessageReqBody struct {
@@ -81,6 +79,8 @@ type ChatReqBody struct {
 type ChatRespBody struct {
 	ConversationID string `json:"conversation_id" example:"5a41f3ca-763b-41ec-91c3-4bbbb00736d0"`
 	MessageID      string `json:"message_id" example:"4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24"`
+	// Action indicates what is this chat for
+	Action string `json:"action,omitempty" example:"CHAT"`
 	// Message is what AI say
 	Message string `json:"message" example:"旷工最小计算单位为0.5天。"`
 	// CreatedAt is the time when the message is created

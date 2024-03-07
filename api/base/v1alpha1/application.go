@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1alpha1
 
+import "fmt"
+
 const (
 	InputNode  = "Input"
 	OutputNode = "Output"
@@ -26,3 +28,8 @@ const (
 	// AppPublicLabelKey will add to app which is public
 	AppPublicLabelKey = Group + "/app-is-public"
 )
+
+// ConversationFilePath is the path in system storage for file within a conversation
+func ConversationFilePath(appName string, conversationID string, fileName string) string {
+	return fmt.Sprintf("application/%s/conversation/%s/%s", appName, conversationID, fileName)
+}
