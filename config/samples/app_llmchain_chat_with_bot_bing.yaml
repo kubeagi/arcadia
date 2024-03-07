@@ -23,14 +23,6 @@ spec:
         kind: Prompt
         name: base-chat-with-bot-bing
       nextNodeName: ["chain-node"]
-    - name: llm-node
-      displayName: "zhipu大模型服务"
-      description: "设定大模型的访问信息"
-      ref:
-        apiGroup: arcadia.kubeagi.k8s.com.cn
-        kind: LLM
-        name: app-shared-llm-service
-      nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "llm chain"
       description: "chain是langchain的核心概念，llmChain用于连接prompt和llm"
@@ -79,6 +71,8 @@ metadata:
 spec:
   displayName: "llm chain"
   description: "llm chain"
+  llm:
+    name: "app-shared-llm-service"
   memory:
     conversionWindowSize: 2
   model: chatglm_turbo # notice: default model chatglm_lite gets poor results in most cases, openai's gpt-3.5-turbo is also good enough

@@ -27,6 +27,8 @@ import (
 type APIChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
 
+	LLM *v1alpha1.TypedObjectReference `json:"llm"`
+
 	CommonChainConfig `json:",inline"`
 	// APIDoc is the api doc for this chain, "api_docs"
 	APIDoc string `json:"apiDoc"`

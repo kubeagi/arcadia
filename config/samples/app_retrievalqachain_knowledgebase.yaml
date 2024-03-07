@@ -23,22 +23,6 @@ spec:
         kind: Prompt
         name: base-chat-with-knowledgebase
       nextNodeName: ["chain-node"]
-    - name: llm-node
-      displayName: "zhipu大模型服务"
-      description: "设定大模型的访问信息"
-      ref:
-        apiGroup: arcadia.kubeagi.k8s.com.cn
-        kind: LLM
-        name: app-shared-llm-service
-      nextNodeName: ["chain-node"]
-    - name: knowledgebase-node
-      displayName: "使用的知识库"
-      description: "要用哪个知识库"
-      ref:
-        apiGroup: arcadia.kubeagi.k8s.com.cn
-        kind: KnowledgeBase
-        name: knowledgebase-sample
-      nextNodeName: ["retriever-node"]
     - name: retriever-node
       displayName: "从知识库提取信息的retriever"
       description: "连接应用和知识库"
@@ -106,3 +90,5 @@ metadata:
     arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
 spec:
   displayName: "从知识库获取信息的Retriever"
+  konwledgebase:
+    name: ""
