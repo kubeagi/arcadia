@@ -80,7 +80,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	}
 
 	var allDocs []schema.Document
-	var textArray []string
+	var allDocsContent []string
 
 	for _, file := range files {
 		ossInfo := &arcadiav1alpha1.OSS{Bucket: dl.RefNamespace()}
@@ -132,15 +132,16 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 			klog.Errorln("failed to load and split content", err)
 			return nil, err
 		}
+
 		allDocs = append(allDocs, docs...)
 		for _, doc := range docs {
-			textArray = append(textArray, doc.PageContent)
+			allDocsContent = append(allDocsContent, doc.PageContent)
 		}
 	}
 
 	// Set both docs and context for latter usage
 	args["documents"] = allDocs
-	args["context"] = strings.Join(textArray, "\n")
+	args["documents_content"] = strings.Join(allDocsContent, "\n")
 	return args, nil
 }
 

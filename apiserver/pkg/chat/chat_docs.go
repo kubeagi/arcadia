@@ -26,9 +26,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"crypto/sha256"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/sha256-simd"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
 

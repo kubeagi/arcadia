@@ -93,6 +93,24 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	instance := l.Instance
 	options := GetChainOptions(instance.Spec.CommonChainConfig)
 
+	// Check if have files as input
+	v5, ok := args["documents"]
+	if ok {
+		docs, ok := v5.([]langchainschema.Document)
+		if ok && len(docs) != 0 {
+			mpChain := NewMapReduceChain(l.BaseNode, options...)
+			err = mpChain.Init(ctx, nil, args)
+			if err != nil {
+				return args, err
+			}
+			_, err = mpChain.Run(ctx, nil, args)
+			if err != nil {
+				return args, err
+			}
+			// TODO:save out as a reference of following answer
+		}
+	}
+
 	args = runTools(ctx, args, instance.Spec.Tools)
 	llmChain := chains.NewLLMChain(llm, prompt)
 	if history != nil {

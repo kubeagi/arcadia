@@ -34,11 +34,17 @@ import (
 const (
 	// For map-reduce
 	DefaultPromptTemplateForMap = `
+		Content: {{.context}}
+
+		With above content, please summarize it with only 1/5 size of the content.Please remind that your answer must use same language(中文或English) of the content.
+		`
+	DefaultPromptTemplatForReduce = `
+	Below is the sub-summaries that each is based on a piece of a complete document: 
+
 		{{.context}}
 
-		With above content, please summarize it with only half content size of it.
-		`
-	DefaultPromptTemplatForReduce = `"{{.context}}"`
+	Please generate a single summary based on above sub-summaries.
+	`
 )
 
 type MapReduceChain struct {
@@ -60,58 +66,28 @@ type MapReduceChain struct {
 	chainCallOptions []chains.ChainCallOption
 }
 
-func NewMapReduceChain(baseNode base.BaseNode) *MapReduceChain {
+func NewMapReduceChain(baseNode base.BaseNode, chainCallOptions ...chains.ChainCallOption) *MapReduceChain {
 	return &MapReduceChain{
 		BaseNode:           baseNode,
 		MapReduceDocuments: chains.MapReduceDocuments{},
+		chainCallOptions:   chainCallOptions,
 	}
 }
 
-func (l *MapReduceChain) Init(ctx context.Context, cli client.Client, args map[string]any) error {
-	if args == nil {
-		return errors.New("no arguments provided for MapReduceChain")
-	}
+func (l *MapReduceChain) Init(ctx context.Context, _ client.Client, _ map[string]any) error {
+	return nil
+}
+
+func (l *MapReduceChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	// initialize the LLM
 	v1, ok := args["llm"]
 	if !ok {
-		return errors.New("no llm")
+		return args, errors.New("no llm")
 	}
 	llm, ok := v1.(llms.Model)
 	if !ok {
-		return errors.New("llm not llms.Model")
+		return args, errors.New("llm not llms.Model")
 	}
-
-	// only group `chain` is allowed
-	if l.BaseNode.Group() != "chain" {
-		return fmt.Errorf("invalid base node with group %s.must be in group chain", l.BaseNode.Group())
-	}
-	// initialize call options
-	var chainCallOptions []chains.ChainCallOption
-	switch kind := l.BaseNode.Kind(); kind {
-	case "llmchain":
-		llmchain := NewLLMChain(l.BaseNode)
-		if err := llmchain.Init(ctx, cli, nil); err != nil {
-			return err
-		}
-		l.isReady, l.message = llmchain.Ready()
-		if !l.isReady {
-			return fmt.Errorf("llmchain is not ready with %s", l.message)
-		}
-		chainCallOptions = GetChainOptions(llmchain.Instance.Spec.CommonChainConfig)
-	case "retrievalqachain":
-		retrivalQAChain := NewRetrievalQAChain(l.BaseNode)
-		if err := retrivalQAChain.Init(ctx, cli, nil); err != nil {
-			return err
-		}
-		l.isReady, l.message = retrivalQAChain.Ready()
-		if !l.isReady {
-			return fmt.Errorf("retrivalQAChain is not ready with %s", l.message)
-		}
-		chainCallOptions = GetChainOptions(retrivalQAChain.Instance.Spec.CommonChainConfig)
-	default:
-		return fmt.Errorf("invalid base node kind %s for MapReduceChain.not supported yet", kind)
-	}
-	l.chainCallOptions = chainCallOptions
 
 	// initialize MapReduceDocuments
 	l.MapReduceDocuments = chains.NewMapReduceDocuments(
@@ -123,28 +99,20 @@ func (l *MapReduceChain) Init(ctx context.Context, cli client.Client, args map[s
 			),
 		),
 	)
+	// TODO: able to configure this MaxNumberOfConcurrent
+	l.MapReduceDocuments.MaxNumberOfConcurrent = 1
 
-	return nil
-}
-
-func (l *MapReduceChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
-	v1, ok := args["documents"]
+	v2, ok := args["documents"]
 	if !ok {
 		// skip if no documents
 		klog.V(5).Infof("skip MapReduceChain due to no documents found")
 		return args, nil
 	}
-	documents, ok := v1.([]schema.Document)
+	documents, ok := v2.([]schema.Document)
 	if !ok {
 		// skip if no documents
 		klog.V(5).Infof("skip MapReduceChain due to no documents found")
 		return args, nil
-	}
-
-	needStream := false
-	needStream, ok = args["_need_stream"].(bool)
-	if ok && needStream {
-		l.chainCallOptions = append(l.chainCallOptions, chains.WithStreamingFunc(stream(args)))
 	}
 
 	// run MapReduceDocuments
@@ -152,7 +120,7 @@ func (l *MapReduceChain) Run(ctx context.Context, cli client.Client, args map[st
 	if err != nil {
 		return args, fmt.Errorf("failed to run MapReduceChain due to %s", err.Error())
 	}
-	args["_answer"] = out
+	args["_answer"] = fmt.Sprintf("Here is the document summary: %s \n", out)
 	return args, nil
 }
 

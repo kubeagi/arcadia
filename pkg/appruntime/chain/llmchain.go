@@ -46,7 +46,7 @@ func NewLLMChain(baseNode base.BaseNode) *LLMChain {
 	}
 }
 
-func (l *LLMChain) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
+func (l *LLMChain) Init(ctx context.Context, cli client.Client, args map[string]any) error {
 	instance := &v1alpha1.LLMChain{}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: l.RefNamespace(), Name: l.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the chain in cluster: %w", err)
@@ -55,7 +55,7 @@ func (l *LLMChain) Init(ctx context.Context, cli client.Client, _ map[string]any
 	return nil
 }
 
-func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
+func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args["llm"]
 	if !ok {
 		return args, errors.New("no llm")
@@ -73,22 +73,23 @@ func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]a
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
 
+	instance := l.Instance
+	options := GetChainOptions(instance.Spec.CommonChainConfig)
+
 	// Check if have files as input
 	v3, ok := args["documents"]
 	if ok {
 		docs, ok := v3.([]langchaingoschema.Document)
-		// TOOD: call mpchain
 		if ok && len(docs) != 0 {
-			mpChain := NewMapReduceChain(l.BaseNode)
-			err = mpChain.Init(ctx, cli, args)
+			mpChain := NewMapReduceChain(l.BaseNode, options...)
+			err = mpChain.Init(ctx, nil, args)
 			if err != nil {
 				return args, err
 			}
-			_, err = mpChain.Run(ctx, cli, args)
+			_, err = mpChain.Run(ctx, nil, args)
 			if err != nil {
 				return args, err
 			}
-			// update document
 			// TODO:save out as a reference of following answer
 		}
 	}
@@ -102,8 +103,7 @@ func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]a
 			return args, errors.New("history not memory.ChatMessageHistory")
 		}
 	}
-	instance := l.Instance
-	options := GetChainOptions(instance.Spec.CommonChainConfig)
+
 	// Add the answer to the context if it's not empty
 	if args["_answer"] != nil {
 		klog.Infoln("get answer from upstream:", args["_answer"])
