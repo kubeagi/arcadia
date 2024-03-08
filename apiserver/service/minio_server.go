@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -129,6 +130,7 @@ type (
 const (
 	bucketQuery     = "bucket"
 	bucketPathQuery = "bucketPath"
+	objectVersionID = "version"
 	md5Query        = "md5"
 	cachePrefix     = "totallines"
 
@@ -562,6 +564,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 // @Param			fileName	query		string	true	"Name of the file"
 // @Param			namespace	header		string	true	"Name of the bucket"
 // @Param			bucketPath	query		string	true	"Path of the bucket"
+// @Param			version		query		string	false	"Download the specified version of the file, if not passed, download the latest version"
 // @Success		200			{object}	map[string]string
 // @Failure		400			{object}	map[string]string
 // @Failure		500			{object}	map[string]string
@@ -579,6 +582,7 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 		})
 		return
 	}
+	// versionID := ctx.Query(objectVersionID)
 	anyObject, err := source.StatFile(ctx.Request.Context(), &v1alpha1.OSS{
 		Object: fmt.Sprintf("%s/%s", bucketPath, fileName),
 		Bucket: bucket,
@@ -613,6 +617,7 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 // @Param			namespace	header	string	true	"Name of the bucket"
 // @Param			bucketPath	query	string	true	"Path of the bucket"
 // @Param			fileName	query	string	true	"Name of the file"
+// @Param			version		query	string	false	"Download the specified version of the file, if not passed, download the latest version"
 // @Success		200
 // @Failure		400	{object}	map[string]string
 // @Failure		500	{object}	map[string]string
@@ -637,9 +642,10 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	bucket := ctx.GetHeader(namespaceHeader)
 	bucketPath := ctx.Query(bucketPathQuery)
 	fileName := ctx.Query("fileName")
+	versionID := ctx.Query(objectVersionID)
 
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
-	opt := minio.GetObjectOptions{}
+	opt := minio.GetObjectOptions{VersionID: versionID}
 	_ = opt.SetRange(from, end)
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
 	if err != nil {
@@ -723,7 +729,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	statInfo := anyStatInfo.(minio.ObjectInfo)
 
 	// checks if the total number of lines in the file has been cached
-	key := [4]string{cachePrefix, bucket, bucketPath, statInfo.ETag}
+	key := [...]string{cachePrefix, bucket, bucketPath, statInfo.ETag, statInfo.VersionID}
 	if a, ok := m.lru.Get(key); ok {
 		if v, ok1 := a.(int64); ok1 {
 			klog.V(5).Infof("nice, key: %v match, the file has not changed, and the total number of lines in the file is %d", key, v)
@@ -731,7 +737,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		}
 	}
 
-	object, err := source.Client.GetObject(context.TODO(), bucket, objectName, minio.GetObjectOptions{})
+	object, err := source.Client.GetObject(context.TODO(), bucket, objectName, minio.GetObjectOptions{VersionID: statInfo.VersionID})
 	if err != nil {
 		klog.Errorf("failed to get data, error is %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -753,6 +759,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	// cache the total number of lines in the file
 	_ = m.lru.Set(key, result.Total)
 	klog.V(5).Infof("set the total number of lines in the file to %d, key %v", result.Total, key)
+	result.Version = statInfo.VersionID
 	ctx.JSON(http.StatusOK, result)
 }
 
@@ -765,6 +772,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 // @Param			namespace	header		string	true	"Name of the bucket"
 // @Param			bucketPath	query		string	true	"Path of the bucket"
 // @Param			fileName	query		string	true	"Name of the file"
+// @Param			version		query		string	false	"file version"
 // @Success		200			{object}	map[string]string
 // @Failure		400			{object}	map[string]string
 // @Failure		500			{object}	map[string]string
@@ -784,7 +792,11 @@ func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
 
-	u, err := source.Core.PresignedGetObject(ctx.Request.Context(), bucket, objectName, time.Hour*12, url.Values{})
+	v := url.Values{}
+	if r := ctx.Query(objectVersionID); r != "" {
+		v.Add("versionId", r)
+	}
+	u, err := source.Core.PresignedGetObject(ctx.Request.Context(), bucket, objectName, time.Hour*12, v)
 	if err != nil {
 		klog.Errorf("failed to generate download link %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -881,6 +893,117 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"bucket": namespace, "object": object})
 }
 
+// @Summary	edit csv file online
+// @Schemes
+// @Description	edit csv file online
+// @Tags			MinioAPI
+// @Accept			json
+// @Produce		json
+// @Param			request		body		common.UpdateCSVBody	true	"request params"
+// @Param			namespace	header		string					true	"Name of the bucket"
+// @Success		200			{object}	string
+// @Failure		400			{object}	map[string]string
+// @Failure		500			{object}	map[string]string
+// @Router			/bff/versioneddataset/files/edit [PUT]
+func (m *minioAPI) EditCSV(ctx *gin.Context) {
+	var body common.UpdateCSVBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		klog.Errorf("failed to parse body error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	bucketName := ctx.GetHeader(namespaceHeader)
+	if bucketName == "" {
+		klog.Errorf("the namespace request header must be set")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "the namespace request header must be set",
+		})
+		return
+	}
+
+	objectName := fmt.Sprintf("%s/%s", body.BucketPath, body.FileName)
+	if objectName == "" {
+		klog.Errorf("unable to find target file, objectname is empty")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "unable to find target file",
+		})
+		return
+	}
+
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("failed to get system datasource error %s", err.Error()),
+		})
+		return
+	}
+
+	latestVersion := ""
+	singleFileVersions := source.Client.ListObjects(ctx.Request.Context(), bucketName, minio.ListObjectsOptions{WithVersions: true, Prefix: objectName})
+	for fv := range singleFileVersions {
+		if fv.IsLatest {
+			latestVersion = fv.VersionID
+			break
+		}
+	}
+	if body.Version != latestVersion {
+		// TODO: handle forceUpdate logic
+		klog.Warningf("The latest version is %s, and version %s is ready to be edited. Please refresh the page and edit again.", latestVersion, body.Version)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"message": fmt.Sprintf("The latest version is %s, and version %s is ready to be edited. Please refresh the page and edit again.", latestVersion, body.Version),
+		})
+		return
+	}
+
+	swapFileName := fmt.Sprintf(".%s", body.Version)
+	sf, err := os.OpenFile(swapFileName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+	if err != nil {
+		if !os.IsExist(err) {
+			klog.Errorf("an error occurred while creating, error %s", err)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"message": "unable to lock file",
+			})
+			return
+		}
+		klog.Warningf("there are other users editing the collection, please try again later.")
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"message": "there are other users editing the collection, please try again later.",
+		})
+		return
+	}
+	sf.Close()
+	defer os.Remove(swapFileName)
+
+	obj, err := source.Client.GetObject(ctx.Request.Context(), bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		klog.Errorf("failed to get original file error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	buffer, l, err := common.EditCSV(obj, body.UpdateLines, body.NewLines, body.DelLines)
+	if err != nil {
+		klog.Errorf("generate new csv file failed error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	_, err = source.Client.PutObject(ctx.Request.Context(), bucketName, objectName, buffer, l, minio.PutObjectOptions{})
+	if err != nil {
+		klog.Errorf("write new csv file failed error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, "")
+}
+
 func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	c, err := pkgclient.GetClient(nil)
 	if err != nil {
@@ -917,6 +1040,7 @@ func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 		group.GET("/versioneddataset/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.GetDownloadLink)
 		// create a webcrawler file for versioneddataset
 		group.POST("/versioneddataset/files/webcrawler", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "create", "versioneddatasets"), api.CreateWebCrawlerFile)
+		group.PUT("/versioneddataset/files/edit", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, v1alpha1.GroupVersion, "get", "versioneddatasets"), api.EditCSV)
 	}
 
 	group.GET("/rags/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, evaluationarcadiav1alpha1.GroupVersion, "get", "rags"), api.GetDownloadLink)

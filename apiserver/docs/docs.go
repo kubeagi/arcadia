@@ -440,6 +440,12 @@ const docTemplate = `{
                         "name": "fileName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Download the specified version of the file, if not passed, download the latest version",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -501,6 +507,12 @@ const docTemplate = `{
                         "name": "fileName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "file version",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -568,6 +580,12 @@ const docTemplate = `{
                         "name": "bucketPath",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Download the specified version of the file, if not passed, download the latest version",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -656,6 +674,65 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.ReadCSVResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bff/versioneddataset/files/edit": {
+            "put": {
+                "description": "edit csv file online",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "edit csv file online",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.UpdateCSVBody"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the bucket",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -1517,6 +1594,20 @@ const docTemplate = `{
                 }
             }
         },
+        "common.CSVLine": {
+            "type": "object",
+            "properties": {
+                "lineNumber": {
+                    "type": "integer"
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "common.ReadCSVResult": {
             "type": "object",
             "properties": {
@@ -1531,6 +1622,49 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.UpdateCSVBody": {
+            "type": "object",
+            "properties": {
+                "bucketPath": {
+                    "description": "BucketName string ` + "`" + `json:\"bucketName\"` + "`" + `, from header",
+                    "type": "string"
+                },
+                "delLines": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "forceUpdate": {
+                    "description": "The version to be edited is inconsistent with the latest version.\nDo you want to force an update?",
+                    "type": "boolean"
+                },
+                "newLines": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "updateLines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.CSVLine"
+                    }
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },

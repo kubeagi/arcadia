@@ -180,6 +180,15 @@ func (r *NamespaceReconciler) syncBucket(ctx context.Context, bucketName string)
 			return err
 		}
 	}
+	// https://min.io/product/object-versioning-bucket-versioning
+	// NOTE: once a bucket is enabled for versioning, that action cannot be undone - only suspended
+	klog.Infof("set bucket supports version control")
+	if err = oss.Client.SetBucketVersioning(ctx, bucketName, minio.BucketVersioningConfiguration{Status: minio.Enabled}); err != nil {
+		err = fmt.Errorf("failed to set bucket versioning. error %w", err)
+		klog.Error(err)
+		return err
+	}
+
 	return nil
 }
 
@@ -260,7 +269,7 @@ func (r *NamespaceReconciler) ensureRagRBAC(ctx context.Context, logger logr.Log
 	return r.Client.Update(ctx, &crb)
 }
 
-func (r *NamespaceReconciler) removeRagRBAC(ctx context.Context, logger logr.Logger, namespace string) error {
+func (r *NamespaceReconciler) removeRagRBAC(ctx context.Context, _ logr.Logger, namespace string) error {
 	saName := env.GetString(evaluation.RAGServiceAccountEnv, evaluation.RAGJobServiceAccount)
 	clusterRoleBindingName := env.GetString(evaluation.RAGClusterRoleBindingEnv, evaluation.RAGJobClusterRoleBinding)
 	crb := v1.ClusterRoleBinding{}

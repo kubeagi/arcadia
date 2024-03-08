@@ -112,19 +112,20 @@ func (oss *OSS) Remove(ctx context.Context, info any) error {
 	if err != nil {
 		return err
 	}
-	if strings.HasSuffix(ossInfo.Object, "/") {
-		var resultErr error
-		for e := range oss.Client.RemoveObjects(
-			ctx,
-			ossInfo.Bucket,
-			oss.Client.ListObjects(ctx, ossInfo.Bucket, minio.ListObjectsOptions{Prefix: ossInfo.Object, Recursive: true}),
-			minio.RemoveObjectsOptions{}) {
-			resultErr = e.Err
+
+	// NOTE: all versions of a file need to be deleted,
+	// so when deleting a file, the prefix is set to the full path to ensure that all versions are deleted.
+	for e := range oss.Client.RemoveObjects(
+		ctx,
+		ossInfo.Bucket,
+		oss.Client.ListObjects(ctx, ossInfo.Bucket, minio.ListObjectsOptions{Prefix: ossInfo.Object, Recursive: true}),
+		minio.RemoveObjectsOptions{}) {
+		if e.Err != nil {
+			return e.Err
 		}
-		return resultErr
 	}
 
-	return oss.Client.RemoveObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.RemoveObjectOptions{ForceDelete: true})
+	return nil
 }
 
 // StatObject against oss info
