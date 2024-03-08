@@ -24,7 +24,9 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 
+	"github.com/tmc/langchaingo/tools/scraper"
 	"k8s.io/klog/v2"
 )
 
@@ -44,6 +46,7 @@ type options struct {
 	promote        string
 	mkt            string
 	answerCount    int
+	scraperPage    bool
 }
 
 func defaultOptions() options {
@@ -72,6 +75,12 @@ func WithCount(count int) Option {
 		if count > 0 {
 			opts.count = count
 		}
+	}
+}
+
+func WithScraperPage(scraperPage bool) Option {
+	return func(opts *options) {
+		opts.scraperPage = scraperPage
 	}
 }
 
@@ -123,8 +132,29 @@ func (client *BingClient) SearchGetDetailData(ctx context.Context, query string)
 	if err != nil {
 		return nil, "", fmt.Errorf("bingSearch json marshal resp, get err:%w", err)
 	}
-	klog.V(3).Infof("bingSearch finally get webpages: %#v", resp)
-	klog.V(5).Infof("bingSearch get resp: %s", string(bytes))
+	logger := klog.FromContext(ctx)
+	logger.V(5).Info(fmt.Sprintf("bingSearch get resp: %s", string(bytes)))
+	if client.options.scraperPage {
+		var wg sync.WaitGroup
+		wg.Add(len(resp))
+		for i, data := range resp {
+			u := data.URL
+			go func(i int, URL string) {
+				defer wg.Done()
+				s, err := scraper.New()
+				if err != nil {
+					logger.V(3).Error(err, "failed to create a new scraper")
+					return
+				}
+				resp[i].Content, err = s.Call(ctx, URL)
+				if err != nil {
+					logger.V(3).Error(err, fmt.Sprintf("failed to scraper page: %s", URL))
+					return
+				}
+			}(i, u)
+		}
+		wg.Wait()
+	}
 	return resp, string(bytes), nil
 }
 
@@ -196,7 +226,7 @@ func (client *BingClient) getOnePage(ctx context.Context, query string, count, o
 
 func FormatResults(vals []WebPage) (res string) {
 	for _, val := range vals {
-		res += fmt.Sprintf("Title: %s\nDescription: %s\nURL: %s\n\n", val.Title, val.Description, val.URL)
+		res += fmt.Sprintf("Title: %s\nDescription: %s\nURL: %s\nContent: %s\n\n", val.Title, val.Description, val.URL, val.Content)
 	}
 	return res
 }

@@ -106,20 +106,6 @@ spec:
                 maximum: 1
                 minimum: 0
                 type: number
-              tools:
-                items:
-                  description: Tool/Capability that this agent will use
-                  properties:
-                    name:
-                      description: Name of the tool
-                      type: string
-                    params:
-                      additionalProperties:
-                        type: string
-                      description: Map of key/value that will be passed to the tool
-                      type: object
-                  type: object
-                type: array
               topK:
                 description: TopK is the number of tokens to consider for top-k sampling
                   in a llm call.

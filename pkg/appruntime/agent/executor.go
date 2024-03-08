@@ -20,21 +20,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
-	"github.com/tmc/langchaingo/tools"
-	"github.com/tmc/langchaingo/tools/scraper"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
-	"github.com/kubeagi/arcadia/pkg/tools/weather"
+	"github.com/kubeagi/arcadia/pkg/appruntime/log"
+	"github.com/kubeagi/arcadia/pkg/appruntime/tools"
 )
 
 type Executor struct {
@@ -60,65 +57,11 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: p.RefNamespace(), Name: p.Ref.Name}, instance); err != nil {
 		return args, fmt.Errorf("can't find the agent in cluster: %w", err)
 	}
-	var allowedTools []tools.Tool
-	// prepare tools that can be used by this agent
-	for _, toolSpec := range instance.Spec.AllowedTools {
-		switch toolSpec.Name {
-		case weather.ToolName:
-			tool, err := weather.New(&toolSpec)
-			if err != nil {
-				klog.Errorf("failed to create a new weather tool:", err)
-				continue
-			}
-			allowedTools = append(allowedTools, tool)
-		case "calculator":
-			tool := tools.Calculator{}
-			allowedTools = append(allowedTools, tool)
-		case "scraper":
-			// prepare options from toolSpec
-			options := make([]scraper.Options, 0)
-			if toolSpec.Params["delay"] != "" {
-				delay, err := strconv.ParseInt(toolSpec.Params["delay"], 10, 64)
-				if err != nil {
-					klog.Errorln("failed to parse delay %s", toolSpec.Params["delay"])
-				} else {
-					options = append(options, scraper.WithDelay(delay))
-				}
-			}
-			if toolSpec.Params["async"] != "" {
-				async, err := strconv.ParseBool(toolSpec.Params["async"])
-				if err != nil {
-					klog.Errorln("failed to parse async %s", toolSpec.Params["async"])
-				} else {
-					options = append(options, scraper.WithAsync(async))
-				}
-			}
-			if toolSpec.Params["handleLinks"] != "" {
-				handleLinks, err := strconv.ParseBool(toolSpec.Params["handleLinks"])
-				if err != nil {
-					klog.Errorln("failed to parse handleLinks %s", toolSpec.Params["handleLinks"])
-				} else {
-					options = append(options, scraper.WithHandleLinks(handleLinks))
-				}
-			}
-			if toolSpec.Params["blacklist"] != "" {
-				blacklistArray := strings.Split(toolSpec.Params["blacklist"], ",")
-				options = append(options, scraper.WithBlacklist(blacklistArray))
-			}
-			tool, err := scraper.New(options...)
-			if err != nil {
-				klog.Errorf("failed to create a new scraper tool:", err)
-				continue
-			}
-			allowedTools = append(allowedTools, tool)
-		default:
-			// Just continue if the tool does not exist
-			klog.Errorln("no tool found with name: %s", toolSpec.Name)
-		}
-	}
+	allowedTools := tools.InitTools(ctx, instance.Spec.AllowedTools)
 
 	// Initialize executor using langchaingo
 	executorOptions := func(o *agents.CreationOptions) {
+		agents.WithCallbacksHandler(log.KLogHandler{LogLevel: 3})(o)
 		agents.WithMaxIterations(instance.Spec.Options.MaxIterations)(o)
 		// Only show tool action in the streaming output if configured
 		if instance.Spec.Options.ShowToolAction {

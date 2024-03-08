@@ -1893,6 +1893,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "kaoqin.pdf"
                 },
+                "object": {
+                    "type": "string",
+                    "example": "kaoqin.pdf"
+                },
                 "summary": {
                     "type": "string",
                     "example": "kaoqin.pdf"

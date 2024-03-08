@@ -418,6 +418,9 @@ definitions:
       name:
         example: kaoqin.pdf
         type: string
+      object:
+        example: kaoqin.pdf
+        type: string
       summary:
         example: kaoqin.pdf
         type: string

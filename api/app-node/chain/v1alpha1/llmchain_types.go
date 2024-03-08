@@ -20,7 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	node "github.com/kubeagi/arcadia/api/app-node"
-	agent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
@@ -32,8 +31,6 @@ type LLMChainSpec struct {
 }
 
 type CommonChainConfig struct {
-	Tools []agent.Tool `json:"tools,omitempty"`
-
 	// MaxNumberOfConcurrent represents the max number of concurrent calls done simultaneously to
 	// the llm chain.Only 1 by default
 	// +kubebuilder:default=1

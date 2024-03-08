@@ -28,9 +28,10 @@ import (
 )
 
 const (
-	ToolName    = "Bing Search API"
-	ParamAPIKey = "apiKey"
-	ParamCount  = "count"
+	ToolName         = "Bing Search API"
+	ParamAPIKey      = "apiKey"
+	ParamCount       = "count"
+	ParamScraperPage = "scraperPage"
 )
 
 type Tool struct {
@@ -46,7 +47,7 @@ func New(tool *v1alpha1.Tool) (*Tool, error) {
 	return &Tool{client: client}, err
 }
 
-func NewFromToolSpec(tool *v1alpha1.Tool) (*BingClient, error) {
+func NewFromToolSpec(tool *v1alpha1.Tool) (client *BingClient, err error) {
 	var countVal int
 	apikey := tool.Params[ParamAPIKey]
 	count, ok := tool.Params[ParamCount]
@@ -57,7 +58,15 @@ func NewFromToolSpec(tool *v1alpha1.Tool) (*BingClient, error) {
 		}
 		countVal = atoi
 	}
-	return NewBingClient(WithAPIKey(apikey), WithCount(countVal)), nil
+	scraperPage := true
+	p, ok := tool.Params[ParamScraperPage]
+	if ok {
+		scraperPage, err = strconv.ParseBool(p)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return NewBingClient(WithAPIKey(apikey), WithCount(countVal), WithScraperPage(scraperPage)), nil
 }
 
 func (t Tool) Name() string {
@@ -90,4 +99,5 @@ type WebPage struct {
 	Title       string
 	Description string
 	URL         string
+	Content     string
 }
