@@ -99,11 +99,11 @@ metadata:
 spec:
   type: zeroShot
   allowedTools:
-    - name: "Bing Search API"
-      params:
-        apiKey: "" # should set your bing api key
-        count: "5" # total number of results
-        scraperPage: "true" # use web scraper to get page content
+#    - name: "Bing Search API"
+#      params:
+#        apiKey: "" # should set your bing api key
+#        count: "5" # total number of results
+#        scraperPage: "true" # use web scraper to get page content
     - name: "calculator"
     - name: "Weather Query API"
       params:
