@@ -65,7 +65,7 @@ jobs:
       - build-image
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         no: [1, 2, 3]
     steps:
@@ -97,6 +97,8 @@ jobs:
           	--create-dirs -o /usr/local/bin/mc && chmod +x /usr/local/bin/mc )
       - name: Example test
         run: tests/example-test.sh
+        env:
+          GITHUB_ACTION_NO: ${{ matrix.no }}
       - name: Upload logs if test fail
         if: failure()
         uses: actions/upload-artifact@v4

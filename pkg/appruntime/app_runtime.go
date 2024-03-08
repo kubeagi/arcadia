@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
@@ -169,6 +170,11 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 				continue
 			}
 			klog.FromContext(ctx).V(3).Info(fmt.Sprintf("try to run node:%s", e.Name()))
+			defer func() {
+				if r := recover(); r != nil {
+					klog.FromContext(ctx).Info(fmt.Sprintf("Recovered from node:%s error:%s stack:%s", e.Name(), r, string(debug.Stack())))
+				}
+			}()
 			if out, err = e.Run(ctx, cli, out); err != nil {
 				return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
 			}

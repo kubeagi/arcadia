@@ -36,125 +36,146 @@ var _ callbacks.Handler = KLogHandler{}
 
 func (l KLogHandler) HandleLLMGenerateContentStart(ctx context.Context, ms []llms.MessageContent) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Entering LLM with messages:")
+	buf := strings.Builder{}
+	buf.WriteString("Entering LLM with messages: ")
 	for _, m := range ms {
 		// TODO: Implement logging of other content types
-		var buf strings.Builder
+		buf.WriteString("text: ")
 		for _, t := range m.Parts {
 			if t, ok := t.(llms.TextContent); ok {
 				buf.WriteString(t.Text)
 			}
 		}
-		logger.V(l.LogLevel).Info("Role:", m.Role)
-		logger.V(l.LogLevel).Info("Text:", buf.String())
+		buf.WriteString("Role: ")
+		buf.WriteString(string(m.Role))
 	}
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info(buf.String())
 }
 
 func (l KLogHandler) HandleLLMGenerateContentEnd(ctx context.Context, res *llms.ContentResponse) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting LLM with response:")
+	buf := strings.Builder{}
+	buf.WriteString("Exiting LLM with response: ")
 	for _, c := range res.Choices {
 		if c.Content != "" {
-			logger.V(l.LogLevel).Info("Content:", c.Content)
+			buf.WriteString("Content: " + c.Content)
 		}
 		if c.StopReason != "" {
-			logger.V(l.LogLevel).Info("StopReason:", c.StopReason)
+			buf.WriteString("StopReason: " + c.StopReason)
 		}
 		if len(c.GenerationInfo) > 0 {
-			logger.V(l.LogLevel).Info("GenerationInfo:")
+			buf.WriteString("GenerationInfo: ")
 			for k, v := range c.GenerationInfo {
-				fmt.Printf("%20s: %v\n", k, v)
+				buf.WriteString(fmt.Sprintf("%20s: %#v\n", k, v))
 			}
 		}
 		if c.FuncCall != nil {
-			logger.V(l.LogLevel).Info("FuncCall: ", c.FuncCall.Name, c.FuncCall.Arguments)
+			buf.WriteString("FuncCall: " + c.FuncCall.Name + " " + c.FuncCall.Arguments)
 		}
 	}
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info(buf.String())
 }
 
 func (l KLogHandler) HandleStreamingFunc(ctx context.Context, chunk []byte) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info(string(chunk))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("log streaming: " + string(chunk))
 }
 
 func (l KLogHandler) HandleText(ctx context.Context, text string) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info(text)
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("log text: " + text)
 }
 
 func (l KLogHandler) HandleLLMStart(ctx context.Context, prompts []string) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Entering LLM with prompts:", prompts)
+	buf := strings.Builder{}
+	buf.WriteString("Entering LLM with prompts: ")
+	for _, p := range prompts {
+		buf.WriteString(p)
+		buf.WriteString(" ")
+	}
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info(buf.String())
 }
 
 func (l KLogHandler) HandleLLMError(ctx context.Context, err error) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting LLM with error:", err)
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Error(err, "Exiting LLM with error")
 }
 
 func (l KLogHandler) HandleChainStart(ctx context.Context, inputs map[string]any) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Entering chain with inputs:", formatChainValues(inputs))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info(fmt.Sprintf("Entering chain with inputs: %#v", inputs))
 }
 
 func (l KLogHandler) HandleChainEnd(ctx context.Context, outputs map[string]any) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting chain with outputs:", formatChainValues(outputs))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info(fmt.Sprintf("Exiting chain with outputs: %#v", outputs))
 }
 
 func (l KLogHandler) HandleChainError(ctx context.Context, err error) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting chain with error:", err)
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Error(err, "Exiting chain with error")
 }
 
 func (l KLogHandler) HandleToolStart(ctx context.Context, input string) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Entering tool with input:", removeNewLines(input))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("Entering tool with input: " + removeNewLines(input))
 }
 
 func (l KLogHandler) HandleToolEnd(ctx context.Context, output string) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting tool with output:", removeNewLines(output))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("Exiting tool with output: " + removeNewLines(output))
 }
 
 func (l KLogHandler) HandleToolError(ctx context.Context, err error) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Exiting tool with error:", err)
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Error(err, "Exiting tool with error")
 }
 
 func (l KLogHandler) HandleAgentAction(ctx context.Context, action schema.AgentAction) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Agent selected action:", formatAgentAction(action))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("Agent selected action: " + formatAgentAction(action))
 }
 
 func (l KLogHandler) HandleAgentFinish(ctx context.Context, finish schema.AgentFinish) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info(fmt.Sprintf("Agent finish: %v", finish))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("Agent finish: " + formatAgentFinish(finish))
 }
 
 func (l KLogHandler) HandleRetrieverStart(ctx context.Context, query string) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info("Entering retriever with query:", removeNewLines(query))
+	logger.WithValues("logger", "arcadia")
+	logger.V(l.LogLevel).Info("Entering retriever with query: " + removeNewLines(query))
 }
 
 func (l KLogHandler) HandleRetrieverEnd(ctx context.Context, query string, documents []schema.Document) {
 	logger := klog.FromContext(ctx)
-	logger.V(l.LogLevel).Info(fmt.Sprintf("Exiting retriever with documents for query:%s documents: %v", query, documents))
-}
-
-func formatChainValues(values map[string]any) string {
-	output := ""
-	for key, value := range values {
-		output += fmt.Sprintf("\"%s\" : \"%s\", ", removeNewLines(key), removeNewLines(value))
-	}
-
-	return output
+	logger.WithValues("logger", "arcadia")
+	// TODO need format
+	// logger.V(l.LogLevel).Info(fmt.Sprintf("Exiting retriever with documents for query:%s documents: %#v", query, documents))
+	logger.V(l.LogLevel).Info(fmt.Sprintf("Exiting retriever with documents for query: %s", query))
 }
 
 func formatAgentAction(action schema.AgentAction) string {
 	return fmt.Sprintf("\"%s\" with input \"%s\"", removeNewLines(action.Tool), removeNewLines(action.ToolInput))
 }
-
+func formatAgentFinish(finish schema.AgentFinish) string {
+	return fmt.Sprintf("ReturnValues: %#v Log: %s", removeNewLines(finish.ReturnValues), removeNewLines(finish.Log))
+}
 func removeNewLines(s any) string {
 	return strings.ReplaceAll(fmt.Sprint(s), "\n", " ")
 }

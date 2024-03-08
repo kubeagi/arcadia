@@ -184,37 +184,39 @@ function getRespInAppChat() {
 	query=$3
 	conversationID=$4
 	testStream=$5
-	START_TIME=$(date +%s)
+	RETRY_COUNT=3
+	attempt=0
 	while true; do
+		info "sleep 3 seconds"
+		sleep 3
 		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
 		resp=$(curl -s -XPOST http://127.0.0.1:8081/chat --data "$data")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
 			echo $resp
-			exit 1
+			attempt=$((attempt + 1))
+			if [ $attempt -gt $RETRY_COUNT ]; then
+				echo "❌: Failed. Retry count exceeded."
+				exit 1
+			fi
+			echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+			continue
 		fi
 		echo "👤: ${query}"
 		echo "🤖: ${ai_data}"
 		echo "🔗: ${references}"
-		resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
-
-		if [ $testStream == "true" ]; then
-			info "sleep 3 seconds"
-			sleep 3
-			info "just test stream mode"
-			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-			curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data "$data"
-		fi
 		break
-		CURRENT_TIME=$(date +%s)
-		ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-		if [ $ELAPSED_TIME -gt $TimeoutSeconds ]; then
-			error "Timeout reached"
-			exit 1
-		fi
-		sleep 5
 	done
+	resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
+
+	if [ $testStream == "true" ]; then
+		info "sleep 3 seconds"
+		sleep 3
+		info "just test stream mode"
+		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
+		curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data "$data"
+	fi
 }
 
 info "1. create kind cluster"
@@ -362,6 +364,21 @@ if [[ $GITHUB_ACTIONS == "true" ]]; then
 	info "in github action, use gemini"
 	sed -i 's/model: chatglm_turbo/model: gemini-pro/g' config/samples/*
 	sed -i 's/model: glm-4/model: gemini-pro/g' config/samples/*
+	case "$GITHUB_ACTION_NO" in
+	1)
+		info "in github action no 1, use gemini apikey github-action-1"
+		sed -i 's/apiKey: "QUl6YVN5QVZOdGRYOHpkeU5pNWpubzNYSExUWGM0UnpJSGxIRUFz"/apiKey: "QUl6YVN5QTBBWGVNOEJoRGpoSDN3MjBYdHc3NEQ3QUpVaV9meFRr"/g' config/samples/app_shared_llm_service_gemini.yaml
+		;;
+	2)
+		info "in github action no 2, use gemini apikey github-action-2"
+		sed -i 's/apiKey: "QUl6YVN5QVZOdGRYOHpkeU5pNWpubzNYSExUWGM0UnpJSGxIRUFz"/apiKey: "QUl6YVN5QlZPeXpQUlc0aE5tQ244QkV1MmxBcEYyeWo2eVVfcU93"/g' config/samples/app_shared_llm_service_gemini.yaml
+		;;
+	3)
+		info "in github action no 3, use gemini apikey github-action-3"
+		sed -i 's/apiKey: "QUl6YVN5QVZOdGRYOHpkeU5pNWpubzNYSExUWGM0UnpJSGxIRUFz"/apiKey: "QUl6YVN5RHJlSmtPZXZXZHZ5NGRUU1lrbGFFTFVzN0tQQktUZXdZ"/g' config/samples/app_shared_llm_service_gemini.yaml
+		;;
+	*) ;;
+	esac
 	kubectl apply -f config/samples/app_shared_llm_service_gemini.yaml
 else
 	info "in local, use zhipu"
@@ -441,18 +458,32 @@ if [[ $resp == *"$delete_conversation_id"* ]]; then
 	exit 1
 fi
 info "8.4.5 get app prompt starters"
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
-echo $resp | jq .
-if [[ $resp == *"error"* ]]; then
-	echo "failed"
-	exit 1
-fi
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
-echo $resp | jq .
-if [[ $resp == *"error"* ]]; then
-	echo "failed"
-	exit 1
-fi
+RETRY_COUNT=3
+attempt=0
+while true; do
+	info "sleep 3 seconds"
+	sleep 3
+	info "get app prompt starters without knowledgebase"
+	resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+	echo $resp | jq .
+	if [[ $resp == *"error"* ]]; then
+		attempt=$((attempt + 1))
+		if [ $attempt -gt $RETRY_COUNT ]; then
+			echo "❌: Failed. Retry count exceeded."
+			exit 1
+		fi
+		echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+		continue
+	fi
+	info "get app prompt starters with knowledgebase"
+	resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+	echo $resp | jq .
+	if [[ $resp == *"error"* ]]; then
+		echo "failed"
+		exit 1
+	fi
+	break
+done
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
