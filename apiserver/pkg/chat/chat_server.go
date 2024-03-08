@@ -136,6 +136,10 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 			User:         currentUser,
 			Debug:        req.Debug,
 		}
+		// create before do AppRun
+		if err := cs.Storage().UpdateConversation(conversation); err != nil {
+			return nil, err
+		}
 	}
 	conversation.Messages = append(conversation.Messages, storage.Message{
 		ID:     messageID,
@@ -157,6 +161,10 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 	conversation.Messages[len(conversation.Messages)-1].Answer = out.Answer
 	conversation.Messages[len(conversation.Messages)-1].References = out.References
 	conversation.Messages[len(conversation.Messages)-1].Latency = time.Since(req.StartTime).Milliseconds()
+	if req.Files != nil && len(req.Files) > 0 {
+		conversation.Messages[len(conversation.Messages)-1].RawFiles = strings.Join(req.Files, ",")
+	}
+
 	if err := cs.Storage().UpdateConversation(conversation); err != nil {
 		return nil, err
 	}

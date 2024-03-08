@@ -453,9 +453,14 @@ definitions:
         example: 旷工最小计算单位为0.5天。
         type: string
       documents:
-        description: Docs uploaded in this message
+        description: For Action Upload
         items:
           $ref: '#/definitions/storage.Document'
+        type: array
+      files:
+        description: Files that shall be used in this Chat
+        items:
+          type: string
         type: array
       id:
         example: 4f3546dd-5404-4bf8-a3bc-4fa3f9a7ba24
@@ -464,6 +469,7 @@ definitions:
         example: 1000
         type: integer
       query:
+        description: For Action Chat
         example: 旷工最小计算单位为多少天？
         type: string
       references:
