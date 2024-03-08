@@ -393,7 +393,7 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 		}
 		podWorker.r = r
 	case arcadiav1alpha1.WorkerTypeKubeAGI:
-		r, err := NewKubeAGIRunner(podWorker.c, podWorker.w.DeepCopy())
+		r, err := NewKubeAGIRunner(podWorker.c, podWorker.w.DeepCopy(), loader == nil)
 		if err != nil {
 			return fmt.Errorf("failed to new a runner with %w", err)
 		}
