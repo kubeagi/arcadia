@@ -120,16 +120,24 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	needStream := false
 	needStream, ok = args["_need_stream"].(bool)
 	if ok && needStream {
+		klog.FromContext(ctx).Info("123")
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+		klog.FromContext(ctx).Info("126")
 	} else {
 		if len(options) > 0 {
+			klog.FromContext(ctx).Info("129")
 			out, err = chains.Predict(ctx, l.LLMChain, args, options...)
+			klog.FromContext(ctx).Info("131")
 		} else {
+			klog.FromContext(ctx).Info("133.")
 			out, err = chains.Predict(ctx, l.LLMChain, args)
+			klog.FromContext(ctx).Info("134")
 		}
 	}
+	klog.FromContext(ctx).Info("138")
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, options)
+	klog.FromContext(ctx).Info("140")
 	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out

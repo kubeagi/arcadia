@@ -32,19 +32,23 @@ import (
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	return func(ctx context.Context, chunk []byte) error {
+		klog.FromContext(ctx).Info("35")
 		logger := klog.FromContext(ctx)
 		if _, ok := res["_answer_stream"]; !ok {
 			logger.Info("no _answer_stream found, create a new one")
 			res["_answer_stream"] = make(chan string)
 		}
+		klog.FromContext(ctx).Info("41")
 		streamChan, ok := res["_answer_stream"].(chan string)
 		if !ok {
 			err := fmt.Errorf("answer_stream is not chan string, but %T", res["_answer_stream"])
 			logger.Error(err, "answer_stream is not chan string")
 			return err
 		}
+		klog.FromContext(ctx).Info("48")
 		logger.V(5).Info("stream out:" + string(chunk))
 		streamChan <- string(chunk)
+		klog.FromContext(ctx).Info("51")
 		return nil
 	}
 }

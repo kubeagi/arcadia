@@ -173,6 +173,8 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 			defer func() {
 				if r := recover(); r != nil {
 					klog.FromContext(ctx).Info(fmt.Sprintf("Recovered from node:%s error:%s stack:%s", e.Name(), r, string(debug.Stack())))
+				} else {
+					klog.FromContext(ctx).Info(fmt.Sprintf("Recovered from node:%s no error stack:%s", e.Name(), string(debug.Stack())))
 				}
 			}()
 			if out, err = e.Run(ctx, cli, out); err != nil {

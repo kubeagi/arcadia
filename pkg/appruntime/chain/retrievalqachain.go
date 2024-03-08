@@ -130,25 +130,37 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	var out string
 	needStream := false
 	needStream, ok = args["_need_stream"].(bool)
+	klog.FromContext(ctx).Info("133")
 	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
+		klog.FromContext(ctx).Info("136")
 		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
+		klog.FromContext(ctx).Info("138")
 	} else {
 		if len(options) > 0 {
+			klog.FromContext(ctx).Info("141")
 			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
+			klog.FromContext(ctx).Info("143")
 		} else {
+			klog.FromContext(ctx).Info("145")
 			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
+			klog.FromContext(ctx).Info("147")
 		}
 	}
 	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
+		klog.FromContext(ctx).Info("151")
 		args = appretriever.AddReferencesToArgs(args, stuffDocuments.References)
+		klog.FromContext(ctx).Info("153")
 	}
+	klog.FromContext(ctx).Info("155")
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.ConversationalRetrievalQA, args, options)
+	klog.FromContext(ctx).Info("157")
 	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {
 		args["_answer"] = out
 		return args, nil
 	}
+	klog.FromContext(ctx).Info("163")
 	return args, fmt.Errorf("retrievalqachain run error: %w", err)
 }
 
