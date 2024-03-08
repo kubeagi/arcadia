@@ -161,6 +161,15 @@ definitions:
         example: ok
         type: string
     type: object
+  common.CSVLine:
+    properties:
+      lineNumber:
+        type: integer
+      values:
+        items:
+          type: string
+        type: array
+    type: object
   common.ReadCSVResult:
     properties:
       rows:
@@ -171,6 +180,37 @@ definitions:
         type: array
       total:
         type: integer
+      version:
+        type: string
+    type: object
+  common.UpdateCSVBody:
+    properties:
+      bucketPath:
+        description: BucketName string `json:"bucketName"`, from header
+        type: string
+      delLines:
+        items:
+          type: integer
+        type: array
+      fileName:
+        type: string
+      forceUpdate:
+        description: |-
+          The version to be edited is inconsistent with the latest version.
+          Do you want to force an update?
+        type: boolean
+      newLines:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      updateLines:
+        items:
+          $ref: '#/definitions/common.CSVLine'
+        type: array
+      version:
+        type: string
     type: object
   rag.RadarData:
     properties:
@@ -767,6 +807,11 @@ paths:
         name: fileName
         required: true
         type: string
+      - description: Download the specified version of the file, if not passed, download
+          the latest version
+        in: query
+        name: version
+        type: string
       produces:
       - application/json
       responses:
@@ -807,6 +852,10 @@ paths:
         in: query
         name: fileName
         required: true
+        type: string
+      - description: file version
+        in: query
+        name: version
         type: string
       produces:
       - application/json
@@ -852,6 +901,11 @@ paths:
         in: query
         name: bucketPath
         required: true
+        type: string
+      - description: Download the specified version of the file, if not passed, download
+          the latest version
+        in: query
+        name: version
         type: string
       produces:
       - application/json
@@ -928,6 +982,45 @@ paths:
               type: string
             type: object
       summary: Read a file line by line
+      tags:
+      - MinioAPI
+  /bff/versioneddataset/files/edit:
+    put:
+      consumes:
+      - application/json
+      description: edit csv file online
+      parameters:
+      - description: request params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/common.UpdateCSVBody'
+      - description: Name of the bucket
+        in: header
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: edit csv file online
       tags:
       - MinioAPI
   /bff/versioneddataset/files/webcrawler:
