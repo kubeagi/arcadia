@@ -1941,10 +1941,17 @@ const docTemplate = `{
                     "example": "旷工最小计算单位为0.5天。"
                 },
                 "documents": {
-                    "description": "Docs uploaded in this message",
+                    "description": "For Action Upload",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/storage.Document"
+                    }
+                },
+                "files": {
+                    "description": "Files that shall be used in this Chat",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "id": {
@@ -1956,6 +1963,7 @@ const docTemplate = `{
                     "example": 1000
                 },
                 "query": {
+                    "description": "For Action Chat",
                     "type": "string",
                     "example": "旷工最小计算单位为多少天？"
                 },

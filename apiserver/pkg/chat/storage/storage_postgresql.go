@@ -103,7 +103,7 @@ func (p *PostgreSQLStorage) ListConversations(opts ...SearchOption) ([]Conversat
 	conversationQuery.Debug = false
 	conversationQuery.DeletedAt.Valid = false
 	res := make([]Conversation, 0)
-	tx := p.db.Preload("Messages").Order("updated_at DESC").Find(&res, conversationQuery)
+	tx := p.db.Preload("Messages.Documents").Order("updated_at DESC").Find(&res, conversationQuery)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -161,7 +161,28 @@ func (p *PostgreSQLStorage) FindExistingConversation(conversationID string, opts
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
+
+	for index, message := range res.Messages {
+		// search document info based on object which is also a primary key in Document
+		if message.Action != "UPLOAD" && message.Files != nil && len(message.Files) > 0 {
+			documents, err := p.findMessageRelevantDocuments(message)
+			if err == nil {
+				message.Documents = documents
+				res.Messages[index] = message
+			}
+		}
+	}
+
 	return res, nil
+}
+
+func (p *PostgreSQLStorage) findMessageRelevantDocuments(message Message) ([]Document, error) {
+	var documents []Document
+	err := p.db.Where("object IN ?", message.Files).Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+	return documents, nil
 }
 
 func (p *PostgreSQLStorage) Delete(opts ...SearchOption) error {

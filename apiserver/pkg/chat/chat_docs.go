@@ -69,6 +69,10 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 			User:         currentUser,
 			Debug:        req.Debug,
 		}
+		// create before upload documents
+		if err := cs.Storage().UpdateConversation(conversation); err != nil {
+			return nil, err
+		}
 	}
 
 	// upload files to system datasource
