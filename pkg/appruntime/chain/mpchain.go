@@ -102,7 +102,7 @@ func (l *MapReduceChain) Run(ctx context.Context, _ client.Client, args map[stri
 	v2, ok := args["max_number_of_conccurent"]
 	if ok {
 		maxNumberOfConcurrent, ok := v2.(int)
-		if ok {
+		if ok && maxNumberOfConcurrent > 0 {
 			l.MapReduceDocuments.MaxNumberOfConcurrent = maxNumberOfConcurrent
 		}
 	}
