@@ -57,7 +57,7 @@ type Message struct {
 	Query string `gorm:"column:query;type:string;comment:user input" json:"query" example:"旷工最小计算单位为多少天？"`
 	// Files that shall be used in this Chat
 	Files      []string   `gorm:"-" json:"files"`
-	RawFiles   string     `gorm:"column:files;type:text[];comment:input files" json:"-"`
+	RawFiles   string     `gorm:"column:files;type:string;comment:input files" json:"-"`
 	Answer     string     `gorm:"column:answer;type:string;comment:ai response" json:"answer" example:"旷工最小计算单位为0.5天。"`
 	References References `gorm:"column:references;type:json;comment:references" json:"references,omitempty"`
 
