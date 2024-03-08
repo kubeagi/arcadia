@@ -367,7 +367,7 @@ func (cs *ChatServer) getApp(ctx context.Context, appName, appNamespace string) 
 		return nil, c, fmt.Errorf("failed to get application: %w", err)
 	}
 	if !app.Status.IsReady() {
-		return nil, c, errors.New("application is not ready")
+		return nil, c, fmt.Errorf("application not ready: %s", app.Status.GetCondition(v1alpha1.TypeReady).Message)
 	}
 	return app, c, nil
 }
