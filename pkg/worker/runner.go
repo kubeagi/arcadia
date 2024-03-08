@@ -268,12 +268,16 @@ var _ ModelRunner = (*KubeAGIRunner)(nil)
 type KubeAGIRunner struct {
 	c client.Client
 	w *arcadiav1alpha1.Worker
+
+	modelFileFromRemote bool
 }
 
-func NewKubeAGIRunner(c client.Client, w *arcadiav1alpha1.Worker) (ModelRunner, error) {
+func NewKubeAGIRunner(c client.Client, w *arcadiav1alpha1.Worker, modelFileFromRemote bool) (ModelRunner, error) {
 	return &KubeAGIRunner{
 		c: c,
 		w: w,
+
+		modelFileFromRemote: modelFileFromRemote,
 	}, nil
 }
 
@@ -300,6 +304,23 @@ func (runner *KubeAGIRunner) Build(ctx context.Context, model *arcadiav1alpha1.T
 
 	// read worker address
 	mountPath := "/data/models"
+	rerankModelPath := fmt.Sprintf("%s/%s", mountPath, model.Name)
+
+	if runner.modelFileFromRemote {
+		m := arcadiav1alpha1.Model{}
+		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
+			return nil, err
+		}
+		if m.Spec.HuggingFaceRepo != "" {
+			rerankModelPath = m.Spec.HuggingFaceRepo
+		}
+		/*
+			TODO support modelscope
+			if m.Spec.ModelScopeRepo != "" {
+			    rerankModelPath = m.Spec.ModelScopeRepo
+			}
+		*/
+	}
 	container := &corev1.Container{
 		Name:            "runner",
 		Image:           img,
@@ -309,7 +330,7 @@ func (runner *KubeAGIRunner) Build(ctx context.Context, model *arcadiav1alpha1.T
 		},
 		Env: []corev1.EnvVar{
 			// Only reranking supported for now
-			{Name: "RERANKING_MODEL_PATH", Value: fmt.Sprintf("%s/%s", mountPath, model.Name)},
+			{Name: "RERANKING_MODEL_PATH", Value: rerankModelPath},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: 21002},
