@@ -89,6 +89,14 @@ type ChatRespBody struct {
 	References []retriever.Reference `json:"references,omitempty"`
 	// Latency(ms) is how much time the server cost to process a certain request.
 	Latency int64 `json:"latency,omitempty" example:"1000"`
+	// Documents in this chat
+	Document DocumentRespBody `json:"document,omitempty"`
+}
+
+type DocumentRespBody struct {
+	ID     string `json:"id,omitempty" example:"8b833028-5d8d-418c-9f28-8aaa23c972b0"`
+	Name   string `json:"name,omitempty" example:"example.pdf"`
+	Object string `json:"object,omitempty" example:"application/base-chat-document-assistant/conversation/f54f5122-28fb-474e-8593-39f5b3760eaa/90fe100fb9ee6e6cb9ccb091fd91b6264f5f5444dea6d93b3c8ed7418e20c37d.pdf"`
 }
 
 type ErrorResp struct {

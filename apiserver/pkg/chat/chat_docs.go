@@ -97,31 +97,31 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 		bytes.NewReader(data),
 		int64(len(data)),
 		minio.PutObjectOptions{
-			UserTags: map[string]string{
-				"FILE_NAME": file.Filename,
-			},
+			// UserTags: map[string]string{
+			// 	"FILE_NAME": file.Filename,
+			// },
 		})
 	if err != nil {
 		klog.Errorf("failed to store file %s with error %s", file.Filename, err.Error())
 		return nil, fmt.Errorf("failed to store file %s with error %s", file.Filename, err.Error())
 	}
 
+	document := storage.Document{
+		ID:             string(uuid.NewUUID()),
+		MessageID:      messageID,
+		ConversationID: req.ConversationID,
+		Name:           file.Filename,
+		Object:         objectPath,
+	}
+
 	// process document with map-reduce
 	message := storage.Message{
-		ID:      messageID,
-		Action:  "UPLOAD",
-		Query:   "UPLOAD",
-		Answer:  "DONE",
-		Latency: int64(time.Since(req.StartTime).Milliseconds()),
-		Documents: []storage.Document{
-			{
-				ID:             string(uuid.NewUUID()),
-				MessageID:      messageID,
-				ConversationID: req.ConversationID,
-				Name:           file.Filename,
-				Object:         objectPath,
-			},
-		},
+		ID:        messageID,
+		Action:    "UPLOAD",
+		Query:     "UPLOAD",
+		Answer:    "DONE",
+		Latency:   int64(time.Since(req.StartTime).Milliseconds()),
+		Documents: []storage.Document{document},
 	}
 
 	// update conversat ion
@@ -146,5 +146,10 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 		Action:         "UPLOAD",
 		Message:        "Done",
 		Latency:        message.Latency,
+		Document: DocumentRespBody{
+			ID:     document.ID,
+			Name:   document.Name,
+			Object: document.Object,
+		},
 	}, nil
 }

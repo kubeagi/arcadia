@@ -67,6 +67,10 @@ definitions:
         description: CreatedAt is the time when the message is created
         example: "2023-12-21T10:21:06.389359092+08:00"
         type: string
+      document:
+        allOf:
+        - $ref: '#/definitions/chat.DocumentRespBody'
+        description: Documents in this chat
       latency:
         description: Latency(ms) is how much time the server cost to process a certain
           request.
@@ -102,6 +106,18 @@ definitions:
     required:
     - app_name
     - app_namespace
+    type: object
+  chat.DocumentRespBody:
+    properties:
+      id:
+        example: 8b833028-5d8d-418c-9f28-8aaa23c972b0
+        type: string
+      name:
+        example: example.pdf
+        type: string
+      object:
+        example: application/base-chat-document-assistant/conversation/f54f5122-28fb-474e-8593-39f5b3760eaa/90fe100fb9ee6e6cb9ccb091fd91b6264f5f5444dea6d93b3c8ed7418e20c37d.pdf
+        type: string
     type: object
   chat.ErrorResp:
     properties:

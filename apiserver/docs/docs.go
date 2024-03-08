@@ -1387,6 +1387,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2023-12-21T10:21:06.389359092+08:00"
                 },
+                "document": {
+                    "description": "Documents in this chat",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/chat.DocumentRespBody"
+                        }
+                    ]
+                },
                 "latency": {
                     "description": "Latency(ms) is how much time the server cost to process a certain request.",
                     "type": "integer",
@@ -1431,6 +1439,23 @@ const docTemplate = `{
                     "description": "ConversationID, if it is empty, a new conversation will be created",
                     "type": "string",
                     "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"
+                }
+            }
+        },
+        "chat.DocumentRespBody": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "8b833028-5d8d-418c-9f28-8aaa23c972b0"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "example.pdf"
+                },
+                "object": {
+                    "type": "string",
+                    "example": "application/base-chat-document-assistant/conversation/f54f5122-28fb-474e-8593-39f5b3760eaa/90fe100fb9ee6e6cb9ccb091fd91b6264f5f5444dea6d93b3c8ed7418e20c37d.pdf"
                 }
             }
         },
