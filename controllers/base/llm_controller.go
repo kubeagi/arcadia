@@ -272,5 +272,5 @@ func (r *LLMReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1alp
 		newCondition = instance.ReadyCondition(msg)
 	}
 	instanceCopy.Status.SetConditions(newCondition)
-	return r.Client.Status().Update(ctx, instanceCopy)
+	return errors.Join(err, r.Client.Status().Update(ctx, instanceCopy))
 }
