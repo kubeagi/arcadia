@@ -91,6 +91,7 @@ metadata:
 spec:
   displayName: "llm chain"
   description: "llm chain"
+  maxNumberOfConccurent: 1
   maxTokens: 20480
   maxLength: 20480
   model: "6ac7baa2-71e7-4ffc-bd49-9356e743ecbb"
