@@ -34,6 +34,8 @@ type AgentConfig struct {
 	// type, can be zeroShot or conversational
 	//+kubebuilder:default="zeroShot"
 	Type string `json:"type,omitempty"`
+	// Prompt used to instruct the LLM of agent
+	Prompt string `json:"prompt,omitempty"`
 	// list of allowed tools for this agent
 	AllowedTools []Tool `json:"allowedTools,omitempty"`
 	// http action like get/post

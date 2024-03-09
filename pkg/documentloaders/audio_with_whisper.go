@@ -88,6 +88,11 @@ func (aww AudioWithWhisper) CovertToText(ctx context.Context) (string, error) {
 
 	// write data to local file
 	tmpFilePath := fmt.Sprintf("/tmp/%s", aww.fileName)
+	filePath := filepath.Dir(tmpFilePath)
+	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+		klog.Errorln("failed to create directory: %s", err)
+		return "", err
+	}
 	tmpFile, err := os.Create(tmpFilePath)
 	if err != nil {
 		klog.Errorln("failed to create file: %s", err)

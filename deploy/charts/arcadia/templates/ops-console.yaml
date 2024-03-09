@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-portal
+  name: {{ .Release.Name }}-opsconsole
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-portal
+      app: {{ .Release.Name }}-opsconsole
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-portal
+        app: {{ .Release.Name }}-opsconsole
     spec:
       containers:
         - image: {{ .Values.opsconsole.image }}
           imagePullPolicy: IfNotPresent
-          name: kubeagi-portal
+          name: kubeagi-opsconsole
           ports:
           - containerPort: 80
             protocol: TCP
@@ -32,12 +32,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-portal
+  name: {{ .Release.Name }}-opsconsole
   namespace: {{ .Release.Namespace }}
 spec:
   type: ClusterIP
   selector:
-    app: {{ .Release.Name }}-portal
+    app: {{ .Release.Name }}-opsconsole
   ports:
     - name: api
       port: 80
@@ -47,11 +47,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-portal-ingress
+  name: {{ .Release.Name }}-opsconsole-ingress
   namespace: {{ .Release.Namespace }}
   annotations:
-    description: kubeagi-portal-ingress
-    displayName: kubeagi-portal-ingress
+    description: kubeagi-opsconsole-ingress
+    displayName: kubeagi-opsconsole-ingress
     httpSend: /
     ingress-lb: portal-ingress
     kubernetes.io/ingress.class: portal-ingress
@@ -79,7 +79,7 @@ spec:
             path: "/{{ .Values.opsconsole.ingress.path }}"
             backend:
               service:
-                name: {{ .Release.Name }}-portal
+                name: {{ .Release.Name }}-opsconsole
                 port:
                   number: 80
 {{- end }}

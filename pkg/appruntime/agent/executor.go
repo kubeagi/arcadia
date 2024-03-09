@@ -76,7 +76,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		return args, fmt.Errorf("failed to initialize executor: %w", err)
 	}
 	input := make(map[string]any)
-	input["input"] = args["question"]
+	input["input"] = fmt.Sprintf("%s, %s", instance.Spec.Prompt, args["question"])
 	response, err := executor.Call(ctx, input)
 	if err != nil {
 		return args, fmt.Errorf("error when call agent: %w", err)
