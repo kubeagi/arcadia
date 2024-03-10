@@ -72,6 +72,9 @@ spec:
                     description: Whether to show tool action in the streaming output
                     type: boolean
                 type: object
+              prompt:
+                description: Prompt used to instruct the LLM of agent
+                type: string
               type:
                 default: zeroShot
                 description: type, can be zeroShot or conversational

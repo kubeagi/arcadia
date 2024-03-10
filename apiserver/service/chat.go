@@ -41,7 +41,7 @@ import (
 
 const (
 	// Time interval to check if the chat stream should be closed if no more message arrives
-	WaitTimeoutForChatStreaming = 10
+	WaitTimeoutForChatStreaming = 30
 	// default prompt starter
 	PromptLimit = 4
 )

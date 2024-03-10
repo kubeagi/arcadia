@@ -201,4 +201,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/tmc/langchaingo => github.com/kubeagi/langchaingo v0.0.0-20240229054113-5336bfef6e5e // branch dev
+replace github.com/tmc/langchaingo => github.com/kubeagi/langchaingo v0.0.0-20240309031049-511cb230f881 // branch dev

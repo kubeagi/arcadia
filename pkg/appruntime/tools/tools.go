@@ -88,6 +88,14 @@ func InitTools(ctx context.Context, specTools []v1alpha1.Tool) []tools.Tool {
 				blacklistArray := strings.Split(toolSpec.Params["blacklist"], ",")
 				options = append(options, scraper.WithBlacklist(blacklistArray))
 			}
+			if toolSpec.Params["maxScrapedDataLength"] != "" {
+				maxScrapedDataLength, err := strconv.Atoi(toolSpec.Params["maxScrapedDataLength"])
+				if err != nil {
+					klog.Errorln("failed to parse maxScrapedDataLength %s", toolSpec.Params["maxScrapedDataLength"])
+				} else {
+					options = append(options, scraper.WithMaxScrapedDataLength(maxScrapedDataLength))
+				}
+			}
 			tool, err := scraper.New(options...)
 			if err != nil {
 				logger.Error(err, "failed to create a new scraper tool")
@@ -96,7 +104,7 @@ func InitTools(ctx context.Context, specTools []v1alpha1.Tool) []tools.Tool {
 			allowedTools = append(allowedTools, tool)
 		default:
 			// Just continue if the tool does not exist
-			logger.Error(fmt.Errorf("no tool found with name: %s", toolSpec.Name), "")
+			klog.Errorf("no tool found with name: %s", toolSpec.Name)
 		}
 	}
 	return allowedTools

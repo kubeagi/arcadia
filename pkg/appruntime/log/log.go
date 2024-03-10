@@ -81,7 +81,8 @@ func (l KLogHandler) HandleLLMGenerateContentEnd(ctx context.Context, res *llms.
 func (l KLogHandler) HandleStreamingFunc(ctx context.Context, chunk []byte) {
 	logger := klog.FromContext(ctx)
 	logger.WithValues("logger", "arcadia")
-	logger.V(l.LogLevel).Info("log streaming: " + string(chunk))
+	// Lower level for log streaming
+	logger.V(l.LogLevel + 1).Info("log streaming: " + string(chunk))
 }
 
 func (l KLogHandler) HandleText(ctx context.Context, text string) {
