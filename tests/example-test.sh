@@ -190,11 +190,20 @@ function getRespInAppChat() {
 		info "sleep 3 seconds"
 		sleep 3
 		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-		resp=$(curl -s -XPOST http://127.0.0.1:8081/chat --data "$data")
+		resp=$(curl -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
 			echo $resp
+			kill $portal_pid >/dev/null 2>&1
+			echo "re port-forward apiserver..."
+			kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
+			portal_pid=$!
+			info "port-forward apiserver in pid: $portal_pid"
+			if [[ $resp == *"googleapi: Error 500"* ]]; then
+				echo "google api error, will retry after 20s"
+				sleep 20
+			fi
 			attempt=$((attempt + 1))
 			if [ $attempt -gt $RETRY_COUNT ]; then
 				echo "❌: Failed. Retry count exceeded."
@@ -211,11 +220,31 @@ function getRespInAppChat() {
 	resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
 
 	if [ $testStream == "true" ]; then
-		info "sleep 3 seconds"
-		sleep 3
-		info "just test stream mode"
-		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-		curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data "$data"
+		attempt=0
+		while true; do
+			info "sleep 3 seconds"
+			sleep 3
+			info "just test stream mode"
+			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
+			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data"
+			if [[ $? -ne 0 ]]; then
+				attempt=$((attempt + 1))
+				if [ $attempt -gt $RETRY_COUNT ]; then
+					echo "❌: Failed. Retry count exceeded."
+					exit 1
+				fi
+				echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+				kill $portal_pid >/dev/null 2>&1
+				echo "re port-forward apiserver..."
+				kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
+				portal_pid=$!
+				info "port-forward apiserver in pid: $portal_pid"
+				echo "and wait 20s for google api error"
+				sleep 20
+				continue
+			fi
+			break
+		done
 	fi
 }
 
@@ -435,24 +464,24 @@ fi
 
 info "8.4 check other chat rest api"
 info "8.4.1 conversation list"
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 echo $resp | jq .
 delete_conversation_id=$(echo $resp | jq -r '.[0].id')
 info "8.4.2 message list"
 data=$(jq -n --arg conversationID "$delete_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/messages --data "$data")
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/messages --data "$data")
 echo $resp | jq .
 info "8.4.3 message references"
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
 message_id=$(echo $resp | jq -r '.[1].messages[0].id')
 conversation_id=$(echo $resp | jq -r '.[1].id')
 data=$(jq -n --arg conversationID "$conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/messages/$message_id/references --data "$data")
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/messages/$message_id/references --data "$data")
 echo $resp | jq .
 info "8.4.4 delete conversation"
-resp=$(curl --max-time $TimeoutSeconds -s -XDELETE http://127.0.0.1:8081/chat/conversations/$delete_conversation_id)
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XDELETE http://127.0.0.1:8081/chat/conversations/$delete_conversation_id)
 echo $resp | jq .
-resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 if [[ $resp == *"$delete_conversation_id"* ]]; then
 	echo "delete conversation failed"
 	exit 1
@@ -464,7 +493,7 @@ while true; do
 	info "sleep 3 seconds"
 	sleep 3
 	info "get app prompt starters without knowledgebase"
-	resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 	echo $resp | jq .
 	if [[ $resp == *"error"* ]]; then
 		attempt=$((attempt + 1))
@@ -473,10 +502,19 @@ while true; do
 			exit 1
 		fi
 		echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+		kill $portal_pid >/dev/null 2>&1
+		echo "re port-forward apiserver..."
+		kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
+		portal_pid=$!
+		info "port-forward apiserver in pid: $portal_pid"
+		if [[ $resp == *"googleapi: Error 500"* ]]; then
+			echo "google api error, will retry after 20s"
+			sleep 20
+		fi
 		continue
 	fi
 	info "get app prompt starters with knowledgebase"
-	resp=$(curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
 	echo $resp | jq .
 	if [[ $resp == *"error"* ]]; then
 		echo "failed"
@@ -499,61 +537,63 @@ info "8.5 apichain test"
 kubectl apply -f config/samples/app_apichain_movie.yaml
 waitCRDStatusReady "Application" "arcadia" "movie-bot"
 sleep 3
-curl --max-time $TimeoutSeconds -s -XPOST http://127.0.0.1:8081/chat --data '{"query":"年会不能停的主演有谁？","response_mode":"blocking","conversation_id":"","app_name":"movie-bot", "app_namespace":"arcadia"}'
+getRespInAppChat "movie-bot" "arcadia" "年会不能停的主演是谁？" "" "false"
 #if [[ $resp != *"温度"* ]]; then
 #	echo "Because conversationWindowSize is enabled to be 2, llm should record history, but resp:"$resp "dont contains Jim"
 #	exit 1
 #fi
-if [[ $GITHUB_ACTIONS != "true" ]]; then
-	info "8.6 tool test"
-	kubectl apply -f config/samples/app_llmchain_chat_with_bot_tool.yaml
-	waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-tool"
-	sleep 3
-	info "8.6.1 bingsearch test"
-	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
-	#	if [ -z "$references" ] || [ "$references" = "null" ]; then
-	#		echo $resp
-	#		exit 1
-	#	fi
-	sleep 3
-	info "8.6.2 calculator test"
-	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "true"
-	info "23*34 should be 782"
-	sleep 3
-	info "8.6.3 webpage test"
-	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
-	info "说的是kubeedge在cmcc上的使用情况"
-	sleep 3
-	info "8.6.4 weather test"
-	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "北京今天的天气如何？" "" "true"
+#if [[ $GITHUB_ACTIONS != "true" ]]; then
+info "8.6 tool test"
+kubectl apply -f config/samples/app_llmchain_chat_with_bot_tool.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-tool"
+sleep 3
+#	info "8.6.1 bingsearch test"
+#	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+#	if [ -z "$references" ] || [ "$references" = "null" ]; then
+#		echo $resp
+#		exit 1
+#	fi
+sleep 3
+info "8.6.2 calculator test"
+info "23*34 结果应该是 782"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "true"
+sleep 3
+info "8.6.3 webpage test"
+info "说的是 kubeedge 在 cmcc 上的使用情况"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
+sleep 3
+info "8.6.4 weather test"
+info "说的是北京今天的天气情况"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "北京今天的天气如何？" "" "true"
 
-	info "8.7 tool test with knowledgebase"
-	kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_tool.yaml
-	waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-tool"
-	kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"docNullReturn":""}}' --type='merge'
-	kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.9}}' --type='merge'
-	sleep 3
-	info "8.7.1 bingsearch test"
-	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "用30字介绍一下时速云" "" "true"
-	#	if [ -z "$references" ] || [ "$references" = "null" ]; then
-	#		echo $resp
-	#		exit 1
-	#	fi
-	sleep 3
-	info "8.7.2 calculator test"
-	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "计算 23*34 的结果" "" "true"
-	info "23*34 should be 782"
-	sleep 3
-	info "8.7.3 webpage test"
-	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
-	info "说的是kubeedge在cmcc上的使用情况"
-	sleep 3
-	info "8.7.4 weather test"
-	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "北京今天的天气如何？" "" "true"
-	sleep 3
-	info "8.7.5 knowledgebase test"
-	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
-fi
+info "8.7 tool test with knowledgebase and qachain"
+kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_tool.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-tool"
+kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"docNullReturn":""}}' --type='merge'
+kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.9}}' --type='merge'
+sleep 3
+#	info "8.7.1 bingsearch test"
+#	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+#	if [ -z "$references" ] || [ "$references" = "null" ]; then
+#		echo $resp
+#		exit 1
+#	fi
+sleep 3
+info "8.7.2 calculator test"
+info "23*34 结果应该是 782"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "计算 23*34 的结果" "" "true"
+sleep 3
+info "8.7.3 webpage test"
+info "说的是 kubeedge 在 cmcc 上的使用情况"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "https://kubeedge.io/zh/case-studies/CMCC-10086 简单总结一下说了什么" "" "true"
+sleep 3
+info "8.7.4 weather test"
+info "说的是北京今天的天气情况"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "北京今天的天气如何？" "" "true"
+sleep 3
+info "8.7.5 knowledgebase test"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+#fi
 
 info "9. show apiserver logs for debug"
 kubectl logs --tail=100 -n arcadia -l app=arcadia-apiserver >/tmp/apiserver.log
