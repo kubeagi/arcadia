@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -560,18 +561,26 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			Namespace: input.Namespace,
 		},
 	}
-	if _, err = controllerutil.CreateOrUpdate(ctx, c, app, func() error {
-		app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm, input.Tools)
-		app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
-		app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
-		app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
-		app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
-		return nil
-	}); err != nil {
-		return nil, err
+	appCopy := app.DeepCopy()
+	_ = mutateApp(appCopy, input)
+	if !equality.Semantic.DeepEqual(app.Spec, appCopy.Spec) {
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, app, func() error {
+			return mutateApp(app, input)
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	return cr2app(prompt, chainConfig, retriever, app, agent)
+}
+
+func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfigInput) error {
+	app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm, input.Tools)
+	app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
+	app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
+	app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
+	app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
+	return nil
 }
 
 func redefineNodes(knowledgebase *string, name string, llmName string, tools []*generated.ToolInput) (nodes []v1alpha1.Node) {
