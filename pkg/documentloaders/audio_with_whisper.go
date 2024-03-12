@@ -61,8 +61,6 @@ func NewAudoWithWhisper(data []byte, fileName, language, output string, vadFilte
 
 // Load reads from the io.Reader and returns a document with the data.
 func (aww AudioWithWhisper) Load(ctx context.Context) ([]schema.Document, error) {
-	// TODO: Update the status of document loader CR
-
 	// Run the whisperloader tool to transcribe audio to text
 	text, err := aww.CovertToText(ctx)
 	if err != nil {
@@ -79,7 +77,11 @@ func (aww AudioWithWhisper) Load(ctx context.Context) ([]schema.Document, error)
 // LoadAndSplit reads text data from the io.Reader and splits it into multiple
 // documents using a text splitter.
 func (aww AudioWithWhisper) LoadAndSplit(ctx context.Context, splitter textsplitter.TextSplitter) ([]schema.Document, error) {
-	return aww.Load(ctx)
+	docs, err := aww.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return textsplitter.SplitDocuments(splitter, docs)
 }
 
 // input will be from the previous LLM
