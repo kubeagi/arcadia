@@ -29,6 +29,12 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/config"
+)
+
+const (
+	DefaultChunkSize    = 1024
+	DefaultChunkOverlap = 100
 )
 
 func knowledgebase2modelConverter(ctx context.Context, c client.Client) func(obj client.Object) (generated.PageNode, error) {
@@ -101,6 +107,8 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		embedderType = string(embedderResource.Spec.Provider.GetType())
 	}
 
+	embeddingOptions := knowledgebase.EmbeddingOptions()
+
 	md := generated.KnowledgeBase{
 		ID:                &id,
 		Name:              knowledgebase.GetName(),
@@ -122,6 +130,8 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 			Namespace: knowledgebase.Spec.VectorStore.Namespace,
 		},
 		FileGroupDetails: filegroupdetails,
+		ChunkSize:        &embeddingOptions.ChunkSize,
+		ChunkOverlap:     &embeddingOptions.ChunkOverlap,
 		// Status info
 		Status:  &status,
 		Reason:  &reason,
@@ -130,11 +140,49 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 	return &md, nil
 }
 
-func CreateKnowledgeBase(ctx context.Context, c client.Client, name, namespace, displayname, description, embedder string, vectorstore v1alpha1.TypedObjectReference, filegroups []v1alpha1.FileGroup) (*generated.KnowledgeBase, error) {
+func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.CreateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
+	var filegroups []v1alpha1.FileGroup
+	var vectorstore v1alpha1.TypedObjectReference
+	vector, _ := config.GetVectorStore(ctx, c)
+	displayname, description, embedder := "", "", ""
+	if input.DisplayName != nil {
+		displayname = *input.DisplayName
+	}
+	if input.Description != nil {
+		description = *input.Description
+	}
+	if input.VectorStore != nil {
+		vectorstore = v1alpha1.TypedObjectReference(*input.VectorStore)
+	} else {
+		vectorstore = *vector
+	}
+	if input.Embedder != "" {
+		embedder = input.Embedder
+	}
+	if input.FileGroups != nil {
+		for _, f := range input.FileGroups {
+			filegroup := v1alpha1.FileGroup{
+				Source: (*v1alpha1.TypedObjectReference)(&f.Source),
+				Paths:  f.Path,
+			}
+			filegroups = append(filegroups, filegroup)
+		}
+	}
+
+	// Embedding options
+	chunkSize := DefaultChunkSize
+	if input.ChunkSize != nil {
+		chunkSize = *input.ChunkSize
+	}
+	chunkOverlap := DefaultChunkOverlap
+	if input.ChunkOverlap != nil {
+		chunkOverlap = *input.ChunkOverlap
+	}
+
 	knowledgebase := &v1alpha1.KnowledgeBase{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      input.Name,
+			Namespace: input.Namespace,
 		},
 		Spec: v1alpha1.KnowledgeBaseSpec{
 			CommonSpec: v1alpha1.CommonSpec{
@@ -144,10 +192,14 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, name, namespace, 
 			Embedder: &v1alpha1.TypedObjectReference{
 				Kind:      "Embedder",
 				Name:      embedder,
-				Namespace: &namespace,
+				Namespace: &input.Namespace,
 			},
 			VectorStore: &vectorstore,
 			FileGroups:  filegroups,
+			EmbeddingOptions: v1alpha1.EmbeddingOptions{
+				ChunkSize:    chunkSize,
+				ChunkOverlap: chunkOverlap,
+			},
 		},
 	}
 	common.SetCreator(ctx, &knowledgebase.Spec.CommonSpec)
@@ -211,6 +263,13 @@ func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.
 			filegroups[index] = filegroup
 		}
 		kb.Spec.FileGroups = filegroups
+	}
+
+	if input.ChunkSize != nil {
+		kb.Spec.ChunkSize = *input.ChunkSize
+	}
+	if input.ChunkOverlap != nil {
+		kb.Spec.ChunkOverlap = *input.ChunkOverlap
 	}
 
 	err = c.Update(ctx, kb)

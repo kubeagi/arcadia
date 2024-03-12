@@ -28,10 +28,10 @@ type DocumentLoaderSpec struct {
 	// CommonSpec
 	v1alpha1.CommonSpec `json:",inline"`
 	// ChunkSize for text splitter
-	// +kubebuilder:default=2048
+	// +kubebuilder:default=512
 	ChunkSize int `json:"chunkSize,omitempty"`
 	// ChunkOverlap for text splitter
-	// +kubebuilder:default=200
+	// +kubebuilder:default=100
 	ChunkOverlap int `json:"chunkOverlap,omitempty"`
 	// FileExtName the type of documents, can be .pdf, .txt, .mp3, etc ...
 	FileExtName string `json:"fileExtName,omitempty"`

@@ -27,13 +27,23 @@ type KnowledgeBaseSpec struct {
 	// Embedder defines the embedder to embedding files
 	Embedder *TypedObjectReference `json:"embedder,omitempty"`
 
-	// TODO: add EmbedderOptions
-
 	// VectorStore defines the vectorstore to store results
 	VectorStore *TypedObjectReference `json:"vectorStore,omitempty"`
 
 	// FileGroups included files Grouped by VersionedDataset
 	FileGroups []FileGroup `json:"fileGroups,omitempty"`
+
+	// Embedding Options
+	EmbeddingOptions `json:",inline"`
+}
+
+type EmbeddingOptions struct {
+	// ChunkSize for text splitter
+	// +kubebuilder:default=1024
+	ChunkSize int `json:"chunkSize,omitempty"`
+	// ChunkOverlap for text splitter
+	// +kubebuilder:default=100
+	ChunkOverlap int `json:"chunkOverlap,omitempty"`
 }
 
 type FileGroupDetail struct {

@@ -39,6 +39,14 @@ spec:
           spec:
             description: KnowledgeBaseSpec defines the desired state of KnowledgeBase
             properties:
+              chunkOverlap:
+                default: 100
+                description: ChunkOverlap for text splitter
+                type: integer
+              chunkSize:
+                default: 1024
+                description: ChunkSize for text splitter
+                type: integer
               creator:
                 description: Creator defines datasource creator (AUTO-FILLED by webhook)
                 type: string
