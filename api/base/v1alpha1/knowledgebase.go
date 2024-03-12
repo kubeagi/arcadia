@@ -10,6 +10,19 @@ const (
 	UpdateSourceFileAnnotationKey = Group + "/update-source-file-time"
 )
 
+func (kb *KnowledgeBase) EmbeddingOptions() EmbeddingOptions {
+	options := kb.Spec.EmbeddingOptions
+	if kb.Spec.EmbeddingOptions.ChunkSize == 0 {
+		// default 1024
+		options.ChunkSize = 1024
+	}
+	if kb.Spec.EmbeddingOptions.ChunkOverlap == 0 {
+		// default 100
+		options.ChunkOverlap = 100
+	}
+	return options
+}
+
 func (kb *KnowledgeBase) VectorStoreCollectionName() string {
 	return kb.Namespace + "_" + kb.Name
 }

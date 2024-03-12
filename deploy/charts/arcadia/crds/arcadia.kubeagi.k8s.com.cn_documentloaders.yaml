@@ -36,11 +36,11 @@ spec:
             description: DocumentLoaderSpec defines the desired state of DocumentLoader
             properties:
               chunkOverlap:
-                default: 200
+                default: 100
                 description: ChunkOverlap for text splitter
                 type: integer
               chunkSize:
-                default: 2048
+                default: 512
                 description: ChunkSize for text splitter
                 type: integer
               creator:

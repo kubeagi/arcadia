@@ -249,6 +249,10 @@ type CreateKnowledgeBaseInput struct {
 	VectorStore *TypedObjectReferenceInput `json:"vectorStore,omitempty"`
 	// 知识库文件
 	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
+	// chunkSize为知识库做文档拆分时的块大小
+	ChunkSize *int `json:"chunkSize,omitempty"`
+	// chunkOverlap为知识库作文档拆分时相邻块的交集
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
 }
 
 type CreateLLMInput struct {
@@ -849,6 +853,10 @@ type KnowledgeBase struct {
 	VectorStore *TypedObjectReference `json:"vectorStore,omitempty"`
 	// fileGroupDetails为知识库中所处理的文件组的详细内容和状态
 	FileGroupDetails []*Filegroupdetail `json:"fileGroupDetails,omitempty"`
+	// chunkSize为知识库做文档拆分时的块大小
+	ChunkSize *int `json:"chunkSize,omitempty"`
+	// chunkOverlap为知识库作文档拆分时相邻块的交集
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
 	// 知识库整体连接状态
 	// 规则: True 代表正常 False代表异常
 	// 规则: Deleting 代表删除中
@@ -1668,6 +1676,10 @@ type UpdateKnowledgeBaseInput struct {
 	Description *string `json:"description,omitempty"`
 	// 更新知识库文件
 	FileGroups []*Filegroupinput `json:"fileGroups,omitempty"`
+	// chunkSize为知识库做文档拆分时的块大小
+	ChunkSize *int `json:"chunkSize,omitempty"`
+	// chunkOverlap为知识库作文档拆分时相邻块的交集
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
 }
 
 type UpdateLLMInput struct {

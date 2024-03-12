@@ -370,6 +370,8 @@ type ComplexityRoot struct {
 
 	KnowledgeBase struct {
 		Annotations       func(childComplexity int) int
+		ChunkOverlap      func(childComplexity int) int
+		ChunkSize         func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Creator           func(childComplexity int) int
 		Description       func(childComplexity int) int
@@ -2479,6 +2481,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KnowledgeBase.Annotations(childComplexity), true
+
+	case "KnowledgeBase.chunkOverlap":
+		if e.complexity.KnowledgeBase.ChunkOverlap == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBase.ChunkOverlap(childComplexity), true
+
+	case "KnowledgeBase.chunkSize":
+		if e.complexity.KnowledgeBase.ChunkSize == nil {
+			break
+		}
+
+		return e.complexity.KnowledgeBase.ChunkSize(childComplexity), true
 
 	case "KnowledgeBase.creationTimestamp":
 		if e.complexity.KnowledgeBase.CreationTimestamp == nil {
@@ -6203,6 +6219,16 @@ type KnowledgeBase {
     fileGroupDetails为知识库中所处理的文件组的详细内容和状态
     """
     fileGroupDetails: [filegroupdetail]
+
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
     
     """
     知识库整体连接状态
@@ -6250,6 +6276,16 @@ input CreateKnowledgeBaseInput{
     vectorStore: TypedObjectReferenceInput
     """知识库文件"""
     fileGroups: [filegroupinput!]
+
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
 }
 
 """知识库更新的输入"""
@@ -6271,6 +6307,15 @@ input UpdateKnowledgeBaseInput {
 
     """更新知识库文件"""
     fileGroups: [filegroupinput!]
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
 }
 
 """知识库分页列表查询的输入"""
@@ -18820,6 +18865,88 @@ func (ec *executionContext) fieldContext_KnowledgeBase_fileGroupDetails(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _KnowledgeBase_chunkSize(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_chunkSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBase_chunkSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBase",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KnowledgeBase_chunkOverlap(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KnowledgeBase_chunkOverlap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkOverlap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KnowledgeBase_chunkOverlap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KnowledgeBase",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBase_status(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBase_status(ctx, field)
 	if err != nil {
@@ -19010,6 +19137,10 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_createKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_KnowledgeBase_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_KnowledgeBase_chunkOverlap(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "reason":
@@ -19101,6 +19232,10 @@ func (ec *executionContext) fieldContext_KnowledgeBaseMutation_updateKnowledgeBa
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_KnowledgeBase_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_KnowledgeBase_chunkOverlap(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "reason":
@@ -19244,6 +19379,10 @@ func (ec *executionContext) fieldContext_KnowledgeBaseQuery_getKnowledgeBase(ctx
 				return ec.fieldContext_KnowledgeBase_vectorStore(ctx, field)
 			case "fileGroupDetails":
 				return ec.fieldContext_KnowledgeBase_fileGroupDetails(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_KnowledgeBase_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_KnowledgeBase_chunkOverlap(ctx, field)
 			case "status":
 				return ec.fieldContext_KnowledgeBase_status(ctx, field)
 			case "reason":
@@ -33370,7 +33509,7 @@ func (ec *executionContext) unmarshalInputCreateKnowledgeBaseInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "embedder", "vectorStore", "fileGroups"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "embedder", "vectorStore", "fileGroups", "chunkSize", "chunkOverlap"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33440,6 +33579,20 @@ func (ec *executionContext) unmarshalInputCreateKnowledgeBaseInput(ctx context.C
 				return it, err
 			}
 			it.FileGroups = data
+		case "chunkSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkSize = data
+		case "chunkOverlap":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkOverlap"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkOverlap = data
 		}
 	}
 
@@ -36171,7 +36324,7 @@ func (ec *executionContext) unmarshalInputUpdateKnowledgeBaseInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "fileGroups"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "fileGroups", "chunkSize", "chunkOverlap"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -36227,6 +36380,20 @@ func (ec *executionContext) unmarshalInputUpdateKnowledgeBaseInput(ctx context.C
 				return it, err
 			}
 			it.FileGroups = data
+		case "chunkSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkSize = data
+		case "chunkOverlap":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkOverlap"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkOverlap = data
 		}
 	}
 
@@ -39810,6 +39977,10 @@ func (ec *executionContext) _KnowledgeBase(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._KnowledgeBase_vectorStore(ctx, field, obj)
 		case "fileGroupDetails":
 			out.Values[i] = ec._KnowledgeBase_fileGroupDetails(ctx, field, obj)
+		case "chunkSize":
+			out.Values[i] = ec._KnowledgeBase_chunkSize(ctx, field, obj)
+		case "chunkOverlap":
+			out.Values[i] = ec._KnowledgeBase_chunkOverlap(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._KnowledgeBase_status(ctx, field, obj)
 		case "reason":

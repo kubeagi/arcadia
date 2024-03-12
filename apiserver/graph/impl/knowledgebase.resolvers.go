@@ -7,10 +7,8 @@ package impl
 import (
 	"context"
 
-	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/knowledgebase"
-	"github.com/kubeagi/arcadia/pkg/config"
 )
 
 // CreateKnowledgeBase is the resolver for the createKnowledgeBase field.
@@ -20,34 +18,7 @@ func (r *knowledgeBaseMutationResolver) CreateKnowledgeBase(ctx context.Context,
 		return nil, err
 	}
 
-	var filegroups []v1alpha1.FileGroup
-	var vectorstore v1alpha1.TypedObjectReference
-	vector, _ := config.GetVectorStore(ctx, c)
-	displayname, description, embedder := "", "", ""
-	if input.DisplayName != nil {
-		displayname = *input.DisplayName
-	}
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.VectorStore != nil {
-		vectorstore = v1alpha1.TypedObjectReference(*input.VectorStore)
-	} else {
-		vectorstore = *vector
-	}
-	if input.Embedder != "" {
-		embedder = input.Embedder
-	}
-	if input.FileGroups != nil {
-		for _, f := range input.FileGroups {
-			filegroup := v1alpha1.FileGroup{
-				Source: (*v1alpha1.TypedObjectReference)(&f.Source),
-				Paths:  f.Path,
-			}
-			filegroups = append(filegroups, filegroup)
-		}
-	}
-	return knowledgebase.CreateKnowledgeBase(ctx, c, input.Name, input.Namespace, displayname, description, embedder, vectorstore, filegroups)
+	return knowledgebase.CreateKnowledgeBase(ctx, c, input)
 }
 
 // UpdateKnowledgeBase is the resolver for the updateKnowledgeBase field.

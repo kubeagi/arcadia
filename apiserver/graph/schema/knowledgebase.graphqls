@@ -125,6 +125,16 @@ type KnowledgeBase {
     fileGroupDetails为知识库中所处理的文件组的详细内容和状态
     """
     fileGroupDetails: [filegroupdetail]
+
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
     
     """
     知识库整体连接状态
@@ -172,6 +182,16 @@ input CreateKnowledgeBaseInput{
     vectorStore: TypedObjectReferenceInput
     """知识库文件"""
     fileGroups: [filegroupinput!]
+
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
 }
 
 """知识库更新的输入"""
@@ -193,6 +213,15 @@ input UpdateKnowledgeBaseInput {
 
     """更新知识库文件"""
     fileGroups: [filegroupinput!]
+
+    """
+    chunkSize为知识库做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap为知识库作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
 }
 
 """知识库分页列表查询的输入"""

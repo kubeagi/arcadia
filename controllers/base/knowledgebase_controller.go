@@ -538,15 +538,17 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 		}
 	case ".html", ".htm":
 		loader = documentloaders.NewHTML(dataReader)
+	// TODO: support .mp3,.wav
 	default:
 		loader = documentloaders.NewText(dataReader)
 	}
 
 	// initialize text splitter
 	// var split textsplitter.TextSplitter
+	embeddingOptions := kb.EmbeddingOptions()
 	split := textsplitter.NewRecursiveCharacter(
-		textsplitter.WithChunkSize(300),
-		textsplitter.WithChunkOverlap(30),
+		textsplitter.WithChunkSize(embeddingOptions.ChunkSize),
+		textsplitter.WithChunkOverlap(embeddingOptions.ChunkOverlap),
 	)
 	// switch {
 	// case "token":
