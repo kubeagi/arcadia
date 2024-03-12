@@ -32,7 +32,7 @@ import (
 
 type LLM struct {
 	base.BaseNode
-	langchainllms.LLM
+	langchainllms.Model
 	Instance *v1alpha1.LLM
 }
 
@@ -51,13 +51,13 @@ func (z *LLM) Init(ctx context.Context, cli client.Client, _ map[string]any) err
 	if err != nil {
 		return fmt.Errorf("can't convert to langchain llm: %w", err)
 	}
-	z.LLM = llm
+	z.Model = llm
 	z.Instance = instance
 	return nil
 }
 
 func (z *LLM) Run(ctx context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
-	args["llm"] = z
+	args[base.LangchaingoLLMKeyInArg] = z
 	logger := klog.FromContext(ctx)
 	logger.Info("use llm", "name", z.Ref.Name, "namespace", z.RefNamespace())
 	return args, nil

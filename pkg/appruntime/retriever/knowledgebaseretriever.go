@@ -18,14 +18,9 @@ package retriever
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
-	"github.com/tmc/langchaingo/callbacks"
-	"github.com/tmc/langchaingo/chains"
-	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -35,73 +30,19 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	"github.com/kubeagi/arcadia/pkg/appruntime/log"
-	"github.com/kubeagi/arcadia/pkg/documentloaders"
 	"github.com/kubeagi/arcadia/pkg/langchainwrap"
 	pkgvectorstore "github.com/kubeagi/arcadia/pkg/vectorstore"
 )
 
-type Reference struct {
-	// Question row
-	Question string `json:"question" example:"q: 旷工最小计算单位为多少天？"`
-	// Answer row
-	Answer string `json:"answer" example:"旷工最小计算单位为 0.5 天。"`
-	// vector search score
-	Score float32 `json:"score" example:"0.34"`
-	// the qa file fullpath
-	QAFilePath string `json:"qa_file_path" example:"dataset/dataset-playground/v1/qa.csv"`
-	// line number in the qa file
-	QALineNumber int `json:"qa_line_number" example:"7"`
-	// source file name, only file name, not full path
-	FileName string `json:"file_name" example:"员工考勤管理制度-2023.pdf"`
-	// page number in the source file
-	PageNumber int `json:"page_number" example:"1"`
-	// related content in the source file or in webpage
-	Content string `json:"content" example:"旷工最小计算单位为0.5天，不足0.5天以0.5天计算，超过0.5天不满1天以1天计算，以此类推。"`
-	// Title of the webpage
-	Title string `json:"title,omitempty" example:"开始使用 Microsoft 帐户 – Microsoft"`
-	// URL of the webpage
-	URL string `json:"url,omitempty" example:"https://www.microsoft.com/zh-cn/welcome"`
-}
-
-func (reference Reference) String() string {
-	bytes, err := json.Marshal(&reference)
-	if err != nil {
-		return ""
-	}
-	return string(bytes)
-}
-
-func (reference Reference) SimpleString() string {
-	return fmt.Sprintf("%s %s", reference.Question, reference.Answer)
-}
-
-func AddReferencesToArgs(args map[string]any, refs []Reference) map[string]any {
-	if len(refs) == 0 {
-		return args
-	}
-	old, exist := args["_references"]
-	if exist {
-		oldRefs := old.([]Reference)
-		args["_references"] = append(oldRefs, refs...)
-		return args
-	}
-	args["_references"] = refs
-	return args
-}
-
 type KnowledgeBaseRetriever struct {
-	langchaingoschema.Retriever
 	base.BaseNode
-	DocNullReturn string
-	Instance      *apiretriever.KnowledgeBaseRetriever
-	Finish        func()
+	Instance *apiretriever.KnowledgeBaseRetriever
+	Finish   func()
 }
 
 func NewKnowledgeBaseRetriever(baseNode base.BaseNode) *KnowledgeBaseRetriever {
 	return &KnowledgeBaseRetriever{
-		Retriever:     nil,
-		BaseNode:      baseNode,
-		DocNullReturn: "",
+		BaseNode: baseNode,
 	}
 }
 
@@ -116,7 +57,6 @@ func (l *KnowledgeBaseRetriever) Init(ctx context.Context, cli client.Client, _ 
 
 func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
 	instance := l.Instance
-	l.DocNullReturn = instance.Spec.DocNullReturn
 
 	var knowledgebaseName, knowledgebaseNamespace string
 	for _, n := range l.BaseNode.GetPrevNode() {
@@ -159,11 +99,42 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 		return nil, err
 	}
 	logger := klog.FromContext(ctx)
-	logger.V(3).Info(fmt.Sprintf("retriever created with scorethreshold: %f", instance.Spec.ScoreThreshold))
+	logger.V(3).Info(fmt.Sprintf("retriever created[scorethreshold: %f][num: %d]", instance.Spec.ScoreThreshold, instance.Spec.NumDocuments))
 	retriever := vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
 	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
-	l.Retriever = retriever
-	args["retriever"] = l
+
+	question, ok := args["question"]
+	if !ok {
+		return nil, errors.New("no question in args")
+	}
+	query, ok := question.(string)
+	if !ok {
+		return nil, errors.New("question not string")
+	}
+	docs, err := retriever.GetRelevantDocuments(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("can't get relevant documents: %w", err)
+	}
+	if len(docs) == 0 {
+		v, exist := args[base.APPDocNullReturn]
+		if exist {
+			docNullReturn, ok := v.(string)
+			if ok && len(docNullReturn) > 0 {
+				return nil, &base.RetrieverGetNullDocError{Msg: docNullReturn}
+			}
+		}
+	}
+	// pgvector get score means vector distance, similarity = 1 - vector distance
+	// chroma get score means similarity
+	// we want similarity finally.
+	if vectorStore.Spec.Type() == v1alpha1.VectorStoreTypePGVector {
+		for i := range docs {
+			docs[i].Score = 1 - docs[i].Score
+		}
+	}
+	docs, refs := ConvertDocuments(ctx, docs, "knowledgebase")
+	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: docs}
+	AddReferencesToArgs(args, refs)
 	return args, nil
 }
 
@@ -175,144 +146,4 @@ func (l *KnowledgeBaseRetriever) Cleanup() {
 	if l.Finish != nil {
 		l.Finish()
 	}
-}
-
-// KnowledgeBaseStuffDocuments is similar to chains.StuffDocuments but with new joinDocuments method
-type KnowledgeBaseStuffDocuments struct {
-	chains.StuffDocuments
-	isDocNullReturn bool
-	DocNullReturn   string
-	callbacks.SimpleHandler
-	References []Reference
-}
-
-func (c *KnowledgeBaseStuffDocuments) GetCallbackHandler() callbacks.Handler {
-	return c
-}
-
-var (
-	_ chains.Chain           = &KnowledgeBaseStuffDocuments{}
-	_ callbacks.Handler      = &KnowledgeBaseStuffDocuments{}
-	_ callbacks.HandlerHaver = &KnowledgeBaseStuffDocuments{}
-)
-
-func (c *KnowledgeBaseStuffDocuments) joinDocuments(ctx context.Context, docs []langchaingoschema.Document) string {
-	logger := klog.FromContext(ctx)
-	var text string
-	docLen := len(docs)
-	for k, doc := range docs {
-		logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] raw text: %s, raw score: %f\n", k, doc.PageContent, doc.Score))
-		for key, v := range doc.Metadata {
-			if str, ok := v.([]byte); ok {
-				logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %s\n", k, key, string(str)))
-			} else {
-				logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: related doc[%d] metadata[%s]: %#v\n", k, key, v))
-			}
-		}
-		// chroma will get []byte, pgvector will get string...
-		answer, ok := doc.Metadata[documentloaders.AnswerCol].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.AnswerCol].([]byte); ok {
-				answer = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-
-		text += doc.PageContent
-		if len(answer) != 0 {
-			text = text + "\na: " + answer
-		}
-		if k != docLen-1 {
-			text += c.Separator
-		}
-		qafilepath, ok := doc.Metadata[documentloaders.QAFileName].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.QAFileName].([]byte); ok {
-				qafilepath = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-		lineNumber, ok := doc.Metadata[documentloaders.LineNumber].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.LineNumber].([]byte); ok {
-				lineNumber = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-		line, _ := strconv.Atoi(lineNumber)
-		filename, ok := doc.Metadata[documentloaders.FileNameCol].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.FileNameCol].([]byte); ok {
-				filename = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-		pageNumber, ok := doc.Metadata[documentloaders.PageNumberCol].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.PageNumberCol].([]byte); ok {
-				pageNumber = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-		page, _ := strconv.Atoi(pageNumber)
-		content, ok := doc.Metadata[documentloaders.ChunkContentCol].(string)
-		if !ok {
-			if a, ok := doc.Metadata[documentloaders.ChunkContentCol].([]byte); ok {
-				content = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
-			}
-		}
-		c.References = append(c.References, Reference{
-			Question:     doc.PageContent,
-			Answer:       answer,
-			Score:        1 - doc.Score, // for pgvector
-			QAFilePath:   qafilepath,
-			QALineNumber: line,
-			FileName:     filename,
-			PageNumber:   page,
-			Content:      content,
-		})
-	}
-	logger.V(3).Info(fmt.Sprintf("KnowledgeBaseRetriever: finally get related text: %s\n", text))
-	if len(text) == 0 {
-		c.isDocNullReturn = true
-	}
-	return text
-}
-
-func NewStuffDocuments(llmChain *chains.LLMChain, docNullReturn string) *KnowledgeBaseStuffDocuments {
-	return &KnowledgeBaseStuffDocuments{
-		StuffDocuments: chains.NewStuffDocuments(llmChain),
-		DocNullReturn:  docNullReturn,
-		References:     make([]Reference, 0, 5),
-	}
-}
-
-func (c *KnowledgeBaseStuffDocuments) Call(ctx context.Context, values map[string]any, options ...chains.ChainCallOption) (map[string]any, error) {
-	docs, ok := values[c.InputKey].([]langchaingoschema.Document)
-	if !ok {
-		return nil, fmt.Errorf("%w: %w", chains.ErrInvalidInputValues, chains.ErrInputValuesWrongType)
-	}
-
-	inputValues := make(map[string]any)
-	for key, value := range values {
-		inputValues[key] = value
-	}
-
-	inputValues[c.DocumentVariableName] = c.joinDocuments(ctx, docs)
-	return chains.Call(ctx, c.LLMChain, inputValues, options...)
-}
-
-func (c KnowledgeBaseStuffDocuments) GetMemory() langchaingoschema.Memory {
-	return c.StuffDocuments.GetMemory()
-}
-
-func (c KnowledgeBaseStuffDocuments) GetInputKeys() []string {
-	return c.StuffDocuments.GetInputKeys()
-}
-
-func (c KnowledgeBaseStuffDocuments) GetOutputKeys() []string {
-	return c.StuffDocuments.GetOutputKeys()
-}
-
-func (c KnowledgeBaseStuffDocuments) HandleChainEnd(ctx context.Context, outputValues map[string]any) {
-	if !c.isDocNullReturn || c.DocNullReturn == "" {
-		return
-	}
-	klog.FromContext(ctx).Info(fmt.Sprintf("raw llmChain output: %s, but there is no doc return, so set output to %s\n", outputValues[c.LLMChain.OutputKey], c.DocNullReturn))
-	outputValues[c.LLMChain.OutputKey] = c.DocNullReturn
 }

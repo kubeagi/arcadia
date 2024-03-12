@@ -1,0 +1,20 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Worker
+metadata:
+  name: bce-reranker
+  namespace: arcadia
+spec:
+  displayName: BCE Reranking模型
+  description: "BCEmbedding是由网易有道开发的中英双语和跨语种语义表征算法模型库"
+  type: "kubeagi"
+  model:
+    kind: "Model"
+    name: "bce-reranker"
+  additionalEnvs:
+  - name: "RERANKING_MODEL_PATH"
+    value: "maidalun1020/bce-reranker-base_v1"
+  - name: "HF_TOKEN"
+    value: "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"
+  replicas: 1
+  runner:
+    image: kubeagi/core-library-cli:v0.0.1-20240308-18ea8aa

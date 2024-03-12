@@ -31,7 +31,6 @@ import (
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
-	appretriever "github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
 type RetrievalQAChain struct {
@@ -57,7 +56,7 @@ func (l *RetrievalQAChain) Init(ctx context.Context, cli client.Client, _ map[st
 }
 
 func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
-	v1, ok := args["llm"]
+	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
 	}
@@ -81,7 +80,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	if !ok {
 		return args, errors.New("retriever not schema.Retriever")
 	}
-	v4, ok := args["_history"]
+	v4, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]
 	if !ok {
 		return args, errors.New("no history")
 	}
@@ -116,20 +115,12 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	if history != nil {
 		llmChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
 	}
-	var baseChain chains.Chain
-	var stuffDocuments *appretriever.KnowledgeBaseStuffDocuments
-	if knowledgeBaseRetriever, ok := v3.(*appretriever.KnowledgeBaseRetriever); ok {
-		stuffDocuments = appretriever.NewStuffDocuments(llmChain, knowledgeBaseRetriever.DocNullReturn)
-		baseChain = stuffDocuments
-	} else {
-		baseChain = chains.NewStuffDocuments(llmChain)
-	}
-	chain := chains.NewConversationalRetrievalQA(baseChain, chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history, "", ""))
+	chain := chains.NewConversationalRetrievalQA(chains.NewStuffDocuments(llmChain), chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history, "", ""))
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
 	needStream := false
-	needStream, ok = args["_need_stream"].(bool)
+	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
 	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
@@ -140,13 +131,10 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
 		}
 	}
-	if stuffDocuments != nil && len(stuffDocuments.References) > 0 {
-		args = appretriever.AddReferencesToArgs(args, stuffDocuments.References)
-	}
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.ConversationalRetrievalQA, args, options)
 	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {
-		args["_answer"] = out
+		args[base.OutputAnserKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("retrievalqachain run error: %w", err)

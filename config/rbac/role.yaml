@@ -654,6 +654,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rerankretrievers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rerankretrievers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - rerankretrievers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses

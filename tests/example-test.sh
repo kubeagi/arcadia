@@ -33,9 +33,12 @@ InstallDirPath=${TempFilePath}/building-base
 DefaultPassWord=${DefaultPassWord:-'passw0rd'}
 LOG_DIR=${LOG_DIR:-"/tmp/kubeagi-example-test/logs"}
 RootPath=$(dirname -- "$(readlink -f -- "$0")")/..
+portal_pid=0
+RETRY_COUNT=5
 
 Timeout="${TimeoutSeconds}s"
 mkdir ${TempFilePath} || true
+env
 
 function debugInfo {
 	if [[ $? -eq 0 ]]; then
@@ -46,7 +49,8 @@ function debugInfo {
 	fi
 	if [[ $GITHUB_ACTIONS == "true" ]]; then
 		warning "debugInfo start 🧐"
-		mkdir -p $LOG_DIR
+		mkdir -p $LOG_DIR || true
+		df -h
 
 		warning "1. Try to get all resources "
 		kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get -A --ignore-not-found=true --show-kind=true >$LOG_DIR/get-all-resources-list.log
@@ -132,9 +136,9 @@ function waitPodReady() {
 		readStatus=$(kubectl -n${namespace} get po -l ${podLabel} --ignore-not-found=true -o json | jq -r '.items[0].status.conditions[] | select(."type"=="Ready") | .status')
 		if [[ $readStatus == "True" ]]; then
 			info "Pod:${podLabel} ready"
-			kubectl -n${namespace} get po -l ${podLabel}
 			break
 		fi
+		kubectl -n${namespace} get po -l ${podLabel}
 
 		CURRENT_TIME=$(date +%s)
 		ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
@@ -146,6 +150,18 @@ function waitPodReady() {
 		fi
 		sleep 5
 	done
+}
+
+function EnableAPIServerPortForward() {
+	waitPodReady "arcadia" "app=arcadia-apiserver"
+	if [ $portal_pid -ne 0 ]; then
+		kill $portal_pid >/dev/null 2>&1
+	fi
+	echo "re port-forward apiserver..."
+	kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
+	portal_pid=$!
+	sleep 3
+	info "port-forward apiserver in pid: $portal_pid"
 }
 
 function waitCRDStatusReady() {
@@ -170,9 +186,16 @@ function waitCRDStatusReady() {
 
 		CURRENT_TIME=$(date +%s)
 		ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-		if [ $ELAPSED_TIME -gt $TimeoutSeconds ]; then
-			error "Timeout reached"
-			exit 1
+		if [[ ${source} == "Worker" ]]; then
+			if [ $ELAPSED_TIME -gt 1800 ]; then
+				error "Timeout reached"
+				exit 1
+			fi
+		else
+			if [ $ELAPSED_TIME -gt $TimeoutSeconds ]; then
+				error "Timeout reached"
+				exit 1
+			fi
 		fi
 		sleep 5
 	done
@@ -184,25 +207,20 @@ function getRespInAppChat() {
 	query=$3
 	conversationID=$4
 	testStream=$5
-	RETRY_COUNT=3
 	attempt=0
 	while true; do
 		info "sleep 3 seconds"
 		sleep 3
 		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-		resp=$(curl -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
 			echo $resp
-			kill $portal_pid >/dev/null 2>&1
-			echo "re port-forward apiserver..."
-			kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
-			portal_pid=$!
-			info "port-forward apiserver in pid: $portal_pid"
-			if [[ $resp == *"googleapi: Error 500"* ]]; then
-				echo "google api error, will retry after 20s"
-				sleep 20
+			EnableAPIServerPortForward
+			if [[ $resp == *"googleapi: Error"* ]]; then
+				echo "google api error, will retry after 60s"
+				sleep 60
 			fi
 			attempt=$((attempt + 1))
 			if [ $attempt -gt $RETRY_COUNT ]; then
@@ -222,8 +240,8 @@ function getRespInAppChat() {
 	if [ $testStream == "true" ]; then
 		attempt=0
 		while true; do
-			info "sleep 3 seconds"
-			sleep 3
+			info "sleep 5 seconds"
+			sleep 5
 			info "just test stream mode"
 			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
 			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data"
@@ -234,13 +252,9 @@ function getRespInAppChat() {
 					exit 1
 				fi
 				echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
-				kill $portal_pid >/dev/null 2>&1
-				echo "re port-forward apiserver..."
-				kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
-				portal_pid=$!
-				info "port-forward apiserver in pid: $portal_pid"
-				echo "and wait 20s for google api error"
-				sleep 20
+				EnableAPIServerPortForward
+				echo "and wait 60s for google api error"
+				sleep 60
 				continue
 			fi
 			break
@@ -250,6 +264,12 @@ function getRespInAppChat() {
 
 info "1. create kind cluster"
 make kind
+df -h
+rerank_image="kubeagi/core-library-cli:v0.0.1-20240308-18ea8aa"
+docker pull $rerank_image
+kind load docker-image $rerank_image --name=$KindName
+docker rmi $rerank_image
+df -h
 
 info "2. load arcadia image to kind"
 docker tag controller:latest controller:example-e2e
@@ -417,38 +437,62 @@ fi
 info "8.1 app of llmchain"
 kubectl apply -f config/samples/app_llmchain_englishteacher.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-english-teacher"
-kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
-portal_pid=$!
-info "port-forward portal in pid: $portal_pid"
+EnableAPIServerPortForward
 sleep 3
 getRespInAppChat "base-chat-english-teacher" "arcadia" "hi how are you?" "" "true"
 
 info "8.2 QA app using knowledgebase base"
-info "8.2.1 QA app using knowledgebase base on chroma"
+info "8.2.1.1 QA app using knowledgebase base on chroma"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
-info "8.2.1.2 When no related doc is found, return retriever.spec.docNullReturn info"
-getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "false"
-expected=$(kubectl get knowledgebaseretrievers -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
+info "8.2.1.2 When no related doc is found, return application.spec.docNullReturn info, if set"
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "true"
+expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
 if [[ $ai_data != $expected ]]; then
-	echo "when no related doc is found, return retriever.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	echo "when no related doc is found, return application.spec.docNullReturn info should be:"$expected ", but resp:"$resp
 	exit 1
 fi
+info "8.2.1.3 When no related doc is found and application.spec.docNullReturn is not set"
+kubectl patch applications -n arcadia base-chat-with-knowledgebase -p '{"spec":{"docNullReturn":""}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "true"
 
 info "8.2.2 QA app using knowledgebase base on pgvector"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector"
 sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
-info "8.2.2.2 When no related doc is found, return retriever.spec.docNullReturn info"
-getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "飞天的主演是谁？" "" "false"
-expected=$(kubectl get knowledgebaseretrievers -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
+info "8.2.2.2 When no related doc is found, return application.spec.docNullReturn info, if set"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "飞天的主演是谁？" "" "true"
+expected=$(kubectl get application -n arcadia base-chat-with-knowledgebase-pgvector -o json | jq -r .spec.docNullReturn)
 if [[ $ai_data != $expected ]]; then
-	echo "when no related doc is found, return retriever.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	echo "when no related doc is found, return application.spec.docNullReturn info should be:"$expected ", but resp:"$resp
 	exit 1
 fi
+info "8.2.2.3 When no related doc is found and application.spec.docNullReturn is not set"
+kubectl patch applications -n arcadia base-chat-with-knowledgebase-pgvector -p '{"spec":{"docNullReturn":""}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "飞天的主演是谁？" "" "true"
+
+info "8.2.3 QA app using knowledgebase base on pgvector and rerank"
+kubectl apply -f config/samples/arcadia_v1alpha1_model_reranking_bce.yaml
+waitCRDStatusReady "Model" "arcadia" "bce-reranker"
+kubectl apply -f config/samples/arcadia_v1alpha1_worker_reranking_bce.yaml
+waitCRDStatusReady "Worker" "arcadia" "bce-reranker"
+kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_rerank.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-rerank"
+sleep 3
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
+info "8.2.3.2 When no related doc is found, return application.spec.docNullReturn info, if set"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "飞天的主演是谁？" "" "true"
+expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank -o json | jq -r .spec.docNullReturn)
+if [[ $ai_data != $expected ]]; then
+	echo "when no related doc is found, return application.spec.docNullReturn info should be:"$expected ", but resp:"$resp
+	exit 1
+fi
+info "8.2.3.3 When no related doc is found and application.spec.docNullReturn is not set"
+kubectl patch applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank -p '{"spec":{"docNullReturn":""}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "飞天的主演是谁？" "" "true"
 
 info "8.3 conversation chat app"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot.yaml
@@ -487,7 +531,6 @@ if [[ $resp == *"$delete_conversation_id"* ]]; then
 	exit 1
 fi
 info "8.4.5 get app prompt starters"
-RETRY_COUNT=3
 attempt=0
 while true; do
 	info "sleep 3 seconds"
@@ -503,13 +546,10 @@ while true; do
 		fi
 		echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
 		kill $portal_pid >/dev/null 2>&1
-		echo "re port-forward apiserver..."
-		kubectl port-forward svc/arcadia-apiserver -n arcadia 8081:8081 >/dev/null 2>&1 &
-		portal_pid=$!
-		info "port-forward apiserver in pid: $portal_pid"
-		if [[ $resp == *"googleapi: Error 500"* ]]; then
-			echo "google api error, will retry after 20s"
-			sleep 20
+		EnableAPIServerPortForward
+		if [[ $resp == *"googleapi: Error"* ]]; then
+			echo "google api error, will retry after 60s"
+			sleep 60
 		fi
 		continue
 	fi
@@ -569,7 +609,6 @@ getRespInAppChat "base-chat-with-bot-tool" "arcadia" "北京今天的天气如�
 info "8.7 tool test with knowledgebase and qachain"
 kubectl apply -f config/samples/app_retrievalqachain_knowledgebase_pgvector_tool.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvector-tool"
-kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"docNullReturn":""}}' --type='merge'
 kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.9}}' --type='merge'
 sleep 3
 #	info "8.7.1 bingsearch test"

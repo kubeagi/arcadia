@@ -171,3 +171,6 @@ ray:
       headAddress: raycluster-kuberay-head-svc.kuberay-system.svc:6379
       pythonVersion: 3.9.18
       dashboardHost: raycluster-kuberay-head-svc.kuberay-system.svc:8265
+
+rerank:
+  enabled: true

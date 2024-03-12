@@ -54,7 +54,7 @@ func (l *APIChain) Init(ctx context.Context, cli client.Client, _ map[string]any
 }
 
 func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
-	v1, ok := args["llm"]
+	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
 	}
@@ -75,7 +75,7 @@ func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any
 		return args, fmt.Errorf("can't format prompt: %w", err)
 	}
 	args["input"] = p.String()
-	v3, ok := args["_history"]
+	v3, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]
 	if !ok {
 		return args, errors.New("no history")
 	}
@@ -98,7 +98,7 @@ func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	args["api_docs"] = apiDoc
 	var out string
 	needStream := false
-	needStream, ok = args["_need_stream"].(bool)
+	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
 	if ok && needStream {
 		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.APIChain, args, options...)
@@ -112,7 +112,7 @@ func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.APIChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use apichain, blocking out:" + out)
 	if err == nil {
-		args["_answer"] = out
+		args[base.OutputAnserKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("apichain run error: %w", err)

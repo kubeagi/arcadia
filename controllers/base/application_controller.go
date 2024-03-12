@@ -49,6 +49,7 @@ const (
 	LLMIndexKey                    = "metadata.llm"
 	PromptIndexKey                 = "metadata.prompt"
 	KnowledgebaseRetrieverIndexKey = "metadata.knowledgebaseretriever"
+	RerankRetrieverIndexKey        = "metadata.rerankretriever"
 	AgentIndexKey                  = "metadata.agent"
 )
 
@@ -293,6 +294,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		{LLMIndexKey, "", "llm"},
 		{PromptIndexKey, "prompt", "prompt"},
 		{KnowledgebaseRetrieverIndexKey, "retriever", "knowledgebaseretriever"},
+		{RerankRetrieverIndexKey, "retriever", "rerankretriever"},
 		{AgentIndexKey, "", "agent"},
 	}
 	for _, d := range dependencies {
@@ -346,6 +348,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		Watches(&source.Kind{Type: &arcadiav1alpha1.LLM{}}, getEventHandler(LLMIndexKey)).
 		Watches(&source.Kind{Type: &promptv1alpha1.Prompt{}}, getEventHandler(PromptIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.KnowledgeBaseRetriever{}}, getEventHandler(KnowledgebaseRetrieverIndexKey)).
+		Watches(&source.Kind{Type: &retrieveralpha1.RerankRetriever{}}, getEventHandler(RerankRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &agentv1alpha1.Agent{}}, getEventHandler(AgentIndexKey)).
 		Complete(r)
 }

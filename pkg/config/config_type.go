@@ -42,6 +42,9 @@ type Config struct {
 
 	// Resource pool managed by Ray cluster
 	RayClusters []RayCluster `json:"rayClusters,omitempty"`
+
+	// the default rerank model
+	Rerank *arcadiav1alpha1.TypedObjectReference `json:"rerank,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia

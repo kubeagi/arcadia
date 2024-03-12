@@ -38,6 +38,13 @@ data:
       name: '{{ .Release.Name }}-pgvector-vectorstore'
 {{- end }}
       namespace: '{{ .Release.Namespace }}'
+{{- if .Values.rerank.enabled }}
+    rerank:
+      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+      kind: Model
+      name: bge-reranker-large
+      namespace: {{ .Release.Namespace }}
+{{- end }}
 
     #streamlit:
     #  image: 172.22.96.34/cluster_system/streamlit:v1.29.0

@@ -42,6 +42,10 @@ type ApplicationSpec struct {
 	// Nodes
 	// +kubebuilder:validation:Required
 	Nodes []Node `json:"nodes"`
+	// DocNullReturn is the return statement when the query result is empty from the retriever.
+	// If this field is not empty and no result is returned by retriever,
+	// the app chat api will return this value directly, without call LLM.
+	DocNullReturn string `json:"docNullReturn,omitempty"`
 }
 
 // WebConfig is the configuration for web interface

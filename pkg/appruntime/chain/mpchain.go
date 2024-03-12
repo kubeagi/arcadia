@@ -80,7 +80,7 @@ func (l *MapReduceChain) Init(ctx context.Context, _ client.Client, _ map[string
 
 func (l *MapReduceChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	// initialize the LLM
-	v1, ok := args["llm"]
+	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
 	}

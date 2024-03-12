@@ -45,15 +45,10 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
-              docNullReturn:
-                default: 未找到您询问的内容，请详细描述您的问题
-                description: DocNullReturn is the return statement when the query
-                  result is empty from the retriever.
-                type: string
               numDocuments:
                 default: 5
                 description: NumDocuments is the max number of documents to return.
-                maximum: 10
+                maximum: 50
                 minimum: 1
                 type: integer
               scoreThreshold:

@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: applications.arcadia.kubeagi.k8s.com.cn
+  name: rerankretrievers.retriever.arcadia.kubeagi.k8s.com.cn
 spec:
-  group: arcadia.kubeagi.k8s.com.cn
+  group: retriever.arcadia.kubeagi.k8s.com.cn
   names:
-    kind: Application
-    listKind: ApplicationList
-    plural: applications
-    singular: application
+    kind: RerankRetriever
+    listKind: RerankRetrieverList
+    plural: rerankretrievers
+    singular: rerankretriever
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Application is the Schema for the applications API
+        description: RerankRetriever is the Schema for the RerankRetriever API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ApplicationSpec defines the desired state of Application
+            description: RerankRetrieverSpec defines the desired state of RerankRetriever
             properties:
               creator:
                 description: Creator defines datasource creator (AUTO-FILLED by webhook)
@@ -44,71 +44,44 @@ spec:
               displayName:
                 description: DisplayName defines datasource display name
                 type: string
-              docNullReturn:
-                description: DocNullReturn is the return statement when the query
-                  result is empty from the retriever. If this field is not empty and
-                  no result is returned by retriever, the app chat api will return
-                  this value directly, without call LLM.
-                type: string
-              icon:
-                description: Icon base64 image icon
-                type: string
-              isPublic:
-                description: IsPublic Set whether the current application provides
-                  services to the public
-                type: boolean
-              nodes:
-                description: Nodes
-                items:
-                  properties:
-                    description:
-                      type: string
-                    displayName:
-                      type: string
-                    name:
-                      type: string
-                    nextNodeName:
-                      items:
-                        type: string
-                      type: array
-                    ref:
-                      properties:
-                        apiGroup:
-                          description: APIGroup is the group for the resource being
-                            referenced. If APIGroup is not specified, the specified
-                            Kind must be in the core API group. For any other third-party
-                            types, APIGroup is required.
-                          type: string
-                        kind:
-                          description: Kind is the type of resource being referenced
-                          type: string
-                        name:
-                          description: Name is the name of resource being referenced
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of resource being
-                            referenced
-                          type: string
-                      required:
-                      - kind
-                      - name
-                      type: object
-                  type: object
-                type: array
-              prologue:
-                description: prologue, show in the chat top
-                type: string
-              showNextGuide:
-                type: boolean
-              showRespInfo:
-                type: boolean
-              showRetrievalInfo:
-                type: boolean
-            required:
-            - nodes
+              model:
+                description: the model of the rerank
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              numDocuments:
+                default: 5
+                description: NumDocuments is the max number of documents to return.
+                maximum: 50
+                minimum: 1
+                type: integer
+              scoreThreshold:
+                default: 0.3
+                description: ScoreThreshold is the cosine distance float score threshold.
+                  Lower score represents more similarity.
+                maximum: 1
+                minimum: 0
+                type: number
             type: object
           status:
-            description: ApplicationStatus defines the observed state of Application
+            description: RerankRetrieverStatus defines the observed state of RerankRetriever
             properties:
               conditions:
                 description: Conditions of the resource.

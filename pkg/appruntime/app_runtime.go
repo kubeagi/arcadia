@@ -140,15 +140,16 @@ func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 
 func (a *Application) Run(ctx context.Context, cli client.Client, respStream chan string, input Input) (output Output, err error) {
 	out := map[string]any{
-		"question":       input.Question,
-		"files":          input.Files,
-		"_answer_stream": respStream,
-		"_history":       input.History,
+		base.InputQuestionKeyInArg:                 input.Question,
+		"files":                                    input.Files,
+		base.OutputAnserStreamChanKeyInArg:         respStream,
+		base.InputIsNeedStreamKeyInArg:             input.NeedStream,
+		base.LangchaingoChatMessageHistoryKeyInArg: input.History,
 		// Use an empty context before run
 		"context": "",
 	}
-	if input.NeedStream {
-		out["_need_stream"] = true
+	if a.Spec.DocNullReturn != "" {
+		out[base.APPDocNullReturn] = a.Spec.DocNullReturn
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
@@ -175,22 +176,41 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 					klog.FromContext(ctx).Info(fmt.Sprintf("Recovered from node:%s error:%s stack:%s", e.Name(), r, string(debug.Stack())))
 				}
 			}()
-			if out, err = e.Run(ctx, cli, out); err != nil {
-				return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
-			}
 			defer e.Cleanup()
+			if out, err = e.Run(ctx, cli, out); err != nil {
+				var er *base.RetrieverGetNullDocError
+				if errors.As(err, &er) {
+					agentReturnNothing := true
+					v, ok := out[base.OutputAnserKeyInArg]
+					if ok {
+						if answer, ok := v.(string); ok && len(answer) > 0 {
+							agentReturnNothing = false
+						}
+					}
+					if agentReturnNothing {
+						if input.NeedStream && respStream != nil {
+							go func() {
+								respStream <- er.Msg
+							}()
+						}
+						return Output{Answer: er.Msg}, nil
+					}
+				} else {
+					return Output{}, fmt.Errorf("run node %s: %w", e.Name(), err)
+				}
+			}
 			visited[e.Name()] = true
 		}
 		for _, n := range e.GetNextNode() {
 			waitRunningNodes.PushBack(n)
 		}
 	}
-	if a, ok := out["_answer"]; ok {
+	if a, ok := out[base.OutputAnserKeyInArg]; ok {
 		if answer, ok := a.(string); ok && len(answer) > 0 {
 			output = Output{Answer: answer}
 		}
 	}
-	if a, ok := out["_references"]; ok {
+	if a, ok := out[base.RuntimeRetrieverReferencesKeyInArg]; ok {
 		if references, ok := a.([]retriever.Reference); ok && len(references) > 0 {
 			output.References = references
 		}
@@ -230,6 +250,9 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		case "knowledgebaseretriever":
 			logger.V(3).Info("initnode knowledgebaseretriever")
 			return retriever.NewKnowledgeBaseRetriever(baseNode), nil
+		case "rerankretriever":
+			logger.V(3).Info("initnode rerankretriever")
+			return retriever.NewRerankRetriever(baseNode), nil
 		default:
 			return nil, err
 		}

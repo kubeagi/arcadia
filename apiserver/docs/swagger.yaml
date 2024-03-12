@@ -302,6 +302,10 @@ definitions:
         description: Question row
         example: 'q: 旷工最小计算单位为多少天？'
         type: string
+      rerank_score:
+        description: RerankScore
+        example: 0.58124
+        type: number
       score:
         description: vector search score
         example: 0.34

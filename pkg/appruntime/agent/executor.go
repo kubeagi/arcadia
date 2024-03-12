@@ -45,7 +45,7 @@ func NewExecutor(baseNode base.BaseNode) *Executor {
 }
 
 func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
-	v1, ok := args["llm"]
+	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
 	}
@@ -65,7 +65,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		agents.WithMaxIterations(instance.Spec.Options.MaxIterations)(o)
 		// Only show tool action in the streaming output if configured
 		if instance.Spec.Options.ShowToolAction {
-			if needStream, ok := args["_need_stream"].(bool); ok && needStream {
+			if needStream, ok := args[base.InputIsNeedStreamKeyInArg].(bool); ok && needStream {
 				streamHandler := StreamHandler{callbacks.SimpleHandler{}, args}
 				agents.WithCallbacksHandler(streamHandler)(o)
 			}
@@ -82,6 +82,6 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 		return args, fmt.Errorf("error when call agent: %w", err)
 	}
 	klog.FromContext(ctx).V(5).Info("use agent, blocking out:", response["output"])
-	args["_answer"] = response["output"]
+	args[base.OutputAnserKeyInArg] = response["output"]
 	return args, nil
 }

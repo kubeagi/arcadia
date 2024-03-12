@@ -43,6 +43,7 @@ var (
 	ErrNoConfigVectorstore = fmt.Errorf("config Vectorstore in comfigmap is not found")
 	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
 	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
+	ErrNoConfigRerank      = fmt.Errorf("config rerankDefaultEndpoint in comfigmap is not found")
 )
 
 func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client) (ds *arcadiav1alpha1.Datasource, err error) {
@@ -148,4 +149,15 @@ func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) 
 		return nil, ErrNoConfigRayClusters
 	}
 	return config.RayClusters, nil
+}
+
+func GetDefaultRerank(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := GetConfig(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if config.Rerank == nil {
+		return nil, ErrNoConfigRerank
+	}
+	return config.Rerank, nil
 }
