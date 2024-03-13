@@ -24,12 +24,14 @@ import (
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
+	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/chain"
 	"github.com/kubeagi/arcadia/pkg/appruntime/log"
 	"github.com/kubeagi/arcadia/pkg/appruntime/tools"
 )
@@ -59,6 +61,13 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	}
 	allowedTools := tools.InitTools(ctx, instance.Spec.AllowedTools)
 
+	var history langchaingoschema.ChatMessageHistory
+	if v3, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]; ok && v3 != nil {
+		history, ok = v3.(langchaingoschema.ChatMessageHistory)
+		if !ok {
+			return args, errors.New("history not memory.ChatMessageHistory")
+		}
+	}
 	// Initialize executor using langchaingo
 	executorOptions := func(o *agents.CreationOptions) {
 		agents.WithCallbacksHandler(log.KLogHandler{LogLevel: 3})(o)
@@ -70,6 +79,7 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 				agents.WithCallbacksHandler(streamHandler)(o)
 			}
 		}
+		agents.WithMemory(chain.GetMemory(llm, instance.Spec.AgentConfig.Options.Memory, history, "", ""))(o)
 	}
 	executor, err := agents.Initialize(llm, allowedTools, agents.ZeroShotReactDescription, executorOptions)
 	if err != nil {

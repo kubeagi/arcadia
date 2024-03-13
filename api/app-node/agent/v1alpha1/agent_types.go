@@ -51,7 +51,8 @@ type Options struct {
 	// +kubebuilder:validation:Maximum=10
 	// +kubebuilder:default=5
 	MaxIterations int `json:"maxIterations,omitempty"`
-
+	// Memory for chain memory
+	Memory node.Memory `json:"memory,omitempty"`
 	// The options below might be used later
 	// prompt prompts.PromptTemplate
 	// outputKey               string
