@@ -56,6 +56,9 @@ spec:
           name: agentportal-config-volume
           subPath: .env.production
       restartPolicy: Always
+      {{- if .Values.global.hostConfig.enabled }}
+      hostAliases: {{ toYaml .Values.global.hostConfig.hostAliases | nindent 6 }}
+      {{- end }}
       volumes:
       - hostPath:
           path: /etc/localtime

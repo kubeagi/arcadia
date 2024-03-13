@@ -14,6 +14,9 @@ spec:
       labels:
         app: {{ .Release.Name }}-opsconsole
     spec:
+      {{- if .Values.global.hostConfig.enabled }}
+      hostAliases: {{ toYaml .Values.global.hostConfig.hostAliases | nindent 6 }}
+      {{- end }}
       containers:
         - image: {{ .Values.opsconsole.image }}
           imagePullPolicy: IfNotPresent

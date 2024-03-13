@@ -14,6 +14,9 @@ spec:
         app: {{ .Release.Name }}-apiserver
     spec:
       serviceAccountName: {{ .Release.Name }}
+      {{- if .Values.global.hostConfig.enabled }}
+      hostAliases: {{ toYaml .Values.global.hostConfig.hostAliases | nindent 6 }}
+      {{- end }}
       containers:
         - name: apiserver
           image: {{ .Values.apiserver.image }}
