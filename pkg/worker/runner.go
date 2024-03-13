@@ -217,13 +217,15 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
 			return nil, err
 		}
+		if m.Spec.Revision != "" {
+			extraAgrs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
+		}
 		if m.Spec.HuggingFaceRepo != "" {
 			modelFileDir = m.Spec.HuggingFaceRepo
 		}
 		if m.Spec.ModelScopeRepo != "" {
 			modelFileDir = m.Spec.ModelScopeRepo
 			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"}, corev1.EnvVar{Name: "VLLM_USE_MODELSCOPE", Value: "True"})
-			extraAgrs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
 		}
 	}
 
