@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"sync"
 
@@ -51,7 +50,6 @@ type options struct {
 
 func defaultOptions() options {
 	return options{
-		apiKey:         os.Getenv("BING_KEY"),
 		count:          5,
 		responseFilter: "News,Webpages",
 		promote:        "News,Webpages",

@@ -17,7 +17,6 @@ package weather
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/tmc/langchaingo/callbacks"
@@ -42,9 +41,6 @@ var _ tools.Tool = Tool{}
 // New creates a new weather tool to search on internet
 func New(tool *v1alpha1.Tool) (*Tool, error) {
 	apikey := tool.Params["apiKey"]
-	if apikey == "" {
-		apikey = os.Getenv("WEATHER_API_KEY")
-	}
 	return &Tool{
 		client: internal.New(apikey),
 	}, nil
