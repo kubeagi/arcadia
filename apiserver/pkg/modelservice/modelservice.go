@@ -378,9 +378,9 @@ func CheckModelService(ctx context.Context, c client.Client, input generated.Cre
 
 		switch *input.APIType {
 		case "openai":
-			info, err = checkOpenAI(ctx, c, input)
+			info, err = checkOpenAI(ctx, input)
 		case "zhipuai":
-			info, err = checkZhipuAI(ctx, c, input)
+			info, err = checkZhipuAI(ctx, input)
 		default:
 			err = fmt.Errorf("not support api type %s", *input.APIType)
 		}
@@ -399,22 +399,31 @@ func CheckModelService(ctx context.Context, c client.Client, input generated.Cre
 	return nil, ErrNoAuthProvided
 }
 
-func checkOpenAI(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (string, error) {
+func checkOpenAI(ctx context.Context, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
 	client, err := openai.NewOpenAI(apiKey, input.Endpoint.URL)
 	if err != nil {
 		return "", err
 	}
 
-	// TODO: able to validate openai models
-	res, err := client.Validate(ctx, llms.WithModel(""))
+	// use the first model if specified by user
+	model := "gpt-3.5"
+	if input.LlmModels != nil && len(input.LlmModels) > 0 {
+		model = input.LlmModels[0]
+	}
+	if input.EmbeddingModels != nil && len(input.EmbeddingModels) > 0 {
+		model = input.EmbeddingModels[0]
+	}
+
+	// able to validate openai models
+	res, err := client.Validate(ctx, llms.WithModel(model))
 	if err != nil {
 		return "", err
 	}
 	return res.String(), nil
 }
 
-func checkZhipuAI(ctx context.Context, c client.Client, input generated.CreateModelServiceInput) (string, error) {
+func checkZhipuAI(ctx context.Context, input generated.CreateModelServiceInput) (string, error) {
 	apiKey := input.Endpoint.Auth["apiKey"].(string)
 	client := zhipuai.NewZhiPuAI(apiKey)
 	res, err := client.Validate(ctx)

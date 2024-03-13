@@ -6,6 +6,20 @@ global:
   ## When the option is `pgvector`, it needs `postgresql.enabled` to be `true` as well to work.
   defaultVectorStoreType: pgvector
 
+  # Enable and update the ip if nip.io is NOT accessible in deployed environment
+  hostConfig:
+    enabled: true
+    hostAliases:
+      - hostnames:
+          - portal.<replaced-ingress-nginx-ip>.nip.io
+          - gpts.<replaced-ingress-nginx-ip>.nip.io
+          - minio-api.<replaced-ingress-nginx-ip>.nip.io
+          - fastchat-api.<replaced-ingress-nginx-ip>.nip.io
+          - fastchat-controller.<replaced-ingress-nginx-ip>.nip.io
+          - minio-api.<replaced-ingress-nginx-ip>.nip.io
+          - postgresql.<replaced-ingress-nginx-ip>.nip.io
+        ip: <replaced-ingress-nginx-ip>
+
 # @section controller is used as the core controller for arcadia
 # @param image Image to be used
 # @param imagePullPolcy ImagePullPolicy

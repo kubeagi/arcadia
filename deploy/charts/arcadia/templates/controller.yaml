@@ -67,3 +67,6 @@ spec:
         resources: {{ toYaml .Values.controller.resources | nindent 10 }} 
       serviceAccountName: {{ .Release.Name }}
       terminationGracePeriodSeconds: 10
+      {{- if .Values.global.hostConfig.enabled }}
+      hostAliases: {{ toYaml .Values.global.hostConfig.hostAliases | nindent 6 }}
+      {{- end }}
