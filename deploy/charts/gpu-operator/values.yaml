@@ -1,0 +1,522 @@
+# Default values for gpu-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+platform:
+  openshift: false
+
+nfd:
+  enabled: true
+  nodefeaturerules: false
+
+# deprecated: use PodSecurityAdmission (PSA) controls instead
+psp:
+  enabled: false
+
+psa:
+  enabled: false
+
+cdi:
+  enabled: false
+  default: false
+
+sandboxWorkloads:
+  enabled: false
+  defaultWorkload: "container"
+
+daemonsets:
+  labels: {}
+  annotations: {}
+  priorityClassName: system-node-critical
+  tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+  # configuration for controlling update strategy("OnDelete" or "RollingUpdate") of GPU Operands
+  # note that driver Daemonset is always set with OnDelete to avoid unintended disruptions
+  updateStrategy: "RollingUpdate"
+  # configuration for controlling rolling update of GPU Operands
+  rollingUpdate:
+    # maximum number of nodes to simultaneously apply pod updates on.
+    # can be specified either as number or percentage of nodes. Default 1.
+    maxUnavailable: "1"
+
+validator:
+  repository: docker.io/kubeagi
+  image: gpu-operator-validator
+  # If version is not specified, then default is to use chart.AppVersion
+  #version: ""
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  args: []
+  resources: {}
+  plugin:
+    env:
+      - name: WITH_WORKLOAD
+        value: "false"
+
+operator:
+  repository: docker.io/kubeagi
+  image: gpu-operator
+  # If version is not specified, then default is to use chart.AppVersion
+  #version: ""
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  priorityClassName: system-node-critical
+  defaultRuntime: docker
+  runtimeClass: nvidia
+  use_ocp_driver_toolkit: false
+  # cleanup CRD on chart un-install
+  cleanupCRD: false
+  # upgrade CRD on chart upgrade, requires --disable-openapi-validation flag
+  # to be passed during helm upgrade.
+  upgradeCRD: false
+  initContainer:
+    image: cuda
+    repository: docker.io/kubeagi
+    version: 12.3.1-base-ubi8
+    imagePullPolicy: IfNotPresent
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Equal"
+    value: ""
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Equal"
+    value: ""
+    effect: "NoSchedule"
+  annotations:
+    openshift.io/scc: restricted-readonly
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: In
+                values: [""]
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: In
+                values: [""]
+  logging:
+    # Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')
+    timeEncoding: epoch
+    # Zap Level to configure the verbosity of logging. Can be one of 'debug', 'info', 'error', or any integer value > 0 which corresponds to custom debug levels of increasing verbosity
+    level: info
+    # Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn)
+    # Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error)
+    develMode: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 350Mi
+    requests:
+      cpu: 200m
+      memory: 100Mi
+
+mig:
+  strategy: single
+
+driver:
+  enabled: true
+  nvidiaDriverCRD:
+    enabled: false
+    deployDefaultCR: true
+    driverType: gpu
+    nodeSelector: {}
+  useOpenKernelModules: false
+  # use pre-compiled packages for NVIDIA driver installation.
+  # only supported for as a tech-preview feature on ubuntu22.04 kernels.
+  usePrecompiled: false
+  repository: docker.io/kubeagi
+  image: driver
+  version: "535.129.03"
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  startupProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    # nvidia-smi can take longer than 30s in some cases
+    # ensure enough timeout is set
+    timeoutSeconds: 60
+    failureThreshold: 120
+  rdma:
+    enabled: false
+    useHostMofed: false
+  upgradePolicy:
+    # global switch for automatic upgrade feature
+    # if set to false all other options are ignored
+    autoUpgrade: true
+    # how many nodes can be upgraded in parallel
+    # 0 means no limit, all nodes will be upgraded in parallel
+    maxParallelUpgrades: 1
+    # maximum number of nodes with the driver installed, that can be unavailable during
+    # the upgrade. Value can be an absolute number (ex: 5) or
+    # a percentage of total nodes at the start of upgrade (ex:
+    # 10%). Absolute number is calculated from percentage by rounding
+    # up. By default, a fixed value of 25% is used.'
+    maxUnavailable: 25%
+    # options for waiting on pod(job) completions
+    waitForCompletion:
+      timeoutSeconds: 0
+      podSelector: ""
+    # options for gpu pod deletion
+    gpuPodDeletion:
+      force: false
+      timeoutSeconds: 300
+      deleteEmptyDir: false
+    # options for node drain (`kubectl drain`) before the driver reload
+    # this is required only if default GPU pod deletions done by the operator
+    # are not sufficient to re-install the driver
+    drain:
+      enable: false
+      force: false
+      podSelector: ""
+      # It's recommended to set a timeout to avoid infinite drain in case non-fatal error keeps happening on retries
+      timeoutSeconds: 300
+      deleteEmptyDir: false
+  manager:
+    image: k8s-driver-manager
+    repository: docker.io/kubeagi
+    version: v0.6.5
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: ENABLE_GPU_POD_EVICTION
+        value: "true"
+      - name: ENABLE_AUTO_DRAIN
+        value: "false"
+      - name: DRAIN_USE_FORCE
+        value: "false"
+      - name: DRAIN_POD_SELECTOR_LABEL
+        value: ""
+      - name: DRAIN_TIMEOUT_SECONDS
+        value: "0s"
+      - name: DRAIN_DELETE_EMPTYDIR_DATA
+        value: "false"
+  env: []
+  resources: {}
+  # Private mirror repository configuration
+  repoConfig:
+    configMapName: ""
+  # custom ssl key/certificate configuration
+  certConfig:
+    name: ""
+  # vGPU licensing configuration
+  licensingConfig:
+    configMapName: ""
+    nlsEnabled: true
+  # vGPU topology daemon configuration
+  virtualTopology:
+    config: ""
+  # kernel module configuration for NVIDIA driver
+  kernelModuleConfig:
+    name: ""
+
+toolkit:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: container-toolkit
+  version: v1.14.3-ubuntu20.04
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  resources: {}
+  installDir: "/usr/local/nvidia"
+
+devicePlugin:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: k8s-device-plugin
+  version: v0.14.3-ubi8
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  args: []
+  env:
+    - name: PASS_DEVICE_SPECS
+      value: "true"
+    - name: FAIL_ON_INIT_ERROR
+      value: "true"
+    - name: DEVICE_LIST_STRATEGY
+      value: envvar
+    - name: DEVICE_ID_STRATEGY
+      value: uuid
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: all
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: all
+  resources: {}
+  # Plugin configuration
+  # Use "name" to either point to an existing ConfigMap or to create a new one with a list of configurations(i.e with create=true).
+  # Use "data" to build an integrated ConfigMap from a set of configurations as
+  # part of this helm chart. An example of setting "data" might be:
+  # config:
+  #   name: device-plugin-config
+  #   create: true
+  #   data:
+  #     default: |-
+  #       version: v1
+  #       flags:
+  #         migStrategy: none
+  #     mig-single: |-
+  #       version: v1
+  #       flags:
+  #         migStrategy: single
+  #     mig-mixed: |-
+  #       version: v1
+  #       flags:
+  #         migStrategy: mixed
+  config:
+    # Create a ConfigMap (default: false)
+    create: false
+    # ConfigMap name (either exiting or to create a new one with create=true above)
+    name: ""
+    # Default config name within the ConfigMap
+    default: ""
+    # Data section for the ConfigMap to create (i.e only applies when create=true)
+    data: {}
+
+# standalone dcgm hostengine
+dcgm:
+  # disabled by default to use embedded nv-hostengine by exporter
+  enabled: false
+  repository: docker.io/kubeagi
+  image: dcgm
+  version: 3.3.0-1-ubuntu22.04
+  imagePullPolicy: IfNotPresent
+  hostPort: 5555
+  args: []
+  env: []
+  resources: {}
+
+dcgmExporter:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: dcgm-exporter
+  version: 3.3.0-3.2.0-ubuntu22.04
+  imagePullPolicy: IfNotPresent
+  env:
+    - name: DCGM_EXPORTER_LISTEN
+      value: ":9400"
+    - name: DCGM_EXPORTER_KUBERNETES
+      value: "true"
+    - name: DCGM_EXPORTER_COLLECTORS
+      value: "/etc/dcgm-exporter/dcp-metrics-included.csv"
+  resources: {}
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+    honorLabels: false
+    additionalLabels: {}
+    relabelings: []
+    # - source_labels:
+    #     - __meta_kubernetes_pod_node_name
+    #   regex: (.*)
+    #   target_label: instance
+    #   replacement: $1
+    #   action: replace
+gfd:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: gpu-feature-discovery
+  version: v0.8.2-ubi8
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env:
+    - name: GFD_SLEEP_INTERVAL
+      value: 60s
+    - name: GFD_FAIL_ON_INIT_ERROR
+      value: "true"
+  resources: {}
+
+migManager:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: k8s-mig-manager
+  version: v0.5.5-ubuntu20.04
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env:
+    - name: WITH_REBOOT
+      value: "false"
+  resources: {}
+  config:
+    name: "default-mig-parted-config"
+    default: "all-disabled"
+  gpuClientsConfig:
+    name: ""
+
+nodeStatusExporter:
+  enabled: false
+  repository: docker.io/kubeagi
+  image: gpu-operator-validator
+  # If version is not specified, then default is to use chart.AppVersion
+  #version: ""
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  resources: {}
+
+gds:
+  enabled: false
+  repository: docker.io/kubeagi
+  image: nvidia-fs
+  version: "2.17.5"
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  args: []
+
+vgpuManager:
+  enabled: false
+  repository: ""
+  image: vgpu-manager
+  version: ""
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  resources: {}
+  driverManager:
+    image: k8s-driver-manager
+    repository: docker.io/kubeagi
+    version: v0.6.4
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: ENABLE_GPU_POD_EVICTION
+        value: "false"
+      - name: ENABLE_AUTO_DRAIN
+        value: "false"
+
+vgpuDeviceManager:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: vgpu-device-manager
+  version: "v0.2.4"
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  config:
+    name: ""
+    default: "default"
+
+vfioManager:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: cuda
+  version: 12.3.1-base-ubi8
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  resources: {}
+  driverManager:
+    image: k8s-driver-manager
+    repository: docker.io/kubeagi
+    version: v0.6.2
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: ENABLE_GPU_POD_EVICTION
+        value: "false"
+      - name: ENABLE_AUTO_DRAIN
+        value: "false"
+
+kataManager:
+  enabled: false
+  config:
+    artifactsDir: "/opt/nvidia-gpu-operator/artifacts/runtimeclasses"
+    runtimeClasses:
+      - name: kata-qemu-nvidia-gpu
+        nodeSelector: {}
+        artifacts:
+          url: docker.io/kubeagi/kata-gpu-artifacts:ubuntu22.04-535.54.03
+          pullSecret: ""
+      - name: kata-qemu-nvidia-gpu-snp
+        nodeSelector:
+          "nvidia.com/cc.capable": "true"
+        artifacts:
+          url: docker.io/kubeagi/kata-gpu-artifacts:ubuntu22.04-535.86.10-snp
+          pullSecret: ""
+  repository: docker.io/kubeagi
+  image: k8s-kata-manager
+  version: v0.1.2
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  resources: {}
+
+sandboxDevicePlugin:
+  enabled: true
+  repository: docker.io/kubeagi
+  image: kubevirt-gpu-device-plugin
+  version: v1.2.4
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  args: []
+  env: []
+  resources: {}
+
+ccManager:
+  enabled: false
+  defaultMode: "off"
+  repository: docker.io/kubeagi
+  image: k8s-cc-manager
+  version: v0.1.1
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env:
+    - name: CC_CAPABLE_DEVICE_IDS
+      value: "0x2339,0x2331,0x2330,0x2324,0x2322,0x233d"
+  resources: {}
+
+node-feature-discovery:
+  image:
+    repository: docker.io/kubeagi/node-feature-discovery
+    # This should be set to 'IfNotPresent' for released version
+    pullPolicy: IfNotPresent
+  enableNodeFeatureApi: true
+  gc:
+    enable: true
+    replicaCount: 1
+    serviceAccount:
+      name: node-feature-discovery
+      create: false
+  worker:
+    serviceAccount:
+      name: node-feature-discovery
+      # disable creation to avoid duplicate serviceaccount creation by master spec below
+      create: false
+    tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Equal"
+      value: ""
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      value: ""
+      effect: "NoSchedule"
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    config:
+      sources:
+        pci:
+          deviceClassWhitelist:
+          - "02"
+          - "0200"
+          - "0207"
+          - "0300"
+          - "0302"
+          deviceLabelFields:
+          - vendor
+  master:
+    serviceAccount:
+      name: node-feature-discovery
+      create: true
+    config:
+      extraLabelNs: ["nvidia.com"]
+      # noPublish: false
+      # resourceLabels: ["nvidia.com/feature-1","nvidia.com/feature-2"]
+      # enableTaints: false
+      # labelWhiteList: "nvidia.com/gpu"
