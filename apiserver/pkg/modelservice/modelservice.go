@@ -107,96 +107,36 @@ func CreateModelService(ctx context.Context, c client.Client, input generated.Cr
 	return modelSerivce, nil
 }
 
-// UpdateModelService updates a 3rd_party model service
+// UpdateModelService updates a 3rd_party model service. Considering mdoel_service wraps two resources (LLM&Embedder) which is hard to do `Update`.
+// So we can have the following workaround(Update == delete + create):
+// 1. delete model_service
+// 2. create model_service
 func UpdateModelService(ctx context.Context, c client.Client, input *generated.UpdateModelServiceInput) (*generated.ModelService, error) {
-	var updatedLLM *generated.Llm
-	var updatedEmbedder *generated.Embedder
-
-	ms, err := ReadModelService(ctx, c, input.Name, input.Namespace)
+	// delete model service
+	_, err := DeleteModelService(ctx, c, &generated.DeleteCommonInput{
+		Name:      &input.Name,
+		Namespace: input.Namespace,
+	})
 	if err != nil {
-		return nil, errors.New("read model service failed: " + err.Error())
+		return nil, fmt.Errorf("failed to update model service due to %s", err.Error())
 	}
 
-	var newDisplayName, newDescription, newAPIType string
-	var newLabels, newAnnotations map[string]interface{}
-
-	if input.DisplayName != nil {
-		newDisplayName = *input.DisplayName
-	} else {
-		newDisplayName = *ms.DisplayName
+	// create model service
+	ms, err := CreateModelService(ctx, c, generated.CreateModelServiceInput{
+		Name:            input.Name,
+		Namespace:       input.Namespace,
+		DisplayName:     input.DisplayName,
+		Description:     input.Description,
+		Types:           input.Types,
+		APIType:         input.APIType,
+		Endpoint:        input.Endpoint,
+		LlmModels:       input.LlmModels,
+		EmbeddingModels: input.EmbeddingModels,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update model service due to %s", err.Error())
 	}
-	if input.Description != nil {
-		newDescription = *input.Description
-	} else {
-		newDescription = *ms.Description
-	}
-	if input.APIType != nil {
-		newAPIType = *input.APIType
-	} else {
-		newAPIType = *ms.APIType
-	}
-	if input.Labels != nil {
-		newLabels = input.Labels
-	} else {
-		newLabels = ms.Labels
-	}
-	if input.Annotations != nil {
-		newAnnotations = input.Annotations
-	} else {
-		newAnnotations = ms.Annotations
-	}
-
-	updateLLMInput := generated.UpdateLLMInput{
-		Name:          input.Name,
-		Namespace:     input.Namespace,
-		DisplayName:   &newDisplayName,
-		Description:   &newDescription,
-		Labels:        newLabels,
-		Annotations:   newAnnotations,
-		Type:          &newAPIType,
-		Endpointinput: &input.Endpoint,
-		Models:        input.LlmModels,
-	}
-
-	updateEmbedderInput := generated.UpdateEmbedderInput{
-		Name:          input.Name,
-		Namespace:     input.Namespace,
-		DisplayName:   &newDisplayName,
-		Description:   &newDescription,
-		Labels:        newLabels,
-		Annotations:   newAnnotations,
-		Type:          &newAPIType,
-		Endpointinput: &input.Endpoint,
-		Models:        input.EmbeddingModels,
-	}
-
-	// TODO: codes to delete/create llm/embedding resource if input.Types is changed. For now it will not work.
-	var updatedModelSerivce = &generated.ModelService{}
-	var llmModels, embeddingModels []string
-	if strings.Contains(*ms.Types, "llm") {
-		updatedLLM, err = llm.UpdateLLM(ctx, c, &updateLLMInput)
-		if err != nil {
-			return nil, errors.New("update LLM failed: " + err.Error())
-		}
-		llmModels = updatedLLM.Models
-		updatedModelSerivce = LLM2ModelService(updatedLLM)
-	}
-
-	if strings.Contains(*ms.Types, "embedding") {
-		updatedEmbedder, err = embedder.UpdateEmbedder(ctx, c, &updateEmbedderInput)
-		if err != nil {
-			return nil, errors.New("update embedding failed: " + err.Error())
-		}
-		embeddingModels = updatedEmbedder.Models
-		updatedModelSerivce = Embedder2ModelService(updatedEmbedder)
-	}
-
-	// merge llm&embedder
-	updatedModelSerivce.Types = ms.Types
-	updatedModelSerivce.LlmModels = llmModels
-	updatedModelSerivce.EmbeddingModels = embeddingModels
-
-	return updatedModelSerivce, nil
+	return ms, nil
 }
 
 // DeleteModelService deletes a 3rd_party model service
