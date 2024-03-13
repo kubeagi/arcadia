@@ -113,9 +113,9 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 
 	llmChain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
-		llmChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
+		llmChain.Memory = GetMemory(llm, instance.Spec.Memory, history, "", "")
 	}
-	chain := chains.NewConversationalRetrievalQA(chains.NewStuffDocuments(llmChain), chains.LoadCondenseQuestionGenerator(llm), retriever, getMemory(llm, instance.Spec.Memory, history, "", ""))
+	chain := chains.NewConversationalRetrievalQA(chains.NewStuffDocuments(llmChain), chains.LoadCondenseQuestionGenerator(llm), retriever, GetMemory(llm, instance.Spec.Memory, history, "", ""))
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string

@@ -27,6 +27,7 @@ import (
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
 
+	appnode "github.com/kubeagi/arcadia/api/app-node"
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
@@ -85,7 +86,7 @@ func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	return options
 }
 
-func getMemory(llm llms.Model, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
+func GetMemory(llm llms.Model, config appnode.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
 	if inputKey == "" {
 		inputKey = "question"
 	}

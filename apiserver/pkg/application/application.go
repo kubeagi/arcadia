@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	apinode "github.com/kubeagi/arcadia/api/app-node"
 	apiagent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apidocumentloader "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
@@ -440,7 +441,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 					Description: "qachain",
 				},
 				CommonChainConfig: apichain.CommonChainConfig{
-					Memory: apichain.Memory{
+					Memory: apinode.Memory{
 						ConversionWindowSize: pointer.IntDeref(input.ConversionWindowSize, 0),
 					},
 					Model:       pointer.StringDeref(input.Model, ""),
@@ -473,7 +474,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 					Description: "qachain",
 				},
 				CommonChainConfig: apichain.CommonChainConfig{
-					Memory: apichain.Memory{
+					Memory: apinode.Memory{
 						ConversionWindowSize: pointer.IntDeref(input.ConversionWindowSize, 0),
 					},
 					Model:       pointer.StringDeref(input.Model, ""),

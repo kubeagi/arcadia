@@ -88,8 +88,8 @@ func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	options := GetChainOptions(instance.Spec.CommonChainConfig)
 
 	chain := chains.NewAPIChain(llm, http.DefaultClient)
-	chain.RequestChain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
-	chain.AnswerChain.Memory = getMemory(llm, instance.Spec.Memory, history, "input", "")
+	chain.RequestChain.Memory = GetMemory(llm, instance.Spec.Memory, history, "", "")
+	chain.AnswerChain.Memory = GetMemory(llm, instance.Spec.Memory, history, "input", "")
 	l.APIChain = chain
 	apiDoc := instance.Spec.APIDoc
 	if apiDoc == "" {

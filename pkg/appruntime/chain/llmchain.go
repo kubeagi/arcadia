@@ -112,7 +112,7 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	}
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
-		chain.Memory = getMemory(llm, instance.Spec.Memory, history, "", "")
+		chain.Memory = GetMemory(llm, instance.Spec.Memory, history, "", "")
 	}
 	l.LLMChain = *chain
 

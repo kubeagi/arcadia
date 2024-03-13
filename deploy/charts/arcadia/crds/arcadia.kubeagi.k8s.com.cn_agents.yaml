@@ -67,6 +67,22 @@ spec:
                     maximum: 10
                     minimum: 1
                     type: integer
+                  memory:
+                    description: Memory for chain memory
+                    properties:
+                      conversionWindowSize:
+                        default: 5
+                        description: ConversionWindowSize is the maximum number of
+                          conversation rounds in memory.Can only use MaxTokenLimit
+                          or ConversionWindowSize.
+                        maximum: 30
+                        minimum: 0
+                        type: integer
+                      maxTokenLimit:
+                        description: MaxTokenLimit is the maximum number of tokens
+                          to keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
+                        type: integer
+                    type: object
                   showToolAction:
                     default: false
                     description: Whether to show tool action in the streaming output

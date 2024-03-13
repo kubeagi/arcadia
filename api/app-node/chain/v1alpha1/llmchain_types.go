@@ -37,7 +37,7 @@ type CommonChainConfig struct {
 	MaxNumberOfConccurent int `json:"maxNumberOfConccurent,omitempty"`
 
 	// for memory
-	Memory Memory `json:"memory,omitempty"`
+	Memory node.Memory `json:"memory,omitempty"`
 
 	// Model is the model to use in an llm call.like `gpt-3.5-turbo` or `chatglm_turbo`
 	// Usually this value is just empty
@@ -66,16 +66,6 @@ type CommonChainConfig struct {
 	MaxLength int `json:"maxLength,omitempty"`
 	// RepetitionPenalty is the repetition penalty for sampling in a llm call.
 	RepetitionPenalty float64 `json:"repetitionPenalty,omitempty"`
-}
-
-type Memory struct {
-	// MaxTokenLimit is the maximum number of tokens to keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
-	MaxTokenLimit int `json:"maxTokenLimit,omitempty"`
-	// ConversionWindowSize is the maximum number of conversation rounds in memory.Can only use MaxTokenLimit or ConversionWindowSize.
-	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:validation:Maximum=30
-	// +kubebuilder:default=5
-	ConversionWindowSize int `json:"conversionWindowSize,omitempty"`
 }
 
 // LLMChainStatus defines the observed state of LLMChain

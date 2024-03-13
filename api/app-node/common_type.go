@@ -27,6 +27,16 @@ const (
 	OutputLengthAnnotationKey = v1alpha1.Group + `/output-rules`
 )
 
+type Memory struct {
+	// MaxTokenLimit is the maximum number of tokens to keep in memory. Can only use MaxTokenLimit or ConversionWindowSize.
+	MaxTokenLimit int `json:"maxTokenLimit,omitempty"`
+	// ConversionWindowSize is the maximum number of conversation rounds in memory.Can only use MaxTokenLimit or ConversionWindowSize.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=30
+	// +kubebuilder:default=5
+	ConversionWindowSize int `json:"conversionWindowSize,omitempty"`
+}
+
 type Ref struct {
 	Kind   string `json:"kind,omitempty"`
 	Group  string `json:"group,omitempty"`

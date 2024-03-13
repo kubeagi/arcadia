@@ -587,6 +587,11 @@ info "8.6 tool test"
 kubectl apply -f config/samples/app_llmchain_chat_with_bot_tool.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-with-bot-tool"
 sleep 3
+info "8.6.1 conversation test"
+info "23*34 结果应该是 782, 结果再乘2是 1564, 再减去564是 1000"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "计算 23*34 的结果" "" "false"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "结果再乘2" ${resp_conversation_id} "false"
+getRespInAppChat "base-chat-with-bot-tool" "arcadia" "结果再减去564" ${resp_conversation_id} "false"
 #	info "8.6.1 bingsearch test"
 #	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
 #	if [ -z "$references" ] || [ "$references" = "null" ]; then
