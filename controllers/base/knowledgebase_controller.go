@@ -499,15 +499,6 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 
 func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logger, file io.ReadCloser, fileName string, tags map[string]string, kb *arcadiav1alpha1.KnowledgeBase, store *arcadiav1alpha1.VectorStore, embedder *arcadiav1alpha1.Embedder) (err error) {
 	log = log.WithValues("fileName", fileName, "tags", tags)
-	if tags == nil {
-		log.Info("file tags is nil, ignore")
-		return fmt.Errorf("file tags is nil, %w", errFileSkipped)
-	}
-	v, ok := tags[arcadiav1alpha1.ObjectTypeTag]
-	if !ok {
-		log.Info("file tags object type not found, ignore")
-		return fmt.Errorf("file tags object type not found, %w", errFileSkipped)
-	}
 	if !embedder.Status.IsReady() {
 		return errEmbedderNotReady
 	}
@@ -530,7 +521,8 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	case ".txt":
 		loader = documentloaders.NewText(dataReader)
 	case ".csv":
-		if v == arcadiav1alpha1.ObjectTypeQA {
+		v, ok := tags[arcadiav1alpha1.ObjectTypeTag]
+		if ok && v == arcadiav1alpha1.ObjectTypeQA {
 			// for qa csv,we skip the text splitter
 			loader = pkgdocumentloaders.NewQACSV(dataReader, fileName)
 		} else {
