@@ -23,6 +23,8 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
+const DefaultScoreThreshold = 0.3
+
 // KnowledgeBaseRetrieverSpec defines the desired state of KnowledgeBaseRetriever
 type KnowledgeBaseRetrieverSpec struct {
 	v1alpha1.CommonSpec   `json:",inline"`
@@ -34,7 +36,7 @@ type CommonRetrieverConfig struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=1
 	// +kubebuilder:default=0.3
-	ScoreThreshold float32 `json:"scoreThreshold,omitempty"`
+	ScoreThreshold *float32 `json:"scoreThreshold,omitempty"`
 	// NumDocuments is the max number of documents to return.
 	// +kubebuilder:default=5
 	// +kubebuilder:validation:Minimum=1

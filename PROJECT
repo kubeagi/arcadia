@@ -147,6 +147,14 @@ resources:
     crdVersion: v1
   controller: true
   domain: arcadia.kubeagi.k8s.com.cn
+  group: retriever
+  kind: RerankRetriever
+  path: github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
   group: prompt
   kind: Prompt
   path: github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1
@@ -168,5 +176,14 @@ resources:
   group: chain
   kind: APIChain
   path: github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubeagi.k8s.com.cn
+  group: arcadia
+  kind: Agent
+  path: github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1
   version: v1alpha1
 version: "3"

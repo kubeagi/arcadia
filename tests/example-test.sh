@@ -268,7 +268,10 @@ df -h
 rerank_image="kubeagi/core-library-cli:v0.0.1-20240308-18ea8aa"
 docker pull $rerank_image
 kind load docker-image $rerank_image --name=$KindName
-docker rmi $rerank_image
+if [[ $GITHUB_ACTIONS == "true" ]]; then
+	# github action has less disk space
+	docker rmi $rerank_image
+fi
 df -h
 
 info "2. load arcadia image to kind"

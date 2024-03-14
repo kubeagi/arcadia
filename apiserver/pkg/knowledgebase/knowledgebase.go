@@ -23,6 +23,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -30,11 +31,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/config"
-)
-
-const (
-	DefaultChunkSize    = 1024
-	DefaultChunkOverlap = 100
 )
 
 func knowledgebase2modelConverter(ctx context.Context, c client.Client) func(obj client.Object) (generated.PageNode, error) {
@@ -131,7 +127,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		},
 		FileGroupDetails: filegroupdetails,
 		ChunkSize:        &embeddingOptions.ChunkSize,
-		ChunkOverlap:     &embeddingOptions.ChunkOverlap,
+		ChunkOverlap:     embeddingOptions.ChunkOverlap,
 		// Status info
 		Status:  &status,
 		Reason:  &reason,
@@ -170,13 +166,13 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 	}
 
 	// Embedding options
-	chunkSize := DefaultChunkSize
+	chunkSize := v1alpha1.DefaultChunkSize
 	if input.ChunkSize != nil {
 		chunkSize = *input.ChunkSize
 	}
-	chunkOverlap := DefaultChunkOverlap
+	chunkOverlap := pointer.Int(v1alpha1.DefaultChunkOverlap)
 	if input.ChunkOverlap != nil {
-		chunkOverlap = *input.ChunkOverlap
+		chunkOverlap = input.ChunkOverlap
 	}
 
 	knowledgebase := &v1alpha1.KnowledgeBase{
@@ -269,7 +265,7 @@ func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.
 		kb.Spec.ChunkSize = *input.ChunkSize
 	}
 	if input.ChunkOverlap != nil {
-		kb.Spec.ChunkOverlap = *input.ChunkOverlap
+		kb.Spec.ChunkOverlap = input.ChunkOverlap
 	}
 
 	err = c.Update(ctx, kb)

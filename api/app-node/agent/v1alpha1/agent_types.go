@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	node "github.com/kubeagi/arcadia/api/app-node"
+	chainv1alpha1 "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
@@ -52,7 +53,7 @@ type Options struct {
 	// +kubebuilder:default=5
 	MaxIterations int `json:"maxIterations,omitempty"`
 	// Memory for chain memory
-	Memory node.Memory `json:"memory,omitempty"`
+	Memory chainv1alpha1.Memory `json:"memory,omitempty"`
 	// The options below might be used later
 	// prompt prompts.PromptTemplate
 	// outputKey               string

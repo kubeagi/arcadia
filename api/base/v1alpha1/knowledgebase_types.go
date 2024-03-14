@@ -43,7 +43,7 @@ type EmbeddingOptions struct {
 	ChunkSize int `json:"chunkSize,omitempty"`
 	// ChunkOverlap for text splitter
 	// +kubebuilder:default=100
-	ChunkOverlap int `json:"chunkOverlap,omitempty"`
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
 }
 
 type FileGroupDetail struct {

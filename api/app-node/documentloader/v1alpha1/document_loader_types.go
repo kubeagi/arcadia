@@ -32,7 +32,7 @@ type DocumentLoaderSpec struct {
 	ChunkSize int `json:"chunkSize,omitempty"`
 	// ChunkOverlap for text splitter
 	// +kubebuilder:default=100
-	ChunkOverlap int `json:"chunkOverlap,omitempty"`
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
 	// FileExtName the type of documents, can be .pdf, .txt, .mp3, etc ...
 	FileExtName string `json:"fileExtName,omitempty"`
 	// LoaderConfig defines the config of loader tools

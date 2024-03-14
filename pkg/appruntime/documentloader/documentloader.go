@@ -24,11 +24,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	documentloaders "github.com/tmc/langchaingo/documentloaders"
+	"github.com/tmc/langchaingo/documentloaders"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
@@ -135,7 +136,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 
 		split := textsplitter.NewRecursiveCharacter(
 			textsplitter.WithChunkSize(dl.Instance.Spec.ChunkSize),
-			textsplitter.WithChunkOverlap(dl.Instance.Spec.ChunkOverlap),
+			textsplitter.WithChunkOverlap(pointer.IntDeref(dl.Instance.Spec.ChunkOverlap, arcadiav1alpha1.DefaultChunkOverlap)),
 		)
 		docs, err := loader.LoadAndSplit(ctx, split)
 		if err != nil {
