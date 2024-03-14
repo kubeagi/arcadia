@@ -21,12 +21,20 @@ COPY apiserver/ apiserver/
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o apiserver-bin apiserver/main.go
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+
+# Use alpine as minimal base image to package the manager binary
+FROM alpine:3.19.1
+
+RUN apk update \
+    # Install packages to support pdf to text conversion
+    && apk add --no-cache  poppler-utils wv unrtf tidyhtml
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/apiserver-bin ./apiserver
-USER 65532:65532
+
+RUN adduser -D -u 1000 1000
+
+USER 1000
 
 ENTRYPOINT ["/manager"]
