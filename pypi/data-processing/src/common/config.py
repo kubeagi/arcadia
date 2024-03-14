@@ -68,11 +68,16 @@ class Config(metaclass=Singleton):
 
         self.llm_qa_retry_count = int(llm_qa_retry_count)
 
-        # knowledge
+        # dataprocess
+        dataprocess = model_cr.get_dataprocess_in_k8s_configmap(
+            namespace=k8s_pod_namespace, config_map_name=k8s_default_config
+        )
         # chunk size
-        self.knowledge_chunk_size = 500
+        self.knowledge_chunk_size = dataprocess.get("chunkSize", 500)
         # chunk overlap
         self.knowledge_chunk_overlap = 50
+        # worker
+        self.worker = dataprocess.get("worker", 1)
 
         # backend PostgreSQL
         postgresql_config = postgresql_cr.get_postgresql_config_in_k8s_configmap(

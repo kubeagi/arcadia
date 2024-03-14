@@ -125,3 +125,33 @@ def get_spec_for_embedding_k8s_cr(name, namespace):
     except Exception as ex:
         logger.error(str(ex))
         return {"status": 400, "message": "获取embedding中的provider失败", "data": ""}
+
+def get_dataprocess_in_k8s_configmap(namespace, config_map_name):
+    """Get the dataprocess in the configmap.
+
+    namespace: namespace;
+    config_map_name: config map name
+    """
+    try:
+        kube = client.KubeEnv()
+
+        config_map = kube.read_namespaced_config_map(
+            namespace=namespace, name=config_map_name
+        )
+
+        config = config_map.data.get("dataprocess")
+
+        json_data = yaml.safe_load(config)
+
+        return json_data
+    except Exception as ex:
+        logger.error(
+            "".join(
+                [
+                    f"Can not the dataprocess. The error is: \n",
+                    f"{traceback.format_exc()}\n",
+                ]
+            )
+        )
+
+        return None
