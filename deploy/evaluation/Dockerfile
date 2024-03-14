@@ -32,10 +32,17 @@ ARG PYTHON_INDEX_URL=https://pypi.mirrors.ustc.edu.cn/simple/
 
 WORKDIR /usr/local/bin
 COPY --from=builder /go/src/arctl ./arctl
-RUN python -m pip install ragas langchain==0.0.354 -i ${PYTHON_INDEX_URL}
+RUN python -m pip install ragas langchain -i ${PYTHON_INDEX_URL}
 
-# build ragas-once by source code
-COPY ./pypi/ragas_once ./ragas_once
-WORKDIR /usr/local/bin/ragas_once
-RUN python setup.py bdist_wheel -d /usr/local/bin/ragas_once/dist
-RUN pip install dist/ragas_once-0.0.1-py3-none-any.whl
+# Install core-library
+RUN apt-get install -y git make gcc
+RUN git clone https://github.com/kubeagi/core-library.git
+WORKDIR /usr/local/bin/core-library
+RUN make install-eval
+
+# DEPRECATED: moved to core library
+# # build ragas-once by source code
+# COPY ./pypi/ragas_once ./ragas_once
+# WORKDIR /usr/local/bin/ragas_once
+# RUN python setup.py bdist_wheel -d /usr/local/bin/ragas_once/dist
+# RUN pip install dist/ragas_once-0.0.1-py3-none-any.whl

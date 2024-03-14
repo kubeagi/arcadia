@@ -6,7 +6,6 @@ on:
     paths:
       - 'deploy/evaluation/Dockerfile'
       - 'pkg/**'
-      - 'pypi/ragas_once/**'
   workflow_dispatch:
 env:
   PYTHON_INDEX_URL: https://pypi.org/simple
