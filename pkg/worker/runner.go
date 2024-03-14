@@ -249,6 +249,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			// Need python version and ray address for distributed inference
 			{Name: "PYTHON_VERSION", Value: pythonVersion},
 			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
+			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
