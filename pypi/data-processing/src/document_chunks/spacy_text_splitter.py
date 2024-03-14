@@ -24,10 +24,15 @@ class SpacyTextSplitter(TextSplitter):
         self,
         separator: str = "\n\n",
         pipeline: str = "zh_core_web_sm",
-        chunk_size: int = 500,
-        chunk_overlap: int = 10,
+        chunk_size: int = None,
+        chunk_overlap: int = None,
     ):
         """Initialize the spacy text splitter."""
+        if chunk_size is None:
+            chunk_size = config.knowledge_chunk_size
+        if chunk_overlap is None:
+            chunk_overlap = config.knowledge_chunk_overlap
+
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
