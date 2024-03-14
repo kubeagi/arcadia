@@ -53,6 +53,16 @@ func (p *PDF) Load(ctx context.Context) ([]schema.Document, error) {
 	for page := 1; page <= pages; page++ {
 		key := fmt.Sprintf("Page %d of %d", page, pages)
 		idx := strings.Index(str, key)
+		if idx == -1 {
+			docs = append(docs, schema.Document{
+				PageContent: str[from:],
+				Metadata: map[string]any{
+					"page":        page,
+					"total_pages": page,
+				},
+			})
+			break
+		}
 		docs = append(docs, schema.Document{
 			PageContent: str[from:idx],
 			Metadata: map[string]any{
