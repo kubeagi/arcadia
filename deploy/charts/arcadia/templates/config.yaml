@@ -54,6 +54,8 @@ data:
   dataprocess: |
     llm:
       qa_retry_count: {{ .Values.dataprocess.config.llm.qa_retry_count }}
+    worker: {{ .Values.dataprocess.config.worker }}
+    chunkSize: {{ .Values.dataprocess.config.chunkSize }}
 {{- if .Values.postgresql.enabled }}
     postgresql:
       host: {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local

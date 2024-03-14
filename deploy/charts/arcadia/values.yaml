@@ -134,6 +134,10 @@ dataprocess:
   config:
     llm:
       qa_retry_count: '2'
+    worker: 1
+    chunkSize: 500
+
+    
 
 # @section postgresql is used to configure postgresql service
 # Posgresql service will be used in two parts:
