@@ -27,7 +27,6 @@ import (
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/klog/v2"
 
-	appnode "github.com/kubeagi/arcadia/api/app-node"
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
@@ -56,17 +55,17 @@ func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	if config.MaxTokens > 0 {
 		options = append(options, chains.WithMaxTokens(config.MaxTokens))
 	}
-	if config.Temperature > 0 {
-		options = append(options, chains.WithTemperature(config.Temperature))
+	if config.Temperature != nil {
+		options = append(options, chains.WithTemperature(*config.Temperature))
 	}
 	if len(config.StopWords) > 0 {
 		options = append(options, chains.WithStopWords(config.StopWords))
 	}
-	if config.TopK > 0 {
-		options = append(options, chains.WithTopK(config.TopK))
+	if config.TopK != nil {
+		options = append(options, chains.WithTopK(*config.TopK))
 	}
-	if config.TopP > 0 {
-		options = append(options, chains.WithTopP(config.TopP))
+	if config.TopP != nil {
+		options = append(options, chains.WithTopP(*config.TopP))
 	}
 	if config.Seed > 0 {
 		options = append(options, chains.WithSeed(config.Seed))
@@ -77,8 +76,8 @@ func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	if config.MaxLength > 0 {
 		options = append(options, chains.WithMaxLength(config.MaxLength))
 	}
-	if config.RepetitionPenalty > 0 {
-		options = append(options, chains.WithRepetitionPenalty(config.RepetitionPenalty))
+	if config.RepetitionPenalty != nil {
+		options = append(options, chains.WithRepetitionPenalty(*config.RepetitionPenalty))
 	}
 	if len(config.Model) != 0 {
 		options = append(options, chains.WithModel(config.Model))
@@ -86,7 +85,7 @@ func GetChainOptions(config v1alpha1.CommonChainConfig) []chains.ChainCallOption
 	return options
 }
 
-func GetMemory(llm llms.Model, config appnode.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
+func GetMemory(llm llms.Model, config v1alpha1.Memory, history langchaingoschema.ChatMessageHistory, inputKey, outputKey string) langchaingoschema.Memory {
 	if inputKey == "" {
 		inputKey = "question"
 	}
@@ -96,8 +95,8 @@ func GetMemory(llm llms.Model, config appnode.Memory, history langchaingoschema.
 	if config.MaxTokenLimit > 0 {
 		return memory.NewConversationTokenBuffer(llm, config.MaxTokenLimit, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
 	}
-	if config.ConversionWindowSize > 0 {
-		return memory.NewConversationWindowBuffer(config.ConversionWindowSize, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
+	if config.ConversionWindowSize != nil {
+		return memory.NewConversationWindowBuffer(*config.ConversionWindowSize, memory.WithInputKey(inputKey), memory.WithOutputKey(outputKey), memory.WithChatHistory(history))
 	}
 	return memory.NewSimple()
 }

@@ -88,6 +88,11 @@ func (in *DocumentLoaderList) DeepCopyObject() runtime.Object {
 func (in *DocumentLoaderSpec) DeepCopyInto(out *DocumentLoaderSpec) {
 	*out = *in
 	out.CommonSpec = in.CommonSpec
+	if in.ChunkOverlap != nil {
+		in, out := &in.ChunkOverlap, &out.ChunkOverlap
+		*out = new(int)
+		**out = **in
+	}
 	in.LoaderConfig.DeepCopyInto(&out.LoaderConfig)
 }
 

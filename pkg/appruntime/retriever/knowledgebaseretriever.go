@@ -24,6 +24,7 @@ import (
 	"github.com/tmc/langchaingo/vectorstores"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
@@ -99,8 +100,13 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 		return nil, err
 	}
 	logger := klog.FromContext(ctx)
-	logger.V(3).Info(fmt.Sprintf("retriever created[scorethreshold: %f][num: %d]", instance.Spec.ScoreThreshold, instance.Spec.NumDocuments))
-	retriever := vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(instance.Spec.ScoreThreshold))
+	logger.V(3).Info(fmt.Sprintf("retriever created[scorethreshold: %f][num: %d]", pointer.Float32Deref(instance.Spec.ScoreThreshold, 0.0), instance.Spec.NumDocuments))
+	var retriever vectorstores.Retriever
+	if instance.Spec.ScoreThreshold != nil {
+		retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(*instance.Spec.ScoreThreshold))
+	} else {
+		retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments)
+	}
 	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
 
 	question, ok := args["question"]

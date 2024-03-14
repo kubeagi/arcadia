@@ -89,7 +89,8 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 	input["input"] = fmt.Sprintf("%s, %s", instance.Spec.Prompt, args["question"])
 	response, err := executor.Call(ctx, input)
 	if err != nil {
-		return args, fmt.Errorf("error when call agent: %w", err)
+		klog.FromContext(ctx).Error(err, "error when call agent")
+		// return args, fmt.Errorf("error when call agent: %w", err)
 	}
 	klog.FromContext(ctx).V(5).Info("use agent, blocking out:", response["output"])
 	args[base.OutputAnserKeyInArg] = response["output"]

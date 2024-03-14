@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apinode "github.com/kubeagi/arcadia/api/app-node"
 	apiagent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apidocumentloader "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
@@ -107,10 +106,10 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	}
 	if chainConfig != nil {
 		gApp.Model = pointer.String(chainConfig.Model)
-		gApp.Temperature = pointer.Float64(chainConfig.Temperature)
+		gApp.Temperature = chainConfig.Temperature
 		gApp.MaxLength = pointer.Int(chainConfig.MaxLength)
 		gApp.MaxTokens = pointer.Int(chainConfig.MaxTokens)
-		gApp.ConversionWindowSize = pointer.Int(chainConfig.Memory.ConversionWindowSize)
+		gApp.ConversionWindowSize = chainConfig.Memory.ConversionWindowSize
 	}
 	if agent != nil && len(agent.Spec.AllowedTools) > 0 {
 		for _, v := range agent.Spec.AllowedTools {
@@ -132,7 +131,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		}
 	}
 	if retriever != nil {
-		gApp.ScoreThreshold = pointer.Float64(float64(retriever.Spec.ScoreThreshold))
+		gApp.ScoreThreshold = pointer.Float64(float64(pointer.Float32Deref(retriever.Spec.ScoreThreshold, 0.0)))
 		gApp.NumDocuments = pointer.Int(retriever.Spec.NumDocuments)
 	}
 	addDefaultValue(gApp, app)
@@ -414,7 +413,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 				Description: "documentloader",
 			},
 			ChunkSize:    1024,
-			ChunkOverlap: 50,
+			ChunkOverlap: pointer.Int(50),
 			LoaderConfig: apidocumentloader.LoaderConfig{},
 		},
 	}
@@ -441,13 +440,13 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 					Description: "qachain",
 				},
 				CommonChainConfig: apichain.CommonChainConfig{
-					Memory: apinode.Memory{
-						ConversionWindowSize: pointer.IntDeref(input.ConversionWindowSize, 0),
+					Memory: apichain.Memory{
+						ConversionWindowSize: input.ConversionWindowSize,
 					},
 					Model:       pointer.StringDeref(input.Model, ""),
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
 					MaxTokens:   pointer.IntDeref(input.MaxTokens, 0),
-					Temperature: pointer.Float64Deref(input.Temperature, 0),
+					Temperature: input.Temperature,
 				},
 			},
 		}
@@ -455,8 +454,8 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			qachain.Spec.Model = pointer.StringDeref(input.Model, qachain.Spec.Model)
 			qachain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, qachain.Spec.MaxLength)
 			qachain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, qachain.Spec.MaxTokens)
-			qachain.Spec.Temperature = pointer.Float64Deref(input.Temperature, qachain.Spec.Temperature)
-			qachain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, qachain.Spec.Memory.ConversionWindowSize)
+			qachain.Spec.Temperature = input.Temperature
+			qachain.Spec.Memory.ConversionWindowSize = input.ConversionWindowSize
 			return nil
 		}); err != nil {
 			return nil, err
@@ -470,17 +469,17 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			},
 			Spec: apichain.LLMChainSpec{
 				CommonSpec: v1alpha1.CommonSpec{
-					DisplayName: "qachain",
-					Description: "qachain",
+					DisplayName: "llmchain",
+					Description: "llmchain",
 				},
 				CommonChainConfig: apichain.CommonChainConfig{
-					Memory: apinode.Memory{
-						ConversionWindowSize: pointer.IntDeref(input.ConversionWindowSize, 0),
+					Memory: apichain.Memory{
+						ConversionWindowSize: input.ConversionWindowSize,
 					},
 					Model:       pointer.StringDeref(input.Model, ""),
 					MaxLength:   pointer.IntDeref(input.MaxLength, 0),
 					MaxTokens:   pointer.IntDeref(input.MaxTokens, 0),
-					Temperature: pointer.Float64Deref(input.Temperature, 0),
+					Temperature: input.Temperature,
 				},
 			},
 		}
@@ -488,8 +487,8 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			llmchain.Spec.Model = pointer.StringDeref(input.Model, llmchain.Spec.Model)
 			llmchain.Spec.MaxLength = pointer.IntDeref(input.MaxLength, llmchain.Spec.MaxLength)
 			llmchain.Spec.MaxTokens = pointer.IntDeref(input.MaxTokens, llmchain.Spec.MaxTokens)
-			llmchain.Spec.Temperature = pointer.Float64Deref(input.Temperature, llmchain.Spec.Temperature)
-			llmchain.Spec.Memory.ConversionWindowSize = pointer.IntDeref(input.ConversionWindowSize, llmchain.Spec.Memory.ConversionWindowSize)
+			llmchain.Spec.Temperature = input.Temperature
+			llmchain.Spec.Memory.ConversionWindowSize = input.ConversionWindowSize
 			return nil
 		}); err != nil {
 			return nil, err
@@ -510,13 +509,13 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 					Description: "retriever",
 				},
 				CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
-					ScoreThreshold: float32(pointer.Float64Deref(input.ScoreThreshold, 0)),
+					ScoreThreshold: pointer.Float32(float32(pointer.Float64Deref(input.ScoreThreshold, 0.0))),
 					NumDocuments:   pointer.IntDeref(input.NumDocuments, 0),
 				},
 			},
 		}
 		if _, err = controllerutil.CreateOrUpdate(ctx, c, retriever, func() error {
-			retriever.Spec.ScoreThreshold = float32(pointer.Float64Deref(input.ScoreThreshold, float64(retriever.Spec.ScoreThreshold)))
+			retriever.Spec.ScoreThreshold = pointer.Float32(float32(pointer.Float64Deref(input.ScoreThreshold, 0.0)))
 			retriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, retriever.Spec.NumDocuments)
 			return nil
 		}); err != nil {
@@ -547,6 +546,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 					Params: utils.MapAny2Str(v.Params),
 				})
 			}
+			agent.Spec.AgentConfig.Options.Memory.ConversionWindowSize = input.ConversionWindowSize
 			return nil
 		}); err != nil {
 			return nil, err

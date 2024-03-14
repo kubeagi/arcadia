@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -542,7 +543,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	embeddingOptions := kb.EmbeddingOptions()
 	split := textsplitter.NewRecursiveCharacter(
 		textsplitter.WithChunkSize(embeddingOptions.ChunkSize),
-		textsplitter.WithChunkOverlap(embeddingOptions.ChunkOverlap),
+		textsplitter.WithChunkOverlap(pointer.IntDeref(embeddingOptions.ChunkOverlap, arcadiav1alpha1.DefaultChunkOverlap)),
 	)
 	// switch {
 	// case "token":

@@ -81,6 +81,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 		messageID := string(uuid.NewUUID())
 		var response *chat.ChatRespBody
 		var err error
+		logger := klog.FromContext(c.Request.Context())
 
 		if req.ResponseMode.IsStreaming() {
 			buf := strings.Builder{}
@@ -91,9 +92,9 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 					if e := recover(); e != nil {
 						err, ok := e.(error)
 						if ok {
-							klog.FromContext(c.Request.Context()).Error(err, "A panic occurred when run chat.AppRun")
+							logger.Error(err, "A panic occurred when run chat.AppRun")
 						} else {
-							klog.FromContext(c.Request.Context()).Error(fmt.Errorf("get err:%#v", e), "A panic occurred when run chat.AppRun")
+							logger.Error(fmt.Errorf("get err:%#v", e), "A panic occurred when run chat.AppRun")
 						}
 					}
 				}()
@@ -107,7 +108,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						Latency:        time.Since(req.StartTime).Milliseconds(),
 					})
 					// c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-					klog.FromContext(c.Request.Context()).Error(err, "error resp")
+					logger.Error(err, "error resp")
 					close(respStream)
 					return
 				}
@@ -147,7 +148,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 			c.Writer.Header().Set("Cache-Control", "no-cache")
 			c.Writer.Header().Set("Connection", "keep-alive")
 			c.Writer.Header().Set("Transfer-Encoding", "chunked")
-			klog.FromContext(c.Request.Context()).Info("start to receive messages...")
+			logger.Info("start to receive messages...")
 			clientDisconnected := c.Stream(func(w io.Writer) bool {
 				if msg, ok := <-respStream; ok {
 					c.SSEvent("", chat.ChatRespBody{
@@ -165,20 +166,27 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 				return false
 			})
 			if clientDisconnected {
-				klog.FromContext(c.Request.Context()).Info("chatHandler: the client is disconnected")
+				logger.Info("chatHandler: the client is disconnected")
 			}
-			klog.FromContext(c.Request.Context()).Info("end to receive messages")
+			logger.Info("end to receive messages")
 		} else {
 			// handle chat blocking mode
 			response, err = cs.server.AppRun(c.Request.Context(), req, nil, messageID)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-				klog.FromContext(c.Request.Context()).Error(err, "error resp")
+				logger.Error(err, "error resp")
 				return
 			}
 			c.JSON(http.StatusOK, response)
 		}
-		klog.FromContext(c.Request.Context()).V(3).Info("chat done", "req", req)
+		switch {
+		case logger.V(3).Enabled():
+			logger.Info("chat done", "req", req)
+		case logger.V(5).Enabled():
+			logger.Info("chat done", "req", req, "resp", response)
+		default:
+			logger.Info("chat done")
+		}
 	}
 }
 

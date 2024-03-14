@@ -3,22 +3,25 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
 	// UpdateSourceFileAnnotationKey is the key of the update source file annotation
 	UpdateSourceFileAnnotationKey = Group + "/update-source-file-time"
+	DefaultChunkSize              = 1024
+	DefaultChunkOverlap           = 100
 )
 
 func (kb *KnowledgeBase) EmbeddingOptions() EmbeddingOptions {
 	options := kb.Spec.EmbeddingOptions
 	if kb.Spec.EmbeddingOptions.ChunkSize == 0 {
 		// default 1024
-		options.ChunkSize = 1024
+		options.ChunkSize = DefaultChunkSize
 	}
-	if kb.Spec.EmbeddingOptions.ChunkOverlap == 0 {
+	if kb.Spec.EmbeddingOptions.ChunkOverlap == nil {
 		// default 100
-		options.ChunkOverlap = 100
+		options.ChunkOverlap = pointer.IntPtr(DefaultChunkOverlap)
 	}
 	return options
 }

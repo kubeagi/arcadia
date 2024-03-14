@@ -129,7 +129,7 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 	})
 	newRef := make([]Reference, 0, len(references))
 	for i := range references {
-		if l.Instance.Spec.ScoreThreshold > 0 && references[i].RerankScore < l.Instance.Spec.ScoreThreshold {
+		if l.Instance.Spec.ScoreThreshold != nil && references[i].RerankScore < *l.Instance.Spec.ScoreThreshold {
 			break
 		}
 		if l.Instance.Spec.NumDocuments > 0 && len(newRef) >= l.Instance.Spec.NumDocuments {
