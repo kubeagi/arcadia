@@ -941,6 +941,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		return
 	}
 
+	invalidVersion := body.Version == "" || body.Version == "null"
 	latestVersion := ""
 	singleFileVersions := source.Client.ListObjects(ctx.Request.Context(), bucketName, minio.ListObjectsOptions{WithVersions: true, Prefix: objectName})
 	for fv := range singleFileVersions {
@@ -949,7 +950,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 			break
 		}
 	}
-	if body.Version != latestVersion {
+	if !invalidVersion && body.Version != latestVersion {
 		// TODO: handle forceUpdate logic
 		klog.Warningf("The latest version is %s, and version %s is ready to be edited. Please refresh the page and edit again.", latestVersion, body.Version)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
@@ -958,24 +959,26 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		return
 	}
 
-	swapFileName := fmt.Sprintf(".%s", body.Version)
-	sf, err := os.OpenFile(swapFileName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
-	if err != nil {
-		if !os.IsExist(err) {
-			klog.Errorf("an error occurred while creating, error %s", err)
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"message": "unable to lock file",
+	if !invalidVersion {
+		swapFileName := fmt.Sprintf(".%s", body.Version)
+		sf, err := os.OpenFile(swapFileName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+		if err != nil {
+			if !os.IsExist(err) {
+				klog.Errorf("an error occurred while creating, error %s", err)
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+					"message": "unable to lock file",
+				})
+				return
+			}
+			klog.Warningf("there are other users editing the collection, please try again later.")
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"message": "there are other users editing the collection, please try again later.",
 			})
 			return
 		}
-		klog.Warningf("there are other users editing the collection, please try again later.")
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"message": "there are other users editing the collection, please try again later.",
-		})
-		return
+		sf.Close()
+		defer os.Remove(swapFileName)
 	}
-	sf.Close()
-	defer os.Remove(swapFileName)
 
 	obj, err := source.Client.GetObject(ctx.Request.Context(), bucketName, objectName, minio.GetObjectOptions{})
 	if err != nil {
@@ -985,6 +988,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		})
 		return
 	}
+	tags, _ := source.Client.GetObjectTagging(ctx.Request.Context(), bucketName, objectName, minio.GetObjectTaggingOptions{})
 	buffer, l, err := common.EditCSV(obj, body.UpdateLines, body.NewLines, body.DelLines)
 	if err != nil {
 		klog.Errorf("generate new csv file failed error %s", err)
@@ -1001,6 +1005,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		})
 		return
 	}
+	_ = source.Client.PutObjectTagging(ctx.Request.Context(), bucketName, objectName, tags, minio.PutObjectTaggingOptions{})
 	ctx.JSON(http.StatusOK, "")
 }
 
