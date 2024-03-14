@@ -73,11 +73,13 @@ class Config(metaclass=Singleton):
             namespace=k8s_pod_namespace, config_map_name=k8s_default_config
         )
         # chunk size
-        self.knowledge_chunk_size = dataprocess.get("chunkSize", 500)
+        chunkSize = dataprocess.get("chunkSize", 500)
+        self.knowledge_chunk_size = int(chunkSize)
         # chunk overlap
         self.knowledge_chunk_overlap = 50
         # worker
-        self.worker = dataprocess.get("worker", 1)
+        worker = dataprocess.get("worker", 1)
+        self.workers = int(worker)
 
         # backend PostgreSQL
         postgresql_config = postgresql_cr.get_postgresql_config_in_k8s_configmap(

@@ -88,4 +88,4 @@ def _create_database_connection():
 
 
 if __name__ == "__main__":
-    sanic_app.run(host="0.0.0.0", port=28888, access_log=False, debug=False, workers=config.worker)
+    sanic_app.run(host="0.0.0.0", port=28888, access_log=False, debug=False, workers=config.workers)
