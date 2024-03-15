@@ -3,6 +3,48 @@ entries:
   arcadia:
   - apiVersion: v2
     appVersion: 0.2.0
+    created: "2024-03-15T02:58:50.413208515Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: ""
+      version: 13.2.14
+    - name: minio
+      repository: ""
+      version: 5.0.13
+    - condition: fastchat.enabled
+      name: fastchat
+      repository: ""
+      version: 0.0.4
+    - condition: chromadb.enabled
+      name: chromadb
+      repository: ""
+      version: 0.1.19
+    description: A Helm chart(Also a KubeBB Component) for KubeAGI Arcadia
+    digest: 7f2fc44522383d3a7ac431380a58664aa2cd0839502feb8a7943f81992058915
+    keywords:
+    - LLMOps
+    - Kubernetes
+    maintainers:
+    - name: nkwangleiGIT
+      url: https://github.com/nkwangleiGIT
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    - name: Abirdcfly
+      url: https://github.com/Abirdcfly
+    - name: 0xff-dev
+      url: https://github.com/0xff-dev
+    - name: lanture1064
+      url: https://github.com/lanture1064
+    name: arcadia
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.3.14/arcadia-0.3.14.tgz
+    version: 0.3.14
+  - apiVersion: v2
+    appVersion: 0.2.0
     created: "2024-03-13T08:57:22.116843707Z"
     dependencies:
     - condition: postgresql.enabled
@@ -3460,6 +3502,34 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/component-store-0.0.2/component-store-0.0.2.tgz
     version: 0.0.2
+  gpu-operator:
+  - apiVersion: v2
+    appVersion: v23.9.1
+    created: "2024-03-15T02:58:50.521395088Z"
+    dependencies:
+    - condition: nfd.enabled
+      name: node-feature-discovery
+      repository: ""
+      version: v0.14.2
+    description: NVIDIA GPU Operator creates/configures/manages GPUs atop Kubernetes
+    digest: c458e43f57945b50d7813a5117259ff60000c75acea75cbee715ef2ce9f049ba
+    home: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html
+    icon: https://assets.nvidiagrid.net/ngc/logos/GPUoperator.png
+    keywords:
+    - gpu
+    - cuda
+    - compute
+    - operator
+    - deep learning
+    - monitoring
+    - tesla
+    kubeVersion: '>= 1.16.0-0'
+    name: gpu-operator
+    sources:
+    - https://github.com/NVIDIA/gpu-operator
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/gpu-operator-v23.9.1/gpu-operator-v23.9.1.tgz
+    version: v23.9.1
   jupyterlab:
   - apiVersion: v2
     appVersion: 4.0.3
@@ -3559,4 +3629,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2024-03-13T08:57:22.117397414Z"
+generated: "2024-03-15T02:58:50.521681595Z"
