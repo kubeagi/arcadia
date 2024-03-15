@@ -43,6 +43,8 @@ type ModelSpec struct {
 	// It can be a tag, branch name.
 	Revision string `json:"revision,omitempty"`
 
+	ModelSource string `json:"modelSource,omitempty"`
+
 	// MaxContextLength defines the max context length allowed in this model
 	MaxContextLength int `json:"maxContextLength,omitempty"`
 }
