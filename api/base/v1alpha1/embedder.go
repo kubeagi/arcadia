@@ -26,6 +26,15 @@ import (
 	"github.com/kubeagi/arcadia/pkg/embeddings"
 )
 
+func (e Embedder) TypedObjectReference() *TypedObjectReference {
+	return &TypedObjectReference{
+		APIGroup:  &GroupVersion.Group,
+		Kind:      "Embedder",
+		Name:      e.Name,
+		Namespace: &e.Namespace,
+	}
+}
+
 func (e Embedder) AuthAPIKey(ctx context.Context, c client.Client) (string, error) {
 	if e.Spec.Endpoint == nil {
 		return "", nil

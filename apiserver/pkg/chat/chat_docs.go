@@ -29,13 +29,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	"github.com/kubeagi/arcadia/pkg/config"
 )
 
 // ReceiveConversationDocs receive and process docs for a conversation
@@ -118,6 +122,13 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 		Object:         objectPath,
 	}
 
+	// build/update conversation knowledgebase
+	err = cs.BuildConversationKnowledgeBase(ctx, req, document)
+	if err != nil {
+		// only log error
+		klog.Errorf("failed to build conversation knowledgebase %s with error %s", req.ConversationID, err.Error())
+	}
+
 	// process document with map-reduce
 	message := storage.Message{
 		ID:        messageID,
@@ -156,4 +167,61 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 			Object: document.Object,
 		},
 	}, nil
+}
+
+// BuildConversationKnowledgeBase create/updates knowledgebase for this conversation.
+// Conversation ID will be the knowledgebase name and document will be placed unde filegroup
+// Knoweledgebase will embed the document into vectorstore which can be used in this conversation as references(similarity search)
+func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req ConversationFilesReqBody, document storage.Document) error {
+	// get system embedding suite
+	embedder, vs, err := common.SystemEmbeddingSuite(ctx, cs.cli)
+	if err != nil {
+		return err
+	}
+
+	// new knowledgebase
+	kb := &arcadiav1alpha1.KnowledgeBase{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      req.ConversationID,
+			Namespace: req.AppNamespace,
+			Labels: map[string]string{
+				arcadiav1alpha1.LabelKnowledgeBaseType: string(arcadiav1alpha1.KnowledgeBaseTypeConversation),
+			},
+		},
+		Spec: arcadiav1alpha1.KnowledgeBaseSpec{
+			CommonSpec: arcadiav1alpha1.CommonSpec{
+				DisplayName: "Conversation",
+				Description: "Knowledgebase built for conversation",
+			},
+			Type:        arcadiav1alpha1.KnowledgeBaseTypeConversation,
+			Embedder:    embedder.TypedObjectReference(),
+			VectorStore: vs.TypedObjectReference(),
+			FileGroups:  make([]arcadiav1alpha1.FileGroup, 0),
+		},
+	}
+
+	// app as ownerreference
+	app, _, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
+	if err != nil {
+		return err
+	}
+	// systemDatasource which stores the document
+	systemDatasource, err := config.GetSystemDatasource(ctx, cs.cli)
+	if err != nil {
+		return err
+	}
+	// create or update the conversation knowledgebase
+	_, err = controllerutil.CreateOrUpdate(ctx, cs.cli, kb, func() error {
+		if err := controllerutil.SetControllerReference(app, kb, pkgclient.Scheme); err != nil {
+			return err
+		}
+		// append document path
+		kb.Spec.FileGroups = append(kb.Spec.FileGroups, arcadiav1alpha1.FileGroup{
+			Source: systemDatasource.TypedObjectReference(),
+			Paths:  []string{document.Object},
+		})
+		return nil
+	})
+
+	return err
 }
