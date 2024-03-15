@@ -39,12 +39,16 @@ spec:
           spec:
             description: KnowledgeBaseSpec defines the desired state of KnowledgeBase
             properties:
+              batchSize:
+                default: 10
+                description: BatchSize for text splitter
+                type: integer
               chunkOverlap:
-                default: 100
+                default: 30
                 description: ChunkOverlap for text splitter
                 type: integer
               chunkSize:
-                default: 1024
+                default: 300
                 description: ChunkSize for text splitter
                 type: integer
               creator:

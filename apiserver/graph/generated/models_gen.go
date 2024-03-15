@@ -253,6 +253,8 @@ type CreateKnowledgeBaseInput struct {
 	ChunkSize *int `json:"chunkSize,omitempty"`
 	// chunkOverlap为知识库作文档拆分时相邻块的交集
 	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// batchSize为知识库做批量处理时的批次大小
+	BatchSize *int `json:"batchSize,omitempty"`
 }
 
 type CreateLLMInput struct {
@@ -857,6 +859,8 @@ type KnowledgeBase struct {
 	ChunkSize *int `json:"chunkSize,omitempty"`
 	// chunkOverlap为知识库作文档拆分时相邻块的交集
 	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// batchSize为知识库做批量处理时的批次大小
+	BatchSize *int `json:"batchSize,omitempty"`
 	// 知识库整体连接状态
 	// 规则: True 代表正常 False代表异常
 	// 规则: Deleting 代表删除中
@@ -1680,6 +1684,8 @@ type UpdateKnowledgeBaseInput struct {
 	ChunkSize *int `json:"chunkSize,omitempty"`
 	// chunkOverlap为知识库作文档拆分时相邻块的交集
 	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// batchSize为知识库做批量处理时的批次大小
+	BatchSize *int `json:"batchSize,omitempty"`
 }
 
 type UpdateLLMInput struct {

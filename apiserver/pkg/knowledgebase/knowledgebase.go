@@ -128,6 +128,8 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		FileGroupDetails: filegroupdetails,
 		ChunkSize:        &embeddingOptions.ChunkSize,
 		ChunkOverlap:     embeddingOptions.ChunkOverlap,
+		BatchSize:        &embeddingOptions.BatchSize,
+
 		// Status info
 		Status:  &status,
 		Reason:  &reason,
@@ -174,6 +176,10 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 	if input.ChunkOverlap != nil {
 		chunkOverlap = input.ChunkOverlap
 	}
+	batchSize := v1alpha1.DefaultBatchSize
+	if input.BatchSize != nil {
+		batchSize = *input.BatchSize
+	}
 
 	knowledgebase := &v1alpha1.KnowledgeBase{
 		ObjectMeta: metav1.ObjectMeta{
@@ -195,6 +201,7 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 			EmbeddingOptions: v1alpha1.EmbeddingOptions{
 				ChunkSize:    chunkSize,
 				ChunkOverlap: chunkOverlap,
+				BatchSize:    batchSize,
 			},
 		},
 	}
@@ -266,6 +273,9 @@ func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.
 	}
 	if input.ChunkOverlap != nil {
 		kb.Spec.ChunkOverlap = input.ChunkOverlap
+	}
+	if input.BatchSize != nil {
+		kb.Spec.BatchSize = *input.BatchSize
 	}
 
 	err = c.Update(ctx, kb)
