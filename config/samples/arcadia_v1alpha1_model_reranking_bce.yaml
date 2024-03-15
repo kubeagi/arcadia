@@ -13,3 +13,4 @@ spec:
     HuggingFace: https://huggingface.co/maidalun1020/bce-reranker-base_v1
   types: "reranking"
   huggingFaceRepo: maidalun1020/bce-reranker-base_v1
+  modelSource: huggingface

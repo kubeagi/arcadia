@@ -118,17 +118,20 @@ func AddDocuments(ctx context.Context, log logr.Logger, vs *arcadiav1alpha1.Vect
 	log.Info("handle file: add documents to embedder")
 	if store, ok := s.(*PGVectorStore); ok {
 		// now only pgvector support Row-level updates
-		log.V(3).Info("handle file: use pgvector, filter out exist documents")
+		log.V(3).Info("handle file: use pgvector, filter out exist documents...")
 		if documents, err = store.RemoveExist(ctx, log, documents); err != nil {
 			return err
 		}
+		log.V(3).Info("handle file: use pgvector, filter out exist documents done")
 	}
 	for i, doc := range documents {
 		log.V(5).Info(fmt.Sprintf("add doc to vectorstore, document[%d]: embedding:%s, metadata:%v", i, doc.PageContent, doc.Metadata))
 	}
+	log.V(3).Info("handle file: add documents, may take long time...")
 	if _, err = s.AddDocuments(ctx, documents); err != nil {
 		return err
 	}
+	log.V(3).Info("handle file: add documents done")
 	if finish != nil {
 		finish()
 	}
