@@ -497,7 +497,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)] = true
 		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
-		log.Info("handle FileGroup succeeded with timecost %d milliseconds", fileDetail.TimeCost)
+		log.Info("handle FileGroup succeeded", "timecost(milliseconds)", fileDetail.TimeCost)
 	}
 	return errors.Join(errs...)
 }
