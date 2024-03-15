@@ -95,13 +95,15 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
 			return nil, err
 		}
-		if m.Spec.HuggingFaceRepo != "" {
+		if m.Spec.Revision != "" {
+			extraArgs += fmt.Sprintf(" --revision %s ", m.Spec.Revision)
+		}
+		if m.Spec.ModelSource == modelSourceFromHugginfFace {
 			modelFileDir = m.Spec.HuggingFaceRepo
 		}
-		if m.Spec.ModelScopeRepo != "" {
+		if m.Spec.ModelSource == modelSourceFromModelScope {
 			modelFileDir = m.Spec.ModelScopeRepo
 			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"})
-			extraArgs += fmt.Sprintf(" --revision %s ", m.Spec.Revision)
 		}
 	}
 
@@ -220,12 +222,12 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		if m.Spec.Revision != "" {
 			extraAgrs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
 		}
-		if m.Spec.HuggingFaceRepo != "" {
+		if m.Spec.ModelSource == modelSourceFromHugginfFace {
 			modelFileDir = m.Spec.HuggingFaceRepo
 		}
-		if m.Spec.ModelScopeRepo != "" {
+		if m.Spec.ModelSource == modelSourceFromModelScope {
 			modelFileDir = m.Spec.ModelScopeRepo
-			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"}, corev1.EnvVar{Name: "VLLM_USE_MODELSCOPE", Value: "True"})
+			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"})
 		}
 	}
 
