@@ -7,6 +7,21 @@ import (
 )
 
 const (
+	LabelKnowledgeBaseType = Group + "/knowledgebase-type"
+)
+
+type KnowledgeBaseType string
+
+const (
+	KnowledgeBaseTypeNormal       KnowledgeBaseType = "normal"
+	KnowledgeBaseTypeConversation KnowledgeBaseType = "conversation"
+)
+
+func (kb *KnowledgeBase) IsTypeConversation() bool {
+	return kb.Spec.Type == KnowledgeBaseTypeConversation
+}
+
+const (
 	// UpdateSourceFileAnnotationKey is the key of the update source file annotation
 	UpdateSourceFileAnnotationKey = Group + "/update-source-file-time"
 	DefaultChunkSize              = 300

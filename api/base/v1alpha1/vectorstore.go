@@ -21,6 +21,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func (vs VectorStore) TypedObjectReference() *TypedObjectReference {
+	return &TypedObjectReference{
+		APIGroup:  &GroupVersion.Group,
+		Kind:      "VectorStore",
+		Name:      vs.Name,
+		Namespace: &vs.Namespace,
+	}
+}
+
 const (
 	LabelVectorStoreType = Group + "/vectorstore-type"
 )

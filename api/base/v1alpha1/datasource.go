@@ -21,6 +21,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func (datasource Datasource) TypedObjectReference() *TypedObjectReference {
+	return &TypedObjectReference{
+		APIGroup:  &GroupVersion.Group,
+		Kind:      "Datasource",
+		Name:      datasource.Name,
+		Namespace: &datasource.Namespace,
+	}
+}
+
 const (
 	LabelDatasourceType = Group + "/datasource-type"
 )

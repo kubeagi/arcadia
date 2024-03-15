@@ -24,6 +24,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -353,34 +354,64 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	if group.Source == nil {
 		return errNoSource
 	}
-	versionedDataset := &arcadiav1alpha1.VersionedDataset{}
+
 	ns := kb.Namespace
 	if group.Source.Namespace != nil {
 		ns = *group.Source.Namespace
 	}
-	if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, versionedDataset); err != nil {
-		if apierrors.IsNotFound(err) {
-			return errNoSource
-		}
-		return err
-	}
-	if !versionedDataset.Status.IsReady() {
-		return errDataSourceNotReady
-	}
 
-	system, err := config.GetSystemDatasource(ctx, r.Client)
-	if err != nil {
-		return err
-	}
-	endpoint := system.Spec.Endpoint.DeepCopy()
-	if endpoint != nil && endpoint.AuthSecret != nil {
-		endpoint.AuthSecret.WithNameSpace(system.Namespace)
-	}
-	ds, err := datasource.NewLocal(ctx, r.Client, endpoint)
-	if err != nil {
-		return err
-	}
+	var ds datasource.Datasource
 	info := &arcadiav1alpha1.OSS{Bucket: ns}
+	var vsBasePath string
+	switch strings.ToLower(group.Source.Kind) {
+	case "versioneddataset":
+		versionedDataset := &arcadiav1alpha1.VersionedDataset{}
+		if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, versionedDataset); err != nil {
+			if apierrors.IsNotFound(err) {
+				return errNoSource
+			}
+			return err
+		}
+		if versionedDataset.Spec.Dataset == nil {
+			return fmt.Errorf("versionedDataset.Spec.Dataset is nil")
+		}
+		if !versionedDataset.Status.IsReady() {
+			return errDataSourceNotReady
+		}
+		system, err := config.GetSystemDatasource(ctx, r.Client)
+		if err != nil {
+			return err
+		}
+		endpoint := system.Spec.Endpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(system.Namespace)
+		}
+		ds, err = datasource.NewLocal(ctx, r.Client, endpoint)
+		if err != nil {
+			return err
+		}
+		// basepath for this versioneddataset
+		vsBasePath = filepath.Join("dataset", versionedDataset.Spec.Dataset.Name, versionedDataset.Spec.Version)
+	case "datasource":
+		dsObj := &arcadiav1alpha1.Datasource{}
+		if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, dsObj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return errNoSource
+			}
+			return err
+		}
+		if !dsObj.Status.IsReady() {
+			return errDataSourceNotReady
+		}
+		ds, err = datasource.NewOSS(ctx, r.Client, &dsObj.Spec.Endpoint)
+		if err != nil {
+			return err
+		}
+		// for none-conversation knowledgebase, bucket is the same as datasource.
+		if kb.Spec.Type != arcadiav1alpha1.KnowledgeBaseTypeConversation {
+			info.Bucket = dsObj.Spec.OSS.Bucket
+		}
+	}
 
 	if len(kb.Status.FileGroupDetail) == 0 {
 		// brand new knowledgebase, init status.
@@ -391,7 +422,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	var fileGroupDetail *arcadiav1alpha1.FileGroupDetail
 	pathMap := make(map[string]*arcadiav1alpha1.FileDetails, 1)
 	for i, detail := range kb.Status.FileGroupDetail {
-		if detail.Source != nil && detail.Source.Name == versionedDataset.Name && detail.Source.GetNamespace(kb.GetNamespace()) == versionedDataset.GetNamespace() {
+		if detail.Source != nil && detail.Source.Name == group.Source.Name && detail.Source.GetNamespace(kb.GetNamespace()) == ns {
 			fileGroupDetail = &kb.Status.FileGroupDetail[i]
 			for i, detail := range fileGroupDetail.FileDetails {
 				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
@@ -430,13 +461,15 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 			})
 			fileDetail = &fileGroupDetail.FileDetails[len(fileGroupDetail.FileDetails)-1]
 		}
-		if versionedDataset.Spec.Dataset == nil {
-			err = fmt.Errorf("versionedDataset.Spec.Dataset is nil")
-			errs = append(errs, err)
-			fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
-			continue
+
+		switch strings.ToLower(group.Source.Kind) {
+		case "versioneddataset":
+			// info.Object has been
+			info.Object = filepath.Join(vsBasePath, path)
+		case "datasource":
+			info.Object = path
 		}
-		info.Object = filepath.Join("dataset", versionedDataset.Spec.Dataset.Name, versionedDataset.Spec.Version, path)
+
 		stat, err := ds.StatFile(ctx, info)
 		log.V(5).Info(fmt.Sprintf("raw StatFile:%#v", stat), "path", path)
 		if err != nil {

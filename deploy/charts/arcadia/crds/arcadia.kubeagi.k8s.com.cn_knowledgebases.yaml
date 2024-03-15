@@ -19,6 +19,9 @@ spec:
     - jsonPath: .spec.displayName
       name: display-name
       type: string
+    - jsonPath: .spec.type
+      name: type
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -117,6 +120,10 @@ spec:
                       type: object
                   type: object
                 type: array
+              type:
+                default: normal
+                description: Type defines the type of knowledgebase
+                type: string
               vectorStore:
                 description: VectorStore defines the vectorstore to store results
                 properties:
