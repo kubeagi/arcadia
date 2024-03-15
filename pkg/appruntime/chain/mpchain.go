@@ -34,16 +34,18 @@ import (
 const (
 	// For map-reduce
 	DefaultPromptTemplateForMap = `
-		Content: {{.context}}
+	As an expert document summarizer, please provide a concise summary of the following content based on your expertise. Don't worry about the length of the summary:
 
-		With above content, please summarize it with only 1/5 size of the content.Please remind that your answer must use same language(中文或English) of the content.
+	Content: {{.context}}
+
+	Please note that your response should be in the same language as the content (English or Chinese).
 		`
 	DefaultPromptTemplatForReduce = `
-	Below is the sub-summaries that each is based on a piece of a complete document: 
+	After segmenting the document and generating sub-summaries for each section, it is now time to create a comprehensive summary. Below are the sub-summaries, each based on a specific part of the complete document:
 
-		{{.context}}
+	{{.context}}
 
-	Please generate a single summary based on above sub-summaries.
+	Please generate a cohesive summary that encapsulates the main points from the provided sub-summaries.
 	`
 )
 
