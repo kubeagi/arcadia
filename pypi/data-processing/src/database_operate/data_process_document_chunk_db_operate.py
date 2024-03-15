@@ -182,3 +182,41 @@ def list_by_status(req_json, pool):
 
     res = postgresql_pool_client.execute_query(pool, sql, params)
     return res
+
+def top_n_list_for_preview(req_json, pool):
+    """List chunk info with task id for preview.
+
+    req_json is a dictionary object. for example:
+    {
+        "task_id": "01HGWBE48DT3ADE9ZKA62SW4WS",
+        "file_name": "MyFile.pdf"
+    }
+    pool: databasec connection pool;
+    """
+    params = {"task_id": req_json["task_id"]}
+
+    sql = """
+        select
+          id,
+          document_id,
+          status,
+          task_id,
+          content,
+          meta_info,
+          page_number,
+          create_datetime,
+          create_user,
+          create_program,
+          update_datetime,
+          update_user,
+          update_program
+        from
+          public.data_process_task_document_chunk
+        where
+          task_id = %(task_id)s
+        order by random()
+        limit 10
+    """.strip()
+
+    res = postgresql_pool_client.execute_query(pool, sql, params)
+    return res

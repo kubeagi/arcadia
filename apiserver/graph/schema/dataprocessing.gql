@@ -95,6 +95,8 @@ query dataProcessDetails($input: DataProcessDetailsInput){
             enable
             zh_name
             description
+            chunk_size
+            chunk_overlap
             llm_config {
               name
               namespace

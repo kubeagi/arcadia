@@ -62,6 +62,8 @@ input FileItem {
 # 数据处理配置条目
 input DataProcessConfigItem {
   type: String!
+  chunk_size: Int
+  chunk_overlap: Int
   llm_config: LLMConfigItem
   remove_duplicate_config: RemoveDuplicateConfig
 }
@@ -231,6 +233,8 @@ type DataProcessConfigChildren {
   enable: String
   zh_name: String
   description: String
+  chunk_size: Int
+  chunk_overlap: Int
   llm_config: LLMConfig
   preview: [DataProcessConfigpreView]
   file_progress: [DataProcessConfigpreFileProgress]
