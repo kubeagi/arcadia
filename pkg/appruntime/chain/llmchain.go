@@ -76,6 +76,12 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	instance := l.Instance
 	options := GetChainOptions(instance.Spec.CommonChainConfig)
 
+	needStream := false
+	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
+	if ok && needStream {
+		options = append(options, chains.WithStreamingFunc(stream(args)))
+	}
+
 	// Check if have files as input
 	v3, ok := args["documents"]
 	if ok {
@@ -117,18 +123,14 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	l.LLMChain = *chain
 
 	var out string
-	needStream := false
-	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
-	if ok && needStream {
-		options = append(options, chains.WithStreamingFunc(stream(args)))
+
+	// Predict based on options
+	if len(options) > 0 {
 		out, err = chains.Predict(ctx, l.LLMChain, args, options...)
 	} else {
-		if len(options) > 0 {
-			out, err = chains.Predict(ctx, l.LLMChain, args, options...)
-		} else {
-			out, err = chains.Predict(ctx, l.LLMChain, args)
-		}
+		out, err = chains.Predict(ctx, l.LLMChain, args)
 	}
+
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
