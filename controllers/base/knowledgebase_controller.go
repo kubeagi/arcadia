@@ -30,6 +30,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/minio/minio-go/v7"
 	"github.com/tmc/langchaingo/documentloaders"
+	"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/textsplitter"
 	corev1 "k8s.io/api/core/v1"
@@ -506,7 +507,8 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	if !store.Status.IsReady() {
 		return errVectorStoreNotReady
 	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, "")
+	embeddingOptions := kb.EmbeddingOptions()
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, r.Client, "", embeddings.WithBatchSize(embeddingOptions.BatchSize))
 	if err != nil {
 		return err
 	}
@@ -540,7 +542,6 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 
 	// initialize text splitter
 	// var split textsplitter.TextSplitter
-	embeddingOptions := kb.EmbeddingOptions()
 	split := textsplitter.NewRecursiveCharacter(
 		textsplitter.WithChunkSize(embeddingOptions.ChunkSize),
 		textsplitter.WithChunkOverlap(pointer.IntDeref(embeddingOptions.ChunkOverlap, arcadiav1alpha1.DefaultChunkOverlap)),

@@ -39,11 +39,14 @@ type KnowledgeBaseSpec struct {
 
 type EmbeddingOptions struct {
 	// ChunkSize for text splitter
-	// +kubebuilder:default=1024
+	// +kubebuilder:default=300
 	ChunkSize int `json:"chunkSize,omitempty"`
 	// ChunkOverlap for text splitter
-	// +kubebuilder:default=100
+	// +kubebuilder:default=30
 	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// BatchSize for text splitter
+	// +kubebuilder:default=10
+	BatchSize int `json:"batchSize,omitempty"`
 }
 
 type FileGroupDetail struct {

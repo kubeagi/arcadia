@@ -9,19 +9,21 @@ import (
 const (
 	// UpdateSourceFileAnnotationKey is the key of the update source file annotation
 	UpdateSourceFileAnnotationKey = Group + "/update-source-file-time"
-	DefaultChunkSize              = 1024
-	DefaultChunkOverlap           = 100
+	DefaultChunkSize              = 300
+	DefaultChunkOverlap           = 10
+	DefaultBatchSize              = 10
 )
 
 func (kb *KnowledgeBase) EmbeddingOptions() EmbeddingOptions {
 	options := kb.Spec.EmbeddingOptions
 	if kb.Spec.EmbeddingOptions.ChunkSize == 0 {
-		// default 1024
 		options.ChunkSize = DefaultChunkSize
 	}
 	if kb.Spec.EmbeddingOptions.ChunkOverlap == nil {
-		// default 100
 		options.ChunkOverlap = pointer.IntPtr(DefaultChunkOverlap)
+	}
+	if kb.Spec.EmbeddingOptions.BatchSize == 0 {
+		options.BatchSize = DefaultBatchSize
 	}
 	return options
 }

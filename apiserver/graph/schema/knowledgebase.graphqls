@@ -135,6 +135,10 @@ type KnowledgeBase {
     chunkOverlap为知识库作文档拆分时相邻块的交集
     """
     chunkOverlap: Int
+    """
+    batchSize为知识库做批量处理时的批次大小
+    """
+    batchSize: Int
     
     """
     知识库整体连接状态
@@ -192,6 +196,10 @@ input CreateKnowledgeBaseInput{
     chunkOverlap为知识库作文档拆分时相邻块的交集
     """
     chunkOverlap: Int
+    """
+    batchSize为知识库做批量处理时的批次大小
+    """
+    batchSize: Int
 }
 
 """知识库更新的输入"""
@@ -222,6 +230,10 @@ input UpdateKnowledgeBaseInput {
     chunkOverlap为知识库作文档拆分时相邻块的交集
     """
     chunkOverlap: Int
+    """
+    batchSize为知识库做批量处理时的批次大小
+    """
+    batchSize: Int
 }
 
 """知识库分页列表查询的输入"""
