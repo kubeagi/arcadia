@@ -23,7 +23,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -79,11 +78,14 @@ func (loader *LoaderOSS) Build(ctx context.Context, model *arcadiav1alpha1.Typed
 		Object: fmt.Sprintf("model/%s/", model.Name),
 	})
 	if err != nil {
-		if err == datasource.ErrOSSNoSuchObject {
-			klog.Info("No object was found, So it could pull the model file from other places.")
-			return nil, nil
-		}
 		return nil, err
+		/*
+			if err == datasource.ErrOSSNoSuchObject {
+				klog.Info("No object was found, So it could pull the model file from other places.")
+				return nil, nil
+			}
+			return nil, err
+		*/
 	}
 
 	var accessKeyID, secretAccessKey string

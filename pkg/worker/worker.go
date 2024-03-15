@@ -41,6 +41,10 @@ const (
 	WokerCommonSuffix = "-worker"
 
 	RDMANodeLabel = "arcadia.kubeagi.k8s.com.cn/rdma"
+
+	modelSourceFromLocal       = "local"
+	modelSourceFromHugginfFace = "huggingface"
+	modelSourceFromModelScope  = "modelscope"
 )
 
 var (
@@ -372,13 +376,19 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 
 // Start will build and create worker pod which will host model service
 func (podWorker *PodWorker) Start(ctx context.Context) error {
-	var err error
+	var (
+		err    error
+		loader any
+	)
 
 	// define the way to load model
-	loader, err := podWorker.l.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &podWorker.m.Namespace, Name: podWorker.m.Name})
-	if err != nil {
-		return fmt.Errorf("failed to build loader with %w", err)
+	if podWorker.m.Spec.ModelSource == "" || podWorker.m.Spec.ModelSource == modelSourceFromLocal {
+		loader, err = podWorker.l.Build(ctx, &arcadiav1alpha1.TypedObjectReference{Namespace: &podWorker.m.Namespace, Name: podWorker.m.Name})
+		if err != nil {
+			return fmt.Errorf("failed to build loader with %w", err)
+		}
 	}
+
 	switch podWorker.w.Type() {
 	case arcadiav1alpha1.WorkerTypeFastchatVLLM:
 		r, err := NewRunnerFastchatVLLM(podWorker.c, podWorker.w.DeepCopy(), loader == nil)
