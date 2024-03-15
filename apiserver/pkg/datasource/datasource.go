@@ -206,15 +206,10 @@ func DeleteDatasources(ctx context.Context, c client.Client, input *generated.De
 
 func ListDatasources(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	keyword := ""
-	page, pageSize := 1, 10
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 	if input.Keyword != nil {
 		keyword = *input.Keyword
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
 	}
 
 	opts, err := common.NewListOptions(input)

@@ -132,15 +132,10 @@ func DeleteModels(ctx context.Context, c client.Client, input *generated.DeleteC
 
 func ListModels(ctx context.Context, c client.Client, input generated.ListModelInput) (*generated.PaginatedResult, error) {
 	filter := make([]common.ResourceFilter, 0)
-	page, pageSize := 1, 10
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterModelByKeyword(*input.Keyword))
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
 	}
 
 	models := &v1alpha1.ModelList{}
