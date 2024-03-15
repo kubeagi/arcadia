@@ -156,7 +156,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // 6. when this node points to output, it can only point to output
 // 7. should not have cycle TODO
 // 8. nodeName should be unique
-func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logger, app *arcadiav1alpha1.Application) (*arcadiav1alpha1.Application, ctrl.Result, error) {
+func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger, app *arcadiav1alpha1.Application) (*arcadiav1alpha1.Application, ctrl.Result, error) {
 	var input, output int
 	var outputNodeName string
 	nodeName := make(map[string]bool, len(app.Spec.Nodes))

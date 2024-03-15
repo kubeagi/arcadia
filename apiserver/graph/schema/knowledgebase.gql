@@ -45,6 +45,7 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
                 count
                 size
                 updateTimestamp
+                timeCost
             }
           }
         }
@@ -96,6 +97,7 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
                 count
                 size
                 updateTimestamp
+                timeCost
             }
           }
     }
@@ -145,6 +147,7 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
                 count
                 size
                 updateTimestamp
+                timeCost
             }
           }
     }
@@ -194,6 +197,7 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
                 count
                 size
                 updateTimestamp
+                timeCost
             }
           }
     }

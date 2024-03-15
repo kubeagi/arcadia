@@ -136,7 +136,7 @@ func (r *WorkerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	return ctrl.Result{}, nil
 }
 
-func (r *WorkerReconciler) initialize(ctx context.Context, logger logr.Logger, instance *arcadiav1alpha1.Worker) (bool, error) {
+func (r *WorkerReconciler) initialize(ctx context.Context, _ logr.Logger, instance *arcadiav1alpha1.Worker) (bool, error) {
 	instanceDeepCopy := instance.DeepCopy()
 
 	var update bool

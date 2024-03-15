@@ -214,6 +214,11 @@ spec:
                             description: Size defines the file size which is extracted
                               from object tag  `object_size`
                             type: string
+                          timeCost:
+                            description: TimeCost defines the time cost of the file
+                              processing in milliseconds
+                            format: int64
+                            type: integer
                           type:
                             description: Type defines the file type which is extracted
                               from object tag  `object_type`

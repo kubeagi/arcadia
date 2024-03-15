@@ -73,6 +73,9 @@ type FileDetails struct {
 	// Checksum defines the checksum of the file
 	Checksum string `json:"checksum,omitempty"`
 
+	// TimeCost defines the time cost of the file processing in milliseconds
+	TimeCost int64 `json:"timeCost,omitempty"`
+
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 
