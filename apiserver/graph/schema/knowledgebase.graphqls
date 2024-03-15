@@ -43,6 +43,9 @@ type filedetail{
     """
     updateTimestamp: Time
 
+    """最近一次成功的处理耗时"""
+    timeCost: Int!
+
     """
     文件处理的阶段
     规则: enum { Pending , Processing , Succeeded, Failed, Skipped}

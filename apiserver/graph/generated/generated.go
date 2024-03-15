@@ -753,6 +753,7 @@ type ComplexityRoot struct {
 		Path            func(childComplexity int) int
 		Phase           func(childComplexity int) int
 		Size            func(childComplexity int) int
+		TimeCost        func(childComplexity int) int
 		UpdateTimestamp func(childComplexity int) int
 	}
 
@@ -4502,6 +4503,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filedetail.Size(childComplexity), true
 
+	case "filedetail.timeCost":
+		if e.complexity.Filedetail.TimeCost == nil {
+			break
+		}
+
+		return e.complexity.Filedetail.TimeCost(childComplexity), true
+
 	case "filedetail.updateTimestamp":
 		if e.complexity.Filedetail.UpdateTimestamp == nil {
 			break
@@ -6176,6 +6184,9 @@ type filedetail{
     最新处理时间
     """
     updateTimestamp: Time
+
+    """最近一次成功的处理耗时"""
+    timeCost: Int!
 
     """
     文件处理的阶段
@@ -33055,6 +33066,50 @@ func (ec *executionContext) fieldContext_filedetail_updateTimestamp(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _filedetail_timeCost(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filedetail_timeCost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TimeCost, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filedetail_timeCost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filedetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _filedetail_phase(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_filedetail_phase(ctx, field)
 	if err != nil {
@@ -33292,6 +33347,8 @@ func (ec *executionContext) fieldContext_filegroupdetail_filedetails(ctx context
 				return ec.fieldContext_filedetail_size(ctx, field)
 			case "updateTimestamp":
 				return ec.fieldContext_filedetail_updateTimestamp(ctx, field)
+			case "timeCost":
+				return ec.fieldContext_filedetail_timeCost(ctx, field)
 			case "phase":
 				return ec.fieldContext_filedetail_phase(ctx, field)
 			}
@@ -44424,6 +44481,11 @@ func (ec *executionContext) _filedetail(ctx context.Context, sel ast.SelectionSe
 			}
 		case "updateTimestamp":
 			out.Values[i] = ec._filedetail_updateTimestamp(ctx, field, obj)
+		case "timeCost":
+			out.Values[i] = ec._filedetail_timeCost(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "phase":
 			out.Values[i] = ec._filedetail_phase(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

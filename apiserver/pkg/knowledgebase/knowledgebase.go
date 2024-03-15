@@ -70,6 +70,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 				Size:            detail.Size,
 				Path:            detail.Path,
 				Phase:           string(detail.Phase),
+				TimeCost:        int(detail.TimeCost),
 				UpdateTimestamp: &detail.LastUpdateTime.Time,
 			}
 			filedetails = append(filedetails, filedetail)

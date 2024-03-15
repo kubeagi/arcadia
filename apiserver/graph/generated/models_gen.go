@@ -2002,6 +2002,8 @@ type Filedetail struct {
 	Size string `json:"size"`
 	// 最新处理时间
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
+	// 最近一次成功的处理耗时
+	TimeCost int `json:"timeCost"`
 	// 文件处理的阶段
 	// 规则: enum { Pending , Processing , Succeeded, Failed, Skipped}
 	Phase string `json:"phase"`

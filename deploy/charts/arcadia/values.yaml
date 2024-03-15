@@ -47,6 +47,7 @@ apiserver:
     enabled: true
     path: kubeagi-apis
     host: portal.<replaced-ingress-nginx-ip>.nip.io
+    proxyBodySize: 100m
   oidc:
     enabled: true
     clientID: bff-client
@@ -96,6 +97,7 @@ minio:
     size: 30Gi
   ingress:
     enabled: true
+    proxyBodySize: 10240m
     api:
       enabled: true
       insecure: false

@@ -480,6 +480,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 			continue
 		}
 		defer file.Close()
+		startTime := time.Now()
 		if err = r.handleFile(ctx, log, file, info.Object, tags, kb, vectorStore, embedder); err != nil {
 			if errors.Is(err, errFileSkipped) {
 				fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseSkipped)
@@ -490,11 +491,13 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 			fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
+		// time cost for file process
+		fileDetail.TimeCost = int64(time.Since(startTime).Milliseconds())
 		r.mu.Lock()
 		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)] = true
 		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
-		log.Info("handle FileGroup succeeded")
+		log.Info("handle FileGroup succeeded with timecost %d milliseconds", fileDetail.TimeCost)
 	}
 	return errors.Join(errs...)
 }
