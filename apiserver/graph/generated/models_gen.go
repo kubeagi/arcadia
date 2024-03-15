@@ -293,6 +293,15 @@ type CreateModelInput struct {
 	// 规则: 目前支持 llm和embedding两种模型类型
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types string `json:"types"`
+	// 如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+	HuggingFaceRepo *string `json:"huggingFaceRepo,omitempty"`
+	ModelScopeRepo  *string `json:"modelScopeRepo,omitempty"`
+	// 返回模型选择的版本
+	Revision *string `json:"revision,omitempty"`
+	// local: 从本地的minio来。
+	// modelscope: 从modelscope来
+	// huggingface: 从huggingface来
+	ModelSource *string `json:"modelSource,omitempty"`
 }
 
 type CreateModelServiceInput struct {
@@ -1156,6 +1165,15 @@ type Model struct {
 	Message *string `json:"message,omitempty"`
 	// 模型包含文件列表
 	Files PaginatedResult `json:"files"`
+	// 如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+	HuggingFaceRepo *string `json:"huggingFaceRepo,omitempty"`
+	ModelScopeRepo  *string `json:"modelScopeRepo,omitempty"`
+	// 返回模型选择的版本
+	Revision *string `json:"revision,omitempty"`
+	// local: 从本地的minio来。
+	// modelscope: 从modelscope来
+	// huggingface: 从huggingface来
+	ModelSource *string `json:"modelSource,omitempty"`
 }
 
 func (Model) IsPageNode() {}
@@ -1728,6 +1746,15 @@ type UpdateModelInput struct {
 	// 规则: 目前支持 llm和embedding两种模型类型
 	// 规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
 	Types *string `json:"types,omitempty"`
+	// 如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+	HuggingFaceRepo *string `json:"huggingFaceRepo,omitempty"`
+	ModelScopeRepo  *string `json:"modelScopeRepo,omitempty"`
+	// 返回模型选择的版本
+	Revision *string `json:"revision,omitempty"`
+	// local: 从本地的minio来。
+	// modelscope: 从modelscope来
+	// huggingface: 从huggingface来
+	ModelSource *string `json:"modelSource,omitempty"`
 }
 
 type UpdateModelServiceInput struct {

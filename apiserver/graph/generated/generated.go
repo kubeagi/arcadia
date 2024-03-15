@@ -450,11 +450,15 @@ type ComplexityRoot struct {
 		Description       func(childComplexity int) int
 		DisplayName       func(childComplexity int) int
 		Files             func(childComplexity int, input *FileFilter) int
+		HuggingFaceRepo   func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Labels            func(childComplexity int) int
 		Message           func(childComplexity int) int
+		ModelScopeRepo    func(childComplexity int) int
+		ModelSource       func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
+		Revision          func(childComplexity int) int
 		Status            func(childComplexity int) int
 		SystemModel       func(childComplexity int) int
 		Types             func(childComplexity int) int
@@ -2936,6 +2940,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.Files(childComplexity, args["input"].(*FileFilter)), true
 
+	case "Model.huggingFaceRepo":
+		if e.complexity.Model.HuggingFaceRepo == nil {
+			break
+		}
+
+		return e.complexity.Model.HuggingFaceRepo(childComplexity), true
+
 	case "Model.id":
 		if e.complexity.Model.ID == nil {
 			break
@@ -2957,6 +2968,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Model.Message(childComplexity), true
 
+	case "Model.modelScopeRepo":
+		if e.complexity.Model.ModelScopeRepo == nil {
+			break
+		}
+
+		return e.complexity.Model.ModelScopeRepo(childComplexity), true
+
+	case "Model.modelSource":
+		if e.complexity.Model.ModelSource == nil {
+			break
+		}
+
+		return e.complexity.Model.ModelSource(childComplexity), true
+
 	case "Model.name":
 		if e.complexity.Model.Name == nil {
 			break
@@ -2970,6 +2995,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Model.Namespace(childComplexity), true
+
+	case "Model.revision":
+		if e.complexity.Model.Revision == nil {
+			break
+		}
+
+		return e.complexity.Model.Revision(childComplexity), true
 
 	case "Model.status":
 		if e.complexity.Model.Status == nil {
@@ -6560,6 +6592,24 @@ type Model {
     模型包含文件列表
     """
     files(input: FileFilter): PaginatedResult!
+
+    """
+    如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+    """
+    huggingFaceRepo: String
+    modelScopeRepo: String
+
+    """
+    返回模型选择的版本
+    """
+    revision: String
+
+    """
+    local: 从本地的minio来。
+    modelscope: 从modelscope来
+    huggingface: 从huggingface来
+    """
+    modelSource: String
 }
 
 """创建模型的输入"""
@@ -6580,6 +6630,24 @@ input CreateModelInput{
     规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
     """
     types: String!
+
+    """
+    如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+    """
+    huggingFaceRepo: String
+    modelScopeRepo: String
+
+    """
+    返回模型选择的版本
+    """
+    revision: String
+
+    """
+    local: 从本地的minio来。
+    modelscope: 从modelscope来
+    huggingface: 从huggingface来
+    """
+    modelSource: String
 }
 
 """模型更新的输入"""
@@ -6604,6 +6672,24 @@ input UpdateModelInput {
     规则: 如果该模型支持多种模型类型，则可多选。多选后组成的字段通过逗号隔开。如 "llm,embedding"
     """
     types: String
+
+    """
+    如果设置从modelscope或者hugginface拉取模型文件，这两个字段会返回模型名字。
+    """
+    huggingFaceRepo: String
+    modelScopeRepo: String
+
+    """
+    返回模型选择的版本
+    """
+    revision: String
+
+    """
+    local: 从本地的minio来。
+    modelscope: 从modelscope来
+    huggingface: 从huggingface来
+    """
+    modelSource: String
 }
 
 type ModelMutation {
@@ -21463,6 +21549,170 @@ func (ec *executionContext) fieldContext_Model_files(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Model_huggingFaceRepo(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_huggingFaceRepo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HuggingFaceRepo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_huggingFaceRepo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_modelScopeRepo(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_modelScopeRepo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ModelScopeRepo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_modelScopeRepo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_revision(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_revision(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Revision, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_revision(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Model_modelSource(ctx context.Context, field graphql.CollectedField, obj *Model) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Model_modelSource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ModelSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Model_modelSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Model",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelMutation_createModel(ctx context.Context, field graphql.CollectedField, obj *ModelMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ModelMutation_createModel(ctx, field)
 	if err != nil {
@@ -21532,6 +21782,14 @@ func (ec *executionContext) fieldContext_ModelMutation_createModel(ctx context.C
 				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
+			case "huggingFaceRepo":
+				return ec.fieldContext_Model_huggingFaceRepo(ctx, field)
+			case "modelScopeRepo":
+				return ec.fieldContext_Model_modelScopeRepo(ctx, field)
+			case "revision":
+				return ec.fieldContext_Model_revision(ctx, field)
+			case "modelSource":
+				return ec.fieldContext_Model_modelSource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -21619,6 +21877,14 @@ func (ec *executionContext) fieldContext_ModelMutation_updateModel(ctx context.C
 				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
+			case "huggingFaceRepo":
+				return ec.fieldContext_Model_huggingFaceRepo(ctx, field)
+			case "modelScopeRepo":
+				return ec.fieldContext_Model_modelScopeRepo(ctx, field)
+			case "revision":
+				return ec.fieldContext_Model_revision(ctx, field)
+			case "modelSource":
+				return ec.fieldContext_Model_modelSource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -21758,6 +22024,14 @@ func (ec *executionContext) fieldContext_ModelQuery_getModel(ctx context.Context
 				return ec.fieldContext_Model_message(ctx, field)
 			case "files":
 				return ec.fieldContext_Model_files(ctx, field)
+			case "huggingFaceRepo":
+				return ec.fieldContext_Model_huggingFaceRepo(ctx, field)
+			case "modelScopeRepo":
+				return ec.fieldContext_Model_modelScopeRepo(ctx, field)
+			case "revision":
+				return ec.fieldContext_Model_revision(ctx, field)
+			case "modelSource":
+				return ec.fieldContext_Model_modelSource(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Model", field.Name)
 		},
@@ -33763,7 +34037,7 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "types"}
+	fieldsInOrder := [...]string{"name", "namespace", "displayName", "description", "types", "huggingFaceRepo", "modelScopeRepo", "revision", "modelSource"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33805,6 +34079,34 @@ func (ec *executionContext) unmarshalInputCreateModelInput(ctx context.Context, 
 				return it, err
 			}
 			it.Types = data
+		case "huggingFaceRepo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("huggingFaceRepo"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HuggingFaceRepo = data
+		case "modelScopeRepo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelScopeRepo"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelScopeRepo = data
+		case "revision":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("revision"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Revision = data
+		case "modelSource":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelSource"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelSource = data
 		}
 	}
 
@@ -36571,7 +36873,7 @@ func (ec *executionContext) unmarshalInputUpdateModelInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "types", "huggingFaceRepo", "modelScopeRepo", "revision", "modelSource"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -36627,6 +36929,34 @@ func (ec *executionContext) unmarshalInputUpdateModelInput(ctx context.Context, 
 				return it, err
 			}
 			it.Types = data
+		case "huggingFaceRepo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("huggingFaceRepo"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HuggingFaceRepo = data
+		case "modelScopeRepo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelScopeRepo"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelScopeRepo = data
+		case "revision":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("revision"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Revision = data
+		case "modelSource":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modelSource"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ModelSource = data
 		}
 	}
 
@@ -40693,6 +41023,14 @@ func (ec *executionContext) _Model(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "huggingFaceRepo":
+			out.Values[i] = ec._Model_huggingFaceRepo(ctx, field, obj)
+		case "modelScopeRepo":
+			out.Values[i] = ec._Model_modelScopeRepo(ctx, field, obj)
+		case "revision":
+			out.Values[i] = ec._Model_revision(ctx, field, obj)
+		case "modelSource":
+			out.Values[i] = ec._Model_modelSource(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
