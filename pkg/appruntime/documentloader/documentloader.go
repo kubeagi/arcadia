@@ -127,7 +127,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 			loader = documentloaders.NewHTML(dataReader)
 		case ".pdf":
 			dataReader := bytes.NewReader(data)
-			loader = arcadiadocumentloaders.NewPDF(dataReader)
+			loader = arcadiadocumentloaders.NewPDF(dataReader, file)
 			// loader = documentloaders.NewPDF(dataReader, int64(len(data)))
 		default:
 			dataReader := bytes.NewReader(data)

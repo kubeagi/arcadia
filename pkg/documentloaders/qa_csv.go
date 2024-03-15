@@ -31,13 +31,20 @@ import (
 )
 
 const (
-	QuestionCol     = "q"
-	AnswerCol       = "a"
-	FileNameCol     = "file_name"
-	PageNumberCol   = "page_number"
+	// QustionCol the question column, which will be embedding
+	QuestionCol = "q"
+	// AnswerCol the answer column, will be added to qustionCol when use qachain and knowledgebase retriever
+	AnswerCol = "a"
+	// FileNameCol the file name column, will show in reference
+	FileNameCol = "file_name"
+	// PageNumberCol the page number column, will show in reference
+	PageNumberCol = "page_number"
+	// ChunkContentCol the chunk content column, will show in reference
 	ChunkContentCol = "chunk_content"
-	LineNumber      = "line_number"
-	QAFileName      = "qafile_name"
+	// LineNumber the qafile line number column,
+	LineNumber = "line_number"
+	// QAFileName the qafile name
+	QAFileName = "qafile_name"
 )
 
 // QACSV represents a QA CSV document loader.

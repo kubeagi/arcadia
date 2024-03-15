@@ -537,7 +537,7 @@ func (r *KnowledgeBaseReconciler) handleFile(ctx context.Context, log logr.Logge
 	case ".html", ".htm":
 		loader = documentloaders.NewHTML(dataReader)
 	case ".pdf":
-		loader = pkgdocumentloaders.NewPDF(dataReader)
+		loader = pkgdocumentloaders.NewPDF(dataReader, fileName)
 	// TODO: support .mp3,.wav
 	default:
 		loader = documentloaders.NewText(dataReader)

@@ -29,11 +29,12 @@ import (
 )
 
 type PDF struct {
-	r io.Reader
+	r        io.Reader
+	fileName string
 }
 
-func NewPDF(r io.Reader) *PDF {
-	return &PDF{r: r}
+func NewPDF(r io.Reader, fileName string) *PDF {
+	return &PDF{r: r, fileName: fileName}
 }
 
 func (p *PDF) Load(ctx context.Context) ([]schema.Document, error) {
@@ -59,6 +60,8 @@ func (p *PDF) Load(ctx context.Context) ([]schema.Document, error) {
 				Metadata: map[string]any{
 					"page":        page,
 					"total_pages": page,
+					FileNameCol:   p.fileName,
+					PageNumberCol: strconv.Itoa(page),
 				},
 			})
 			break
@@ -68,6 +71,8 @@ func (p *PDF) Load(ctx context.Context) ([]schema.Document, error) {
 			Metadata: map[string]any{
 				"page":        page,
 				"total_pages": pages,
+				FileNameCol:   p.fileName,
+				PageNumberCol: strconv.Itoa(page),
 			},
 		})
 		from = idx + len(key) + 1
