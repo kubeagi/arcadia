@@ -186,13 +186,8 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 }
 
 func ListVersionedDatasets(ctx context.Context, c client.Client, input *generated.ListVersionedDatasetInput) (*generated.PaginatedResult, error) {
-	page, size := 1, 10
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		size = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	size := pointer.IntDeref(input.PageSize, -1)
 	ns := "default"
 	if input.Namespace != nil {
 		ns = *input.Namespace

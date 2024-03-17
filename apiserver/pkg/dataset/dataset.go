@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -126,13 +127,8 @@ func ListDatasets(ctx context.Context, c client.Client, input *generated.ListDat
 	if err != nil {
 		return nil, err
 	}
-	page, size := 1, 10
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		size = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	size := pointer.IntDeref(input.PageSize, -1)
 	filters := make([]common.ResourceFilter, 0)
 	if input.DisplayName != nil {
 		filters = append(filters, common.FilterDatasetByDisplayName(*input.DisplayName))

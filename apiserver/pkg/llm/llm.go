@@ -22,6 +22,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -105,17 +106,12 @@ func ListLLMs(ctx context.Context, c client.Client, input generated.ListCommonIn
 		optFunc(opts)
 	}
 
-	page, pageSize := 1, 10
 	filter := make([]common.ResourceFilter, 0)
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterLLMByKeyword(*input.Keyword))
 	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil {
-		pageSize = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 
 	us := &v1alpha1.LLMList{}
 	options, err := common.NewListOptions(input)

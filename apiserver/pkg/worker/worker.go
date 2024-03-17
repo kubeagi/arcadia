@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -355,18 +356,13 @@ func ListWorkers(ctx context.Context, c client.Client, input generated.ListWorke
 	}
 
 	filter := make([]common.ResourceFilter, 0)
-	page, pageSize := 1, 10
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterWorkerByKeyword(*input.Keyword))
 	}
 	if input.ModelTypes != nil {
 		filter = append(filter, common.FilterWorkerByType(c, input.Namespace, *input.ModelTypes))
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil {
-		pageSize = *input.PageSize
 	}
 
 	us := &v1alpha1.WorkerList{}
