@@ -38,14 +38,20 @@ data:
       name: '{{ .Release.Name }}-pgvector-vectorstore'
 {{- end }}
       namespace: '{{ .Release.Namespace }}'
-{{- if .Values.rerank.enabled }}
+{{- if .Values.config.embedder.enabled }}
+    embedder:
+      apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
+      kind: Embedder
+      name: {{ .Release.Name }}-embedder
+      namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.config.rerank.enabled }}
     rerank:
       apiGroup: arcadia.kubeagi.k8s.com.cn/v1alpha1
       kind: Model
-      name: bge-reranker-large
+      name: {{ .Values.config.rerank.model }}
       namespace: {{ .Release.Namespace }}
 {{- end }}
-
     #streamlit:
     #  image: 172.22.96.34/cluster_system/streamlit:v1.29.0
     #  ingressClassName: portal-ingress

@@ -104,11 +104,6 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 
 	instance := l.Instance
 	options := GetChainOptions(instance.Spec.CommonChainConfig)
-	needStream := false
-	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
-	if ok && needStream {
-		options = append(options, chains.WithStreamingFunc(stream(args)))
-	}
 
 	// Check if have files as input
 	v5, ok := args["documents"]
@@ -137,12 +132,17 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string
-
-	// Predict based on options
-	if len(options) > 0 {
+	needStream := false
+	needStream, ok = args[base.InputIsNeedStreamKeyInArg].(bool)
+	if ok && needStream {
+		options = append(options, chains.WithStreamingFunc(stream(args)))
 		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
 	} else {
-		out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
+		if len(options) > 0 {
+			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args, options...)
+		} else {
+			out, err = chains.Predict(ctx, l.ConversationalRetrievalQA, args)
+		}
 	}
 
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.ConversationalRetrievalQA, args, options)
