@@ -15,5 +15,6 @@ spec:
         namespace: arcadia
       paths:
         - qa.csv
+        - chunk.csv
   released: 0
   version: v1

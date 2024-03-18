@@ -48,7 +48,7 @@ spec:
             app.kubernetes.io/name: kuberay
         spec:
           containers:
-            - image: kubeagi/ray-ml:2.9.0-py39-vllm
+            - image: kubeagi/ray-ml:2.9.3-py39-vllm
               name: ray-worker
               resources:
                 limits:

@@ -323,8 +323,10 @@ s3_key=$(kubectl get secrets -n arcadia datasource-sample-authsecret -o json | j
 s3_secret=$(kubectl get secrets -n arcadia datasource-sample-authsecret -o json | jq -r ".data.rootPassword" | base64 --decode)
 export MC_HOST_arcadiatest=http://${s3_key}:${s3_secret}@127.0.0.1:9000
 mc cp pkg/documentloaders/testdata/qa.csv arcadiatest/${bucket}/qa.csv
+mc cp pkg/documentloaders/testdata/chunk.csv arcadiatest/${bucket}/chunk.csv
 info "add tags to these files"
 mc tag set arcadiatest/${bucket}/qa.csv "object_type=QA"
+mc tag set arcadiatest/${bucket}/chunk.csv "object_type=QA"
 
 info "7.2 create dateset and versioneddataset and wait them ready"
 kubectl apply -f config/samples/arcadia_v1alpha1_dataset.yaml
@@ -454,6 +456,11 @@ if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
 	exit 1
 fi
+getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
+	exit 1
+fi
 info "8.2.1.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase -o json | jq -r .spec.docNullReturn)
@@ -472,6 +479,11 @@ sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
 if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
 	exit 1
 fi
 info "8.2.2.2 When no related doc is found, return application.spec.docNullReturn info, if set"
@@ -498,6 +510,11 @@ if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
 	exit 1
 fi
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
+	exit 1
+fi
 info "8.2.3.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank -o json | jq -r .spec.docNullReturn)
@@ -518,6 +535,11 @@ if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
 	exit 1
 fi
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank-multiquery" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
+	exit 1
+fi
 info "8.2.4.2 When no related doc is found, return application.spec.docNullReturn info, if set"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-rerank-multiquery" "arcadia" "飞天的主演是谁？" "" "true"
 expected=$(kubectl get applications -n arcadia base-chat-with-knowledgebase-pgvector-rerank-multiquery -o json | jq -r .spec.docNullReturn)
@@ -536,6 +558,11 @@ sleep 3
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-multiquery" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
 if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-multiquery" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
 	exit 1
 fi
 info "8.2.5.2 When no related doc is found, return application.spec.docNullReturn info, if set"
@@ -714,6 +741,13 @@ info "8.7.5 knowledgebase test"
 getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "公司的考勤管理制度适用于哪些人员？" "" "true"
 if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
 	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+	exit 1
+fi
+# 0.9 is too high for chunk text segmentation files
+kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.5}}' --type='merge'
+getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "怀孕9个月以上每月可以享受几天假期？" "" "true"
+if [[ $ai_data != *"4"* ]]; then
+	echo "resp should contains '4', but resp is:"$resp
 	exit 1
 fi
 #fi
