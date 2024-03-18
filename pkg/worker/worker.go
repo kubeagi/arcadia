@@ -499,11 +499,6 @@ func (podWorker *PodWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Configure environment variable
-	if len(podSpecTemplate.Spec.Containers) > 0 {
-		podSpecTemplate.Spec.Containers[0].Env = append(podSpecTemplate.Spec.Containers[0].Env, podWorker.w.Spec.AdditionalEnvs...)
-	}
-
 	desiredDep.Spec.Template = podSpecTemplate
 	err = controllerutil.SetControllerReference(podWorker.Worker(), desiredDep, podWorker.s)
 	if err != nil {
