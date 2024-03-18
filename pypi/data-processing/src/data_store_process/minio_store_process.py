@@ -149,8 +149,6 @@ async def text_manipulate(
             if file_extension in ["pdf"]:
                 # 处理PDF文件
                 pdf_handle = PDFHandle(
-                    chunk_size=req_json.get("chunk_size"),
-                    chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
                     document_id=item.get("document_id"),
                     support_type=support_type,
@@ -163,8 +161,6 @@ async def text_manipulate(
             elif file_extension in ["docx"]:
                 # 处理.docx文件
                 result = word_handle.docx_manipulate(
-                    chunk_size=req_json.get("chunk_size"),
-                    chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
                     document_id=item.get("document_id"),
                     support_type=support_type,
@@ -175,8 +171,6 @@ async def text_manipulate(
             elif file_extension == "web":
                 # 处理.web文件
                 result = await web_handle.web_manipulate(
-                    chunk_size=req_json.get("chunk_size"),
-                    chunk_overlap=req_json.get("chunk_overlap"),
                     file_name=file_name,
                     document_id=item.get("document_id"),
                     support_type=support_type,
@@ -510,19 +504,20 @@ def text_manipulate_retry(req_json, pool):
             data_process_stage_log_db_operate.insert(insert_stage_log_params, pool=pool)
 
             # insert QA list to detail preview
-            logger.debug(
-                f"{log_tag_const.MINIO_STORE_PROCESS} Insert QA list for detail preview."
-            )
-            list_qa_params = {"task_id": task_id}
-            list_qa_res = data_process_detail_db_operate.top_n_list_qa_for_preview(
-                list_qa_params, pool=pool
-            )
+            if any(d.get("type") == "qa_split" for d in support_type):
+                logger.debug(
+                    f"{log_tag_const.MINIO_STORE_PROCESS} Insert QA list for detail preview."
+                )
+                list_qa_params = {"task_id": task_id}
+                list_qa_res = data_process_detail_db_operate.top_n_list_qa_for_preview(
+                    list_qa_params, pool=pool
+                )
 
-            for item in list_qa_res.get("data"):
-                item["transform_type"] = "qa_split"
-                item["pre_content"] = item["question"]
-                item["post_content"] = item["answer"]
-                data_process_detail_preview_db_operate.insert(item, pool=pool)
+                for item in list_qa_res.get("data"):
+                    item["transform_type"] = "qa_split"
+                    item["pre_content"] = item["question"]
+                    item["post_content"] = item["answer"]
+                    data_process_detail_preview_db_operate.insert(item, pool=pool)
 
             # 将清洗后的文件上传到MinIO中
             # 上传final文件夹下的文件，并添加tag

@@ -39,8 +39,6 @@ class PDFHandle(BaseHandle):
         conn_pool,
         task_id,
         create_user,
-        chunk_size=None,
-        chunk_overlap=None,
     ):
         """
         Initialize the pdf handle.
@@ -52,22 +50,13 @@ class PDFHandle(BaseHandle):
             conn_pool: PostgreSQL connect pool.
             task_id: data processing task id.
             create_user: create user.
-            chunk_size: chunk size.
-            chunk_overlap: chunk overlap.
         """
-        if chunk_size is None:
-            chunk_size = config.knowledge_chunk_size
-
-        if chunk_overlap is None:
-            chunk_overlap = config.knowledge_chunk_overlap
         self._file_name = file_name
         self._document_id = document_id
         self._support_type = support_type
         self._conn_pool = conn_pool
         self._task_id = task_id
         self._create_user = create_user
-        self._chunk_size = chunk_size
-        self._chunk_overlap = chunk_overlap
 
     def handle(
         self,
@@ -81,7 +70,15 @@ class PDFHandle(BaseHandle):
             file_path = pdf_file_path + "original/" + self._file_name
 
             # Text splitter
-            documents = self._get_documents(file_path=file_path)
+            chunk_item = [item for item in self._support_type if item.get('type') == 'document_chunk']
+            if len(chunk_item) > 0:
+                chunk_size = chunk_item[0].get("chunk_size")
+                chunk_overlap = chunk_item[0].get("chunk_overlap")
+            else:
+                chunk_size = config.knowledge_chunk_size
+                chunk_overlap = config.knowledge_chunk_overlap
+
+            documents = self._get_documents(chunk_size=chunk_size, chunk_overlap=chunk_overlap, file_path=file_path)
 
             # step 2
             # save all chunk info to database
@@ -127,15 +124,15 @@ class PDFHandle(BaseHandle):
             return {"status": 400, "message": str(ex), "data": traceback.format_exc()}
 
 
-    def _get_documents(self, file_path):
+    def _get_documents(self, chunk_size, chunk_overlap, file_path):
         pdf_loader = PDFLoader(file_path)
         docs = pdf_loader.load()
 
         text_splitter = SpacyTextSplitter(
             separator="\n\n",
             pipeline="zh_core_web_sm",
-            chunk_size=int(self._chunk_size),
-            chunk_overlap=int(self._chunk_overlap),
+            chunk_size=int(chunk_size),
+            chunk_overlap=int(chunk_overlap),
         )
         documents = text_splitter.split_documents(docs)
 

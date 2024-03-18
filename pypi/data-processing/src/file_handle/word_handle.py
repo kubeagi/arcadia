@@ -36,8 +36,6 @@ def docx_manipulate(
     conn_pool,
     task_id,
     create_user,
-    chunk_size=None,
-    chunk_overlap=None,
 ):
     """Manipulate the text content from a word file.
 
@@ -45,8 +43,6 @@ def docx_manipulate(
     support_type: support type;
     conn_pool: database connection pool;
     task_id: data process task id;
-    chunk_size: chunk size;
-    chunk_overlap: chunk overlap;
     """
 
     logger.debug(f"{log_tag_const.WORD_HANDLE} Start to manipulate the text in word")
@@ -56,6 +52,13 @@ def docx_manipulate(
         file_path = word_file_path + "original/" + file_name
 
         # Text splitter
+        chunk_item = [item for item in support_type if item.get('type') == 'document_chunk']
+        if len(chunk_item) > 0:
+            chunk_size = chunk_item[0].get("chunk_size")
+            chunk_overlap = chunk_item[0].get("chunk_overlap")
+        else:
+            chunk_size = config.knowledge_chunk_size
+            chunk_overlap = config.knowledge_chunk_overlap
         documents = _get_documents(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap, file_path=file_path
         )
@@ -107,13 +110,6 @@ def docx_manipulate(
 
 
 def _get_documents(chunk_size, chunk_overlap, file_path):
-    # Split the text.
-    if chunk_size is None:
-        chunk_size = config.knowledge_chunk_size
-
-    if chunk_overlap is None:
-        chunk_overlap = config.knowledge_chunk_overlap
-
     docx_loader = DocxLoader(file_path)
     docs = docx_loader.load()
     text_splitter = SpacyTextSplitter(

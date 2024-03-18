@@ -139,6 +139,8 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessConfigChildren struct {
+		ChunkOverlap func(childComplexity int) int
+		ChunkSize    func(childComplexity int) int
 		Description  func(childComplexity int) int
 		Enable       func(childComplexity int) int
 		FileProgress func(childComplexity int) int
@@ -1297,6 +1299,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessConfig.Status(childComplexity), true
+
+	case "DataProcessConfigChildren.chunk_overlap":
+		if e.complexity.DataProcessConfigChildren.ChunkOverlap == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.ChunkOverlap(childComplexity), true
+
+	case "DataProcessConfigChildren.chunk_size":
+		if e.complexity.DataProcessConfigChildren.ChunkSize == nil {
+			break
+		}
+
+		return e.complexity.DataProcessConfigChildren.ChunkSize(childComplexity), true
 
 	case "DataProcessConfigChildren.description":
 		if e.complexity.DataProcessConfigChildren.Description == nil {
@@ -5141,6 +5157,8 @@ input FileItem {
 # 数据处理配置条目
 input DataProcessConfigItem {
   type: String!
+  chunk_size: Int
+  chunk_overlap: Int
   llm_config: LLMConfigItem
   remove_duplicate_config: RemoveDuplicateConfig
 }
@@ -5310,6 +5328,8 @@ type DataProcessConfigChildren {
   enable: String
   zh_name: String
   description: String
+  chunk_size: Int
+  chunk_overlap: Int
   llm_config: LLMConfig
   preview: [DataProcessConfigpreView]
   file_progress: [DataProcessConfigpreFileProgress]
@@ -11111,6 +11131,10 @@ func (ec *executionContext) fieldContext_DataProcessConfig_children(ctx context.
 				return ec.fieldContext_DataProcessConfigChildren_zh_name(ctx, field)
 			case "description":
 				return ec.fieldContext_DataProcessConfigChildren_description(ctx, field)
+			case "chunk_size":
+				return ec.fieldContext_DataProcessConfigChildren_chunk_size(ctx, field)
+			case "chunk_overlap":
+				return ec.fieldContext_DataProcessConfigChildren_chunk_overlap(ctx, field)
 			case "llm_config":
 				return ec.fieldContext_DataProcessConfigChildren_llm_config(ctx, field)
 			case "preview":
@@ -11283,6 +11307,88 @@ func (ec *executionContext) fieldContext_DataProcessConfigChildren_description(c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_chunk_size(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_chunk_size(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_chunk_size(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessConfigChildren_chunk_overlap(ctx context.Context, field graphql.CollectedField, obj *DataProcessConfigChildren) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessConfigChildren_chunk_overlap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkOverlap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessConfigChildren_chunk_overlap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessConfigChildren",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -34572,7 +34678,7 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"type", "llm_config", "remove_duplicate_config"}
+	fieldsInOrder := [...]string{"type", "chunk_size", "chunk_overlap", "llm_config", "remove_duplicate_config"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34586,6 +34692,20 @@ func (ec *executionContext) unmarshalInputDataProcessConfigItem(ctx context.Cont
 				return it, err
 			}
 			it.Type = data
+		case "chunk_size":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunk_size"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkSize = data
+		case "chunk_overlap":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunk_overlap"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkOverlap = data
 		case "llm_config":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llm_config"))
 			data, err := ec.unmarshalOLLMConfigItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐLLMConfigItem(ctx, v)
@@ -38121,6 +38241,10 @@ func (ec *executionContext) _DataProcessConfigChildren(ctx context.Context, sel 
 			out.Values[i] = ec._DataProcessConfigChildren_zh_name(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec._DataProcessConfigChildren_description(ctx, field, obj)
+		case "chunk_size":
+			out.Values[i] = ec._DataProcessConfigChildren_chunk_size(ctx, field, obj)
+		case "chunk_overlap":
+			out.Values[i] = ec._DataProcessConfigChildren_chunk_overlap(ctx, field, obj)
 		case "llm_config":
 			out.Values[i] = ec._DataProcessConfigChildren_llm_config(ctx, field, obj)
 		case "preview":

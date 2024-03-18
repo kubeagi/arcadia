@@ -180,6 +180,32 @@ def text_manipulate(
                     "object_count": len(qa_list.get("data")),
                 },
             }
+        elif support_type_map.get("document_chunk"):
+            chunk_data_dict = [["chunk_content", "file_name", "page_number"]]
+            for document in all_document_for_process:
+                chunk_data_dict.append(
+                    [
+                        document.get("content"),
+                        file_name,
+                        document.get("page_number")
+                    ]
+                )
+
+            # Save the csv file.
+            file_name_without_extension = file_utils.get_file_name_without_extension(
+                file_name
+            )
+            file_name_csv = file_name_without_extension + ".csv"
+            csv_utils.save_csv(
+                file_name=file_name_csv, phase_value="final", data=chunk_data_dict
+            )
+
+            logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
+            return {
+                "status": 200,
+                "message": "",
+                "data": "",
+            }
 
         return {"status": 200, "message": "", "data": ""}
     except Exception as ex:

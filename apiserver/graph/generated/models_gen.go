@@ -417,6 +417,8 @@ type DataProcessConfigChildren struct {
 	Enable       *string                             `json:"enable,omitempty"`
 	ZhName       *string                             `json:"zh_name,omitempty"`
 	Description  *string                             `json:"description,omitempty"`
+	ChunkSize    *int                                `json:"chunk_size,omitempty"`
+	ChunkOverlap *int                                `json:"chunk_overlap,omitempty"`
 	LlmConfig    *LLMConfig                          `json:"llm_config,omitempty"`
 	Preview      []*DataProcessConfigpreView         `json:"preview,omitempty"`
 	FileProgress []*DataProcessConfigpreFileProgress `json:"file_progress,omitempty"`
@@ -430,6 +432,8 @@ type DataProcessConfigInfo struct {
 
 type DataProcessConfigItem struct {
 	Type                  string                 `json:"type"`
+	ChunkSize             *int                   `json:"chunk_size,omitempty"`
+	ChunkOverlap          *int                   `json:"chunk_overlap,omitempty"`
 	LlmConfig             *LLMConfigItem         `json:"llm_config,omitempty"`
 	RemoveDuplicateConfig *RemoveDuplicateConfig `json:"remove_duplicate_config,omitempty"`
 }

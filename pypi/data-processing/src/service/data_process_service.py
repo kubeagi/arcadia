@@ -29,6 +29,7 @@ from database_operate import (data_process_db_operate,
                               data_process_log_db_operate,
                               data_process_stage_log_db_operate)
 from parallel import thread_parallel
+from utils import json_utils
 
 logger = logging.getLogger(__name__)
 
@@ -315,7 +316,10 @@ def _set_basic_info_for_config_map_for_result(
     process_config_map: process config map
     """
     # chunk processing
-    if process_cofig_map.get("qa_split"):
+    if (
+        process_cofig_map.get("qa_split")
+        or process_cofig_map.get("document_chunk")
+    ):
         if from_result.get("chunk_processing") is None:
             from_result["chunk_processing"] = {
                 "name": "chunk_processing",
@@ -388,6 +392,20 @@ def _set_children_info_for_config_map_for_result(
                 "file_progress": _get_file_progress(
                     task_id=task_id, conn_pool=conn_pool
                 ),
+            }
+        )
+
+    # document chunk
+    if process_cofig_map.get("document_chunk"):
+        from_result["chunk_processing"]["children"].append(
+            {
+                "name": "document_chunk",
+                "enable": "true",
+                "zh_name": "文本分段",
+                "description": "根据配置，自动将文件做分段处理。",
+                "chunk_size": process_cofig_map.get("document_chunk").get("chunk_size"),
+                "chunk_overlap": process_cofig_map.get("document_chunk").get("chunk_overlap"),
+                "preview": _get_document_chunk_preview(task_id=task_id, conn_pool=conn_pool),
             }
         )
 
@@ -714,3 +732,34 @@ def _get_privacy_process_file_num(task_id, conn_pool):
         )
     )
     return 0
+
+def _get_document_chunk_preview(task_id, conn_pool):
+    """Get the document chunk list preview.
+
+    task_id: task id;
+    conn_pool: database connection pool
+    """
+    logger.debug("".join([f"{log_tag_const.MINIO_STORE_PROCESS} Get preview for document chunk "]))
+    chunk_list_preview = []
+
+    # list document chunk top 10
+    list_params = {"task_id": task_id}
+    list_file_name_res = (
+        data_process_document_chunk_db_operate.top_n_list_for_preview(
+            list_params, pool=conn_pool
+        )
+    )
+    if list_file_name_res["status"] == 200:
+        for item in list_file_name_res["data"]:
+            meta_json = json_utils.loads(item.get("meta_info"))
+            chunk_list_preview.append(
+                {
+                    "file_name": meta_json.get("source"),
+                    "content": [{
+                        "post": item.get("content")
+                    }
+                    ]
+                }
+            )
+
+    return chunk_list_preview
