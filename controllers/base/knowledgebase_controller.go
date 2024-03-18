@@ -392,7 +392,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		}
 		// basepath for this versioneddataset
 		vsBasePath = filepath.Join("dataset", versionedDataset.Spec.Dataset.Name, versionedDataset.Spec.Version)
-	case "datasource":
+	case "datasource", "":
 		dsObj := &arcadiav1alpha1.Datasource{}
 		if err = r.Get(ctx, types.NamespacedName{Name: group.Source.Name, Namespace: ns}, dsObj); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -403,7 +403,12 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		if !dsObj.Status.IsReady() {
 			return errDataSourceNotReady
 		}
-		ds, err = datasource.NewOSS(ctx, r.Client, &dsObj.Spec.Endpoint)
+		// set endpoint's auth secret namespace to current datasource if not set
+		endpoint := dsObj.Spec.Endpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(dsObj.Namespace)
+		}
+		ds, err = datasource.NewOSS(ctx, r.Client, endpoint)
 		if err != nil {
 			return err
 		}
@@ -411,6 +416,8 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		if kb.Spec.Type != arcadiav1alpha1.KnowledgeBaseTypeConversation {
 			info.Bucket = dsObj.Spec.OSS.Bucket
 		}
+	default:
+		return fmt.Errorf("source type %s not supported yet", group.Source.Kind)
 	}
 
 	if len(kb.Status.FileGroupDetail) == 0 {
@@ -466,8 +473,10 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		case "versioneddataset":
 			// info.Object has been
 			info.Object = filepath.Join(vsBasePath, path)
-		case "datasource":
+		case "datasource", "":
 			info.Object = path
+		default:
+			return fmt.Errorf("source type %s not supported yet", group.Source.Kind)
 		}
 
 		stat, err := ds.StatFile(ctx, info)
