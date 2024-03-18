@@ -41,7 +41,7 @@ import (
 
 const (
 	// Time interval to check if the chat stream should be closed if no more message arrives
-	WaitTimeoutForChatStreaming = 30
+	WaitTimeoutForChatStreaming = 120
 	// default prompt starter
 	PromptLimit = 4
 )
@@ -232,7 +232,7 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 
 		messageID := string(uuid.NewUUID())
 		// Upload the file to specific dst.
-		resp, err := cs.server.ReceiveConversationFile(c, messageID, req, file)
+		resp, err := cs.server.ReceiveConversationFile(c.Request.Context(), messageID, req, file)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error receive conversational file")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
