@@ -17,7 +17,6 @@ global settings of arcadia chart.
 
 | Parameter                | Description                                                  | Default     |
 | ------------------------ | ------------------------------------------------------------ | ----------- |
-| `oss.bucket`             | Name of the bucket where data is stored                      | `"arcadia"` |
 | `defaultVectorStoreType` | Defines the default vector database type, currently `chroma` and `pgvector` are available | `pgvector`  |
 
 ### controller
