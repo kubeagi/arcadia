@@ -21,9 +21,11 @@ const (
 	InputIsNeedStreamKeyInArg             = "_need_stream"
 	LangchaingoChatMessageHistoryKeyInArg = "_history"
 	OutputAnserKeyInArg                   = "_answer"
+	AgentOutputInArg                      = "_agent_answer"
 	OutputAnserStreamChanKeyInArg         = "_answer_stream"
 	RuntimeRetrieverReferencesKeyInArg    = "_references"
 	LangchaingoRetrieverKeyInArg          = "retriever"
 	LangchaingoLLMKeyInArg                = "llm"
+	LangchaingoPromptKeyInArg             = "prompt"
 	APPDocNullReturn                      = "_app_doc_null_return"
 )

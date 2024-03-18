@@ -18,16 +18,22 @@ package retriever
 
 import (
 	"context"
+	"fmt"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
+	"k8s.io/klog/v2"
 )
 
 var _ langchaingoschema.Retriever = &Fakeretriever{}
 
 type Fakeretriever struct {
+	Name string
 	Docs []langchaingoschema.Document
 }
 
-func (f *Fakeretriever) GetRelevantDocuments(context.Context, string) ([]langchaingoschema.Document, error) {
+func (f *Fakeretriever) GetRelevantDocuments(ctx context.Context, query string) ([]langchaingoschema.Document, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(3).Info(fmt.Sprintf("GetReleavantDocuments from %s, query: %s", f.Name, query))
+	logger.V(5).Info(fmt.Sprintf("Doc: %#v", f.Docs))
 	return f.Docs, nil
 }

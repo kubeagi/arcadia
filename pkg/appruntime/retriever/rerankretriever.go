@@ -28,6 +28,7 @@ import (
 
 	langchainschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
@@ -72,7 +73,7 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 				return nil, &base.RetrieverGetNullDocError{Msg: docNullReturn}
 			}
 		}
-		args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: nil}
+		args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: nil, Name: "RerankRetriever"}
 		return args, nil
 	}
 	q, ok := args[base.InputQuestionKeyInArg]
@@ -104,6 +105,7 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 		return nil, fmt.Errorf("request json marshal failed: %w", err)
 	}
 	URL := fmt.Sprintf("http://%s-worker.%s.svc:%d/api/v1/reranking", l.Instance.Spec.Model.Name, l.Instance.Spec.Model.GetNamespace(l.RefNamespace()), arcadiav1alpha1.DefaultWorkerPort)
+	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("send req to rerank, url:%s, body:%s", URL, string(reqBytes)))
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
@@ -120,6 +122,7 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
 		return nil, fmt.Errorf("parse json resp get err:%w, http status code:%d", err, code)
 	}
+	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get resp :%#v", resp))
 
 	for i := range references {
 		references[i].RerankScore = resp[i]
@@ -155,17 +158,31 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 	newDocs := make([]langchainschema.Document, 0, len(docs))
 	for i := range newRef {
 		for j := range docs {
-			if newRef[i].Score == docs[j].Score && reflect.DeepEqual(newRef[i].Metadata, docs[i].Metadata) {
+			if newRef[i].Score == docs[j].Score && reflect.DeepEqual(newRef[i].Metadata, docs[j].Metadata) {
 				newDocs = append(newDocs, docs[j])
 			}
 		}
 	}
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: newDocs}
+	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: newDocs, Name: "RerankRetriever"}
 	return args, nil
 }
 
 func (l *RerankRetriever) Ready() (isReady bool, msg string) {
-	return l.Instance.Status.IsReadyOrGetReadyMessage()
+	isReady, msg = l.Instance.Status.IsReadyOrGetReadyMessage()
+	if !isReady {
+		return isReady, msg
+	}
+	findRetriever := false
+	for _, n := range l.BaseNode.GetPrevNode() {
+		if n.Group() == "retriever" {
+			findRetriever = true
+			break
+		}
+	}
+	if !findRetriever {
+		return false, "the multiqueryretiever's prev node should have one retriever"
+	}
+	return true, ""
 }
 
 type RerankRequestBody struct {

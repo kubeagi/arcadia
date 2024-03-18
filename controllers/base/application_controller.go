@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"container/list"
 	"context"
 	"fmt"
 	"reflect"
@@ -39,6 +40,7 @@ import (
 	retrieveralpha1 "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
+	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
 
 const (
@@ -50,6 +52,7 @@ const (
 	PromptIndexKey                 = "metadata.prompt"
 	KnowledgebaseRetrieverIndexKey = "metadata.knowledgebaseretriever"
 	RerankRetrieverIndexKey        = "metadata.rerankretriever"
+	MultiQueryRetrieverIndexKey    = "metadata.multiqueryretriever"
 	AgentIndexKey                  = "metadata.agent"
 )
 
@@ -220,19 +223,39 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger
 		return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 	}
 
-	for _, node := range app.Spec.Nodes {
-		n, err := appruntime.InitNode(ctx, app.Namespace, node.Name, *node.Ref)
-		if err != nil {
-			r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("initnode %s failed: %s", node.Name, err.Error()))...)
-			return app, ctrl.Result{RequeueAfter: waitMedium}, nil
+	runtimeApp, err := appruntime.NewAppOrGetFromCache(ctx, r.Client, app)
+	if err != nil {
+		r.setCondition(app, app.Status.ErrorCondition(err.Error())...)
+		return app, ctrl.Result{RequeueAfter: waitMedium}, nil
+	}
+
+	visited := make(map[string]bool)
+	waitRunningNodes := list.New()
+	for _, v := range runtimeApp.StartingNodes {
+		waitRunningNodes.PushBack(v)
+	}
+	for e := waitRunningNodes.Front(); e != nil; e = e.Next() {
+		e := e.Value.(base.Node)
+		if !visited[e.Name()] {
+			reWait := false
+			for _, n := range e.GetPrevNode() {
+				if !visited[n.Name()] {
+					reWait = true
+					break
+				}
+			}
+			if reWait {
+				waitRunningNodes.PushBack(e)
+				continue
+			}
+			if isReady, errMsg := e.Ready(); !isReady {
+				r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("node %s init failed: %s", e.Name(), errMsg))...)
+				return app, ctrl.Result{RequeueAfter: waitMedium}, nil
+			}
+			visited[e.Name()] = true
 		}
-		if err := n.Init(ctx, r.Client, map[string]any{}); err != nil {
-			r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("node %s init failed: %s", node.Name, err.Error()))...)
-			return app, ctrl.Result{RequeueAfter: waitMedium}, nil
-		}
-		if isReady, errMsg := n.Ready(); !isReady {
-			r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("node %s init failed: %s", node.Name, errMsg))...)
-			return app, ctrl.Result{RequeueAfter: waitMedium}, nil
+		for _, n := range e.GetNextNode() {
+			waitRunningNodes.PushBack(n)
 		}
 	}
 
@@ -295,6 +318,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		{PromptIndexKey, "prompt", "prompt"},
 		{KnowledgebaseRetrieverIndexKey, "retriever", "knowledgebaseretriever"},
 		{RerankRetrieverIndexKey, "retriever", "rerankretriever"},
+		{MultiQueryRetrieverIndexKey, "retriever", "multiqueryretriever"},
 		{AgentIndexKey, "", "agent"},
 	}
 	for _, d := range dependencies {
@@ -349,6 +373,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		Watches(&source.Kind{Type: &promptv1alpha1.Prompt{}}, getEventHandler(PromptIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.KnowledgeBaseRetriever{}}, getEventHandler(KnowledgebaseRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.RerankRetriever{}}, getEventHandler(RerankRetrieverIndexKey)).
+		Watches(&source.Kind{Type: &retrieveralpha1.MultiQueryRetriever{}}, getEventHandler(MultiQueryRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &agentv1alpha1.Agent{}}, getEventHandler(AgentIndexKey)).
 		Complete(r)
 }

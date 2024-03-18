@@ -101,10 +101,16 @@ func ConvertDocuments(ctx context.Context, docs []langchaingoschema.Document, re
 			}
 		}
 		pageContent := doc.PageContent
+		joinStr := "\na: "
 		if retrieverName == "knowledgebase" {
+			// qachain will only use doc.PageContent in prompt, so add ansewer here if exist
 			if len(answer) != 0 {
-				doc.PageContent = doc.PageContent + "\na: " + answer
+				doc.PageContent = doc.PageContent + joinStr + answer
 			}
+		}
+		if retrieverName == "multiquery" {
+			// pageContent may have the answer in previous steps, and we want this field only has question in reference output
+			pageContent = strings.TrimSuffix(pageContent, joinStr+answer)
 		}
 
 		qafilepath, ok := doc.Metadata[documentloaders.QAFileName].(string)

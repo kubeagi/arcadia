@@ -139,13 +139,28 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 		}
 	}
 	docs, refs := ConvertDocuments(ctx, docs, "knowledgebase")
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: docs}
+	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: docs, Name: "KnowledgebaseRetriever"}
 	AddReferencesToArgs(args, refs)
 	return args, nil
 }
 
 func (l *KnowledgeBaseRetriever) Ready() (isReady bool, msg string) {
-	return l.Instance.Status.IsReadyOrGetReadyMessage()
+	isReady, msg = l.Instance.Status.IsReadyOrGetReadyMessage()
+	if !isReady {
+		return isReady, msg
+	}
+	var knowledgebaseName, knowledgebaseNamespace string
+	for _, n := range l.BaseNode.GetPrevNode() {
+		if n.Kind() == "knowledgebase" {
+			knowledgebaseName = n.RefName()
+			knowledgebaseNamespace = n.RefNamespace()
+			break
+		}
+	}
+	if knowledgebaseName == "" || knowledgebaseNamespace == "" {
+		return false, "the knowledgebaseretiever's prev node should have one knowledgebase"
+	}
+	return true, ""
 }
 
 func (l *KnowledgeBaseRetriever) Cleanup() {

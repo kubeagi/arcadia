@@ -656,6 +656,32 @@ rules:
 - apiGroups:
   - retriever.arcadia.kubeagi.k8s.com.cn
   resources:
+  - multiqueryRetrievers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - multiqueryretrievers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
+  - multiqueryretrievers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - retriever.arcadia.kubeagi.k8s.com.cn
+  resources:
   - rerankretrievers
   verbs:
   - create

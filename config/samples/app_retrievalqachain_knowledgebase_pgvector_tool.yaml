@@ -7,7 +7,6 @@ spec:
   displayName: "知识库应用"
   description: "最简单的和知识库对话的应用"
   prologue: "Welcome to talk to the KnowledgeBase!🤖"
-  docNullReturn: "未找到您询问的内容，请详细描述您的问题，以便我们为您提供更好的服务"
   nodes:
     - name: Input
       displayName: "用户输入"
