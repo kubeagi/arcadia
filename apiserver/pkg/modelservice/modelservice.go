@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/tmc/langchaingo/llms"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -195,8 +196,9 @@ func ListModelServices(ctx context.Context, c client.Client, input *generated.Li
 	// use `UnlimitedPageSize` so we can get all llms and embeddings
 	notWorkerSelector := fmt.Sprintf("%s=%s", v1alpha1.ProviderLabel, v1alpha1.ProviderType3rdParty)
 
+	pageOne := 1
 	query := generated.ListCommonInput{
-		Page:          input.Page,
+		Page:          &pageOne,
 		PageSize:      &common.UnlimitedPageSize,
 		Namespace:     input.Namespace,
 		Keyword:       input.Keyword,
@@ -281,13 +283,8 @@ func ListModelServices(ctx context.Context, c client.Client, input *generated.Li
 	})
 
 	// return ModelService with the actual Page and PageSize
-	page, pageSize := 1, 10
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 
 	totalCount := len(newNodeList)
 	start, end := common.PagePosition(page, pageSize, totalCount)

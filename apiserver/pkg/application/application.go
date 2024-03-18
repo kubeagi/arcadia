@@ -335,7 +335,7 @@ func GetApplication(ctx context.Context, c client.Client, name, namespace string
 func ListApplicationMeatadatas(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
 	keyword := pointer.StringDeref(input.Keyword, "")
 	page := pointer.IntDeref(input.Page, 1)
-	pageSize := pointer.IntDeref(input.PageSize, 10)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 	res := &v1alpha1.ApplicationList{}
 	opts, err := common.NewListOptions(input)
 	if err != nil {

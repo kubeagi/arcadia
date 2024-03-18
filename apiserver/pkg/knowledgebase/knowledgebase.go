@@ -311,7 +311,6 @@ func ReadKnowledgeBase(ctx context.Context, c client.Client, name, namespace str
 }
 
 func ListKnowledgeBases(ctx context.Context, c client.Client, input generated.ListKnowledgeBaseInput) (*generated.PaginatedResult, error) {
-	page, pageSize := 1, 10
 	filter := make([]common.ResourceFilter, 0)
 	if input.Name != nil {
 		filter = append(filter, common.FilterByNameContains(*input.Name))
@@ -319,12 +318,8 @@ func ListKnowledgeBases(ctx context.Context, c client.Client, input generated.Li
 	if input.DisplayName != nil {
 		filter = append(filter, common.FilterKnowledgeByDisplayName(*input.DisplayName))
 	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		pageSize = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 
 	us := &v1alpha1.KnowledgeBaseList{}
 	opts, err := common.NewListOptions(generated.ListCommonInput{

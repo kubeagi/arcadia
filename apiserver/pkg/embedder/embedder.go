@@ -221,15 +221,10 @@ func ListEmbedders(ctx context.Context, c client.Client, input generated.ListCom
 	}
 
 	keyword := ""
-	page, pageSize := 1, 10
+	page := pointer.IntDeref(input.Page, 1)
+	pageSize := pointer.IntDeref(input.PageSize, -1)
 	if input.Keyword != nil {
 		keyword = *input.Keyword
-	}
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil {
-		pageSize = *input.PageSize
 	}
 
 	us := &v1alpha1.EmbedderList{}

@@ -467,13 +467,8 @@ func UpdateRAG(ctx context.Context, kubeClient client.Client, input *generated.U
 }
 
 func ListRAG(ctx context.Context, kubeClient client.Client, input *generated.ListRAGInput) (*generated.PaginatedResult, error) {
-	page, size := 1, 10
-	if input.Page != nil && *input.Page > 0 {
-		page = *input.Page
-	}
-	if input.PageSize != nil && *input.PageSize > 0 {
-		size = *input.PageSize
-	}
+	page := pointer.IntDeref(input.Page, 1)
+	size := pointer.IntDeref(input.PageSize, -1)
 	filter := make([]common.ResourceFilter, 0)
 	if input.Keyword != nil {
 		filter = append(filter, common.FilterByRAGKeyword(*input.Keyword))
