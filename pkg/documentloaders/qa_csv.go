@@ -129,6 +129,10 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 		}
 		doc := schema.Document{}
 		doc.Metadata = make(map[string]any, len(cols)-1)
+		doc.Metadata[c.answerColumn] = ""
+		doc.Metadata[c.fileNameColumn] = ""
+		doc.Metadata[QAFileName] = ""
+		doc.Metadata[LineNumber] = ""
 		for i, value := range row {
 			value = strings.TrimSpace(value)
 			switch header[i] {
@@ -136,8 +140,6 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 				doc.PageContent = fmt.Sprintf("%s: %s", header[i], value)
 			case c.answerColumn:
 				doc.Metadata[c.answerColumn] = value
-				doc.Metadata[QAFileName] = c.fileName
-				doc.Metadata[LineNumber] = strconv.Itoa(rown)
 			case c.pageNumberColumn:
 				doc.Metadata[PageNumberCol] = value
 			case c.fileNameColumn:
@@ -146,6 +148,12 @@ func (c QACSV) Load(_ context.Context) ([]schema.Document, error) {
 				doc.Metadata[ChunkContentCol] = value
 			}
 		}
+		if doc.PageContent == "" && doc.Metadata[c.answerColumn] == "" && doc.Metadata[ChunkContentCol] != "" {
+			doc.PageContent = doc.Metadata[ChunkContentCol].(string)
+			doc.Metadata[ChunkContentCol] = ""
+		}
+		doc.Metadata[QAFileName] = c.fileName
+		doc.Metadata[LineNumber] = strconv.Itoa(rown)
 		rown++
 		docs = append(docs, doc)
 	}
