@@ -213,7 +213,9 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 
 	modelFileDir := fmt.Sprintf("/data/models/%s", model.Name)
 	additionalEnvs := []corev1.EnvVar{}
-	extraAgrs := "--trust-remote-code"
+	// --enforce-eager to disable cupy
+	// TODO: remove --enforce-eager when https://github.com/kubeagi/arcadia/issues/878 is fixed
+	extraAgrs := "--trust-remote-code --enforce-eager"
 	if runner.modelFileFromRemote {
 		m := arcadiav1alpha1.Model{}
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
@@ -251,7 +253,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			// Need python version and ray address for distributed inference
 			{Name: "PYTHON_VERSION", Value: pythonVersion},
 			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
-			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
+			{Name: "NUMBER_GPUS", Value: strconv.Itoa(gpuCount)},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
@@ -262,7 +264,6 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		Resources: runner.w.Spec.Resources,
 	}
 	container.Env = append(container.Env, additionalEnvs...)
-
 	return container, nil
 }
 
