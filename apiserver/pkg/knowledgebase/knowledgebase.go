@@ -160,6 +160,13 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 	}
 	if input.FileGroups != nil {
 		for _, f := range input.FileGroups {
+			// use datasource by default
+			if f.Source.Kind == "" {
+				f.Source.Kind = "Datasource"
+			}
+			if f.Source.Namespace == nil {
+				f.Source.Namespace = &input.Namespace
+			}
 			filegroup := v1alpha1.FileGroup{
 				Source: (*v1alpha1.TypedObjectReference)(&f.Source),
 				Paths:  f.Path,

@@ -19,6 +19,7 @@ resources:
 - bases/chain.arcadia.kubeagi.k8s.com.cn_apichains.yaml
 - bases/prompt.arcadia.kubeagi.k8s.com.cn_prompts.yaml
 - bases/retriever.arcadia.kubeagi.k8s.com.cn_knowledgebaseretrievers.yaml
+- bases/retriever.arcadia.kubeagi.k8s.com.cn_multiqueryretrievers.yaml
 - bases/evaluation.arcadia.kubeagi.k8s.com.cn_rags.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 

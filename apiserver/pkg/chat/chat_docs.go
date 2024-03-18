@@ -217,8 +217,13 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 		}
 		// append document path
 		kb.Spec.FileGroups = append(kb.Spec.FileGroups, arcadiav1alpha1.FileGroup{
-			Source: systemDatasource.TypedObjectReference(),
-			Paths:  []string{document.Object},
+			Source: &arcadiav1alpha1.TypedObjectReference{
+				APIGroup:  &arcadiav1alpha1.GroupVersion.Group,
+				Kind:      "Datasource",
+				Name:      systemDatasource.Name,
+				Namespace: &systemDatasource.Namespace,
+			},
+			Paths: []string{document.Object},
 		})
 		return nil
 	})
