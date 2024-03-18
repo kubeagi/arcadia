@@ -137,6 +137,31 @@ def text_manipulate(
 
                 if remove_duplicate_response.get("status") != 200:
                     return remove_duplicate_response
+            else:
+                qa_list = data_process_detail_db_operate.query_question_answer_list(
+                    document_id=document_id, pool=conn_pool
+                )
+
+                # 将QA去重的数据存入question_answer_clean表中
+                qa_data = qa_list.get("data")
+                for _, item in enumerate(qa_data):
+                    qa_insert_item = {
+                            "id": item.get("id"),
+                            "task_id": item.get("task_id"),
+                            "document_id": item.get("document_id"),
+                            "document_chunk_id": item.get("document_chunk_id"),
+                            "file_name": item.get("file_name"),
+                            "question": item.get("question"),
+                            "answer": item.get("answer"),
+                            "question_score": "",
+                            "answer_score": "",
+                            "duplicated_flag": 1,
+                            "compare_with_id": "",
+                            "create_user": create_user,
+                        }
+                    data_process_detail_db_operate.insert_question_answer_clean_info(
+                        qa_insert_item, pool=conn_pool
+                    )
 
             # 通过documentId查询生成的所有QA数据
             qa_list = data_process_detail_db_operate.query_question_answer_clean_list(
