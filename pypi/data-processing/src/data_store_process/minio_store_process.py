@@ -504,7 +504,7 @@ def text_manipulate_retry(req_json, pool):
             data_process_stage_log_db_operate.insert(insert_stage_log_params, pool=pool)
 
             # insert QA list to detail preview
-            if any(d.get("type") == "qa_split" for d in task_info_dict,get("data_process_config_info")):
+            if any(d.get("type") == "qa_split" for d in task_info_dict.get("data_process_config_info")):
                 logger.debug(
                     f"{log_tag_const.MINIO_STORE_PROCESS} Insert QA list for detail preview."
                 )
