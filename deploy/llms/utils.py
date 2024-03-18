@@ -1,5 +1,7 @@
+# From Ray v2.9.3 and add KubeAGI changes 
 import asyncio
 import binascii
+from collections import defaultdict
 import contextlib
 import errno
 import functools
@@ -17,22 +19,33 @@ import sys
 import tempfile
 import threading
 import time
+from urllib.parse import urlencode, unquote, urlparse, parse_qsl, urlunparse
 import warnings
-from collections import defaultdict
 from inspect import signature
 from pathlib import Path
 from subprocess import list2cmdline
-from typing import (TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping,
-                    Optional, Sequence, Tuple, Union)
-from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    Coroutine,
+    List,
+    Mapping,
+)
 
 # Import psutil after ray so the packaged version is used.
 import psutil
+from google.protobuf import json_format
+
 import ray
 import ray._private.ray_constants as ray_constants
-from google.protobuf import json_format
-from ray.core.generated.runtime_env_common_pb2 import \
-    RuntimeEnvInfo as ProtoRuntimeEnvInfo
+from ray.core.generated.runtime_env_common_pb2 import (
+    RuntimeEnvInfo as ProtoRuntimeEnvInfo,
+)
 
 if TYPE_CHECKING:
     from ray.runtime_env import RuntimeEnv
@@ -269,8 +282,9 @@ def get_visible_accelerator_ids() -> Mapping[str, Optional[List[str]]]:
     to the visible ids."""
 
     from ray._private.accelerators import (
+        get_all_accelerator_resource_names,
         get_accelerator_manager_for_resource,
-        get_all_accelerator_resource_names)
+    )
 
     return {
         accelerator_resource_name: get_accelerator_manager_for_resource(
