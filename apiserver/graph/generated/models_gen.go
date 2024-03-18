@@ -973,7 +973,7 @@ type ListCommonInput struct {
 	// 规则: 从1开始，默认是1
 	Page *int `json:"page,omitempty"`
 	// 每页数量，
-	// 规则: 默认10
+	// 规则: -1,返回全部
 	PageSize *int `json:"pageSize,omitempty"`
 }
 

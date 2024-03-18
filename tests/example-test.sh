@@ -262,6 +262,92 @@ function getRespInAppChat() {
 	fi
 }
 
+function fileUploadSummarise() {
+	appname=$1
+	namespace=$2
+	filename=$3
+	attempt=0
+	while true; do
+		info "sleep 3 seconds"
+		sleep 3
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST --form file=@$filename --form app_name=$appname --form app_namespace=$namespace -H "Content-Type: multipart/form-data" http://127.0.0.1:8081/chat/conversations/file)
+		doc_data=$(echo $resp | jq -r '.document')
+		if [ -z "$doc_data" ]; then
+			echo $resp
+			EnableAPIServerPortForward
+			if [[ $resp == *"googleapi: Error"* ]]; then
+				echo "google api error, will retry after 60s"
+				sleep 60
+			fi
+			attempt=$((attempt + 1))
+			if [ $attempt -gt $RETRY_COUNT ]; then
+				echo "❌: Failed. Retry count exceeded."
+				exit 1
+			fi
+			echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+			continue
+		fi
+		echo "👤: ${filename}"
+		echo "🤖: ${doc_data}"
+		break
+	done
+	file_id=$(echo $resp | jq -r '.document.object')
+	resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
+	attempt=0
+	while true; do
+		info "sleep 3 seconds to sumerize doc"
+		sleep 3
+		data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg namespace "$namespace" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace, "files": [$fileid]}')
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
+		ai_data=$(echo $resp | jq -r '.message')
+		references=$(echo $resp | jq -r '.references')
+		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
+			echo $resp
+			EnableAPIServerPortForward
+			if [[ $resp == *"googleapi: Error"* ]]; then
+				echo "google api error, will retry after 60s"
+				sleep 60
+			fi
+			attempt=$((attempt + 1))
+			if [ $attempt -gt $RETRY_COUNT ]; then
+				echo "❌: Failed. Retry count exceeded."
+				exit 1
+			fi
+			echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+			continue
+		fi
+		echo "👤: 总结一下"
+		echo "🤖: ${ai_data}"
+		echo "🔗: ${references}"
+		break
+	done
+	resp_conversation_id=$(echo $resp | jq -r '.conversation_id')
+
+	if [ $testStream == "true" ]; then
+		attempt=0
+		while true; do
+			info "sleep 5 seconds"
+			sleep 5
+			info "just test stream mode"
+			data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg namespace "$namespace" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace, "files": [$fileid]}')
+			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data"
+			if [[ $? -ne 0 ]]; then
+				attempt=$((attempt + 1))
+				if [ $attempt -gt $RETRY_COUNT ]; then
+					echo "❌: Failed. Retry count exceeded."
+					exit 1
+				fi
+				echo "🔄: Failed. Attempt $attempt/$RETRY_COUNT"
+				EnableAPIServerPortForward
+				echo "and wait 60s for google api error"
+				sleep 60
+				continue
+			fi
+			break
+		done
+	fi
+}
+
 info "1. create kind cluster"
 make kind
 df -h
@@ -644,6 +730,12 @@ while true; do
 	fi
 	break
 done
+
+info "8.4.6 chat with document"
+kubectl apply -f config/samples/app_llmchain_abstract.yaml
+waitCRDStatusReady "Application" "arcadia" "base-chat-document-assistant"
+fileUploadSummarise "base-chat-document-assistant" "arcadia" "./pkg/documentloaders/testdata/llava.pdf"
+getRespInAppChat "base-chat-document-assistant" "arcadia" "what is LLaVA？" ${resp_conversation_id} "false"
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"

@@ -5922,7 +5922,7 @@ input ListCommonInput {
 
     """
     每页数量，
-    规则: 默认10
+    规则: -1,返回全部
     """
     pageSize: Int
 }
