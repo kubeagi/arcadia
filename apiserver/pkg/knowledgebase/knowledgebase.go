@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -59,31 +60,57 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		status = "Deleting"
 	}
 
+	// While the operator is processing the document,
+	// the platform cannot obtain the file list of the knowledge base, nor does it know the processing status.
+	// Therefore, when getting the file list through the API,
+	// we need to get all the files from the spec part,
+	// and then update the status of the files that have been processed.
+	// Ensure that the file list can be seen on the platform interface
+	// https://github.com/kubeagi/arcadia/issues/874
+	cache := make(map[string][2]int)
 	var filegroupdetails []*generated.Filegroupdetail
-	for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
-		var filedetails []*generated.Filedetail
-		fns := filegroupdetail.Source.Namespace
-		for _, detail := range filegroupdetail.FileDetails {
-			filedetail := &generated.Filedetail{
-				FileType:        detail.Type,
-				Count:           detail.Count,
-				Size:            detail.Size,
-				Path:            detail.Path,
-				Phase:           string(detail.Phase),
-				TimeCost:        int(detail.TimeCost),
-				UpdateTimestamp: &detail.LastUpdateTime.Time,
-			}
-			filedetails = append(filedetails, filedetail)
+	for out, fg := range knowledgebase.Spec.FileGroups {
+		groupFiles := make([]*generated.Filedetail, 0)
+		ns := knowledgebase.Namespace
+		if fg.Source.Namespace != nil {
+			ns = *fg.Source.Namespace
 		}
-		filegroupdetail := &generated.Filegroupdetail{
+		for in, fn := range fg.Paths {
+			key := fmt.Sprintf("%s/%s/%s", ns, fg.Source.Name, fn)
+			cache[key] = [2]int{out, in}
+			groupFiles = append(groupFiles, &generated.Filedetail{
+				Path:  fn,
+				Phase: string(v1alpha1.FileProcessPhasePending),
+			})
+		}
+
+		filegroupdetails = append(filegroupdetails, &generated.Filegroupdetail{
 			Source: &generated.TypedObjectReference{
-				Kind:      filegroupdetail.Source.Kind,
-				Name:      filegroupdetail.Source.Name,
-				Namespace: fns,
+				Kind:      fg.Source.Kind,
+				Name:      fg.Source.Name,
+				Namespace: fg.Source.Namespace,
 			},
-			Filedetails: filedetails,
+			Filedetails: groupFiles,
+		})
+	}
+	if len(knowledgebase.Status.FileGroupDetail) > 0 {
+		for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
+			fns := filegroupdetail.Source.Namespace
+			for _, detail := range filegroupdetail.FileDetails {
+				key := fmt.Sprintf("%s/%s/%s", *fns, filegroupdetail.Source.Name, detail.Path)
+				v := cache[key]
+				filegroupdetails[v[0]].Filedetails[v[1]] = &generated.Filedetail{
+					FileType:        detail.Type,
+					Count:           detail.Count,
+					Size:            detail.Size,
+					Path:            detail.Path,
+					Phase:           string(detail.Phase),
+					TimeCost:        int(detail.TimeCost),
+					UpdateTimestamp: new(time.Time),
+				}
+				*filegroupdetails[v[0]].Filedetails[v[1]].UpdateTimestamp = detail.LastUpdateTime.Time
+			}
 		}
-		filegroupdetails = append(filegroupdetails, filegroupdetail)
 	}
 
 	embedderResource := &v1alpha1.Embedder{}
