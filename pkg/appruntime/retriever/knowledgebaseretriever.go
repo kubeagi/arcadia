@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -57,8 +58,6 @@ func (l *KnowledgeBaseRetriever) Init(ctx context.Context, cli client.Client, _ 
 }
 
 func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, args map[string]any) (map[string]any, error) {
-	instance := l.Instance
-
 	var knowledgebaseName, knowledgebaseNamespace string
 	for _, n := range l.BaseNode.GetPrevNode() {
 		if n.Kind() == "knowledgebase" {
@@ -70,78 +69,9 @@ func (l *KnowledgeBaseRetriever) Run(ctx context.Context, cli client.Client, arg
 	if knowledgebaseName == "" || knowledgebaseNamespace == "" {
 		return nil, fmt.Errorf("knowledgebase is not setting")
 	}
-
-	knowledgebase := &v1alpha1.KnowledgeBase{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: knowledgebaseNamespace, Name: knowledgebaseName}, knowledgebase); err != nil {
-		return nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
-	}
-
-	embedderReq := knowledgebase.Spec.Embedder
-	vectorStoreReq := knowledgebase.Spec.VectorStore
-	if embedderReq == nil || vectorStoreReq == nil {
-		return nil, fmt.Errorf("knowledgebase %s: embedder or vectorstore or filegroups is not setting", knowledgebaseName)
-	}
-
-	embedder := &v1alpha1.Embedder{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: embedderReq.GetNamespace(knowledgebaseNamespace), Name: embedderReq.Name}, embedder); err != nil {
-		return nil, fmt.Errorf("can't find the embedder in cluster: %w", err)
-	}
-	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, cli, "")
-	if err != nil {
-		return nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
-	}
-	vectorStore := &v1alpha1.VectorStore{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: vectorStoreReq.GetNamespace(knowledgebaseNamespace), Name: vectorStoreReq.Name}, vectorStore); err != nil {
-		return nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
-	}
-	var s vectorstores.VectorStore
-	s, l.Finish, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), cli)
-	if err != nil {
-		return nil, err
-	}
-	logger := klog.FromContext(ctx)
-	logger.V(3).Info(fmt.Sprintf("retriever created[scorethreshold: %f][num: %d]", pointer.Float32Deref(instance.Spec.ScoreThreshold, 0.0), instance.Spec.NumDocuments))
-	var retriever vectorstores.Retriever
-	if instance.Spec.ScoreThreshold != nil {
-		retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments, vectorstores.WithScoreThreshold(*instance.Spec.ScoreThreshold))
-	} else {
-		retriever = vectorstores.ToRetriever(s, instance.Spec.NumDocuments)
-	}
-	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
-
-	question, ok := args["question"]
-	if !ok {
-		return nil, errors.New("no question in args")
-	}
-	query, ok := question.(string)
-	if !ok {
-		return nil, errors.New("question not string")
-	}
-	docs, err := retriever.GetRelevantDocuments(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("can't get relevant documents: %w", err)
-	}
-	if len(docs) == 0 {
-		v, exist := args[base.APPDocNullReturn]
-		if exist {
-			docNullReturn, ok := v.(string)
-			if ok && len(docNullReturn) > 0 {
-				return nil, &base.RetrieverGetNullDocError{Msg: docNullReturn}
-			}
-		}
-	}
-	// pgvector get score means vector distance, similarity = 1 - vector distance
-	// chroma get score means similarity
-	// we want similarity finally.
-	if vectorStore.Spec.Type() == v1alpha1.VectorStoreTypePGVector {
-		for i := range docs {
-			docs[i].Score = 1 - docs[i].Score
-		}
-	}
-	docs, refs := ConvertDocuments(ctx, docs, "knowledgebase")
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: docs, Name: "KnowledgebaseRetriever"}
-	AddReferencesToArgs(args, refs)
-	return args, nil
+	var err error
+	args, l.Finish, err = GenerateKnowledgebaseRetriever(ctx, cli, knowledgebaseName, knowledgebaseNamespace, l.Instance.Spec.CommonRetrieverConfig, args)
+	return args, err
 }
 
 func (l *KnowledgeBaseRetriever) Ready() (isReady bool, msg string) {
@@ -167,4 +97,91 @@ func (l *KnowledgeBaseRetriever) Cleanup() {
 	if l.Finish != nil {
 		l.Finish()
 	}
+}
+
+func GenerateKnowledgebaseRetriever(ctx context.Context, cli client.Client, knowledgebaseName, knowledgebaseNamespace string, retrieverConfig apiretriever.CommonRetrieverConfig, args map[string]any) (outArg map[string]any, finish func(), err error) {
+	knowledgebase := &v1alpha1.KnowledgeBase{}
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: knowledgebaseNamespace, Name: knowledgebaseName}, knowledgebase); err != nil {
+		return nil, nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
+	}
+
+	embedderReq := knowledgebase.Spec.Embedder
+	vectorStoreReq := knowledgebase.Spec.VectorStore
+	if embedderReq == nil || vectorStoreReq == nil {
+		return nil, nil, fmt.Errorf("knowledgebase %s: embedder or vectorstore or filegroups is not setting", knowledgebaseName)
+	}
+
+	embedder := &v1alpha1.Embedder{}
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: embedderReq.GetNamespace(knowledgebaseNamespace), Name: embedderReq.Name}, embedder); err != nil {
+		return nil, nil, fmt.Errorf("can't find the embedder in cluster: %w", err)
+	}
+	em, err := langchainwrap.GetLangchainEmbedder(ctx, embedder, cli, "")
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't convert to langchain embedder: %w", err)
+	}
+	vectorStore := &v1alpha1.VectorStore{}
+	if err := cli.Get(ctx, types.NamespacedName{Namespace: vectorStoreReq.GetNamespace(knowledgebaseNamespace), Name: vectorStoreReq.Name}, vectorStore); err != nil {
+		return nil, nil, fmt.Errorf("can't find the vectorstore in cluster: %w", err)
+	}
+	var s vectorstores.VectorStore
+	s, finish, err = pkgvectorstore.NewVectorStore(ctx, vectorStore, em, knowledgebase.VectorStoreCollectionName(), cli)
+	if err != nil {
+		return nil, finish, err
+	}
+	logger := klog.FromContext(ctx)
+	logger.V(3).Info(fmt.Sprintf("retriever created[scorethreshold: %f][num: %d]", pointer.Float32Deref(retrieverConfig.ScoreThreshold, 0.0), retrieverConfig.NumDocuments))
+	var retriever vectorstores.Retriever
+	if retrieverConfig.ScoreThreshold != nil {
+		retriever = vectorstores.ToRetriever(s, retrieverConfig.NumDocuments, vectorstores.WithScoreThreshold(*retrieverConfig.ScoreThreshold))
+	} else {
+		retriever = vectorstores.ToRetriever(s, retrieverConfig.NumDocuments)
+	}
+	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
+
+	question, ok := args["question"]
+	if !ok {
+		return nil, finish, errors.New("no question in args")
+	}
+	query, ok := question.(string)
+	if !ok {
+		return nil, finish, errors.New("question not string")
+	}
+	docs, err := retriever.GetRelevantDocuments(ctx, query)
+	if err != nil {
+		return nil, finish, fmt.Errorf("can't get relevant documents: %w", err)
+	}
+	oldDocs := make([]langchaingoschema.Document, 0)
+	v, ok := args[base.LangchaingoRetrieverKeyInArg]
+	if ok {
+		// may exist other retriever, like conversation retriever
+		oldRetriever, ok := v.(langchaingoschema.Retriever)
+		if ok {
+			oldDocs, err = oldRetriever.GetRelevantDocuments(ctx, query)
+			if err != nil {
+				return nil, finish, fmt.Errorf("can't get old doc: %w", err)
+			}
+		}
+	}
+	if len(docs) == 0 && len(oldDocs) == 0 {
+		// FIXME: 需要决定当知识库找不到相关内容，但是conversation知识库存在文档时如何处理
+		v, exist := args[base.APPDocNullReturn]
+		if exist {
+			docNullReturn, ok := v.(string)
+			if ok && len(docNullReturn) > 0 {
+				return nil, finish, &base.RetrieverGetNullDocError{Msg: docNullReturn}
+			}
+		}
+	}
+	// pgvector get score means vector distance, similarity = 1 - vector distance
+	// chroma get score means similarity
+	// we want similarity finally.
+	if vectorStore.Spec.Type() == v1alpha1.VectorStoreTypePGVector {
+		for i := range docs {
+			docs[i].Score = 1 - docs[i].Score
+		}
+	}
+	docs, refs := ConvertDocuments(ctx, docs, "knowledgebase")
+	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: append(docs, oldDocs...), Name: "KnowledgebaseRetriever"}
+	AddReferencesToArgs(args, refs)
+	return args, finish, nil
 }

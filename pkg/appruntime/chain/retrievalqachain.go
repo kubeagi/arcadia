@@ -27,10 +27,14 @@ import (
 	langchainschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
+	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
+	"github.com/kubeagi/arcadia/pkg/appruntime/log"
 	appruntimeretriever "github.com/kubeagi/arcadia/pkg/appruntime/retriever"
 )
 
@@ -56,7 +60,7 @@ func (l *RetrievalQAChain) Init(ctx context.Context, cli client.Client, _ map[st
 	return nil
 }
 
-func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
+func (l *RetrievalQAChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
 	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
@@ -73,6 +77,19 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	if !ok {
 		return args, errors.New("prompt not prompts.FormatPrompter")
 	}
+	vkb, ok := args[base.ConversationKnowledgeBaseInArg]
+	if ok {
+		kb, ok := vkb.(*arcadiav1alpha1.KnowledgeBase)
+		if !ok {
+			return args, errors.New("knowledgebase not arcadiav1alpha1.KnowledgeBase")
+		}
+		args, finish, err := appruntimeretriever.GenerateKnowledgebaseRetriever(ctx, cli, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{ScoreThreshold: pointer.Float32(apiretriever.DefaultScoreThreshold), NumDocuments: 20}, args)
+		if err != nil {
+			return args, err
+		}
+		defer finish()
+	}
+
 	v3, ok := args["retriever"]
 	if !ok {
 		return args, errors.New("no retriever")
@@ -80,17 +97,6 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 	retriever, ok := v3.(langchainschema.Retriever)
 	if !ok {
 		return args, errors.New("retriever not schema.Retriever")
-	}
-	// Add the agent output to qachain context
-	if args[base.AgentOutputInArg] != nil {
-		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get answer from agent: %s", args[base.AgentOutputInArg]))
-		docs, err := retriever.GetRelevantDocuments(ctx, args["question"].(string))
-		if err != nil {
-			return args, fmt.Errorf("can't get doc from retriever: %w", err)
-		}
-		doc := langchainschema.Document{PageContent: fmt.Sprintf("q: %s\na: %s", args["question"].(string), args[base.AgentOutputInArg].(string))}
-		docs = append(docs, doc)
-		retriever = &appruntimeretriever.Fakeretriever{Docs: docs, Name: "AddAgentOutputRetriever"}
 	}
 
 	v4, ok := args[base.LangchaingoChatMessageHistoryKeyInArg]
@@ -124,11 +130,43 @@ func (l *RetrievalQAChain) Run(ctx context.Context, _ client.Client, args map[st
 		}
 	}
 
+	/*
+		Note: we can only add context to retriever's documents not args["context"] if we use ConversationalRetrievalQA chain
+		see https://github.com/kubeagi/langchaingo/blob/ca2f549e8d91788fd76a9f8706afcaae617275c5/chains/stuff_documents.go#L54-L69
+		`args` are reset multiple times, and each Call uses different `args`.
+		chains.Predict ---> ConversationalRetrievalQA.Call ---> CondenseQuestionChain.Call ---> Retriever.GetRelevantDocuments ---> combineDocumentsChain.Call
+	*/
+	// Add the agent output to qachain context
+	if args[base.AgentOutputInArg] != nil {
+		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get context from agent: %s", args[base.AgentOutputInArg]))
+		docs, err := retriever.GetRelevantDocuments(ctx, args["question"].(string))
+		if err != nil {
+			return args, fmt.Errorf("can't get doc from retriever: %w", err)
+		}
+		doc := langchainschema.Document{PageContent: fmt.Sprintf("Tool Output of %s is: %s", args["question"].(string), args[base.AgentOutputInArg].(string))}
+		docs = append(docs, doc)
+		retriever = &appruntimeretriever.Fakeretriever{Docs: docs, Name: "AddAgentOutputRetriever"}
+	}
+	// Add the mapReduceDocument output to the context if it's not empty
+	if args[base.MapReduceDocumentOutputInArg] != nil {
+		// Note: Now args[base.MapReduceDocumentOutputInArg] will not be null only for the first "summarize content of uploaded document" Chat request
+		// after uploading the file, and we don't need to bring in the content of the knowledgebase at this point.
+		// see https://github.com/kubeagi/arcadia/pull/887#discussion_r1531469465
+		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get context from mapReduceDocument: %s", args[base.MapReduceDocumentOutputInArg]))
+		args[base.RuntimeRetrieverReferencesKeyInArg] = nil
+		doc := langchainschema.Document{PageContent: args[base.MapReduceDocumentOutputInArg].(string)}
+		retriever = &appruntimeretriever.Fakeretriever{Docs: []langchainschema.Document{doc}, Name: "AddMapReduceOutputRetriever"}
+	}
+
 	llmChain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
 		llmChain.Memory = GetMemory(llm, instance.Spec.Memory, history, "", "")
 	}
-	chain := chains.NewConversationalRetrievalQA(chains.NewStuffDocuments(llmChain), chains.LoadCondenseQuestionGenerator(llm), retriever, GetMemory(llm, instance.Spec.Memory, history, "", ""))
+	llmChain.CallbacksHandler = log.KLogHandler{LogLevel: 3}
+	condenseQustionGenerator := chains.LoadCondenseQuestionGenerator(llm)
+	condenseQustionGenerator.CallbacksHandler = log.KLogHandler{LogLevel: 3}
+	chain := chains.NewConversationalRetrievalQA(chains.NewStuffDocuments(llmChain), condenseQustionGenerator, retriever, GetMemory(llm, instance.Spec.Memory, history, "", ""))
+	chain.RephraseQuestion = false
 	l.ConversationalRetrievalQA = chain
 	args["query"] = args["question"]
 	var out string

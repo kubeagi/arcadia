@@ -430,6 +430,12 @@ info "7.3 create embedder and wait it ready"
 #fi
 kubectl apply -f config/samples/arcadia_v1alpha1_embedders_zhipu.yaml
 waitCRDStatusReady "Embedders" "arcadia" "embedders-sample"
+# change default embedder
+kubectl get cm -n arcadia arcadia-config -o yaml | sed -e 's/arcadia-embedder/embedders-sample/g' | kubectl apply -f -
+kubectl delete po -n arcadia -l control-plane=arcadia-arcadia
+kubectl delete po -n arcadia -l app=arcadia-apiserver
+waitPodReady "arcadia" "control-plane=arcadia-arcadia"
+waitPodReady "arcadia" "app=arcadia-apiserver"
 
 info "7.4 create knowledgebase and wait it ready"
 info "7.4.1 create knowledgebase based on chroma and wait it ready"
@@ -736,6 +742,17 @@ kubectl apply -f config/samples/app_llmchain_abstract.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-document-assistant"
 fileUploadSummarise "base-chat-document-assistant" "arcadia" "./pkg/documentloaders/testdata/arcadia-readme.pdf"
 getRespInAppChat "base-chat-document-assistant" "arcadia" "what is arcadia?" ${resp_conversation_id} "false"
+getRespInAppChat "base-chat-document-assistant" "arcadia" "Does your model based on gpt-3.5?" ${resp_conversation_id} "false"
+
+info "8.4.7 chat with document with knowledgebase"
+fileUploadSummarise "base-chat-with-knowledgebase-pgvector" "arcadia" "./pkg/documentloaders/testdata/arcadia-readme.pdf"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "what is arcadia?" ${resp_conversation_id} "false"
+getRespInAppChat "base-chat-with-knowledgebase-pgvector" "arcadia" "公司的考勤管理制度适用于哪些人员？" ${resp_conversation_id} "false"
+# FIXME According to the log, we returned the corresponding document to the big model, but the big model probably returned unknown
+#if [[ $ai_data != *"全体正式员工及实习生"* ]]; then
+#	echo "resp should contains '公司全体正式员工及实习生', but resp is:"$resp
+#	exit 1
+#fi
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"

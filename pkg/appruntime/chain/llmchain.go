@@ -27,6 +27,7 @@ import (
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
@@ -55,7 +56,20 @@ func (l *LLMChain) Init(ctx context.Context, cli client.Client, args map[string]
 	return nil
 }
 
-func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any) (outArgs map[string]any, err error) {
+func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]any) (outArgs map[string]any, err error) {
+	if args[base.ConversationKnowledgeBaseInArg] != nil {
+		chain := NewRetrievalQAChain(l.BaseNode)
+		chain.Instance = &v1alpha1.RetrievalQAChain{
+			Spec: v1alpha1.RetrievalQAChainSpec{
+				CommonChainConfig: v1alpha1.CommonChainConfig{
+					Memory: v1alpha1.Memory{
+						ConversionWindowSize: pointer.Int(v1alpha1.DefaultConversionWindowSize),
+					},
+				},
+			},
+		}
+		return chain.Run(ctx, cli, args)
+	}
 	v1, ok := args[base.LangchaingoLLMKeyInArg]
 	if !ok {
 		return args, errors.New("no llm")
@@ -110,6 +124,12 @@ func (l *LLMChain) Run(ctx context.Context, _ client.Client, args map[string]any
 		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get answer from upstream: %s", args[base.AgentOutputInArg]))
 		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args[base.AgentOutputInArg])
 	}
+	// Add the mapReduceDocument output to the context if it's not empty
+	if args[base.MapReduceDocumentOutputInArg] != nil {
+		klog.FromContext(ctx).V(5).Info(fmt.Sprintf("get answer from document: %s", args[base.MapReduceDocumentOutputInArg]))
+		args["context"] = fmt.Sprintf("%s\n%s", args["context"], args[base.MapReduceDocumentOutputInArg])
+	}
+
 	chain := chains.NewLLMChain(llm, prompt)
 	if history != nil {
 		chain.Memory = GetMemory(llm, instance.Spec.Memory, history, "", "")

@@ -23,6 +23,8 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
+const DefaultConversionWindowSize = 5
+
 // LLMChainSpec defines the desired state of LLMChain
 type LLMChainSpec struct {
 	v1alpha1.CommonSpec `json:",inline"`
