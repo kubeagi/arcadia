@@ -15,5 +15,5 @@ jobs:
         with:
           ignore_words_file: .github/.codespellignore
           check_filenames: true
-          skip: go.*,**/*.drawio,./deploy/charts/*,./config/crd/*,./deploy/llms/*,./deploy/pgvector
+          skip: go.*,**/*.drawio,./deploy/charts/*,./config/crd/*,./deploy/llms/*,./deploy/pgvector,./pkg/documentloaders/testdata
 

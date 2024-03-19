@@ -2,7 +2,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Application
 metadata:
   name: base-chat-document-assistant
-  namespace: kubeagi-system
+  namespace: arcadia
 spec:
   displayName: "AI文档对话助手"
   description: "最简单的AI文档对话助手"
@@ -37,7 +37,7 @@ spec:
       ref:
         apiGroup: arcadia.kubeagi.k8s.com.cn
         kind: LLM
-        name: qwen-0-5b-external
+        name: app-shared-llm-service
       nextNodeName: ["chain-node"]
     - name: chain-node
       displayName: "llm chain"
@@ -58,7 +58,7 @@ apiVersion: prompt.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: Prompt
 metadata:
   name: base-chat-document-assistant
-  namespace: kubeagi-system
+  namespace: arcadia
   annotations:
     arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"Input","length":1}]'
     arcadia.kubeagi.k8s.com.cn/output-rules: '[{"length":1}]'
@@ -73,7 +73,7 @@ apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: DocumentLoader
 metadata:
   name: base-chat-document-assistant
-  namespace: kubeagi-system
+  namespace: arcadia
 spec:
   displayName: "llm chain"
   description: "llm chain"
@@ -84,16 +84,13 @@ apiVersion: chain.arcadia.kubeagi.k8s.com.cn/v1alpha1
 kind: LLMChain
 metadata:
   name: base-chat-document-assistant
-  namespace: kubeagi-system
+  namespace: arcadia
   annotations:
     arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"LLM","group":"arcadia.kubeagi.k8s.com.cn","length":1},{"kind":"prompt","group":"prompt.arcadia.kubeagi.k8s.com.cn","length":1}]'
     arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"Output","length":1}]'
 spec:
   displayName: "llm chain"
   description: "llm chain"
-  maxNumberOfConccurent: 1
-  maxTokens: 20480
-  maxLength: 20480
-  model: "6ac7baa2-71e7-4ffc-bd49-9356e743ecbb"
   memory:
-    maxTokenLimit: 20480
+    conversionWindowSize: 2
+  model: glm-4
