@@ -77,6 +77,10 @@ func obj2model(model *v1alpha1.Model) (*generated.Model, error) {
 		UpdateTimestamp:   &updateTime,
 		Status:            &status,
 		Message:           &message,
+		HuggingFaceRepo:   &model.Spec.HuggingFaceRepo,
+		ModelScopeRepo:    &model.Spec.ModelScopeRepo,
+		Revision:          &model.Spec.Revision,
+		ModelSource:       &model.Spec.ModelSource,
 	}
 	return &md, nil
 }
@@ -91,6 +95,18 @@ func CreateModel(ctx context.Context, c client.Client, input generated.CreateMod
 			Types: input.Types,
 		},
 	}
+	if *input.ModelSource == common.ModelSourceModelscope {
+		if *input.Revision == "" {
+			return nil, errors.New("argument revision is required")
+		}
+		model.Spec.ModelScopeRepo = *input.ModelScopeRepo
+		model.Spec.Revision = *input.Revision
+	}
+	if *input.ModelSource == common.ModelSourceHuggingface {
+		model.Spec.HuggingFaceRepo = *input.HuggingFaceRepo
+		model.Spec.Revision = *input.Revision
+	}
+	model.Spec.ModelSource = *input.ModelSource
 	model.Spec.DisplayName = pointer.StringDeref(input.DisplayName, model.Spec.DisplayName)
 	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
 	common.SetCreator(ctx, &model.Spec.CommonSpec)
@@ -114,6 +130,17 @@ func UpdateModel(ctx context.Context, c client.Client, input *generated.UpdateMo
 	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
 	model.Spec.Types = pointer.StringDeref(input.Types, model.Spec.Types)
 
+	if model.Spec.ModelSource == common.ModelSourceModelscope {
+		if *input.Revision == "" {
+			return nil, errors.New("argument revision is required")
+		}
+		model.Spec.ModelScopeRepo = *input.ModelScopeRepo
+		model.Spec.Revision = *input.Revision
+	}
+	if model.Spec.ModelSource == common.ModelSourceHuggingface {
+		model.Spec.HuggingFaceRepo = *input.HuggingFaceRepo
+		model.Spec.Revision = *input.Revision
+	}
 	err = c.Update(ctx, model)
 	if err != nil {
 		return nil, err

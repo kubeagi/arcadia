@@ -21,6 +21,10 @@ query listModels($input: ListModelInput!,$filesInput: FileFilter){
           message
           types
           updateTimestamp
+          huggingFaceRepo
+          modelScopeRepo
+          revision
+          modelSource
           files(input: $filesInput) {
             totalCount
             hasNextPage
@@ -59,6 +63,10 @@ query getModel($name: String!, $namespace: String!,$filesInput: FileFilter) {
       message
       types
       updateTimestamp
+      huggingFaceRepo
+      modelScopeRepo
+      revision
+      modelSource
       files(input: $filesInput) {
         totalCount
         hasNextPage
@@ -95,6 +103,10 @@ mutation createModel($input: CreateModelInput!) {
       message
       types
       updateTimestamp
+      huggingFaceRepo
+      modelScopeRepo
+      revision
+      modelSource
     }
   }
 }
@@ -117,6 +129,10 @@ mutation updateModel($input: UpdateModelInput) {
       message
       types
       updateTimestamp
+      huggingFaceRepo
+      modelScopeRepo
+      revision
+      modelSource
     }
   }
 }

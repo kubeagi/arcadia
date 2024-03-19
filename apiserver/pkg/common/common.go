@@ -52,6 +52,13 @@ var (
 	ModelTypeEmbedding = "embedding"
 )
 
+// ModelSource
+var (
+	ModelSourceLocal       = "local"
+	ModelSourceModelscope  = "modelscope"
+	ModelSourceHuggingface = "huggingface"
+)
+
 func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
 	systemDatasource, err := config.GetSystemDatasource(ctx, mgrClient)
 	if err != nil {
