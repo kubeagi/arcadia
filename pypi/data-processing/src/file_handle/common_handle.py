@@ -1087,7 +1087,7 @@ def _generate_qa_list(content, llm_config):
 
             qa_list.extend(data.get("data"))
         else:
-            return {"status": 1000, "message": "暂时不支持该类型的模型", "data": ""}
+            return {"status": 1000, "message": f"暂时不支持 {llm_type} 类型的模型", "data": ""}
 
     return {"status": 200, "message": "", "data": qa_list}
 

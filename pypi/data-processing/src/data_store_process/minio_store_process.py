@@ -111,6 +111,7 @@ async def text_manipulate(
         # 文件处理
         task_status = "process_complete"
         error_msg = ""
+        exc_msg = ""
         # 存放每个文件对应的数据量
         data_volumes_file = []
 
@@ -258,6 +259,7 @@ async def text_manipulate(
                 )
                 task_status = "process_fail"
                 error_msg = result.get("message")
+                exc_msg = result.get("data")
 
                 # 新增阶段性日志-qa_split
                 if has_qa_split:
@@ -347,6 +349,7 @@ async def text_manipulate(
             "id": log_id,
             "status": task_status,
             "error_msg": error_msg,
+            "exc_msg": exc_msg,
             "creator": req_json["creator"],
         }
         data_process_log_db_operate.update_status_by_id(update_log_item, pool=pool)
@@ -375,6 +378,7 @@ async def text_manipulate(
             "id": log_id,
             "status": "process_fail",
             "error_msg": "未知错误，请联系管理员！",
+            "exc_msg": traceback.format_exc(),
             "creator": req_json.get("creator"),
         }
         data_process_log_db_operate.update_status_by_id(update_log_item, pool=pool)
@@ -451,6 +455,7 @@ def text_manipulate_retry(req_json, pool):
 
         task_status = "process_complete"
         error_msg = ""
+        exc_msg = ""
         if len(document_list.get("data")) > 0:
             # 文件处理
             # 存放每个文件对应的数据量
@@ -486,6 +491,7 @@ def text_manipulate_retry(req_json, pool):
                     )
                     task_status = "process_fail"
                     error_msg = result.get("message")
+                    exc_msg = result.get("data")
                     break
 
                 data_volumes_file.append(result["data"])
@@ -559,6 +565,7 @@ def text_manipulate_retry(req_json, pool):
             "id": log_id,
             "status": task_status,
             "error_msg": error_msg,
+            "exc_msg": exc_msg,
             "creator": creator,
         }
         data_process_log_db_operate.update_status_by_id(update_log_item, pool=pool)
@@ -587,6 +594,7 @@ def text_manipulate_retry(req_json, pool):
             "id": log_id,
             "status": "process_fail",
             "error_msg": "未知错误，请联系管理员！",
+            "exc_msg": traceback.format_exc(),
             "creator": creator,
         }
         data_process_log_db_operate.update_status_by_id(update_log_item, pool=pool)
@@ -671,6 +679,7 @@ def _update_dateset_status(
             "id": log_id,
             "status": "process_fail",
             "error_msg": update_dataset.get("message"),
+            "exc_msg": update_dataset.get("data"),
             "creator": creator,
         }
         data_process_log_db_operate.update_status_by_id(update_log_item, pool=pool)
@@ -932,6 +941,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
     file_name = document.get("file_name")
     task_id = task_info.get("id")
     document_id = document.get("id")
+    document_type = document.get("document_type")
     support_type = task_info.get("data_process_config_info")
 
     # 新增阶段性日志-开始
@@ -993,7 +1003,6 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
             file_name=file_name,
         )
 
-        document_type = document.get("document_type")
         if document_type in ["pdf"]:
             # 处理PDF文件
             pdf_handle = PDFHandle(

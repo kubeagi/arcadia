@@ -82,6 +82,7 @@ def update_status_by_id(req_json, pool):
         "id": req_json["id"],
         "status": req_json["status"],
         "error_msg": req_json["error_msg"],
+        "exc_msg": req_json["exc_msg"],
         "end_datetime": now,
         "update_datetime": now,
         "update_program": program,
@@ -93,6 +94,7 @@ def update_status_by_id(req_json, pool):
           status = %(status)s,
           end_datetime = %(end_datetime)s,
           error_msg = %(error_msg)s,
+          exc_msg = %(exc_msg)s,
           update_datetime = %(update_datetime)s,
           update_program = %(update_program)s,
           update_user = %(update_user)s
