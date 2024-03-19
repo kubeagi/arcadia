@@ -83,7 +83,7 @@ class QARemoveDuplicate():
                     ]
                 )
             )
-            return {"status": 1000, "message": "QA数据向量化失败，请检查向量化模型是否正常！", "data": ""}
+            return {"status": 1000, "message": "QA数据向量化失败，请检查向量化模型是否正常！", "data": traceback.format_exc()}
 
     def _remove_qa_embedding_data_by_id(
         self,
@@ -166,7 +166,7 @@ class QARemoveDuplicate():
                     ]
                 )
             )
-            return {"status": 1000, "message": "QA去重失败，未知原因，请联系管理员！", "data": ""}
+            return {"status": 1000, "message": "QA去重失败，未知原因，请联系管理员！", "data": traceback.format_exc()}
 
     def qa_remove_duplicate(
         self,
