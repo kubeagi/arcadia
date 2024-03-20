@@ -85,7 +85,7 @@ class PDFHandle(BaseHandle):
             all_document_for_process = []
             for document in documents:
                 chunck_id = ulid.ulid()
-                content = document.page_content.replace("\n", "")
+                content = document.page_content.replace("\n", "").replace("\x00", "")
                 chunk_insert_item = {
                     "id": chunck_id,
                     "document_id": self._document_id,
