@@ -68,6 +68,9 @@ func NewServerAndRun(conf config.ServerConfig) {
 	chatGroup := r.Group("/chat")
 	registerChat(chatGroup, conf)
 
+	fg := r.Group("/forward")
+	registerForward(fg, conf)
+
 	//  for swagger
 	if conf.EnableSwagger {
 		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", conf.Host, conf.Port)
