@@ -1,0 +1,15 @@
+query listNodes($input: ListNodeInput) {
+    Node {
+        listNodes(input: $input) {
+            totalCount
+            hasNextPage
+            nodes {
+                __typename
+                ... on Node {
+                    name
+                    labels
+                }
+            }
+        }
+    }
+}

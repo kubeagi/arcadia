@@ -298,3 +298,7 @@ models:
         resolver: true
       listGPT:
         resolver: true
+  NodeQuery:
+    fields:
+      listNodes:
+        resolver: true

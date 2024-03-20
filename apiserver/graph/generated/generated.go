@@ -59,6 +59,7 @@ type ResolverRoot interface {
 	ModelServiceMutation() ModelServiceMutationResolver
 	ModelServiceQuery() ModelServiceQueryResolver
 	Mutation() MutationResolver
+	NodeQuery() NodeQueryResolver
 	Query() QueryResolver
 	RAG() RAGResolver
 	RAGMutation() RAGMutationResolver
@@ -526,6 +527,15 @@ type ComplexityRoot struct {
 		Worker           func(childComplexity int) int
 	}
 
+	Node struct {
+		Labels func(childComplexity int) int
+		Name   func(childComplexity int) int
+	}
+
+	NodeQuery struct {
+		ListNodes func(childComplexity int, input *ListNodeInput) int
+	}
+
 	NodeSelectorRequirement struct {
 		Key      func(childComplexity int) int
 		Operator func(childComplexity int) int
@@ -579,6 +589,7 @@ type ComplexityRoot struct {
 		Llm              func(childComplexity int) int
 		Model            func(childComplexity int) int
 		ModelService     func(childComplexity int) int
+		Node             func(childComplexity int) int
 		Rag              func(childComplexity int) int
 		RayCluster       func(childComplexity int) int
 		VersionedDataset func(childComplexity int) int
@@ -878,6 +889,9 @@ type MutationResolver interface {
 	VersionedDataset(ctx context.Context) (*VersionedDatasetMutation, error)
 	Worker(ctx context.Context) (*WorkerMutation, error)
 }
+type NodeQueryResolver interface {
+	ListNodes(ctx context.Context, obj *NodeQuery, input *ListNodeInput) (*PaginatedResult, error)
+}
 type QueryResolver interface {
 	Hello(ctx context.Context, name string) (string, error)
 	Application(ctx context.Context) (*ApplicationQuery, error)
@@ -890,6 +904,7 @@ type QueryResolver interface {
 	Llm(ctx context.Context) (*LLMQuery, error)
 	Model(ctx context.Context) (*ModelQuery, error)
 	ModelService(ctx context.Context) (*ModelServiceQuery, error)
+	Node(ctx context.Context) (*NodeQuery, error)
 	Rag(ctx context.Context) (*RAGQuery, error)
 	RayCluster(ctx context.Context) (*RayClusterQuery, error)
 	VersionedDataset(ctx context.Context) (*VersionedDatasetQuery, error)
@@ -3395,6 +3410,32 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Worker(childComplexity), true
 
+	case "Node.labels":
+		if e.complexity.Node.Labels == nil {
+			break
+		}
+
+		return e.complexity.Node.Labels(childComplexity), true
+
+	case "Node.name":
+		if e.complexity.Node.Name == nil {
+			break
+		}
+
+		return e.complexity.Node.Name(childComplexity), true
+
+	case "NodeQuery.listNodes":
+		if e.complexity.NodeQuery.ListNodes == nil {
+			break
+		}
+
+		args, err := ec.field_NodeQuery_listNodes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.NodeQuery.ListNodes(childComplexity, args["input"].(*ListNodeInput)), true
+
 	case "NodeSelectorRequirement.key":
 		if e.complexity.NodeSelectorRequirement.Key == nil {
 			break
@@ -3637,6 +3678,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ModelService(childComplexity), true
+
+	case "Query.Node":
+		if e.complexity.Query.Node == nil {
+			break
+		}
+
+		return e.complexity.Query.Node(childComplexity), true
 
 	case "Query.RAG":
 		if e.complexity.Query.Rag == nil {
@@ -4605,6 +4653,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputListKnowledgeBaseInput,
 		ec.unmarshalInputListModelInput,
 		ec.unmarshalInputListModelServiceInput,
+		ec.unmarshalInputListNodeInput,
 		ec.unmarshalInputListRAGInput,
 		ec.unmarshalInputListVersionedDatasetInput,
 		ec.unmarshalInputListWorkerInput,
@@ -6023,7 +6072,7 @@ type Tool {
     params: Map
 }
 
-union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG | GPT
+union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG | GPT | Node
 `, BuiltIn: false},
 	{Name: "../schema/gpt.graphqls", Input: `type GPTQuery {
     getGPT(name: String!): GPT!
@@ -6996,6 +7045,37 @@ extend type Query {
     ModelService: ModelServiceQuery
 }
 `, BuiltIn: false},
+	{Name: "../schema/node.graphqls", Input: `
+type Node {
+    name: String!
+    labels: Map
+}
+
+
+input ListNodeInput {
+    """标签选择器"""
+    labelSelector: String
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: -1,返回全部
+    """
+    pageSize: Int
+}
+
+type NodeQuery {
+    listNodes(input: ListNodeInput): PaginatedResult!
+}
+
+extend type Query {
+    Node: NodeQuery
+}`, BuiltIn: false},
 	{Name: "../schema/rag.graphqls", Input: `type Parameter {
     key: String
     value: String
@@ -8624,6 +8704,21 @@ func (ec *executionContext) field_Mutation_hello_args(ctx context.Context, rawAr
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_NodeQuery_listNodes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ListNodeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOListNodeInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListNodeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -24068,6 +24163,158 @@ func (ec *executionContext) fieldContext_Mutation_Worker(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Node_name(ctx context.Context, field graphql.CollectedField, obj *Node) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Node_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Node_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Node_labels(ctx context.Context, field graphql.CollectedField, obj *Node) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Node_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Labels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Node_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeQuery_listNodes(ctx context.Context, field graphql.CollectedField, obj *NodeQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeQuery_listNodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeQuery().ListNodes(rctx, obj, fc.Args["input"].(*ListNodeInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PaginatedResult)
+	fc.Result = res
+	return ec.marshalNPaginatedResult2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPaginatedResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeQuery_listNodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PaginatedResult_hasNextPage(ctx, field)
+			case "nodes":
+				return ec.fieldContext_PaginatedResult_nodes(ctx, field)
+			case "page":
+				return ec.fieldContext_PaginatedResult_page(ctx, field)
+			case "pageSize":
+				return ec.fieldContext_PaginatedResult_pageSize(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PaginatedResult_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginatedResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_NodeQuery_listNodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NodeSelectorRequirement_key(ctx context.Context, field graphql.CollectedField, obj *NodeSelectorRequirement) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NodeSelectorRequirement_key(ctx, field)
 	if err != nil {
@@ -25627,6 +25874,51 @@ func (ec *executionContext) fieldContext_Query_ModelService(ctx context.Context,
 				return ec.fieldContext_ModelServiceQuery_checkModelService(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ModelServiceQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_Node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_Node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Node(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*NodeQuery)
+	fc.Result = res
+	return ec.marshalONodeQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_Node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "listNodes":
+				return ec.fieldContext_NodeQuery_listNodes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -35700,6 +35992,47 @@ func (ec *executionContext) unmarshalInputListModelServiceInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputListNodeInput(ctx context.Context, obj interface{}) (ListNodeInput, error) {
+	var it ListNodeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"labelSelector", "page", "pageSize"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "labelSelector":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labelSelector"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LabelSelector = data
+		case "page":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputListRAGInput(ctx context.Context, obj interface{}) (ListRAGInput, error) {
 	var it ListRAGInput
 	asMap := map[string]interface{}{}
@@ -37688,6 +38021,13 @@ func (ec *executionContext) _PageNode(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._GPT(ctx, sel, obj)
+	case Node:
+		return ec._Node(ctx, sel, &obj)
+	case *Node:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Node(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -41933,6 +42273,117 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var nodeImplementors = []string{"Node", "PageNode"}
+
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj *Node) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Node")
+		case "name":
+			out.Values[i] = ec._Node_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "labels":
+			out.Values[i] = ec._Node_labels(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var nodeQueryImplementors = []string{"NodeQuery"}
+
+func (ec *executionContext) _NodeQuery(ctx context.Context, sel ast.SelectionSet, obj *NodeQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeQuery")
+		case "listNodes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeQuery_listNodes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var nodeSelectorRequirementImplementors = []string{"NodeSelectorRequirement"}
 
 func (ec *executionContext) _NodeSelectorRequirement(ctx context.Context, sel ast.SelectionSet, obj *NodeSelectorRequirement) graphql.Marshaler {
@@ -42429,6 +42880,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_ModelService(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "Node":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_Node(ctx, field)
 				return res
 			}
 
@@ -46646,6 +47116,14 @@ func (ec *executionContext) unmarshalOListModelServiceInput2ᚖgithubᚗcomᚋku
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOListNodeInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐListNodeInput(ctx context.Context, v interface{}) (*ListNodeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputListNodeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
 	if v == nil {
 		return nil, nil
@@ -46688,6 +47166,13 @@ func (ec *executionContext) marshalOModelServiceQuery2ᚖgithubᚗcomᚋkubeagi�
 		return graphql.Null
 	}
 	return ec._ModelServiceQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONodeQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeQuery(ctx context.Context, sel ast.SelectionSet, v *NodeQuery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeQuery(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONodeSelectorRequirement2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐNodeSelectorRequirement(ctx context.Context, sel ast.SelectionSet, v []*NodeSelectorRequirement) graphql.Marshaler {
