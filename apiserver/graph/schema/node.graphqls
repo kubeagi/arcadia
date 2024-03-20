@@ -1,0 +1,31 @@
+
+type Node {
+    name: String!
+    labels: Map
+}
+
+
+input ListNodeInput {
+    """标签选择器"""
+    labelSelector: String
+
+    """
+    分页页码，
+    规则: 从1开始，默认是1
+    """
+    page: Int
+
+    """
+    每页数量，
+    规则: -1,返回全部
+    """
+    pageSize: Int
+}
+
+type NodeQuery {
+    listNodes(input: ListNodeInput): PaginatedResult!
+}
+
+extend type Query {
+    Node: NodeQuery
+}

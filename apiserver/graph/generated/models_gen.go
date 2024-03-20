@@ -1082,6 +1082,17 @@ type ListModelServiceInput struct {
 	APIType *string `json:"apiType,omitempty"`
 }
 
+type ListNodeInput struct {
+	// 标签选择器
+	LabelSelector *string `json:"labelSelector,omitempty"`
+	// 分页页码，
+	// 规则: 从1开始，默认是1
+	Page *int `json:"page,omitempty"`
+	// 每页数量，
+	// 规则: -1,返回全部
+	PageSize *int `json:"pageSize,omitempty"`
+}
+
 type ListRAGInput struct {
 	AppName   string `json:"appName"`
 	Namespace string `json:"namespace"`
@@ -1251,6 +1262,17 @@ type ModelServiceQuery struct {
 }
 
 type Mutation struct {
+}
+
+type Node struct {
+	Name   string                 `json:"name"`
+	Labels map[string]interface{} `json:"labels,omitempty"`
+}
+
+func (Node) IsPageNode() {}
+
+type NodeQuery struct {
+	ListNodes PaginatedResult `json:"listNodes"`
 }
 
 type NodeSelectorRequirement struct {
