@@ -179,38 +179,6 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
-	rayClusterAddress := ""
-	pythonVersion := ""
-
-	// Get the real GPU requirement from env if configured
-	// this will be the total GPU from ray resource pool, not the resource requests/limits
-	gpuCount, _ := strconv.Atoi(runner.NumberOfGPUs())
-	rayClusterIndex := 0
-	for _, envItem := range runner.w.Spec.AdditionalEnvs {
-		if envItem.Name == "NUMBER_GPUS" {
-			gpuCount, _ = strconv.Atoi(envItem.Value)
-		}
-		if envItem.Name == "RAY_CLUSTER_INDEX" {
-			rayClusterIndex, _ = strconv.Atoi(envItem.Value)
-		}
-	}
-
-	// Get ray config from configMap
-	if gpuCount > 1 {
-		rayClusters, err := config.GetRayClusters(ctx, runner.c)
-		if err != nil || len(rayClusters) == 0 {
-			klog.Warningln("no ray cluster configured, fallback to local resource: ", err)
-		} else {
-			// Use the 1st ray cluster for now
-			// TODO: let user to select with ray cluster to use
-			rayClusterAddress = rayClusters[rayClusterIndex].HeadAddress
-			pythonVersion = rayClusters[rayClusterIndex].PythonVersion
-			klog.Infof("run worker using ray: %s, number of GPU: %s", rayClusterAddress, runner.NumberOfGPUs())
-		}
-	} else {
-		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
-	}
-
 	modelFileDir := fmt.Sprintf("/data/models/%s", model.Name)
 	additionalEnvs := []corev1.EnvVar{}
 	// --enforce-eager to disable cupy
@@ -232,8 +200,43 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_USE_MODELSCOPE", Value: "True"})
 		}
 	}
-
 	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "FASTCHAT_MODEL_NAME_PATH", Value: modelFileDir})
+
+	// Get the real GPU requirement from env if configured
+	// this will be the total GPU from ray resource pool, not the resource requests/limits
+	gpuCount, _ := strconv.Atoi(runner.NumberOfGPUs())
+	for _, envItem := range runner.w.Spec.AdditionalEnvs {
+		if envItem.Name == "NUMBER_GPUS" {
+			gpuCount, _ = strconv.Atoi(envItem.Value)
+		}
+		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
+		// Get the ray cluster address if configured
+		if envItem.Name == "RAY_CLUSTER_INDEX" {
+			rayClusterIndex, _ := strconv.Atoi(envItem.Value)
+			rayClusters, err := config.GetRayClusters(ctx, runner.c)
+			if err != nil || len(rayClusters) == 0 {
+				klog.Warningln("no ray cluster configured, fallback to local resource: ", err)
+			} else {
+				// Use the 1st ray cluster for now
+				rayClusterAddress := rayClusters[rayClusterIndex].HeadAddress
+				pythonVersion := rayClusters[rayClusterIndex].GetPythonVersion()
+				rayVersion := rayClusters[rayClusterIndex].GetRayVersion()
+				klog.Infof("run worker using existing ray cluster: %s", rayClusterAddress)
+				additionalEnvs = append(additionalEnvs,
+					corev1.EnvVar{
+						Name:  "RAY_ADDRESS",
+						Value: rayClusterAddress,
+					}, corev1.EnvVar{
+						Name:  "RAY_VERSION",
+						Value: rayVersion,
+					}, corev1.EnvVar{
+						Name:  "PYTHON_VERSION",
+						Value: pythonVersion,
+					})
+			}
+		}
+	}
+
 	img := defaultFastchatVLLMImage
 	if runner.w.Spec.Runner.Image != "" {
 		img = runner.w.Spec.Runner.Image
@@ -250,9 +253,6 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:%d", runner.w.Name+WokerCommonSuffix, runner.w.Namespace, arcadiav1alpha1.DefaultWorkerPort)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
 			{Name: "EXTRA_ARGS", Value: extraAgrs},
-			// Need python version and ray address for distributed inference
-			{Name: "PYTHON_VERSION", Value: pythonVersion},
-			{Name: "RAY_ADDRESS", Value: rayClusterAddress},
 			{Name: "NUMBER_GPUS", Value: strconv.Itoa(gpuCount)},
 		},
 		Ports: []corev1.ContainerPort{

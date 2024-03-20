@@ -200,6 +200,7 @@ ray:
     - name: 3090-2-GPUs
       headAddress: raycluster-kuberay-head-svc.kuberay-system.svc:6379
       pythonVersion: 3.9.18
+      rayVersion: 2.9.3
       dashboardHost: raycluster-kuberay-head-svc.kuberay-system.svc:8265
 
 rerank:

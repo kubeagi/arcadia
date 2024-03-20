@@ -72,4 +72,23 @@ type RayCluster struct {
 	DashboardHost string `json:"dashboardHost,omitempty"`
 	// Overwrite the python version in the woker
 	PythonVersion string `json:"pythonVersion,omitempty"`
+	// Ray cluster version
+	RayVersion string `json:"rayVersion,omitempty"`
+}
+
+// GetRayVersion in ray cluster
+func (rayCluster RayCluster) GetRayVersion() string {
+	// Default ray version is 2.9.3
+	if rayCluster.RayVersion == "" {
+		return "2.9.3"
+	}
+	return rayCluster.RayVersion
+}
+
+func (rayCluster RayCluster) GetPythonVersion() string {
+	// Default python version is 3.8
+	if rayCluster.PythonVersion == "" {
+		return "3.9.18"
+	}
+	return rayCluster.PythonVersion
 }
