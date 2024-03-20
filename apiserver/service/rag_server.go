@@ -38,9 +38,8 @@ type RagAPI struct {
 }
 
 const (
-	ragNameQuery   = "ragName"
-	appNameQuery   = "appName"
-	namespaceHeadr = "namespace"
+	ragNameQuery = "ragName"
+	appNameQuery = "appName"
 )
 
 // @Summary	Get a summary of rag
@@ -57,7 +56,7 @@ const (
 // @Router			/rags/report [get]
 func (r *RagAPI) Summary(ctx *gin.Context) {
 	ragName := ctx.Query(ragNameQuery)
-	namespace := ctx.GetHeader(namespaceHeadr)
+	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
 	if err := r.c.Get(ctx, types.NamespacedName{
@@ -107,7 +106,7 @@ func (r *RagAPI) ReportDetail(ctx *gin.Context) {
 	sortBy := ctx.Query("sortBy")
 	order := ctx.DefaultQuery("order", "desc")
 	ragName := ctx.Query(ragNameQuery)
-	namespace := ctx.GetHeader(namespaceHeadr)
+	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
 	if err := r.c.Get(ctx, types.NamespacedName{
@@ -143,7 +142,7 @@ func (r *RagAPI) ReportDetail(ctx *gin.Context) {
 // @Router			/rags/scatter [get]
 func (r *RagAPI) ReportScatter(ctx *gin.Context) {
 	ragName := ctx.Query(ragNameQuery)
-	namespace := ctx.GetHeader(namespaceHeadr)
+	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
 	if err := r.c.Get(ctx, types.NamespacedName{

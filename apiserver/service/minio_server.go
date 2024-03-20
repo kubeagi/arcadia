@@ -164,7 +164,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 	}
 
 	fileName := ctx.Query("fileName")
-	bucketName := ctx.GetHeader(namespaceHeader)
+	bucketName := NamespaceInHeader(ctx)
 	bucketPath := ctx.Query(bucketPathQuery)
 	etag := ctx.Query("etag")
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
@@ -293,7 +293,7 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 		return
 	}
 
-	body.Bucket = ctx.GetHeader(namespaceHeader)
+	body.Bucket = NamespaceInHeader(ctx)
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
@@ -374,7 +374,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 		return
 	}
 
-	body.Bucket = ctx.GetHeader(namespaceHeader)
+	body.Bucket = NamespaceInHeader(ctx)
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
@@ -453,7 +453,7 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	body.Bucket = ctx.GetHeader(namespaceHeader)
+	body.Bucket = NamespaceInHeader(ctx)
 	err = source.Complete(ctx.Request.Context(),
 		datasource.WithBucket(body.Bucket),
 		datasource.WithBucketPath(body.BucketPath),
@@ -500,7 +500,7 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 		return
 	}
 
-	body.Bucket = ctx.GetHeader(namespaceHeader)
+	body.Bucket = NamespaceInHeader(ctx)
 	bucketPath := strings.TrimSuffix(body.BucketPath, "/")
 	for _, f := range body.Files {
 		go func(fn string) {
@@ -542,7 +542,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 		})
 		return
 	}
-	body.Bucket = ctx.GetHeader(namespaceHeader)
+	body.Bucket = NamespaceInHeader(ctx)
 	if err := source.Abort(ctx.Request.Context(), datasource.WithBucket(body.Bucket), datasource.WithBucketPath(body.BucketPath),
 		datasource.WithFileName(body.FileName), datasource.WithUploadID(body.UploadID)); err != nil {
 		klog.Errorf("failed to stop file upload, error %s", err)
@@ -571,7 +571,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 // @Router			/bff/model/files/stat [get]
 func (m *minioAPI) StatFile(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
-	bucket := ctx.GetHeader(namespaceHeader)
+	bucket := NamespaceInHeader(ctx)
 	bucketPath := ctx.Query(bucketPathQuery)
 
 	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
@@ -639,7 +639,7 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 		end = 0
 	}
 
-	bucket := ctx.GetHeader(namespaceHeader)
+	bucket := NamespaceInHeader(ctx)
 	bucketPath := ctx.Query(bucketPathQuery)
 	fileName := ctx.Query("fileName")
 	versionID := ctx.Query(objectVersionID)
@@ -706,7 +706,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 		})
 		return
 	}
-	bucket = ctx.GetHeader(namespaceHeader)
+	bucket = NamespaceInHeader(ctx)
 	bucketPath = ctx.Query(bucketPathQuery)
 	fileName = ctx.Query("fileName")
 
@@ -787,7 +787,7 @@ func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
 		return
 	}
 
-	bucket := ctx.GetHeader(namespaceHeader)
+	bucket := NamespaceInHeader(ctx)
 	bucketPath := ctx.Query(bucketPathQuery)
 	fileName := ctx.Query("fileName")
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
@@ -830,7 +830,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 		return
 	}
 
-	namespace := ctx.GetHeader(namespaceHeader)
+	namespace := NamespaceInHeader(ctx)
 
 	// read versioneddataset
 	vds, err := versioneddataset.GetVersionedDataset(ctx, m.client, body.VersionedDataset, namespace)
@@ -914,7 +914,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		})
 		return
 	}
-	bucketName := ctx.GetHeader(namespaceHeader)
+	bucketName := NamespaceInHeader(ctx)
 	if bucketName == "" {
 		klog.Errorf("the namespace request header must be set")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{

@@ -73,6 +73,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
+		req.AppNamespace = NamespaceInHeader(c)
 		req.Debug = c.Query("debug") == "true"
 		req.NewChat = len(req.ConversationID) == 0
 		if req.NewChat {
@@ -216,6 +217,7 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
+		req.AppNamespace = NamespaceInHeader(c)
 		req.Debug = c.Query("debug") == "true"
 		// check if this is a new chat
 		req.NewChat = len(req.ConversationID) == 0
@@ -258,6 +260,7 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		req := chat.APPMetadata{}
 		_ = c.ShouldBindJSON(&req)
+		req.AppNamespace = NamespaceInHeader(c)
 		resp, err := cs.server.ListConversations(c, req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error list conversation")
@@ -319,6 +322,7 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
+		req.AppNamespace = NamespaceInHeader(c)
 		resp, err := cs.server.ListMessages(c, req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error list messages")
@@ -354,6 +358,7 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 		req := chat.MessageReqBody{
 			MessageID: messageID,
 		}
+		req.AppNamespace = NamespaceInHeader(c)
 		if err := c.ShouldBindJSON(&req); err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "referenceHandler: error binding json")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
@@ -390,6 +395,7 @@ func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
+		req.AppNamespace = NamespaceInHeader(c)
 		limit := c.Query("limit")
 		limitVal := PromptLimit
 		if limit != "" {
@@ -412,6 +418,10 @@ func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 		klog.FromContext(c.Request.Context()).V(3).Info("get Prompt Starters done", "req", req)
 		c.JSON(http.StatusOK, resp)
 	}
+}
+
+func NamespaceInHeader(c *gin.Context) string {
+	return c.GetHeader(namespaceHeader)
 }
 
 func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
