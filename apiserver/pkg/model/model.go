@@ -95,18 +95,39 @@ func CreateModel(ctx context.Context, c client.Client, input generated.CreateMod
 			Types: input.Types,
 		},
 	}
-	if *input.ModelSource == common.ModelSourceModelscope {
-		if *input.Revision == "" {
-			return nil, errors.New("argument revision is required")
+	modelSource := ""
+	if input.ModelSource != nil {
+		modelSource = *input.ModelSource
+	}
+	revision := ""
+	if input.Revision != nil {
+		revision = *input.Revision
+	}
+
+	switch modelSource {
+	case common.ModelSourceModelscope:
+		modelScopeRepo := ""
+		if input.ModelScopeRepo == nil || *input.ModelScopeRepo == "" {
+			return nil, errors.New("modelScopeRepo is required when modelSource is modelScope")
+		} else {
+			modelScopeRepo = *input.ModelScopeRepo
 		}
-		model.Spec.ModelScopeRepo = *input.ModelScopeRepo
-		model.Spec.Revision = *input.Revision
+		if revision == "" {
+			return nil, errors.New("revision is required when modelSource is modelScope")
+		}
+		model.Spec.ModelScopeRepo = modelScopeRepo
+	case common.ModelSourceHuggingface:
+		huggingfaceRepo := ""
+		if input.HuggingFaceRepo == nil || *input.HuggingFaceRepo == "" {
+			return nil, errors.New("huggingFaceRepo is required when modelSource is huggingface")
+		} else {
+			huggingfaceRepo = *input.HuggingFaceRepo
+		}
+		model.Spec.HuggingFaceRepo = huggingfaceRepo
 	}
-	if *input.ModelSource == common.ModelSourceHuggingface {
-		model.Spec.HuggingFaceRepo = *input.HuggingFaceRepo
-		model.Spec.Revision = *input.Revision
-	}
-	model.Spec.ModelSource = *input.ModelSource
+
+	model.Spec.ModelSource = modelSource
+	model.Spec.Revision = revision
 	model.Spec.DisplayName = pointer.StringDeref(input.DisplayName, model.Spec.DisplayName)
 	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
 	common.SetCreator(ctx, &model.Spec.CommonSpec)
@@ -130,16 +151,23 @@ func UpdateModel(ctx context.Context, c client.Client, input *generated.UpdateMo
 	model.Spec.Description = pointer.StringDeref(input.Description, model.Spec.Description)
 	model.Spec.Types = pointer.StringDeref(input.Types, model.Spec.Types)
 
+	// update modelscoperepo if modelsource is modelscope
 	if model.Spec.ModelSource == common.ModelSourceModelscope {
-		if *input.Revision == "" {
-			return nil, errors.New("argument revision is required")
+		if input.Revision != nil && *input.Revision != "" {
+			model.Spec.Revision = *input.Revision
 		}
-		model.Spec.ModelScopeRepo = *input.ModelScopeRepo
-		model.Spec.Revision = *input.Revision
+		if input.ModelScopeRepo != nil {
+			model.Spec.ModelScopeRepo = *input.ModelScopeRepo
+		}
 	}
+	// update huggingfacerepo if modelsource is huggingface
 	if model.Spec.ModelSource == common.ModelSourceHuggingface {
-		model.Spec.HuggingFaceRepo = *input.HuggingFaceRepo
-		model.Spec.Revision = *input.Revision
+		if input.Revision != nil && *input.Revision != "" {
+			model.Spec.Revision = *input.Revision
+		}
+		if input.HuggingFaceRepo != nil {
+			model.Spec.HuggingFaceRepo = *input.HuggingFaceRepo
+		}
 	}
 	err = c.Update(ctx, model)
 	if err != nil {
