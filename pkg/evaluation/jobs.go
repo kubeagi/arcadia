@@ -40,6 +40,7 @@ const (
 	defaultPVCMountPath = "/data/evaluations"
 	defaultTestRagFile  = "ragas.csv"
 	defaultMCImage      = "kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z"
+	defaultEvalImage    = "kubeagi/arcadia-eval:v0.2.0"
 
 	// The clusterrolebinding required for the rag evaluation process is ragas-eval-clusterrolebinding by default,
 	// and can be changed via environment variable RAG_EVAL_CLUSTERROLEBINDING.
@@ -86,7 +87,7 @@ func DownloadJob(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
 					Containers: []v1.Container{
 						{
 							Name:  "download-dataset-files",
-							Image: "kubeagi/arcadia-eval:v0.1.0",
+							Image: defaultEvalImage,
 							Command: []string{
 								"arctl",
 							},
@@ -146,7 +147,7 @@ func GenTestDataJob(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
 					Containers: []v1.Container{
 						{
 							Name:  "gen-test-files",
-							Image: "kubeagi/arcadia-eval:v0.1.0",
+							Image: defaultEvalImage,
 							Command: []string{
 								"arctl",
 							},
@@ -253,20 +254,21 @@ func JudgeJobGenerator(ctx context.Context, c client.Client) func(*evav1alpha1.R
 						Containers: []v1.Container{
 							{
 								Name:       "judge-llm",
-								Image:      "kubeagi/arcadia-eval:v0.1.0",
+								Image:      defaultEvalImage,
 								WorkingDir: defaultPVCMountPath,
 								Command: []string{
-									"python3",
+									"kubeagi-cli",
 								},
 								Args: []string{
-									"-m",
-									"ragas_once.cli",
+									"evaluate",
 									fmt.Sprintf("--apibase=%s", apiBase),
-									fmt.Sprintf("--llm=%s", model),
+									fmt.Sprintf("--embedding-apibase=%s", apiBase),
+									fmt.Sprintf("--llm-model=%s", model),
 									fmt.Sprintf("--apikey=%s", apiKey),
+									fmt.Sprintf("--embedding-apikey=%s", apiKey),
 									fmt.Sprintf("--dataset=%s", filepath.Join(defaultPVCMountPath, defaultTestRagFile)),
 									fmt.Sprintf("--metrics=%s", strings.Join(metrics, ",")),
-									fmt.Sprintf("--embedding=%s", embedderModelList[0]),
+									fmt.Sprintf("--embedding-model=%s", embedderModelList[0]),
 								},
 								VolumeMounts: []v1.VolumeMount{
 									{
