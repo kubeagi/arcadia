@@ -210,6 +210,13 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			gpuCount, _ = strconv.Atoi(envItem.Value)
 		}
 		klog.Infof("run worker with %s GPU", runner.NumberOfGPUs())
+
+		// set gpu memory utilization
+		if envItem.Name == "GPU_MEMORY_UTILIZATION" {
+			gpuMemoryUtilization, _ := strconv.ParseFloat(envItem.Value, 64)
+			extraAgrs += fmt.Sprintf(" --gpu_memory_utilization %f", gpuMemoryUtilization)
+		}
+
 		// Get the ray cluster address if configured
 		if envItem.Name == "RAY_CLUSTER_INDEX" {
 			rayClusterIndex, _ := strconv.Atoi(envItem.Value)
