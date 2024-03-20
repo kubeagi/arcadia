@@ -960,7 +960,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 	}
 
 	if !invalidVersion {
-		swapFileName := fmt.Sprintf(".%s", body.Version)
+		swapFileName := fmt.Sprintf("/tmp/.%s", body.Version)
 		sf, err := os.OpenFile(swapFileName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
 		if err != nil {
 			if !os.IsExist(err) {
