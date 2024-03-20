@@ -734,8 +734,8 @@ done
 info "8.4.6 chat with document"
 kubectl apply -f config/samples/app_llmchain_abstract.yaml
 waitCRDStatusReady "Application" "arcadia" "base-chat-document-assistant"
-fileUploadSummarise "base-chat-document-assistant" "arcadia" "./pkg/documentloaders/testdata/llava.pdf"
-getRespInAppChat "base-chat-document-assistant" "arcadia" "what is LLaVA？" ${resp_conversation_id} "false"
+fileUploadSummarise "base-chat-document-assistant" "arcadia" "./pkg/documentloaders/testdata/arcadia-readme.pdf"
+getRespInAppChat "base-chat-document-assistant" "arcadia" "what is arcadia?" ${resp_conversation_id} "false"
 
 # There is uncertainty in the AI replies, most of the time, it will pass the test, a small percentage of the time, the AI will call names in each reply, causing the test to fail, therefore, temporarily disable the following tests
 #getRespInAppChat "base-chat-with-bot" "arcadia" "What is your model?" ${resp_conversation_id} "false"
@@ -779,7 +779,7 @@ if [[ $ai_data != *"1000"* ]]; then
 	exit 1
 fi
 #	info "8.6.1 bingsearch test"
-#	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+#	getRespInAppChat "base-chat-with-bot-tool" "arcadia" "用30字介绍一下云原生" "" "true"
 #	if [ -z "$references" ] || [ "$references" = "null" ]; then
 #		echo $resp
 #		exit 1
@@ -807,7 +807,7 @@ waitCRDStatusReady "Application" "arcadia" "base-chat-with-knowledgebase-pgvecto
 kubectl patch KnowledgeBaseRetriever -n arcadia base-chat-with-knowledgebase -p '{"spec":{"scoreThreshold":0.9}}' --type='merge'
 sleep 3
 #	info "8.7.1 bingsearch test"
-#	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "用30字介绍一下时速云" "" "true"
+#	getRespInAppChat "base-chat-with-knowledgebase-pgvector-tool" "arcadia" "用30字介绍一下云原生" "" "true"
 #	if [ -z "$references" ] || [ "$references" = "null" ]; then
 #		echo $resp
 #		exit 1

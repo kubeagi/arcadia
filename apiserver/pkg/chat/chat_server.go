@@ -185,6 +185,25 @@ func (cs *ChatServer) ListConversations(ctx context.Context, req APPMetadata) ([
 
 func (cs *ChatServer) DeleteConversation(ctx context.Context, conversationID string) error {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	// Note: in pg table, this data is marked as deleted, deleted_at column is not null. the pdf in minio is not deleted. we only delete the conversation knowledgebase.
+	// delete conversation knowledgebase if it exists
+	token := auth.ForOIDCToken(ctx)
+	c, err := client.GetClient(token)
+	if err != nil {
+		return fmt.Errorf("failed to get a client: %w", err)
+	}
+	kbList := &v1alpha1.KnowledgeBaseList{}
+	if err = runtimeclient.IgnoreNotFound(c.List(ctx, kbList, runtimeclient.MatchingFields(map[string]string{"metadata.name": conversationID}))); err != nil {
+		return err
+	}
+	if len(kbList.Items) == 1 {
+		kb := &kbList.Items[0]
+		if err = c.Delete(ctx, kb); err != nil {
+			return err
+		}
+	} else if len(kbList.Items) > 1 {
+		return fmt.Errorf("multiple conversation knowledgebases found")
+	}
 	return cs.Storage().Delete(storage.WithConversationID(conversationID), storage.WithUser(currentUser))
 }
 

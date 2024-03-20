@@ -203,7 +203,7 @@ func (p *PostgreSQLStorage) Delete(opts ...SearchOption) error {
 	if searchOpt.Debug != nil {
 		c.Debug = *searchOpt.Debug
 	}
-	tx := p.db.Select("Messages").Delete(c)
+	tx := p.db.Select("Messages").Select("Documents").Delete(c)
 	if tx.Error != nil {
 		return tx.Error
 	}
