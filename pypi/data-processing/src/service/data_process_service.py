@@ -154,6 +154,10 @@ def info_by_id(req_json, pool):
 
     data["config"] = config_list_for_result
 
+    data["file_details"] = _set_file_status(
+        data.get("file_names"), task_id=id, conn_pool=pool
+    )
+
     logger.debug(f"{log_tag_const.DATA_PROCESS_DETAIL} The response data is: \n{data}")
 
     return {"status": 200, "message": "", "data": data}
@@ -265,6 +269,7 @@ def _get_and_set_basic_detail_info(from_result, task_id, conn_pool):
         from_result["name"] = detail_info_data["name"]
         from_result["status"] = detail_info_data["status"]
         from_result["file_type"] = detail_info_data["file_type"]
+        from_result["file_names"] = detail_info_data["file_names"]
         from_result["file_num"] = file_num
         from_result["pre_dataset_name"] = detail_info_data["pre_data_set_name"]
         from_result["pre_dataset_version"] = detail_info_data["pre_data_set_version"]
@@ -763,3 +768,18 @@ def _get_document_chunk_preview(task_id, conn_pool):
             )
 
     return chunk_list_preview
+
+
+def _set_file_status(file_names, task_id, conn_pool):
+    detail_info_params = {"task_id": task_id}
+    res = data_process_document_db_operate.list_file_by_task_id(
+        detail_info_params, pool=conn_pool
+    )
+
+    documents = res.get("data")
+    for document in documents:
+        for item in file_names:
+            if item.get("name") == document.get("file_name"):
+                document["file_size"] = item.get("size")
+
+    return documents

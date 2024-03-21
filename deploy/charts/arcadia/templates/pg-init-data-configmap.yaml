@@ -275,6 +275,7 @@ data:
             end_datetime character varying(64) COLLATE pg_catalog."default",
             status character varying(64) COLLATE pg_catalog."default",
             error_msg text COLLATE pg_catalog."default",
+            exc_msg text COLLATE pg_catalog."default",
             create_datetime character varying(64) COLLATE pg_catalog."default",
             create_user character varying(64) COLLATE pg_catalog."default",
             create_program character varying(64) COLLATE pg_catalog."default",
@@ -291,6 +292,7 @@ data:
         COMMENT ON COLUMN public.data_process_task_log.end_datetime IS '结束时间';
         COMMENT ON COLUMN public.data_process_task_log.status IS '状态';
         COMMENT ON COLUMN public.data_process_task_log.error_msg IS '错误信息';
+        COMMENT ON COLUMN public.data_process_task_log.exc_msg IS '异常信息';
         COMMENT ON COLUMN public.data_process_task_log.create_datetime IS '创建时间';
         COMMENT ON COLUMN public.data_process_task_log.create_user IS '创建人';
         COMMENT ON COLUMN public.data_process_task_log.create_program IS '创建程序';

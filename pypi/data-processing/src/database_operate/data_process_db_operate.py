@@ -37,6 +37,7 @@ def list_by_page(req_json, pool):
           dpt.post_data_set_name,
           dpt.post_data_set_version,
           dpt.start_datetime,
+          dpt.end_datetime,
           dptl.error_msg
         from
           public.data_process_task dpt

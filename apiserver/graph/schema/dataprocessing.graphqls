@@ -57,6 +57,7 @@ input AddDataProcessInput {
 # 文件条目
 input FileItem {
   name: String!
+  size: String
 }
 
 # 数据处理配置条目
@@ -144,6 +145,8 @@ type DataProcessItem {
   post_data_set_version: String
   # 开始时间
   start_datetime: String!
+  # 结束时间
+  end_datetime: String!
   # 错误日志
   error_msg: String
 }
@@ -202,6 +205,7 @@ type DataProcessDetailsItem {
   error_msg: String
   data_process_config_info: [DataProcessConfigInfo!]
   config: [DataProcessConfig!]
+  file_details: [FileDetails!]
 }
 
 type DataProcessConfigInfo {
@@ -225,6 +229,15 @@ type DataProcessConfig {
   file_num: Int!
   status: String!
   children: [DataProcessConfigChildren]
+}
+
+# 文件处理详情
+type FileDetails {
+  file_name: String!
+  status: String!
+  start_time: String!
+  end_time: String!
+  file_size: String!
 }
 
 # 数据处理配置项子项

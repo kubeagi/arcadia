@@ -27,3 +27,4 @@ bs4==0.0.1
 playwright==1.40.0
 pillow==10.2.0
 html2text==2020.1.16
+cryptography==42.0.5
