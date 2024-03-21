@@ -19,6 +19,8 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,6 +40,8 @@ const (
 	queryParamRevision = "revision"
 
 	repoToken = "REPOTOKEN"
+
+	proxyEnv = "APISERVER_PROXY"
 )
 
 type (
@@ -66,6 +70,10 @@ func (f *FrowarAPI) Summary(ctx *gin.Context) {
 		forwardrepo.WithHFToken(token), forwardrepo.WithModelID(modelID), forwardrepo.WithRevision(revision),
 	}
 	if repo == forwardrepo.HuggingFaceForward {
+		if r := os.Getenv(proxyEnv); r != "" {
+			u, _ := url.Parse(r)
+			tp.Proxy = http.ProxyURL(u)
+		}
 		opts = append(opts, forwardrepo.WithTransport(tp))
 	}
 	instance, err := forwardrepo.NewForward(repo, opts...)
@@ -106,6 +114,10 @@ func (f *FrowarAPI) Revisions(ctx *gin.Context) {
 		forwardrepo.WithHFToken(token), forwardrepo.WithModelID(modelID),
 	}
 	if repo == forwardrepo.HuggingFaceForward {
+		if r := os.Getenv(proxyEnv); r != "" {
+			u, _ := url.Parse(r)
+			tp.Proxy = http.ProxyURL(u)
+		}
 		opts = append(opts, forwardrepo.WithTransport(tp))
 	}
 	instance, err := forwardrepo.NewForward(repo, opts...)
