@@ -83,6 +83,13 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
                 name
                 params
             }
+            enableRerank
+            rerankModel
+            enableMultiQuery
+            chatTimeout
+            chunkSize
+            chunkOverlap
+            batchSize
         }
     }
 }
@@ -125,6 +132,13 @@ query getApplication($name: String!, $namespace: String!){
                 name
                 params
             }
+            enableRerank
+            rerankModel
+            enableMultiQuery
+            chatTimeout
+            chunkSize
+            chunkOverlap
+            batchSize
         }
     }
 }
