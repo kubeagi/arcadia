@@ -42,6 +42,15 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 )
 
+const (
+	DefaultUserPrompt = `在需要时使用以下上下文，回答问题。
+---
+{{.Context}}
+---
+问题：{{.question}} 
+答案：`
+)
+
 func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
 	if len(category) == 0 {
 		delete(app.Annotations, v1alpha1.AppCategoryAnnotationKey)
@@ -69,6 +78,7 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	gApp.MaxLength = pointer.Int(2048)
 	gApp.MaxTokens = pointer.Int(2048)
 	gApp.ConversionWindowSize = pointer.Int(5)
+	gApp.UserPrompt = pointer.String(DefaultUserPrompt)
 }
 
 func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.KnowledgeBaseRetriever, app *v1alpha1.Application, agent *apiagent.Agent) (*generated.Application, error) {
