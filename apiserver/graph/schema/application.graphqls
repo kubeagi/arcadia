@@ -65,12 +65,12 @@ type Application {
     knowledgebase: String
 
     """
-    scoreThreshold 最低相似度
+    scoreThreshold 最终返回结果的最低相似度
     """
     scoreThreshold: Float
 
     """
-    numDocuments  引用上限
+    numDocuments  最终返回结果的引用上限
     """
     numDocuments: Int
 
@@ -99,6 +99,34 @@ type Application {
     tools 要使用的工具列表
     """
     tools: [Tool]
+    """
+    enableRerank 是否启用 rerank
+    """
+    enableRerank: Boolean
+    """
+    rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+    """
+    rerankModel: String
+    """
+    enableMultiQuery 是否启用多查询
+    """
+    enableMultiQuery: Boolean
+    """
+    chatTimeout 对话超时，单位秒，不填为默认 60s
+    """
+    chatTimeout: Float
+    """
+    chunkSize 上传文档做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap 上传文档作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
+    """
+    batchSize 上传文档做批量处理时的批次大小
+    """
+    batchSize: Int
 }
 
 """
@@ -325,12 +353,12 @@ input UpdateApplicationConfigInput {
     knowledgebase: String
 
     """
-    scoreThreshold 最低相似度
+    scoreThreshold 最终返回结果的最低相似度
     """
     scoreThreshold: Float
 
     """
-    numDocuments  引用上限
+    numDocuments  最终返回结果的引用上限
     """
     numDocuments: Int
 
@@ -358,4 +386,32 @@ input UpdateApplicationConfigInput {
     tools 要使用的工具列表
     """
     tools: [ToolInput]
+    """
+    enableRerank 是否启用 rerank
+    """
+    enableRerank: Boolean
+    """
+    rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+    """
+    rerankModel: String
+    """
+    enableMultiQuery 是否启用多查询
+    """
+    enableMultiQuery: Boolean
+    """
+    chatTimeout 对话超时，单位秒，不填为默认 60s
+    """
+    chatTimeout: Float
+    """
+    chunkSize 上传文档做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap 上传文档作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
+    """
+    batchSize 上传文档做批量处理时的批次大小
+    """
+    batchSize: Int
 }

@@ -77,8 +77,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Application struct {
+		BatchSize            func(childComplexity int) int
+		ChatTimeout          func(childComplexity int) int
+		ChunkOverlap         func(childComplexity int) int
+		ChunkSize            func(childComplexity int) int
 		ConversionWindowSize func(childComplexity int) int
 		DocNullReturn        func(childComplexity int) int
+		EnableMultiQuery     func(childComplexity int) int
+		EnableRerank         func(childComplexity int) int
 		Knowledgebase        func(childComplexity int) int
 		Llm                  func(childComplexity int) int
 		MaxLength            func(childComplexity int) int
@@ -87,6 +93,7 @@ type ComplexityRoot struct {
 		Model                func(childComplexity int) int
 		NumDocuments         func(childComplexity int) int
 		Prologue             func(childComplexity int) int
+		RerankModel          func(childComplexity int) int
 		ScoreThreshold       func(childComplexity int) int
 		ShowNextGuide        func(childComplexity int) int
 		ShowRespInfo         func(childComplexity int) int
@@ -970,6 +977,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Application.batchSize":
+		if e.complexity.Application.BatchSize == nil {
+			break
+		}
+
+		return e.complexity.Application.BatchSize(childComplexity), true
+
+	case "Application.chatTimeout":
+		if e.complexity.Application.ChatTimeout == nil {
+			break
+		}
+
+		return e.complexity.Application.ChatTimeout(childComplexity), true
+
+	case "Application.chunkOverlap":
+		if e.complexity.Application.ChunkOverlap == nil {
+			break
+		}
+
+		return e.complexity.Application.ChunkOverlap(childComplexity), true
+
+	case "Application.chunkSize":
+		if e.complexity.Application.ChunkSize == nil {
+			break
+		}
+
+		return e.complexity.Application.ChunkSize(childComplexity), true
+
 	case "Application.conversionWindowSize":
 		if e.complexity.Application.ConversionWindowSize == nil {
 			break
@@ -983,6 +1018,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.DocNullReturn(childComplexity), true
+
+	case "Application.enableMultiQuery":
+		if e.complexity.Application.EnableMultiQuery == nil {
+			break
+		}
+
+		return e.complexity.Application.EnableMultiQuery(childComplexity), true
+
+	case "Application.enableRerank":
+		if e.complexity.Application.EnableRerank == nil {
+			break
+		}
+
+		return e.complexity.Application.EnableRerank(childComplexity), true
 
 	case "Application.knowledgebase":
 		if e.complexity.Application.Knowledgebase == nil {
@@ -1039,6 +1088,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Prologue(childComplexity), true
+
+	case "Application.rerankModel":
+		if e.complexity.Application.RerankModel == nil {
+			break
+		}
+
+		return e.complexity.Application.RerankModel(childComplexity), true
 
 	case "Application.scoreThreshold":
 		if e.complexity.Application.ScoreThreshold == nil {
@@ -4847,12 +4903,12 @@ type Application {
     knowledgebase: String
 
     """
-    scoreThreshold 最低相似度
+    scoreThreshold 最终返回结果的最低相似度
     """
     scoreThreshold: Float
 
     """
-    numDocuments  引用上限
+    numDocuments  最终返回结果的引用上限
     """
     numDocuments: Int
 
@@ -4881,6 +4937,34 @@ type Application {
     tools 要使用的工具列表
     """
     tools: [Tool]
+    """
+    enableRerank 是否启用 rerank
+    """
+    enableRerank: Boolean
+    """
+    rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+    """
+    rerankModel: String
+    """
+    enableMultiQuery 是否启用多查询
+    """
+    enableMultiQuery: Boolean
+    """
+    chatTimeout 对话超时，单位秒，不填为默认 60s
+    """
+    chatTimeout: Float
+    """
+    chunkSize 上传文档做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap 上传文档作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
+    """
+    batchSize 上传文档做批量处理时的批次大小
+    """
+    batchSize: Int
 }
 
 """
@@ -5107,12 +5191,12 @@ input UpdateApplicationConfigInput {
     knowledgebase: String
 
     """
-    scoreThreshold 最低相似度
+    scoreThreshold 最终返回结果的最低相似度
     """
     scoreThreshold: Float
 
     """
-    numDocuments  引用上限
+    numDocuments  最终返回结果的引用上限
     """
     numDocuments: Int
 
@@ -5140,6 +5224,34 @@ input UpdateApplicationConfigInput {
     tools 要使用的工具列表
     """
     tools: [ToolInput]
+    """
+    enableRerank 是否启用 rerank
+    """
+    enableRerank: Boolean
+    """
+    rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+    """
+    rerankModel: String
+    """
+    enableMultiQuery 是否启用多查询
+    """
+    enableMultiQuery: Boolean
+    """
+    chatTimeout 对话超时，单位秒，不填为默认 60s
+    """
+    chatTimeout: Float
+    """
+    chunkSize 上传文档做文档拆分时的块大小
+    """
+    chunkSize: Int
+    """
+    chunkOverlap 上传文档作文档拆分时相邻块的交集
+    """
+    chunkOverlap: Int
+    """
+    batchSize 上传文档做批量处理时的批次大小
+    """
+    batchSize: Int
 }
 `, BuiltIn: false},
 	{Name: "../schema/dataprocessing.graphqls", Input: `# 数据处理 Mutation
@@ -9823,6 +9935,293 @@ func (ec *executionContext) fieldContext_Application_tools(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_enableRerank(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_enableRerank(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableRerank, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_enableRerank(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_rerankModel(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_rerankModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RerankModel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_rerankModel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_enableMultiQuery(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_enableMultiQuery(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableMultiQuery, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_enableMultiQuery(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_chatTimeout(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_chatTimeout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChatTimeout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_chatTimeout(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_chunkSize(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_chunkSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_chunkSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_chunkOverlap(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_chunkOverlap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChunkOverlap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_chunkOverlap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Application_batchSize(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_batchSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BatchSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_batchSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMetadata_name(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMetadata_name(ctx, field)
 	if err != nil {
@@ -10698,6 +11097,20 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
 			case "tools":
 				return ec.fieldContext_Application_tools(ctx, field)
+			case "enableRerank":
+				return ec.fieldContext_Application_enableRerank(ctx, field)
+			case "rerankModel":
+				return ec.fieldContext_Application_rerankModel(ctx, field)
+			case "enableMultiQuery":
+				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
+			case "chatTimeout":
+				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_Application_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_Application_chunkOverlap(ctx, field)
+			case "batchSize":
+				return ec.fieldContext_Application_batchSize(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -10789,6 +11202,20 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
 			case "tools":
 				return ec.fieldContext_Application_tools(ctx, field)
+			case "enableRerank":
+				return ec.fieldContext_Application_enableRerank(ctx, field)
+			case "rerankModel":
+				return ec.fieldContext_Application_rerankModel(ctx, field)
+			case "enableMultiQuery":
+				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
+			case "chatTimeout":
+				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_Application_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_Application_chunkOverlap(ctx, field)
+			case "batchSize":
+				return ec.fieldContext_Application_batchSize(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -26687,6 +27114,20 @@ func (ec *executionContext) fieldContext_RAG_application(ctx context.Context, fi
 				return ec.fieldContext_Application_showNextGuide(ctx, field)
 			case "tools":
 				return ec.fieldContext_Application_tools(ctx, field)
+			case "enableRerank":
+				return ec.fieldContext_Application_enableRerank(ctx, field)
+			case "rerankModel":
+				return ec.fieldContext_Application_rerankModel(ctx, field)
+			case "enableMultiQuery":
+				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
+			case "chatTimeout":
+				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "chunkSize":
+				return ec.fieldContext_Application_chunkSize(ctx, field)
+			case "chunkOverlap":
+				return ec.fieldContext_Application_chunkOverlap(ctx, field)
+			case "batchSize":
+				return ec.fieldContext_Application_batchSize(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
 		},
@@ -36753,7 +37194,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "chunkSize", "chunkOverlap", "batchSize"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -36886,6 +37327,55 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.Tools = data
+		case "enableRerank":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enableRerank"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EnableRerank = data
+		case "rerankModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rerankModel"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RerankModel = data
+		case "enableMultiQuery":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enableMultiQuery"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EnableMultiQuery = data
+		case "chatTimeout":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chatTimeout"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChatTimeout = data
+		case "chunkSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkSize = data
+		case "chunkOverlap":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkOverlap"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChunkOverlap = data
+		case "batchSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("batchSize"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BatchSize = data
 		}
 	}
 
@@ -38085,6 +38575,20 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_showNextGuide(ctx, field, obj)
 		case "tools":
 			out.Values[i] = ec._Application_tools(ctx, field, obj)
+		case "enableRerank":
+			out.Values[i] = ec._Application_enableRerank(ctx, field, obj)
+		case "rerankModel":
+			out.Values[i] = ec._Application_rerankModel(ctx, field, obj)
+		case "enableMultiQuery":
+			out.Values[i] = ec._Application_enableMultiQuery(ctx, field, obj)
+		case "chatTimeout":
+			out.Values[i] = ec._Application_chatTimeout(ctx, field, obj)
+		case "chunkSize":
+			out.Values[i] = ec._Application_chunkSize(ctx, field, obj)
+		case "chunkOverlap":
+			out.Values[i] = ec._Application_chunkOverlap(ctx, field, obj)
+		case "batchSize":
+			out.Values[i] = ec._Application_batchSize(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

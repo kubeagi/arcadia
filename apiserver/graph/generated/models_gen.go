@@ -56,9 +56,9 @@ type Application struct {
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
 	Knowledgebase *string `json:"knowledgebase,omitempty"`
-	// scoreThreshold 最低相似度
+	// scoreThreshold 最终返回结果的最低相似度
 	ScoreThreshold *float64 `json:"scoreThreshold,omitempty"`
-	// numDocuments  引用上限
+	// numDocuments  最终返回结果的引用上限
 	NumDocuments *int `json:"numDocuments,omitempty"`
 	// docNullReturn 空搜索回复
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
@@ -72,6 +72,20 @@ type Application struct {
 	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
 	// tools 要使用的工具列表
 	Tools []*Tool `json:"tools,omitempty"`
+	// enableRerank 是否启用 rerank
+	EnableRerank *bool `json:"enableRerank,omitempty"`
+	// rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+	RerankModel *string `json:"rerankModel,omitempty"`
+	// enableMultiQuery 是否启用多查询
+	EnableMultiQuery *bool `json:"enableMultiQuery,omitempty"`
+	// chatTimeout 对话超时，单位秒，不填为默认 60s
+	ChatTimeout *float64 `json:"chatTimeout,omitempty"`
+	// chunkSize 上传文档做文档拆分时的块大小
+	ChunkSize *int `json:"chunkSize,omitempty"`
+	// chunkOverlap 上传文档作文档拆分时相邻块的交集
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// batchSize 上传文档做批量处理时的批次大小
+	BatchSize *int `json:"batchSize,omitempty"`
 }
 
 // Application
@@ -1603,9 +1617,9 @@ type UpdateApplicationConfigInput struct {
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
 	Knowledgebase *string `json:"knowledgebase,omitempty"`
-	// scoreThreshold 最低相似度
+	// scoreThreshold 最终返回结果的最低相似度
 	ScoreThreshold *float64 `json:"scoreThreshold,omitempty"`
-	// numDocuments  引用上限
+	// numDocuments  最终返回结果的引用上限
 	NumDocuments *int `json:"numDocuments,omitempty"`
 	// docNullReturn 空搜索回复
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
@@ -1619,6 +1633,20 @@ type UpdateApplicationConfigInput struct {
 	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
 	// tools 要使用的工具列表
 	Tools []*ToolInput `json:"tools,omitempty"`
+	// enableRerank 是否启用 rerank
+	EnableRerank *bool `json:"enableRerank,omitempty"`
+	// rerankModel rerank 模型，enableRerank 为 true 时起效，为空时使用默认 rerank 模型
+	RerankModel *string `json:"rerankModel,omitempty"`
+	// enableMultiQuery 是否启用多查询
+	EnableMultiQuery *bool `json:"enableMultiQuery,omitempty"`
+	// chatTimeout 对话超时，单位秒，不填为默认 60s
+	ChatTimeout *float64 `json:"chatTimeout,omitempty"`
+	// chunkSize 上传文档做文档拆分时的块大小
+	ChunkSize *int `json:"chunkSize,omitempty"`
+	// chunkOverlap 上传文档作文档拆分时相邻块的交集
+	ChunkOverlap *int `json:"chunkOverlap,omitempty"`
+	// batchSize 上传文档做批量处理时的批次大小
+	BatchSize *int `json:"batchSize,omitempty"`
 }
 
 type UpdateApplicationMetadataInput struct {
