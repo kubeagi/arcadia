@@ -35,6 +35,10 @@ spec:
           spec:
             description: DocumentLoaderSpec defines the desired state of DocumentLoader
             properties:
+              batchSize:
+                default: 10
+                description: BatchSize for text splitter
+                type: integer
               chunkOverlap:
                 default: 100
                 description: ChunkOverlap for text splitter

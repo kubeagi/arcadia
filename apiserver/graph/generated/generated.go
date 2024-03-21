@@ -85,6 +85,7 @@ type ComplexityRoot struct {
 		DocNullReturn        func(childComplexity int) int
 		EnableMultiQuery     func(childComplexity int) int
 		EnableRerank         func(childComplexity int) int
+		EnableUploadFile     func(childComplexity int) int
 		Knowledgebase        func(childComplexity int) int
 		Llm                  func(childComplexity int) int
 		MaxLength            func(childComplexity int) int
@@ -1042,6 +1043,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.EnableRerank(childComplexity), true
+
+	case "Application.enableUploadFile":
+		if e.complexity.Application.EnableUploadFile == nil {
+			break
+		}
+
+		return e.complexity.Application.EnableUploadFile(childComplexity), true
 
 	case "Application.knowledgebase":
 		if e.complexity.Application.Knowledgebase == nil {
@@ -5013,6 +5021,10 @@ type Application {
     """
     chatTimeout: Float
     """
+    enableUploadFile 是否开启对话上传文档功能
+    """
+    enableUploadFile: Boolean
+    """
     chunkSize 上传文档做文档拆分时的块大小
     """
     chunkSize: Int
@@ -5299,6 +5311,10 @@ input UpdateApplicationConfigInput {
     chatTimeout 对话超时，单位秒，不填为默认 60s
     """
     chatTimeout: Float
+    """
+    enableUploadFile 是否开启对话上传文档功能
+    """
+    enableUploadFile: Boolean
     """
     chunkSize 上传文档做文档拆分时的块大小
     """
@@ -10171,6 +10187,47 @@ func (ec *executionContext) fieldContext_Application_chatTimeout(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_enableUploadFile(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_enableUploadFile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableUploadFile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_enableUploadFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Application_chunkSize(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Application_chunkSize(ctx, field)
 	if err != nil {
@@ -11177,6 +11234,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
 			case "chatTimeout":
 				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "enableUploadFile":
+				return ec.fieldContext_Application_enableUploadFile(ctx, field)
 			case "chunkSize":
 				return ec.fieldContext_Application_chunkSize(ctx, field)
 			case "chunkOverlap":
@@ -11282,6 +11341,8 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
 			case "chatTimeout":
 				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "enableUploadFile":
+				return ec.fieldContext_Application_enableUploadFile(ctx, field)
 			case "chunkSize":
 				return ec.fieldContext_Application_chunkSize(ctx, field)
 			case "chunkOverlap":
@@ -27515,6 +27576,8 @@ func (ec *executionContext) fieldContext_RAG_application(ctx context.Context, fi
 				return ec.fieldContext_Application_enableMultiQuery(ctx, field)
 			case "chatTimeout":
 				return ec.fieldContext_Application_chatTimeout(ctx, field)
+			case "enableUploadFile":
+				return ec.fieldContext_Application_enableUploadFile(ctx, field)
 			case "chunkSize":
 				return ec.fieldContext_Application_chunkSize(ctx, field)
 			case "chunkOverlap":
@@ -37594,7 +37657,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "chunkSize", "chunkOverlap", "batchSize"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "enableUploadFile", "chunkSize", "chunkOverlap", "batchSize"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37755,6 +37818,13 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.ChatTimeout = data
+		case "enableUploadFile":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enableUploadFile"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EnableUploadFile = data
 		case "chunkSize":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chunkSize"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -38983,6 +39053,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_enableMultiQuery(ctx, field, obj)
 		case "chatTimeout":
 			out.Values[i] = ec._Application_chatTimeout(ctx, field, obj)
+		case "enableUploadFile":
+			out.Values[i] = ec._Application_enableUploadFile(ctx, field, obj)
 		case "chunkSize":
 			out.Values[i] = ec._Application_chunkSize(ctx, field, obj)
 		case "chunkOverlap":

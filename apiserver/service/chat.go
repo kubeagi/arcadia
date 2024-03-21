@@ -28,6 +28,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -84,11 +85,13 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 		var response *chat.ChatRespBody
 		var err error
 		logger := klog.FromContext(c.Request.Context())
+		chatTimeoutSecond := pointer.Float64(WaitTimeoutForChatStreaming)
 
 		if req.ResponseMode.IsStreaming() {
 			buf := strings.Builder{}
 			// handle chat streaming mode
 			respStream := make(chan string, 1)
+			manualStop := make(chan bool)
 			go func() {
 				defer func() {
 					if e := recover(); e != nil {
@@ -100,7 +103,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						}
 					}
 				}()
-				response, err = cs.server.AppRun(c.Request.Context(), req, respStream, messageID)
+				response, err = cs.server.AppRun(c.Request.Context(), req, respStream, messageID, chatTimeoutSecond)
 				if err != nil {
 					c.SSEvent("error", chat.ChatRespBody{
 						MessageID:      messageID,
@@ -110,38 +113,28 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 						Latency:        time.Since(req.StartTime).Milliseconds(),
 					})
 					// c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
-					logger.Error(err, "error resp")
-					close(respStream)
+					logger.Error(err, "error resp, stop the stream")
+					manualStop <- true
 					return
 				}
 				if response != nil {
 					if str := buf.String(); response.Message == str || strings.TrimSpace(str) == strings.TrimSpace(response.Message) {
-						close(respStream)
+						logger.Info("blocking resp is same with streaming resp, no new message received, stop the stream")
+						manualStop <- true
 					}
 				}
 			}()
 
-			// Use a ticker to check if there is no data arrived and close the stream
-			// TODO: check if any better solution for this?
-			hasData := true
-			beginStream := false
-			ticker := time.NewTicker(WaitTimeoutForChatStreaming * time.Second)
-			quit := make(chan struct{})
-			defer close(quit)
+			LatestTimestampGetDataFromLLM := time.Now()
+			// Use ticker to check if there is no data from llm for a long time and close the entire stream
+			ticker := time.NewTicker(time.Microsecond * 500)
+			defer ticker.Stop()
 			go func() {
-				for {
-					select {
-					case <-ticker.C:
-						// Only check if the stream is initialized
-						if beginStream {
-							// If there is no generated data within WaitTimeoutForChatStreaming seconds, just close it
-							if !hasData {
-								close(respStream)
-							}
-							hasData = false
-						}
-					case <-quit:
-						ticker.Stop()
+				for range ticker.C {
+					timeout := time.Second * time.Duration(*chatTimeoutSecond)
+					if time.Since(LatestTimestampGetDataFromLLM) > timeout {
+						logger.Info("no data from LLM for a long time, stop the stream", "timeout", timeout)
+						manualStop <- true
 						return
 					}
 				}
@@ -152,28 +145,36 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 			c.Writer.Header().Set("Transfer-Encoding", "chunked")
 			logger.Info("start to receive messages...")
 			clientDisconnected := c.Stream(func(w io.Writer) bool {
-				if msg, ok := <-respStream; ok {
-					c.SSEvent("", chat.ChatRespBody{
-						MessageID:      messageID,
-						ConversationID: req.ConversationID,
-						Message:        msg,
-						CreatedAt:      time.Now(),
-						Latency:        time.Since(req.StartTime).Milliseconds(),
-					})
-					beginStream = true
-					hasData = true
-					buf.WriteString(msg)
-					return true
+				for {
+					select {
+					case <-manualStop:
+						return false
+					case msg, ok := <-respStream:
+						if !ok {
+							return false
+						}
+						t := time.Now()
+						c.SSEvent("", chat.ChatRespBody{
+							MessageID:      messageID,
+							ConversationID: req.ConversationID,
+							Message:        msg,
+							CreatedAt:      t,
+							Latency:        time.Since(req.StartTime).Milliseconds(),
+						})
+						LatestTimestampGetDataFromLLM = t
+						buf.WriteString(msg)
+						return true
+					}
 				}
-				return false
 			})
 			if clientDisconnected {
+				manualStop <- true
 				logger.Info("chatHandler: the client is disconnected")
 			}
 			logger.Info("end to receive messages")
 		} else {
 			// handle chat blocking mode
-			response, err = cs.server.AppRun(c.Request.Context(), req, nil, messageID)
+			response, err = cs.server.AppRun(c.Request.Context(), req, nil, messageID, chatTimeoutSecond)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
 				logger.Error(err, "error resp")
@@ -219,6 +220,16 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 			return
 		}
 		req.AppNamespace = NamespaceInHeader(c)
+		app, _, err := cs.server.GetApp(c.Request.Context(), req.APPName, req.AppNamespace)
+		if err != nil {
+			klog.FromContext(c.Request.Context()).Error(err, "conversationFileHandler: error get app")
+			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
+			return
+		}
+		if !app.Spec.EnableUploadFile {
+			c.JSON(http.StatusForbidden, chat.ErrorResp{Err: "file upload is not enabled"})
+			return
+		}
 		req.Debug = c.Query("debug") == "true"
 		// check if this is a new chat
 		req.NewChat = len(req.ConversationID) == 0

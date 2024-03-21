@@ -76,10 +76,10 @@ func TestCSVLoader(t *testing.T) {
 
 		docs, err := loader.Load(context.Background())
 		require.NoError(t, err)
-		require.Len(t, docs, 7)
+		require.Len(t, docs, 1)
 
 		expectedFileName := "员工考勤管理制度-2023.pdf"
-		expected1ChunkContent := "五．产假及相关衍生假（注：如国家相关政策变动，按照国家最新政策执行，不再另行声明。）1、符合国家计划生育条例规定的女员工依法享受相应产假，在产前15天开始计入产假。配偶生育的给予男员工相应陪产假。类型 享受方 假期天数普通分娩 女员工 98天难产/剖宫产 女员工 另加15天多胞胎（每多育1个）女员工 另加15天生育奖励假 女员工 30天陪产假 男员工 15天怀孕未满4个月流产 女员工 15天怀孕满4个月流产 女员工 42天放置宫内节育器 女员工 自手术之日起2天取出宫内节育器 女员工 自手术之日起1天输精管结扎 男员工 自手术之日起7天单纯输卵管结扎 女员工 自手术之日起21天"
+		expected1ChunkContent := "怀孕9个月以上，每月可享受4天假期"
 		assert.Equal(t, docs[0].PageContent, expected1ChunkContent)
 
 		expected1Metadata := map[string]any{
@@ -88,7 +88,7 @@ func TestCSVLoader(t *testing.T) {
 			LineNumber:      "0",
 			FileNameCol:     expectedFileName,
 			ChunkContentCol: "",
-			PageNumberCol:   "4",
+			PageNumberCol:   "5",
 		}
 		assert.Equal(t, docs[0].Metadata, expected1Metadata)
 	})

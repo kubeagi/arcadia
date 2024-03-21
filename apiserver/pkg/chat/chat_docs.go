@@ -201,7 +201,7 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 	}
 
 	// app as ownerreference
-	app, _, err := cs.getApp(ctx, req.APPName, req.AppNamespace)
+	app, _, err := cs.GetApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
 		return err
 	}

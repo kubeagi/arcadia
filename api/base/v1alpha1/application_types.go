@@ -46,6 +46,10 @@ type ApplicationSpec struct {
 	// If this field is not empty and no result is returned by retriever,
 	// the app chat api will return this value directly, without call LLM.
 	DocNullReturn string `json:"docNullReturn,omitempty"`
+	// ChatTimeoutSecond is the timeout of chat
+	// +kubebuilder:validation:Minimum:=1
+	// +kubebuilder:default:=60
+	ChatTimeoutSecond float64 `json:"chatTimeoutSecond,omitempty"`
 }
 
 // WebConfig is the configuration for web interface
@@ -53,6 +57,8 @@ type WebConfig struct {
 	ShowRespInfo      bool `json:"showRespInfo,omitempty"`
 	ShowRetrievalInfo bool `json:"showRetrievalInfo,omitempty"`
 	ShowNextGuide     bool `json:"showNextGuide,omitempty"`
+	// +kubebuilder:default:=true
+	EnableUploadFile bool `json:"enableUploadFile,omitempty"`
 }
 
 type Node struct {
