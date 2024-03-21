@@ -127,7 +127,8 @@ func (l *MapReduceChain) Run(ctx context.Context, _ client.Client, args map[stri
 	if err != nil {
 		return args, fmt.Errorf("failed to run MapReduceChain due to %s", err.Error())
 	}
-	args[base.AgentOutputInArg] = fmt.Sprintf("Here is the document summary: %s \n", out)
+	args[base.MapReduceDocumentOutputInArg] = fmt.Sprintf("Here is the document summary: %s \n", out)
+	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("Here is the document summary: %s \n", out))
 	return args, nil
 }
 

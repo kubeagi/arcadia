@@ -180,10 +180,10 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 			c.JSON(http.StatusOK, response)
 		}
 		switch {
-		case logger.V(3).Enabled():
-			logger.Info("chat done", "req", req)
 		case logger.V(5).Enabled():
 			logger.Info("chat done", "req", req, "resp", response)
+		case logger.V(3).Enabled():
+			logger.Info("chat done", "req", req)
 		default:
 			logger.Info("chat done")
 		}

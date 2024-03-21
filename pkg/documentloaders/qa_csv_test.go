@@ -1,3 +1,19 @@
+/*
+Copyright 2024 KubeAGI.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package documentloaders
 
 import (
@@ -63,7 +79,7 @@ func TestCSVLoader(t *testing.T) {
 		require.Len(t, docs, 7)
 
 		expectedFileName := "员工考勤管理制度-2023.pdf"
-		expected1ChunkContent := "4五．产假及相关衍生假（注：如国家相关政策变动，按照国家最新政策执行，不再另行声明。）1、符合国家计划生育条例规定的女员工依法享受相应产假，在产前15天开始计入产假。配偶生育的给予男员工相应陪产假。类型 享受方 假期天数普通分娩 女员工 98天难产/剖宫产 女员工 另加15天多胞胎（每多育1个）女员工 另加15天生育奖励假 女员工 30天陪产假 男员工 15天怀孕未满4个月流产 女员工 15天怀孕满4个月流产 女员工 42天放置宫内节育器 女员工 自手术之日起2天取出宫内节育器 女员工 自手术之日起1天输精管结扎 男员工 自手术之日起7天单纯输卵管结扎 女员工 自手术之日起21天"
+		expected1ChunkContent := "五．产假及相关衍生假（注：如国家相关政策变动，按照国家最新政策执行，不再另行声明。）1、符合国家计划生育条例规定的女员工依法享受相应产假，在产前15天开始计入产假。配偶生育的给予男员工相应陪产假。类型 享受方 假期天数普通分娩 女员工 98天难产/剖宫产 女员工 另加15天多胞胎（每多育1个）女员工 另加15天生育奖励假 女员工 30天陪产假 男员工 15天怀孕未满4个月流产 女员工 15天怀孕满4个月流产 女员工 42天放置宫内节育器 女员工 自手术之日起2天取出宫内节育器 女员工 自手术之日起1天输精管结扎 男员工 自手术之日起7天单纯输卵管结扎 女员工 自手术之日起21天"
 		assert.Equal(t, docs[0].PageContent, expected1ChunkContent)
 
 		expected1Metadata := map[string]any{

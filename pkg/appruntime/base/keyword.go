@@ -22,10 +22,12 @@ const (
 	LangchaingoChatMessageHistoryKeyInArg = "_history"
 	OutputAnserKeyInArg                   = "_answer"
 	AgentOutputInArg                      = "_agent_answer"
+	MapReduceDocumentOutputInArg          = "_mapreduce_document_answer"
 	OutputAnserStreamChanKeyInArg         = "_answer_stream"
 	RuntimeRetrieverReferencesKeyInArg    = "_references"
 	LangchaingoRetrieverKeyInArg          = "retriever"
 	LangchaingoLLMKeyInArg                = "llm"
 	LangchaingoPromptKeyInArg             = "prompt"
 	APPDocNullReturn                      = "_app_doc_null_return"
+	ConversationKnowledgeBaseInArg        = "_conversation_knowledgebase" // the conversation Knowledgebase cr in args, status has ready
 )

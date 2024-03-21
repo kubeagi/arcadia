@@ -131,7 +131,7 @@ func NewPostgreSQLStorage(conn *pgx.Conn) (*PostgreSQLStorage, error) {
 		SlowThreshold:             100 * time.Millisecond,
 		LogLevel:                  logger.Info,
 		IgnoreRecordNotFoundError: false,
-		Colorful:                  true,
+		Colorful:                  false,
 	})
 	db.Logger = customLogger
 	return &PostgreSQLStorage{

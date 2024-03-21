@@ -62,3 +62,23 @@ spec:
       ref:
         kind: Output
         name: Output
+    - name: documentloader-node
+      displayName: "documentloader"
+      description: "可选，如果需要对话中上传解析文件，需要添加这个节点"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: DocumentLoader
+        name: common
+      nextNodeName: [ "chain-node" ]
+
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: DocumentLoader
+metadata:
+  name: common
+  namespace: arcadia
+spec:
+  displayName: "DocumentLoader"
+  description: "DocumentLoader"
+  chunkSize: 500
+  chunkOverlap: 100

@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,8 +49,9 @@ type Input struct {
 	// normally, the user will upload the files to s3 first and use the name of files here
 	Files []string
 	// overrideConfig
-	NeedStream bool
-	History    langchaingoschema.ChatMessageHistory
+	NeedStream     bool
+	History        langchaingoschema.ChatMessageHistory
+	ConversationID string
 }
 type Output struct {
 	Answer     string
@@ -150,6 +153,27 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 	}
 	if a.Spec.DocNullReturn != "" {
 		out[base.APPDocNullReturn] = a.Spec.DocNullReturn
+	}
+	if input.ConversationID != "" { // means this is not a new conversation
+		conversationKnowledgebaseExist := true
+		kb := &arcadiav1alpha1.KnowledgeBase{}
+		err := cli.Get(ctx, types.NamespacedName{Namespace: a.Namespace, Name: input.ConversationID}, kb)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				conversationKnowledgebaseExist = false
+				// TODO We can search for whether there should be a conversation knowledgebase from the pg
+				klog.FromContext(ctx).V(5).Info("conversation knowledgebase not exist", "ConversationID", input.ConversationID)
+			} else {
+				return output, err
+			}
+		}
+		if conversationKnowledgebaseExist {
+			if kb.Status.IsReady() {
+				out[base.ConversationKnowledgeBaseInArg] = kb
+			} else {
+				klog.FromContext(ctx).V(3).Info("conversation knowledgebase not ready", "ConversationID", input.ConversationID)
+			}
+		}
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
