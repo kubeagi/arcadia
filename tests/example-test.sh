@@ -211,8 +211,8 @@ function getRespInAppChat() {
 	while true; do
 		info "sleep 3 seconds"
 		sleep 3
-		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
+		data=$(jq -n --arg appname "$appname" --arg query "$query" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname}')
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data" -H "namespace: ${namespace}")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
@@ -243,8 +243,8 @@ function getRespInAppChat() {
 			info "sleep 5 seconds"
 			sleep 5
 			info "just test stream mode"
-			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg namespace "$namespace" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace}')
-			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data"
+			data=$(jq -n --arg appname "$appname" --arg query "$query" --arg conversationID "$conversationID" '{"query":$query,"response_mode":"streaming","conversation_id":$conversationID,"app_name":$appname}')
+			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data" -H "namespace: ${namespace}"
 			if [[ $? -ne 0 ]]; then
 				attempt=$((attempt + 1))
 				if [ $attempt -gt $RETRY_COUNT ]; then
@@ -270,7 +270,7 @@ function fileUploadSummarise() {
 	while true; do
 		info "sleep 3 seconds"
 		sleep 3
-		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST --form file=@$filename --form app_name=$appname --form app_namespace=$namespace -H "Content-Type: multipart/form-data" http://127.0.0.1:8081/chat/conversations/file)
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST --form file=@$filename --form app_name=$appname -H "namespace: ${namespace}" -H "Content-Type: multipart/form-data" http://127.0.0.1:8081/chat/conversations/file)
 		doc_data=$(echo $resp | jq -r '.document')
 		if [ -z "$doc_data" ]; then
 			echo $resp
@@ -297,8 +297,8 @@ function fileUploadSummarise() {
 	while true; do
 		info "sleep 3 seconds to sumerize doc"
 		sleep 3
-		data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg namespace "$namespace" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace, "files": [$fileid]}')
-		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data")
+		data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "files": [$fileid]}')
+		resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data" -H "namespace: ${namespace}")
 		ai_data=$(echo $resp | jq -r '.message')
 		references=$(echo $resp | jq -r '.references')
 		if [ -z "$ai_data" ] || [ "$ai_data" = "null" ]; then
@@ -329,8 +329,8 @@ function fileUploadSummarise() {
 			info "sleep 5 seconds"
 			sleep 5
 			info "just test stream mode"
-			data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg namespace "$namespace" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "app_namespace":$namespace, "files": [$fileid]}')
-			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data"
+			data=$(jq -n --arg fileid "$file_id" --arg appname "$appname" --arg query "总结一下" --arg conversationID "$resp_conversation_id" '{"query":$query,"response_mode":"blocking","conversation_id":$conversationID,"app_name":$appname, "files": [$fileid]}')
+			curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat --data "$data" -H "namespace: ${namespace}"
 			if [[ $? -ne 0 ]]; then
 				attempt=$((attempt + 1))
 				if [ $attempt -gt $RETRY_COUNT ]; then
@@ -710,7 +710,7 @@ while true; do
 	info "sleep 3 seconds"
 	sleep 3
 	info "get app prompt starters without knowledgebase"
-	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
+	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-bot"}' -H 'namespace: arcadia')
 	echo $resp | jq .
 	if [[ $resp == *"error"* ]]; then
 		attempt=$((attempt + 1))
@@ -728,7 +728,7 @@ while true; do
 		continue
 	fi
 	info "get app prompt starters with knowledgebase"
-	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector", "app_namespace": "arcadia"}')
+	resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/prompt-starter --data '{"app_name": "base-chat-with-knowledgebase-pgvector"}' -H 'namespace: arcadia')
 	echo $resp | jq .
 	if [[ $resp == *"error"* ]]; then
 		echo "failed"

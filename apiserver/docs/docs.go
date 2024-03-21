@@ -1380,8 +1380,7 @@ const docTemplate = `{
         "chat.APPMetadata": {
             "type": "object",
             "required": [
-                "app_name",
-                "app_namespace"
+                "app_name"
             ],
             "properties": {
                 "app_name": {
@@ -1390,7 +1389,7 @@ const docTemplate = `{
                     "example": "chat-with-llm"
                 },
                 "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application",
+                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
                     "type": "string",
                     "example": "kubeagi-system"
                 }
@@ -1400,7 +1399,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "app_name",
-                "app_namespace",
                 "query",
                 "response_mode"
             ],
@@ -1411,7 +1409,7 @@ const docTemplate = `{
                     "example": "chat-with-llm"
                 },
                 "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application",
+                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
                     "type": "string",
                     "example": "kubeagi-system"
                 },
@@ -1498,8 +1496,7 @@ const docTemplate = `{
         "chat.ConversationReqBody": {
             "type": "object",
             "required": [
-                "app_name",
-                "app_namespace"
+                "app_name"
             ],
             "properties": {
                 "app_name": {
@@ -1508,7 +1505,7 @@ const docTemplate = `{
                     "example": "chat-with-llm"
                 },
                 "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application",
+                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
                     "type": "string",
                     "example": "kubeagi-system"
                 },
@@ -1548,8 +1545,7 @@ const docTemplate = `{
         "chat.MessageReqBody": {
             "type": "object",
             "required": [
-                "app_name",
-                "app_namespace"
+                "app_name"
             ],
             "properties": {
                 "app_name": {
@@ -1558,7 +1554,7 @@ const docTemplate = `{
                     "example": "chat-with-llm"
                 },
                 "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application",
+                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
                     "type": "string",
                     "example": "kubeagi-system"
                 },

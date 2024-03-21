@@ -7,12 +7,13 @@ definitions:
         example: chat-with-llm
         type: string
       app_namespace:
-        description: AppNamespace, the namespace of the application
+        description: AppNamespace, the namespace of the application, will be forced
+          to use the value of the namespace in the request header for security reasons
+          and is placed here only for compatibility with older versions
         example: kubeagi-system
         type: string
     required:
     - app_name
-    - app_namespace
     type: object
   chat.ChatReqBody:
     properties:
@@ -21,7 +22,9 @@ definitions:
         example: chat-with-llm
         type: string
       app_namespace:
-        description: AppNamespace, the namespace of the application
+        description: AppNamespace, the namespace of the application, will be forced
+          to use the value of the namespace in the request header for security reasons
+          and is placed here only for compatibility with older versions
         example: kubeagi-system
         type: string
       conversation_id:
@@ -50,7 +53,6 @@ definitions:
         example: blocking
     required:
     - app_name
-    - app_namespace
     - query
     - response_mode
     type: object
@@ -96,7 +98,9 @@ definitions:
         example: chat-with-llm
         type: string
       app_namespace:
-        description: AppNamespace, the namespace of the application
+        description: AppNamespace, the namespace of the application, will be forced
+          to use the value of the namespace in the request header for security reasons
+          and is placed here only for compatibility with older versions
         example: kubeagi-system
         type: string
       conversation_id:
@@ -105,7 +109,6 @@ definitions:
         type: string
     required:
     - app_name
-    - app_namespace
     type: object
   chat.DocumentRespBody:
     properties:
@@ -132,7 +135,9 @@ definitions:
         example: chat-with-llm
         type: string
       app_namespace:
-        description: AppNamespace, the namespace of the application
+        description: AppNamespace, the namespace of the application, will be forced
+          to use the value of the namespace in the request header for security reasons
+          and is placed here only for compatibility with older versions
         example: kubeagi-system
         type: string
       conversation_id:
@@ -145,7 +150,6 @@ definitions:
         type: string
     required:
     - app_name
-    - app_namespace
     type: object
   chat.ResponseMode:
     enum:
