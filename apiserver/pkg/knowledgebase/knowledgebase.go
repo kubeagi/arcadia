@@ -84,20 +84,25 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 			})
 		}
 
+		source := &generated.TypedObjectReference{
+			Kind:      fg.Source.Kind,
+			Name:      fg.Source.Name,
+			Namespace: new(string),
+		}
+		*source.Namespace = ns
 		filegroupdetails = append(filegroupdetails, &generated.Filegroupdetail{
-			Source: &generated.TypedObjectReference{
-				Kind:      fg.Source.Kind,
-				Name:      fg.Source.Name,
-				Namespace: fg.Source.Namespace,
-			},
+			Source:      source,
 			Filedetails: groupFiles,
 		})
 	}
 	if len(knowledgebase.Status.FileGroupDetail) > 0 {
 		for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
-			fns := filegroupdetail.Source.Namespace
+			ns := knowledgebase.Namespace
+			if filegroupdetail.Source.Namespace != nil {
+				ns = *filegroupdetail.Source.Namespace
+			}
 			for _, detail := range filegroupdetail.FileDetails {
-				key := fmt.Sprintf("%s/%s/%s", *fns, filegroupdetail.Source.Name, detail.Path)
+				key := fmt.Sprintf("%s/%s/%s", ns, filegroupdetail.Source.Name, detail.Path)
 				v := cache[key]
 				filegroupdetails[v[0]].Filedetails[v[1]] = &generated.Filedetail{
 					FileType:        detail.Type,
