@@ -289,7 +289,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	content := bytes.Buffer{}
 	// if there is a knowledgebase, use it to generate prompt starter
 	if kb != nil {
-		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, c, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit}, map[string]any{"question": ""})
+		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, c, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit * 2}, map[string]any{"question": "开始"})
 		if err != nil {
 			return nil, err
 		}
@@ -314,14 +314,13 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 							question := strings.TrimSuffix(d.PageContent, "\na: "+answer)
 							promptStarters = append(promptStarters, strings.TrimPrefix(question, "q: "))
 							hasAnswer = true
+							if len(promptStarters) == limit {
+								break
+							}
 						}
 					}
 					if !hasAnswer {
 						content.WriteString(d.PageContent + "\n")
-						// if content is too long, may cause llm error
-						if content.Len() > 500 {
-							break
-						}
 					}
 				}
 			}
@@ -339,7 +338,12 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	if content.Len() > 0 {
 		klog.V(3).Infoln("app has knowlegebase with chunk information, let llm generate some question")
 		p = prompts.NewPromptTemplate(PromptForGeneratePromptStartersByChunk, []string{"limit", "information"})
-		predictArg["information"] = content.String()
+		contentStr := content.String()
+		// if content is too long, may cause llm error
+		if len(contentStr) > 500 {
+			contentStr = contentStr[0:500]
+		}
+		predictArg["information"] = contentStr
 	} else {
 		klog.V(3).Infoln("app has no knowlegebase, let llm generate some question")
 		p = prompts.NewPromptTemplate(PromptForGeneratePromptStartersByAppInfo, []string{"limit", "displayName", "description"})
