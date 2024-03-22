@@ -11,6 +11,7 @@ query allDataProcessListByPage($input: AllDataProcessListByPageInput!){
         post_data_set_name
         post_data_set_version
         start_datetime
+        end_datetime
         error_msg
       }
       message
@@ -123,6 +124,13 @@ query dataProcessDetails($input: DataProcessDetailsInput){
               progress
             }
           }
+        }
+        file_details {
+          file_name
+          status
+          start_time
+          end_time
+          file_size
         }
       }
       message

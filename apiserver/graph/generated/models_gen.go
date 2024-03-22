@@ -497,6 +497,7 @@ type DataProcessDetailsItem struct {
 	ErrorMsg              *string                  `json:"error_msg,omitempty"`
 	DataProcessConfigInfo []*DataProcessConfigInfo `json:"data_process_config_info,omitempty"`
 	Config                []*DataProcessConfig     `json:"config,omitempty"`
+	FileDetails           []*FileDetails           `json:"file_details,omitempty"`
 }
 
 type DataProcessFileLogInput struct {
@@ -514,6 +515,7 @@ type DataProcessItem struct {
 	PostDataSetName    string  `json:"post_data_set_name"`
 	PostDataSetVersion *string `json:"post_data_set_version,omitempty"`
 	StartDatetime      string  `json:"start_datetime"`
+	EndDatetime        string  `json:"end_datetime"`
 	ErrorMsg           *string `json:"error_msg,omitempty"`
 }
 
@@ -798,6 +800,14 @@ type F struct {
 
 func (F) IsPageNode() {}
 
+type FileDetails struct {
+	FileName  string `json:"file_name"`
+	Status    string `json:"status"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+	FileSize  string `json:"file_size"`
+}
+
 // 根据条件顾虑版本内的文件，只支持关键词搜索
 type FileFilter struct {
 	// 根据关键词搜索文件，strings.Container(fileName, keyword)
@@ -818,7 +828,8 @@ type FileGroup struct {
 }
 
 type FileItem struct {
-	Name string `json:"name"`
+	Name string  `json:"name"`
+	Size *string `json:"size,omitempty"`
 }
 
 // GPT

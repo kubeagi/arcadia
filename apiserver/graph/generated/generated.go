@@ -195,6 +195,7 @@ type ComplexityRoot struct {
 		DataProcessConfigInfo func(childComplexity int) int
 		EndTime               func(childComplexity int) int
 		ErrorMsg              func(childComplexity int) int
+		FileDetails           func(childComplexity int) int
 		FileNum               func(childComplexity int) int
 		FileType              func(childComplexity int) int
 		ID                    func(childComplexity int) int
@@ -208,6 +209,7 @@ type ComplexityRoot struct {
 	}
 
 	DataProcessItem struct {
+		EndDatetime        func(childComplexity int) int
 		ErrorMsg           func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
@@ -360,6 +362,14 @@ type ComplexityRoot struct {
 		Path              func(childComplexity int) int
 		Size              func(childComplexity int) int
 		Time              func(childComplexity int) int
+	}
+
+	FileDetails struct {
+		EndTime   func(childComplexity int) int
+		FileName  func(childComplexity int) int
+		FileSize  func(childComplexity int) int
+		StartTime func(childComplexity int) int
+		Status    func(childComplexity int) int
 	}
 
 	GPT struct {
@@ -1581,6 +1591,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DataProcessDetailsItem.ErrorMsg(childComplexity), true
 
+	case "DataProcessDetailsItem.file_details":
+		if e.complexity.DataProcessDetailsItem.FileDetails == nil {
+			break
+		}
+
+		return e.complexity.DataProcessDetailsItem.FileDetails(childComplexity), true
+
 	case "DataProcessDetailsItem.file_num":
 		if e.complexity.DataProcessDetailsItem.FileNum == nil {
 			break
@@ -1650,6 +1667,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataProcessDetailsItem.Status(childComplexity), true
+
+	case "DataProcessItem.end_datetime":
+		if e.complexity.DataProcessItem.EndDatetime == nil {
+			break
+		}
+
+		return e.complexity.DataProcessItem.EndDatetime(childComplexity), true
 
 	case "DataProcessItem.error_msg":
 		if e.complexity.DataProcessItem.ErrorMsg == nil {
@@ -2487,6 +2511,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.F.Time(childComplexity), true
+
+	case "FileDetails.end_time":
+		if e.complexity.FileDetails.EndTime == nil {
+			break
+		}
+
+		return e.complexity.FileDetails.EndTime(childComplexity), true
+
+	case "FileDetails.file_name":
+		if e.complexity.FileDetails.FileName == nil {
+			break
+		}
+
+		return e.complexity.FileDetails.FileName(childComplexity), true
+
+	case "FileDetails.file_size":
+		if e.complexity.FileDetails.FileSize == nil {
+			break
+		}
+
+		return e.complexity.FileDetails.FileSize(childComplexity), true
+
+	case "FileDetails.start_time":
+		if e.complexity.FileDetails.StartTime == nil {
+			break
+		}
+
+		return e.complexity.FileDetails.StartTime(childComplexity), true
+
+	case "FileDetails.status":
+		if e.complexity.FileDetails.Status == nil {
+			break
+		}
+
+		return e.complexity.FileDetails.Status(childComplexity), true
 
 	case "GPT.category":
 		if e.complexity.GPT.Category == nil {
@@ -5313,6 +5372,7 @@ input AddDataProcessInput {
 # 文件条目
 input FileItem {
   name: String!
+  size: String
 }
 
 # 数据处理配置条目
@@ -5400,6 +5460,8 @@ type DataProcessItem {
   post_data_set_version: String
   # 开始时间
   start_datetime: String!
+  # 结束时间
+  end_datetime: String!
   # 错误日志
   error_msg: String
 }
@@ -5458,6 +5520,7 @@ type DataProcessDetailsItem {
   error_msg: String
   data_process_config_info: [DataProcessConfigInfo!]
   config: [DataProcessConfig!]
+  file_details: [FileDetails!]
 }
 
 type DataProcessConfigInfo {
@@ -5481,6 +5544,15 @@ type DataProcessConfig {
   file_num: Int!
   status: String!
   children: [DataProcessConfigChildren]
+}
+
+# 文件处理详情
+type FileDetails {
+  file_name: String!
+  status: String!
+  start_time: String!
+  end_time: String!
+  file_size: String!
 }
 
 # 数据处理配置项子项
@@ -12762,6 +12834,8 @@ func (ec *executionContext) fieldContext_DataProcessDetails_data(ctx context.Con
 				return ec.fieldContext_DataProcessDetailsItem_data_process_config_info(ctx, field)
 			case "config":
 				return ec.fieldContext_DataProcessDetailsItem_config(ctx, field)
+			case "file_details":
+				return ec.fieldContext_DataProcessDetailsItem_file_details(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataProcessDetailsItem", field.Name)
 		},
@@ -13484,6 +13558,59 @@ func (ec *executionContext) fieldContext_DataProcessDetailsItem_config(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _DataProcessDetailsItem_file_details(ctx context.Context, field graphql.CollectedField, obj *DataProcessDetailsItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessDetailsItem_file_details(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileDetails, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*FileDetails)
+	fc.Result = res
+	return ec.marshalOFileDetails2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileDetailsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessDetailsItem_file_details(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessDetailsItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "file_name":
+				return ec.fieldContext_FileDetails_file_name(ctx, field)
+			case "status":
+				return ec.fieldContext_FileDetails_status(ctx, field)
+			case "start_time":
+				return ec.fieldContext_FileDetails_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_FileDetails_end_time(ctx, field)
+			case "file_size":
+				return ec.fieldContext_FileDetails_file_size(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FileDetails", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataProcessItem_id(ctx context.Context, field graphql.CollectedField, obj *DataProcessItem) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataProcessItem_id(ctx, field)
 	if err != nil {
@@ -13821,6 +13948,50 @@ func (ec *executionContext) _DataProcessItem_start_datetime(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_DataProcessItem_start_datetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataProcessItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataProcessItem_end_datetime(ctx context.Context, field graphql.CollectedField, obj *DataProcessItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataProcessItem_end_datetime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndDatetime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataProcessItem_end_datetime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataProcessItem",
 		Field:      field,
@@ -18527,6 +18698,226 @@ func (ec *executionContext) fieldContext_F_creationTimestamp(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileDetails_file_name(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileDetails_file_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileDetails_file_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileDetails_status(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileDetails_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileDetails_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileDetails_start_time(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileDetails_start_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileDetails_start_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileDetails_end_time(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileDetails_end_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileDetails_end_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileDetails_file_size(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileDetails_file_size(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileDetails_file_size(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25052,6 +25443,8 @@ func (ec *executionContext) fieldContext_PaginatedDataProcessItem_data(ctx conte
 				return ec.fieldContext_DataProcessItem_post_data_set_version(ctx, field)
 			case "start_datetime":
 				return ec.fieldContext_DataProcessItem_start_datetime(ctx, field)
+			case "end_datetime":
+				return ec.fieldContext_DataProcessItem_end_datetime(ctx, field)
 			case "error_msg":
 				return ec.fieldContext_DataProcessItem_error_msg(ctx, field)
 			}
@@ -35896,7 +36289,7 @@ func (ec *executionContext) unmarshalInputFileItem(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	fieldsInOrder := [...]string{"name", "size"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35910,6 +36303,13 @@ func (ec *executionContext) unmarshalInputFileItem(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Name = data
+		case "size":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Size = data
 		}
 	}
 
@@ -39409,6 +39809,8 @@ func (ec *executionContext) _DataProcessDetailsItem(ctx context.Context, sel ast
 			out.Values[i] = ec._DataProcessDetailsItem_data_process_config_info(ctx, field, obj)
 		case "config":
 			out.Values[i] = ec._DataProcessDetailsItem_config(ctx, field, obj)
+		case "file_details":
+			out.Values[i] = ec._DataProcessDetailsItem_file_details(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39477,6 +39879,11 @@ func (ec *executionContext) _DataProcessItem(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._DataProcessItem_post_data_set_version(ctx, field, obj)
 		case "start_datetime":
 			out.Values[i] = ec._DataProcessItem_start_datetime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "end_datetime":
+			out.Values[i] = ec._DataProcessItem_end_datetime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -41189,6 +41596,65 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 			out.Values[i] = ec._F_size(ctx, field, obj)
 		case "creationTimestamp":
 			out.Values[i] = ec._F_creationTimestamp(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var fileDetailsImplementors = []string{"FileDetails"}
+
+func (ec *executionContext) _FileDetails(ctx context.Context, sel ast.SelectionSet, obj *FileDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fileDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FileDetails")
+		case "file_name":
+			out.Values[i] = ec._FileDetails_file_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._FileDetails_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "start_time":
+			out.Values[i] = ec._FileDetails_start_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "end_time":
+			out.Values[i] = ec._FileDetails_end_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "file_size":
+			out.Values[i] = ec._FileDetails_file_size(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -45916,6 +46382,16 @@ func (ec *executionContext) marshalNF2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapis
 	return ec._F(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNFileDetails2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileDetails(ctx context.Context, sel ast.SelectionSet, v *FileDetails) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FileDetails(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFileGroup2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileGroup(ctx context.Context, v interface{}) (*FileGroup, error) {
 	res, err := ec.unmarshalInputFileGroup(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -47342,6 +47818,53 @@ func (ec *executionContext) marshalOF2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋa
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNF2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐF(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOFileDetails2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileDetailsᚄ(ctx context.Context, sel ast.SelectionSet, v []*FileDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFileDetails2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileDetails(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
