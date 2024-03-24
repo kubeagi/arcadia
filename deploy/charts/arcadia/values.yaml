@@ -24,13 +24,12 @@ global:
 config:
   # embedder is used as the system default embedding service
   embedder:
-    enabled: true
+    enabled: false
     model: "bge-large-zh-v1.5"
   # rerank is the default model for reranking service
   rerank:
     enabled: true
     model: "bge-reranker-large"
-
 
 # @section controller is used as the core controller for arcadia
 # @param image Image to be used
@@ -38,7 +37,7 @@ config:
 # @param resources Resources to be used
 controller:
   loglevel: 3
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.2.1
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -52,7 +51,7 @@ controller:
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
   loglevel: 3
-  image: kubeagi/arcadia:latest
+  image: kubeagi/arcadia:v0.2.1
   enableplayground: false
   port: 8081
   ingress:
@@ -71,7 +70,7 @@ apiserver:
 opsconsole:
   enabled: true
   kubebbEnabled: true
-  image: kubeagi/ops-console:latest
+  image: kubeagi/ops-console:v0.2.1-20240322-60c9820
   ingress:
     path: kubeagi-portal-public
     host: portal.<replaced-ingress-nginx-ip>.nip.io
@@ -143,7 +142,7 @@ minio:
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
   enabled: true
-  image: kubeagi/data-processing:latest
+  image: kubeagi/data-processing:v0.2.1
   port: 28888
   config:
     llm:
@@ -197,7 +196,8 @@ ray:
   # clusters provided by ray
   # For more information on cluster configurations,please refer to http://kubeagi.k8s.com.cn/docs/Configuration/DistributedInference/run-inference-using-ray
   clusters:
-    - name: 3090-2-GPUs
+    # cluster1 comes from https://github.com/kubeagi/arcadia/blob/main/config/samples/ray.io_v1_raycluster.yaml
+    - name: cluster1
       headAddress: raycluster-kuberay-head-svc.kuberay-system.svc:6379
       pythonVersion: 3.9.18
       dashboardHost: raycluster-kuberay-head-svc.kuberay-system.svc:8265
