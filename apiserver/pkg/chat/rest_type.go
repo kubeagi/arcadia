@@ -39,7 +39,7 @@ type APPMetadata struct {
 	// AppName, the name of the application
 	APPName string `json:"app_name" form:"app_name" binding:"required" example:"chat-with-llm"`
 	// AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions
-	AppNamespace string `json:"app_namespace" form:"app_namespace" example:"kubeagi-system"`
+	AppNamespace string `json:"-" form:"-"`
 }
 
 type ConversationReqBody struct {

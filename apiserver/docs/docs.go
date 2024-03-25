@@ -830,6 +830,13 @@ const docTemplate = `{
                 "summary": "chat with application",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "boolean",
                         "description": "Should the chat request be treated as debugging?",
                         "name": "debug",
@@ -881,6 +888,13 @@ const docTemplate = `{
                 ],
                 "summary": "list all conversations",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "query params, if not set will return all current user's conversations",
                         "name": "request",
@@ -975,9 +989,9 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "The app namespace for this conversation",
-                        "name": "app_namespace",
-                        "in": "formData",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -1038,6 +1052,13 @@ const docTemplate = `{
                 "summary": "get all messages history for one conversation",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "description": "query params",
                         "name": "request",
                         "in": "body",
@@ -1083,6 +1104,13 @@ const docTemplate = `{
                 ],
                 "summary": "get one message references",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "messageID",
@@ -1139,6 +1167,13 @@ const docTemplate = `{
                 ],
                 "summary": "get app's prompt starters",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "namespace this request is in",
+                        "name": "namespace",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "integer",
                         "description": "how many prompts you need should \u003e 0 and \u003c 10",
@@ -1203,7 +1238,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the bucket",
+                        "description": "Name of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true
@@ -1284,7 +1319,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the bucket",
+                        "description": "Name of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true
@@ -1341,7 +1376,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the bucket",
+                        "description": "Name of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true
@@ -1387,11 +1422,6 @@ const docTemplate = `{
                     "description": "AppName, the name of the application",
                     "type": "string",
                     "example": "chat-with-llm"
-                },
-                "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
-                    "type": "string",
-                    "example": "kubeagi-system"
                 }
             }
         },
@@ -1407,11 +1437,6 @@ const docTemplate = `{
                     "description": "AppName, the name of the application",
                     "type": "string",
                     "example": "chat-with-llm"
-                },
-                "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
-                    "type": "string",
-                    "example": "kubeagi-system"
                 },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",
@@ -1504,11 +1529,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "chat-with-llm"
                 },
-                "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
-                    "type": "string",
-                    "example": "kubeagi-system"
-                },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",
                     "type": "string",
@@ -1552,11 +1572,6 @@ const docTemplate = `{
                     "description": "AppName, the name of the application",
                     "type": "string",
                     "example": "chat-with-llm"
-                },
-                "app_namespace": {
-                    "description": "AppNamespace, the namespace of the application, will be forced to use the value of the namespace in the request header for security reasons and is placed here only for compatibility with older versions",
-                    "type": "string",
-                    "example": "kubeagi-system"
                 },
                 "conversation_id": {
                     "description": "ConversationID, if it is empty, a new conversation will be created",

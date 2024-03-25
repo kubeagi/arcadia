@@ -6,12 +6,6 @@ definitions:
         description: AppName, the name of the application
         example: chat-with-llm
         type: string
-      app_namespace:
-        description: AppNamespace, the namespace of the application, will be forced
-          to use the value of the namespace in the request header for security reasons
-          and is placed here only for compatibility with older versions
-        example: kubeagi-system
-        type: string
     required:
     - app_name
     type: object
@@ -20,12 +14,6 @@ definitions:
       app_name:
         description: AppName, the name of the application
         example: chat-with-llm
-        type: string
-      app_namespace:
-        description: AppNamespace, the namespace of the application, will be forced
-          to use the value of the namespace in the request header for security reasons
-          and is placed here only for compatibility with older versions
-        example: kubeagi-system
         type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
@@ -97,12 +85,6 @@ definitions:
         description: AppName, the name of the application
         example: chat-with-llm
         type: string
-      app_namespace:
-        description: AppNamespace, the namespace of the application, will be forced
-          to use the value of the namespace in the request header for security reasons
-          and is placed here only for compatibility with older versions
-        example: kubeagi-system
-        type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
         example: 5a41f3ca-763b-41ec-91c3-4bbbb00736d0
@@ -133,12 +115,6 @@ definitions:
       app_name:
         description: AppName, the name of the application
         example: chat-with-llm
-        type: string
-      app_namespace:
-        description: AppNamespace, the namespace of the application, will be forced
-          to use the value of the namespace in the request header for security reasons
-          and is placed here only for compatibility with older versions
-        example: kubeagi-system
         type: string
       conversation_id:
         description: ConversationID, if it is empty, a new conversation will be created
@@ -1076,6 +1052,11 @@ paths:
       - application/json
       description: chat with application
       parameters:
+      - description: namespace this request is in
+        in: header
+        name: namespace
+        required: true
+        type: string
       - description: Should the chat request be treated as debugging?
         in: query
         name: debug
@@ -1111,6 +1092,11 @@ paths:
       - application/json
       description: list all conversations
       parameters:
+      - description: namespace this request is in
+        in: header
+        name: namespace
+        required: true
+        type: string
       - description: query params, if not set will return all current user's conversations
         in: body
         name: request
@@ -1171,9 +1157,9 @@ paths:
       - multipart/form-data
       description: receive conversational files for one conversation
       parameters:
-      - description: The app namespace for this conversation
-        in: formData
-        name: app_namespace
+      - description: namespace this request is in
+        in: header
+        name: namespace
         required: true
         type: string
       - description: The app name for this conversation
@@ -1214,6 +1200,11 @@ paths:
       - application/json
       description: get all messages history for one conversation
       parameters:
+      - description: namespace this request is in
+        in: header
+        name: namespace
+        required: true
+        type: string
       - description: query params
         in: body
         name: request
@@ -1244,6 +1235,11 @@ paths:
       - application/json
       description: get one message's references
       parameters:
+      - description: namespace this request is in
+        in: header
+        name: namespace
+        required: true
+        type: string
       - description: messageID
         in: path
         name: messageID
@@ -1281,6 +1277,11 @@ paths:
       - application/json
       description: get app's prompt starters
       parameters:
+      - description: namespace this request is in
+        in: header
+        name: namespace
+        required: true
+        type: string
       - description: how many prompts you need should > 0 and < 10
         in: query
         name: limit
@@ -1322,7 +1323,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the bucket
+      - description: Name of the rag
         in: header
         name: namespace
         required: true
@@ -1376,7 +1377,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the bucket
+      - description: Name of the rag
         in: header
         name: namespace
         required: true
@@ -1414,7 +1415,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the bucket
+      - description: Name of the rag
         in: header
         name: namespace
         required: true
