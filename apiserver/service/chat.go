@@ -60,11 +60,12 @@ func NewChatService(cli runtimeclient.Client) (*ChatService, error) {
 // @Tags			application
 // @Accept			json
 // @Produce		json
-// @Param			debug	query		bool				false	"Should the chat request be treated as debugging?"
-// @Param			request	body		chat.ChatReqBody	true	"query params"
-// @Success		200		{object}	chat.ChatRespBody	"blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned"
-// @Failure		400		{object}	chat.ErrorResp
-// @Failure		500		{object}	chat.ErrorResp
+// @Param			namespace	header		string				true	"namespace this request is in"
+// @Param			debug		query		bool				false	"Should the chat request be treated as debugging?"
+// @Param			request		body		chat.ChatReqBody	true	"query params"
+// @Success		200			{object}	chat.ChatRespBody	"blocking mode, will return all field; streaming mode, only conversation_id, message and created_at will be returned"
+// @Failure		400			{object}	chat.ErrorResp
+// @Failure		500			{object}	chat.ErrorResp
 // @Router			/chat [post]
 func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -198,7 +199,7 @@ func (cs *ChatService) ChatHandler() gin.HandlerFunc {
 // @Accept			multipart/form-data
 // @Produce		json
 //
-// @Param			app_namespace	formData	string	true	"The app namespace for this conversation"
+// @Param			namespace		header		string	true	"namespace this request is in"
 // @Param			app_name		formData	string	true	"The app name for this conversation"
 // @Param			conversation_id	formData	string	false	"The conversation id for this file"
 // @Param			file			formData	file	true	"This is the file for the conversation"
@@ -251,10 +252,11 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 // @Tags			application
 // @Accept			json
 // @Produce		json
-// @Param			request	body		chat.APPMetadata	false	"query params, if not set will return all current user's conversations"
-// @Success		200		{object}	[]storage.Conversation
-// @Failure		400		{object}	chat.ErrorResp
-// @Failure		500		{object}	chat.ErrorResp
+// @Param			namespace	header		string				true	"namespace this request is in"
+// @Param			request		body		chat.APPMetadata	false	"query params, if not set will return all current user's conversations"
+// @Success		200			{object}	[]storage.Conversation
+// @Failure		400			{object}	chat.ErrorResp
+// @Failure		500			{object}	chat.ErrorResp
 // @Router			/chat/conversations [post]
 func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -309,10 +311,11 @@ func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 // @Tags			application
 // @Accept			json
 // @Produce		json
-// @Param			request	body		chat.ConversationReqBody	true	"query params"
-// @Success		200		{object}	storage.Conversation
-// @Failure		400		{object}	chat.ErrorResp
-// @Failure		500		{object}	chat.ErrorResp
+// @Param			namespace	header		string						true	"namespace this request is in"
+// @Param			request		body		chat.ConversationReqBody	true	"query params"
+// @Success		200			{object}	storage.Conversation
+// @Failure		400			{object}	chat.ErrorResp
+// @Failure		500			{object}	chat.ErrorResp
 // @Router			/chat/messages [post]
 func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -340,6 +343,7 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 // @Tags			application
 // @Accept			json
 // @Produce		json
+// @Param			namespace	header		string				true	"namespace this request is in"
 // @Param			messageID	path		string				true	"messageID"
 // @Param			request		body		chat.MessageReqBody	true	"query params"
 // @Success		200			{object}	[]retriever.Reference
@@ -381,11 +385,12 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 // @Tags			application
 // @Accept			json
 // @Produce		json
-// @Param			limit	query		int					false	"how many prompts you need should > 0 and < 10"
-// @Param			request	body		chat.APPMetadata	true	"query params"
-// @Success		200		{object}	[]string
-// @Failure		400		{object}	chat.ErrorResp
-// @Failure		500		{object}	chat.ErrorResp
+// @Param			namespace	header		string				true	"namespace this request is in"
+// @Param			limit		query		int					false	"how many prompts you need should > 0 and < 10"
+// @Param			request		body		chat.APPMetadata	true	"query params"
+// @Success		200			{object}	[]string
+// @Failure		400			{object}	chat.ErrorResp
+// @Failure		500			{object}	chat.ErrorResp
 // @Router			/chat/prompt-starter [post]
 func (cs *ChatService) PromptStartersHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {

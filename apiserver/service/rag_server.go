@@ -49,7 +49,7 @@ const (
 // @Accept			json
 // @Produce		json
 // @Param			ragName		query		string	true	"rag name"
-// @Param			namespace	header		string	true	"Name of the bucket"
+// @Param			namespace	header		string	true	"Namespace of the rag"
 // @Success		200			{object}	rag.Report
 // @Failure		400			{object}	map[string]string
 // @Failure		500			{object}	map[string]string
@@ -91,7 +91,7 @@ func (r *RagAPI) Summary(ctx *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			ragName		query		string	true	"rag name"
-// @Param			namespace	header		string	true	"Name of the bucket"
+// @Param			namespace	header		string	true	"Namespace of the rag"
 // @Param			page		query		int		false	"default is 1"
 // @Param			size		query		string	false	"default is 10"
 // @Param			sortBy		query		string	false	"rag metrcis"
@@ -135,7 +135,7 @@ func (r *RagAPI) ReportDetail(ctx *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			ragName		query		string	true	"rag name"
-// @Param			namespace	header		string	true	"Name of the bucket"
+// @Param			namespace	header		string	true	"Namespace of the rag"
 // @Success		200			{object}	rag.ReportDetail
 // @Failure		400			{object}	map[string]string
 // @Failure		500			{object}	map[string]string
