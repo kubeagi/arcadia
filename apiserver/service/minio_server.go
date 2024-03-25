@@ -29,6 +29,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -1006,6 +1007,30 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		return
 	}
 	_ = source.Client.PutObjectTagging(ctx.Request.Context(), bucketName, objectName, tags, minio.PutObjectTaggingOptions{})
+	changed := len(body.DelLines) > 0 || len(body.UpdateLines) > 0 || len(body.NewLines) > 0
+
+	if body.Knowledgebase != "" && changed {
+		go func() {
+			kb := v1alpha1.KnowledgeBase{}
+			if err := m.client.Get(context.TODO(), types.NamespacedName{
+				Namespace: bucketName,
+				Name:      body.Knowledgebase,
+			}, &kb); err != nil {
+				klog.Errorf("failed to get knowledgebase %s, error %s", body.Knowledgebase, err)
+				return
+			}
+			if kb.Annotations == nil {
+				kb.Annotations = make(map[string]string)
+			}
+			now := time.Now().Format(time.RFC3339)
+			kb.Annotations[v1alpha1.UpdateSourceFileAnnotationKey] = now
+			if err := m.client.Update(context.TODO(), &kb); err != nil {
+				klog.Errorf("failed to update knowledgebase %s, error %s", body.Knowledgebase, err)
+				return
+			}
+			klog.Infof("successfully update knowledgebase %s", body.Knowledgebase)
+		}()
+	}
 	ctx.JSON(http.StatusOK, "")
 }
 
