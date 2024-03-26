@@ -151,7 +151,8 @@ func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) 
 	return config.RayClusters, nil
 }
 
-func GetDefaultRerank(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
+// GetDefaultRerankModel gets the default reranking model which is recommended by kubeagi
+func GetDefaultRerankModel(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
 	config, err := GetConfig(ctx, c)
 	if err != nil {
 		return nil, err

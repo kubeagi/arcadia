@@ -111,7 +111,7 @@ func (r *RerankRetrieverReconciler) reconcile(ctx context.Context, log logr.Logg
 		}
 	}
 	if instance.Spec.Model == nil {
-		model, err := config.GetDefaultRerank(ctx, r.Client)
+		model, err := config.GetDefaultRerankModel(ctx, r.Client)
 		if err != nil {
 			instance.Status.SetConditions(instance.Status.ErrorCondition(fmt.Sprintf("no model provided. please set model in reranker or set system default reranking model in config :%s", err))...)
 			return instance, ctrl.Result{RequeueAfter: 30 * time.Second}, err

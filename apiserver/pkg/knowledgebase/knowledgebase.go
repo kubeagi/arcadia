@@ -289,6 +289,10 @@ func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.
 		return nil, err
 	}
 
+	if input.Annotations != nil {
+		kb.ObjectMeta.Annotations = graphqlutils.MapAny2Str(input.Annotations)
+	}
+
 	if input.DisplayName != nil && *input.DisplayName != kb.Spec.DisplayName {
 		kb.Spec.DisplayName = *input.DisplayName
 	}

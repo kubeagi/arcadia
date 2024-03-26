@@ -209,6 +209,16 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			}
 			rayCluster = rayClusters[externalRayClusterIndex]
 		}
+
+		// set gpu memory utilization
+		// The ratio (between 0 and 1) of GPU memory to reserve for the model weights, activations, and KV cache. Higher values will increase the KV cache size and thus improve the model's throughput.
+		// However, if the value is too high, it may cause out-of-memory (OOM) errors.
+		// By default, gpu_memory_utilization will be 0.9
+		if envItem.Name == "GPU_MEMORY_UTILIZATION" {
+			gpuMemoryUtilization, _ := strconv.ParseFloat(envItem.Value, 64)
+			extraAgrs += fmt.Sprintf(" --gpu_memory_utilization %f", gpuMemoryUtilization)
+		}
+
 		// extra arguments to run llm
 		if envItem.Name == "EXTRA_ARGS" {
 			extraAgrs = envItem.Value
