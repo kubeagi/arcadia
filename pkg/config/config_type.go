@@ -17,6 +17,8 @@ limitations under the License.
 package config
 
 import (
+	"fmt"
+
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
@@ -72,4 +74,35 @@ type RayCluster struct {
 	DashboardHost string `json:"dashboardHost,omitempty"`
 	// Overwrite the python version in the woker
 	PythonVersion string `json:"pythonVersion,omitempty"`
+	// Ray cluster version
+	RayVersion string `json:"rayVersion,omitempty"`
+}
+
+func (rayCluster RayCluster) String() string {
+	return fmt.Sprintf("Name:%s HeadAddress: %s DashboardHost:%s PythonVersion:%s RayVersion: %s", rayCluster.Name, rayCluster.HeadAddress, rayCluster.DashboardHost, rayCluster.PythonVersion, rayCluster.RayVersion)
+}
+
+// GetRayVersion in ray cluster
+func (rayCluster RayCluster) GetRayVersion() string {
+	// Default ray version is 2.9.3
+	if rayCluster.RayVersion == "" {
+		return "2.9.3"
+	}
+	return rayCluster.RayVersion
+}
+
+func (rayCluster RayCluster) GetPythonVersion() string {
+	// Default python version is 3.9.5
+	if rayCluster.PythonVersion == "" {
+		return "3.9.5"
+	}
+	return rayCluster.PythonVersion
+}
+
+func DefaultRayCluster() RayCluster {
+	return RayCluster{
+		Name:          "default",
+		PythonVersion: "3.9.5",
+		RayVersion:    "2.9.3",
+	}
 }
