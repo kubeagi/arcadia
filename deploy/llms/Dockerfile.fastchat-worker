@@ -39,5 +39,16 @@ RUN python3.9 -m pip install einops scipy transformers_stream_generator==0.0.4 d
 # Install requirements for Qutantization with auto-gptq
 RUN python3.9 -m pip install auto-gptq optimum -i ${PYTHON_INDEX_URL}
 
+# Install requirements for vllm worker
+# Ray v2.9.3 and vllm v0.3.3
+RUN python3.9 -m pip install vllm==0.3.3 
+RUN python3.9 -m pip install -U "ray[default]==2.9.3" -i ${PYTHON_INDEX_URL}
+
+# Allow to use environment variable to set ray & python version to pass the version check
+# for now, ray: 2.9.3, python: 3.9.x
+# this utils.py file is from ray 2.9.0 ray-ml image
+# search 'KubeAGI' in utils.py for what's changed
+COPY deploy/llms/utils.py /usr/local/lib/python3.9/dist-packages/ray/_private/utils.py
+
 COPY deploy/llms/start-worker.sh /
 ENTRYPOINT ["/start-worker.sh"]

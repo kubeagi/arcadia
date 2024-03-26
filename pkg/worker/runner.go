@@ -33,8 +33,9 @@ import (
 
 const (
 	// tag is the same version as fastchat
-	defaultFastChatImage     = "kubeagi/arcadia-fastchat-worker:v0.2.36"
-	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.2.36"
+	defaultFastChatImage = "kubeagi/arcadia-fastchat-worker:v0.2.36"
+	// For ease of maintenance and stability, VLLM module is now included in standard image as a default feature.
+	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:v0.2.36"
 	// defaultKubeAGIImage for RunnerKubeAGI
 	defaultKubeAGIImage = "kubeagi/core-library-cli:v0.0.1"
 
