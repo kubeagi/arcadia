@@ -100,6 +100,11 @@ spec:
                   object:
                     description: Object must end with a slash "/" if it is a directory
                     type: string
+                  versionID:
+                    description: VersionID minio enables the file version function,
+                      so we need to add the VersionID field in OSS to increase the
+                      ability to query the specific version of the file.
+                    type: string
                 type: object
               postgresql:
                 description: PostgreSQL defines info for PostgreSQL

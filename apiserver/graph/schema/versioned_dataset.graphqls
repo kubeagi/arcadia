@@ -81,6 +81,11 @@ type F {
 
     """文件创建时间"""
     creationTimestamp: Time    
+
+    """
+    文件版本列表
+    """
+    versions: [String!]
 }
 
 """
@@ -106,6 +111,8 @@ input FileGroup {
 
     """用到的文件路径，注意⚠️ 一定不要加bucket的名字"""
     paths: [String!]
+
+    files: [FileWithVersionInput!]
 }
 
 

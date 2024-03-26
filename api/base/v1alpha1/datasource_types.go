@@ -55,6 +55,10 @@ type OSS struct {
 	Bucket string `json:"bucket,omitempty"`
 	// Object must end with a slash "/" if it is a directory
 	Object string `json:"object,omitempty"`
+
+	// VersionID minio enables the file version function,
+	// so we need to add the VersionID field in OSS to increase the ability to query the specific version of the file.
+	VersionID string `json:"versionID,omitempty"`
 }
 
 // PostgreSQL defines info for PostgreSQL

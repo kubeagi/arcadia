@@ -102,9 +102,10 @@ func (f *FileDetails) UpdateErr(err error, phase FileProcessPhase) {
 
 func (f *FileGroupDetail) Init(group FileGroup) {
 	f.Source = group.Source.DeepCopy()
-	f.FileDetails = make([]FileDetails, len(group.Paths))
-	for i := range group.Paths {
-		f.FileDetails[i].Path = group.Paths[i]
+	f.FileDetails = make([]FileDetails, len(group.Files))
+	for i := range group.Files {
+		f.FileDetails[i].Path = group.Files[i].Path
+		f.FileDetails[i].Version = group.Files[i].Version
 		f.FileDetails[i].Phase = FileProcessPhasePending
 		f.FileDetails[i].LastUpdateTime = metav1.Now()
 	}

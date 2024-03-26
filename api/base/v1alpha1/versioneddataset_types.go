@@ -23,11 +23,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type FileWithVersion struct {
+	Path    string `json:"path"`
+	Version string `json:"version,omitempty"`
+}
+
 type FileGroup struct {
 	// From defines the source which provides this `File`
 	Source *TypedObjectReference `json:"source,omitempty"`
+
 	// Paths defines the detail paths to get objects from above datasource
-	Paths []string `json:"paths,omitempty"`
+	//
+	// Deprecated: the paths field will be removed in version 0.3
+	Paths []string `json:"paths,omitempty"` // nolint
+
+	Files []FileWithVersion `json:"files,omitempty"`
 }
 
 // VersionedDatasetSpec defines the desired state of VersionedDataset

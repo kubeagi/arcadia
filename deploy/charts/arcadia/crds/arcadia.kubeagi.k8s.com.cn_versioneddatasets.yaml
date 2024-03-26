@@ -78,9 +78,21 @@ spec:
                   by Datasource
                 items:
                   properties:
+                    files:
+                      items:
+                        properties:
+                          path:
+                            type: string
+                          version:
+                            type: string
+                        required:
+                        - path
+                        type: object
+                      type: array
                     paths:
-                      description: Paths defines the detail paths to get objects from
-                        above datasource
+                      description: "Paths defines the detail paths to get objects
+                        from above datasource \n Deprecated: the paths field will
+                        be removed in version 0.3"
                       items:
                         type: string
                       type: array
@@ -224,6 +236,9 @@ spec:
                           type:
                             description: Type defines the file type which is extracted
                               from object tag  `object_type`
+                            type: string
+                          version:
+                            description: Version file version
                             type: string
                         type: object
                       type: array

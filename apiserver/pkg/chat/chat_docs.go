@@ -223,7 +223,7 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 				Name:      systemDatasource.Name,
 				Namespace: &systemDatasource.Namespace,
 			},
-			Paths: []string{document.Object},
+			Files: []arcadiav1alpha1.FileWithVersion{{Path: document.Object}},
 		})
 		return nil
 	})

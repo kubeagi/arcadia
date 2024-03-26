@@ -75,11 +75,11 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		if fg.Source.Namespace != nil {
 			ns = *fg.Source.Namespace
 		}
-		for in, fn := range fg.Paths {
-			key := fmt.Sprintf("%s/%s/%s", ns, fg.Source.Name, fn)
+		for in, fn := range fg.Files {
+			key := fmt.Sprintf("%s/%s/%s", ns, fg.Source.Name, fn.Path)
 			cache[key] = [2]int{out, in}
 			groupFiles = append(groupFiles, &generated.Filedetail{
-				Path:  fn,
+				Path:  fn.Path,
 				Phase: string(v1alpha1.FileProcessPhasePending),
 			})
 		}
@@ -103,17 +103,19 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 			}
 			for _, detail := range filegroupdetail.FileDetails {
 				key := fmt.Sprintf("%s/%s/%s", ns, filegroupdetail.Source.Name, detail.Path)
-				v := cache[key]
-				filegroupdetails[v[0]].Filedetails[v[1]] = &generated.Filedetail{
-					FileType:        detail.Type,
-					Count:           detail.Count,
-					Size:            detail.Size,
-					Path:            detail.Path,
-					Phase:           string(detail.Phase),
-					TimeCost:        int(detail.TimeCost),
-					UpdateTimestamp: new(time.Time),
+				if v, ok := cache[key]; ok {
+					filegroupdetails[v[0]].Filedetails[v[1]] = &generated.Filedetail{
+						FileType:        detail.Type,
+						Count:           detail.Count,
+						Size:            detail.Size,
+						Path:            detail.Path,
+						Phase:           string(detail.Phase),
+						TimeCost:        int(detail.TimeCost),
+						UpdateTimestamp: new(time.Time),
+						Version:         detail.Version,
+					}
+					*filegroupdetails[v[0]].Filedetails[v[1]].UpdateTimestamp = detail.LastUpdateTime.Time
 				}
-				*filegroupdetails[v[0]].Filedetails[v[1]].UpdateTimestamp = detail.LastUpdateTime.Time
 			}
 		}
 	}
@@ -201,7 +203,19 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 			}
 			filegroup := v1alpha1.FileGroup{
 				Source: (*v1alpha1.TypedObjectReference)(&f.Source),
-				Paths:  f.Path,
+				Files:  make([]v1alpha1.FileWithVersion, 0),
+			}
+			// TODO: Compatible with old APIs and will be removed later
+			for _, p := range f.Path {
+				item := v1alpha1.FileWithVersion{Path: p, Version: ""}
+				filegroup.Files = append(filegroup.Files, item)
+			}
+			for _, fp := range f.Files {
+				item := v1alpha1.FileWithVersion{Path: fp.Path, Version: ""}
+				if fp.Version != nil {
+					item.Version = *fp.Version
+				}
+				filegroup.Files = append(filegroup.Files, item)
 			}
 			filegroups = append(filegroups, filegroup)
 		}
@@ -267,11 +281,12 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 					Namespace: fg.Source.Namespace,
 				},
 			}
-			fileDetails := make([]*generated.Filedetail, len(fg.Paths))
-			for findex, path := range fg.Paths {
+			fileDetails := make([]*generated.Filedetail, len(fg.Files))
+			for findex, path := range fg.Files {
 				fileDetails[findex] = &generated.Filedetail{
-					Path:  path,
-					Phase: "",
+					Path:    path.Path,
+					Phase:   "",
+					Version: path.Version,
 				}
 			}
 			fgDetail.Filedetails = fileDetails
@@ -305,7 +320,14 @@ func UpdateKnowledgeBase(ctx context.Context, c client.Client, input *generated.
 		for index, f := range input.FileGroups {
 			filegroup := v1alpha1.FileGroup{
 				Source: (*v1alpha1.TypedObjectReference)(&f.Source),
-				Paths:  f.Path,
+				Files:  make([]v1alpha1.FileWithVersion, 0),
+			}
+			for _, fv := range f.Files {
+				item := v1alpha1.FileWithVersion{Path: fv.Path}
+				if fv.Version != nil {
+					item.Version = *fv.Version
+				}
+				filegroup.Files = append(filegroup.Files, item)
 			}
 			filegroups[index] = filegroup
 		}

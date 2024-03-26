@@ -798,6 +798,8 @@ type F struct {
 	Size *string `json:"size,omitempty"`
 	// 文件创建时间
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
+	// 文件版本列表
+	Versions []string `json:"versions,omitempty"`
 }
 
 func (F) IsPageNode() {}
@@ -826,12 +828,23 @@ type FileGroup struct {
 	// 数据源的基础信息
 	Source TypedObjectReferenceInput `json:"source"`
 	// 用到的文件路径，注意⚠️ 一定不要加bucket的名字
-	Paths []string `json:"paths,omitempty"`
+	Paths []string                `json:"paths,omitempty"`
+	Files []*FileWithVersionInput `json:"files,omitempty"`
 }
 
 type FileItem struct {
 	Name string  `json:"name"`
 	Size *string `json:"size,omitempty"`
+}
+
+type FileWithVersion struct {
+	Path    string  `json:"path"`
+	Version *string `json:"version,omitempty"`
+}
+
+type FileWithVersionInput struct {
+	Path    string  `json:"path"`
+	Version *string `json:"version,omitempty"`
 }
 
 // GPT
@@ -2083,6 +2096,8 @@ type Filedetail struct {
 	// 文件处理的阶段
 	// 规则: enum { Pending , Processing , Succeeded, Failed, Skipped}
 	Phase string `json:"phase"`
+	// 文件版本，""或者"null"的情况表示是文件最新版本。
+	Version string `json:"version"`
 }
 
 // 文件组
@@ -2092,7 +2107,8 @@ type Filegroup struct {
 	// 源；目前仅支持版本数据集，即 Kind为 VersionedDataset
 	Source *TypedObjectReference `json:"source,omitempty"`
 	// 路径数组
-	Path []string `json:"path,omitempty"`
+	Path  []string           `json:"path,omitempty"`
+	Files []*FileWithVersion `json:"files,omitempty"`
 }
 
 // 文件组详情
@@ -2110,5 +2126,6 @@ type Filegroupinput struct {
 	// 数据源字段
 	Source TypedObjectReferenceInput `json:"source"`
 	// 路径
-	Path []string `json:"path,omitempty"`
+	Path  []string                `json:"path,omitempty"`
+	Files []*FileWithVersionInput `json:"files,omitempty"`
 }
