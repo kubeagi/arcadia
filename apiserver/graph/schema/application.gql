@@ -87,6 +87,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             rerankModel
             enableMultiQuery
             chatTimeout
+            enableUploadFile
             chunkSize
             chunkOverlap
             batchSize
@@ -136,6 +137,7 @@ query getApplication($name: String!, $namespace: String!){
             rerankModel
             enableMultiQuery
             chatTimeout
+            enableUploadFile
             chunkSize
             chunkOverlap
             batchSize

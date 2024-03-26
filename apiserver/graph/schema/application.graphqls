@@ -116,6 +116,10 @@ type Application {
     """
     chatTimeout: Float
     """
+    enableUploadFile 是否开启对话上传文档功能
+    """
+    enableUploadFile: Boolean
+    """
     chunkSize 上传文档做文档拆分时的块大小
     """
     chunkSize: Int
@@ -402,6 +406,10 @@ input UpdateApplicationConfigInput {
     chatTimeout 对话超时，单位秒，不填为默认 60s
     """
     chatTimeout: Float
+    """
+    enableUploadFile 是否开启对话上传文档功能
+    """
+    enableUploadFile: Boolean
     """
     chunkSize 上传文档做文档拆分时的块大小
     """

@@ -27,6 +27,8 @@ const (
 
 	// AppPublicLabelKey will add to app which is public
 	AppPublicLabelKey = Group + "/app-is-public"
+
+	DefaultChatTimeoutSeconds = 60
 )
 
 // ConversationFilePath is the path in system storage for file within a conversation

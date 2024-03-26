@@ -35,6 +35,11 @@ spec:
           spec:
             description: ApplicationSpec defines the desired state of Application
             properties:
+              chatTimeoutSecond:
+                default: 60
+                description: ChatTimeoutSecond is the timeout of chat
+                minimum: 1
+                type: number
               creator:
                 description: Creator defines datasource creator (AUTO-FILLED by webhook)
                 type: string
@@ -50,6 +55,9 @@ spec:
                   no result is returned by retriever, the app chat api will return
                   this value directly, without call LLM.
                 type: string
+              enableUploadFile:
+                default: true
+                type: boolean
               icon:
                 description: Icon base64 image icon
                 type: string

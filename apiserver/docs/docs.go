@@ -1238,7 +1238,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the rag",
+                        "description": "Namespace of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true
@@ -1319,7 +1319,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the rag",
+                        "description": "Namespace of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true
@@ -1376,7 +1376,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name of the rag",
+                        "description": "Namespace of the rag",
                         "name": "namespace",
                         "in": "header",
                         "required": true

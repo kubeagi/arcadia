@@ -36,6 +36,7 @@ import (
 
 	agentv1alpha1 "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	chainv1alpha1 "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
+	documentloaderv1alpha1 "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
 	promptv1alpha1 "github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1"
 	retrieveralpha1 "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
@@ -54,6 +55,7 @@ const (
 	RerankRetrieverIndexKey        = "metadata.rerankretriever"
 	MultiQueryRetrieverIndexKey    = "metadata.multiqueryretriever"
 	AgentIndexKey                  = "metadata.agent"
+	DocumentLoaderIndexKey         = "metadata.documentloader"
 )
 
 // ApplicationReconciler reconciles an Application object
@@ -146,6 +148,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{Requeue: true}, updateStatusErr
 	}
 
+	log.V(5).Info("Application Reconcile Done")
 	return result, err
 }
 
@@ -159,7 +162,9 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // 6. when this node points to output, it can only point to output
 // 7. should not have cycle TODO
 // 8. nodeName should be unique
-func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger, app *arcadiav1alpha1.Application) (*arcadiav1alpha1.Application, ctrl.Result, error) {
+func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logger, app *arcadiav1alpha1.Application) (*arcadiav1alpha1.Application, ctrl.Result, error) {
+	log.V(5).Info("Start validate nodes...")
+	defer log.V(5).Info("Validate nodes Done")
 	var input, output int
 	var outputNodeName string
 	nodeName := make(map[string]bool, len(app.Spec.Nodes))
@@ -223,6 +228,7 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger
 		return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 	}
 
+	log.V(5).Info("init runtimeApp")
 	runtimeApp, err := appruntime.NewAppOrGetFromCache(ctx, r.Client, app)
 	if err != nil {
 		r.setCondition(app, app.Status.ErrorCondition(err.Error())...)
@@ -252,6 +258,7 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger
 				r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("node %s init failed: %s", e.Name(), errMsg))...)
 				return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 			}
+			log.V(5).Info("runtimeApp check node", "node", e.Name())
 			visited[e.Name()] = true
 		}
 		for _, n := range e.GetNextNode() {
@@ -259,6 +266,7 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, _ logr.Logger
 		}
 	}
 
+	log.V(5).Info("runtimeApp check Done")
 	r.setCondition(app, app.Status.ReadyCondition()...)
 	return app, ctrl.Result{}, nil
 }
@@ -320,6 +328,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		{RerankRetrieverIndexKey, "retriever", "rerankretriever"},
 		{MultiQueryRetrieverIndexKey, "retriever", "multiqueryretriever"},
 		{AgentIndexKey, "", "agent"},
+		{DocumentLoaderIndexKey, "", "documentloader"},
 	}
 	for _, d := range dependencies {
 		d := d
@@ -375,6 +384,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		Watches(&source.Kind{Type: &retrieveralpha1.RerankRetriever{}}, getEventHandler(RerankRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.MultiQueryRetriever{}}, getEventHandler(MultiQueryRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &agentv1alpha1.Agent{}}, getEventHandler(AgentIndexKey)).
+		Watches(&source.Kind{Type: &documentloaderv1alpha1.DocumentLoader{}}, getEventHandler(DocumentLoaderIndexKey)).
 		Complete(r)
 }
 

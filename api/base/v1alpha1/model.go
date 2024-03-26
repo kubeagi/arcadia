@@ -35,6 +35,15 @@ const (
 	LabelModelFullPath = Group + "/full-path"
 )
 
+func (model Model) TypedObjectReference() *TypedObjectReference {
+	return &TypedObjectReference{
+		APIGroup:  &GroupVersion.Group,
+		Kind:      "Model",
+		Name:      model.Name,
+		Namespace: &model.Namespace,
+	}
+}
+
 // IsLLMModel checks whether this model is a llm model
 func (model Model) IsLLMModel() bool {
 	for _, t := range strings.Split(model.Spec.Types, ",") {

@@ -35,17 +35,15 @@ type StreamHandler struct {
 var _ callbacks.Handler = StreamHandler{}
 
 func (handler StreamHandler) HandleStreamingFunc(ctx context.Context, chunk []byte) {
-	logger := klog.FromContext(ctx)
-	if _, ok := handler.args[base.OutputAnserStreamChanKeyInArg]; !ok {
-		logger.Info("no _answer_stream found, create a new one")
-		handler.args[base.OutputAnserStreamChanKeyInArg] = make(chan string)
+	if _, ok := handler.args[base.OutputAnserStreamChanKeyInArg]; ok {
+		logger := klog.FromContext(ctx)
+		streamChan, ok := handler.args[base.OutputAnserStreamChanKeyInArg].(chan string)
+		if !ok {
+			err := fmt.Errorf("answer_stream is not chan string, but %T", handler.args[base.OutputAnserStreamChanKeyInArg])
+			logger.Error(err, "answer_stream is not chan string")
+			return
+		}
+		logger.V(5).Info("stream out:" + string(chunk))
+		streamChan <- string(chunk)
 	}
-	streamChan, ok := handler.args[base.OutputAnserStreamChanKeyInArg].(chan string)
-	if !ok {
-		err := fmt.Errorf("answer_stream is not chan string, but %T", handler.args[base.OutputAnserStreamChanKeyInArg])
-		logger.Error(err, "answer_stream is not chan string")
-		return
-	}
-	logger.V(5).Info("stream out:" + string(chunk))
-	streamChan <- string(chunk)
 }

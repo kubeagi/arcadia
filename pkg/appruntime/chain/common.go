@@ -33,19 +33,17 @@ import (
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	return func(ctx context.Context, chunk []byte) error {
-		logger := klog.FromContext(ctx)
-		if _, ok := res[base.OutputAnserStreamChanKeyInArg]; !ok {
-			logger.Info("no _answer_stream found, create a new one")
-			res[base.OutputAnserStreamChanKeyInArg] = make(chan string)
+		if _, ok := res[base.OutputAnserStreamChanKeyInArg]; ok {
+			logger := klog.FromContext(ctx)
+			streamChan, ok := res[base.OutputAnserStreamChanKeyInArg].(chan string)
+			if !ok {
+				err := fmt.Errorf("answer_stream is not chan string, but %T", res[base.OutputAnserStreamChanKeyInArg])
+				logger.Error(err, "answer_stream is not chan string")
+				return err
+			}
+			logger.V(5).Info("stream out:" + string(chunk))
+			streamChan <- string(chunk)
 		}
-		streamChan, ok := res[base.OutputAnserStreamChanKeyInArg].(chan string)
-		if !ok {
-			err := fmt.Errorf("answer_stream is not chan string, but %T", res[base.OutputAnserStreamChanKeyInArg])
-			logger.Error(err, "answer_stream is not chan string")
-			return err
-		}
-		logger.V(5).Info("stream out:" + string(chunk))
-		streamChan <- string(chunk)
 		return nil
 	}
 }

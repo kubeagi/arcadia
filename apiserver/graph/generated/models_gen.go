@@ -80,6 +80,8 @@ type Application struct {
 	EnableMultiQuery *bool `json:"enableMultiQuery,omitempty"`
 	// chatTimeout 对话超时，单位秒，不填为默认 60s
 	ChatTimeout *float64 `json:"chatTimeout,omitempty"`
+	// enableUploadFile 是否开启对话上传文档功能
+	EnableUploadFile *bool `json:"enableUploadFile,omitempty"`
 	// chunkSize 上传文档做文档拆分时的块大小
 	ChunkSize *int `json:"chunkSize,omitempty"`
 	// chunkOverlap 上传文档作文档拆分时相邻块的交集
@@ -1652,6 +1654,8 @@ type UpdateApplicationConfigInput struct {
 	EnableMultiQuery *bool `json:"enableMultiQuery,omitempty"`
 	// chatTimeout 对话超时，单位秒，不填为默认 60s
 	ChatTimeout *float64 `json:"chatTimeout,omitempty"`
+	// enableUploadFile 是否开启对话上传文档功能
+	EnableUploadFile *bool `json:"enableUploadFile,omitempty"`
 	// chunkSize 上传文档做文档拆分时的块大小
 	ChunkSize *int `json:"chunkSize,omitempty"`
 	// chunkOverlap 上传文档作文档拆分时相邻块的交集

@@ -23,7 +23,12 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 )
 
-const DefaultScoreThreshold = 0.3
+const (
+	DefaultScoreThreshold = 0.3
+	DefaultNumDocuments   = 5
+	MaxNumDocuments       = 50
+	MinNumDocuments       = 1
+)
 
 // KnowledgeBaseRetrieverSpec defines the desired state of KnowledgeBaseRetriever
 type KnowledgeBaseRetrieverSpec struct {

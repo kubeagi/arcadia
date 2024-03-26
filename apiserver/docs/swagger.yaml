@@ -1323,7 +1323,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the rag
+      - description: Namespace of the rag
         in: header
         name: namespace
         required: true
@@ -1377,7 +1377,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the rag
+      - description: Namespace of the rag
         in: header
         name: namespace
         required: true
@@ -1415,7 +1415,7 @@ paths:
         name: ragName
         required: true
         type: string
-      - description: Name of the rag
+      - description: Namespace of the rag
         in: header
         name: namespace
         required: true
