@@ -56,6 +56,8 @@ type Reference struct {
 	Metadata    map[string]any `json:"-"`
 }
 
+const RerankScoreCol string = "rerank_score"
+
 func (reference Reference) String() string {
 	bytes, err := json.Marshal(&reference)
 	if err != nil {
@@ -79,6 +81,7 @@ func AddReferencesToArgs(args map[string]any, refs []Reference) map[string]any {
 	return args
 }
 
+// ConvertDocuments, convert raw doc to what we want doc, for example, knowledgebase doc should add answer into page content
 func ConvertDocuments(ctx context.Context, docs []langchaingoschema.Document, retrieverName string) (newDocs []langchaingoschema.Document, refs []Reference) {
 	logger := klog.FromContext(ctx)
 	docLen := len(docs)
@@ -108,7 +111,7 @@ func ConvertDocuments(ctx context.Context, docs []langchaingoschema.Document, re
 				doc.PageContent = doc.PageContent + joinStr + answer
 			}
 		}
-		if retrieverName == "multiquery" {
+		if retrieverName == "multiquery" || retrieverName == "retrievalqachain" {
 			// pageContent may have the answer in previous steps, and we want this field only has question in reference output
 			pageContent = strings.TrimSuffix(pageContent, joinStr+answer)
 		}
@@ -145,6 +148,7 @@ func ConvertDocuments(ctx context.Context, docs []langchaingoschema.Document, re
 				content = strings.TrimPrefix(strings.TrimSuffix(string(a), "\""), "\"")
 			}
 		}
+		rerankScore, _ := doc.Metadata[RerankScoreCol].(float32)
 		refs = append(refs, Reference{
 			Question:     pageContent,
 			Answer:       answer,
@@ -155,6 +159,7 @@ func ConvertDocuments(ctx context.Context, docs []langchaingoschema.Document, re
 			PageNumber:   page,
 			Content:      content,
 			Metadata:     doc.Metadata,
+			RerankScore:  rerankScore,
 		})
 		docs[k] = doc
 	}

@@ -54,6 +54,8 @@ type Application struct {
 	MaxTokens *int `json:"maxTokens,omitempty"`
 	// conversionWindowSize 对话轮次
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
+	// knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+	Knowledgebases []*string `json:"knowledgebases,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
 	Knowledgebase *string `json:"knowledgebase,omitempty"`
 	// scoreThreshold 最终返回结果的最低相似度
@@ -1709,6 +1711,8 @@ type UpdateApplicationConfigInput struct {
 	ConversionWindowSize *int `json:"conversionWindowSize,omitempty"`
 	// knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
 	Knowledgebase *string `json:"knowledgebase,omitempty"`
+	// knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+	Knowledgebases []*string `json:"knowledgebases,omitempty"`
 	// scoreThreshold 最终返回结果的最低相似度
 	ScoreThreshold *float64 `json:"scoreThreshold,omitempty"`
 	// numDocuments  最终返回结果的引用上限

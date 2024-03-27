@@ -38,3 +38,7 @@ func MapStr2Any(input map[string]string) map[string]any {
 func HasValue(s *string) bool {
 	return s != nil && strings.TrimSpace(*s) != ""
 }
+
+func HasValues(s []*string) bool {
+	return len(s) > 0 && strings.TrimSpace(*s[0]) != ""
+}

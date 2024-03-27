@@ -1,0 +1,145 @@
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: Application
+metadata:
+  name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+  namespace: arcadia
+spec:
+  displayName: "知识库应用"
+  description: "最简单的和知识库对话的应用"
+  prologue: "Welcome to talk to the KnowledgeBase!🤖"
+  docNullReturn: "未找到您询问的内容，请详细描述您的问题，以便我们为您提供更好的服务"
+  nodes:
+    - name: Input
+      displayName: "用户输入"
+      description: "用户输入节点，必须"
+      ref:
+        kind: Input
+        name: Input
+      nextNodeName: ["prompt-node"]
+    - name: prompt-node
+      displayName: "prompt"
+      description: "设定prompt，template中可以使用{{xx}}来替换变量"
+      ref:
+        apiGroup: prompt.arcadia.kubeagi.k8s.com.cn
+        kind: Prompt
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["chain-node"]
+    - name: llm-node
+      displayName: "大模型服务"
+      description: "设定大模型的访问信息"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: LLM
+        name: app-shared-llm-service
+      nextNodeName: ["chain-node"]
+    - name: knowledgebase-node
+      displayName: "使用的知识库"
+      description: "要用哪个知识库"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBase
+        name: knowledgebase-sample-pgvector
+      nextNodeName: ["retriever-node"]
+    - name: retriever-node
+      displayName: "从知识库提取信息的retriever"
+      description: "连接应用和知识库"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBaseRetriever
+        name: base-chat-with-knowledgebase-pgvector-1
+      nextNodeName: ["mergerretriever-node"]
+    - name: knowledgebase-1-node
+      displayName: "使用的知识库1"
+      description: "要用哪个知识库"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBase
+        name: knowledgebase-sample-pgvector2
+      nextNodeName: ["retriever-1-node"]
+    - name: retriever-1-node
+      displayName: "从知识库1提取信息的retriever"
+      description: "连接应用和知识库"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBaseRetriever
+        name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+      nextNodeName: ["mergerretriever-node"]
+    - name: mergerretriever-node
+      displayName: "整合多个retriever的结果"
+      description: "整合多个retriever的结果"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: MergerRetriever
+        name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+      nextNodeName: ["multiquery-node"]
+    - name: multiquery-node
+      displayName: "让LLM多角度提问的Retriever"
+      description: "让LLM多角度提问的Retriever"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: MultiQueryRetriever
+        name: base-chat-with-knowledgebase-pgvector-2
+      nextNodeName: ["rerank-retriever-node"]
+    - name: rerank-retriever-node
+      displayName: "rerank retriever"
+      description: "重排"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: RerankRetriever
+        name: base-chat-with-knowledgebase-pgvector-rerank
+      nextNodeName: ["chain-node"]
+    - name: chain-node
+      displayName: "RetrievalQA chain"
+      description: "chain是langchain的核心概念，RetrievalQAChain用于从 retriever 中提取信息，供llm调用"
+      ref:
+        apiGroup: chain.arcadia.kubeagi.k8s.com.cn
+        kind: RetrievalQAChain
+        name: base-chat-with-knowledgebase
+      nextNodeName: ["Output"]
+    - name: Output
+      displayName: "最终输出"
+      description: "最终输出节点，必须"
+      ref:
+        kind: Output
+        name: Output
+    - name: conversation-knowledgebase-node
+      displayName: "对话知识库"
+      description: "对话知识库"
+      ref:
+        apiGroup: arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBase
+        name: conversation-knowledgebase-placeholder
+      nextNodeName: ["conversation-knowledgebase-retriever-node"]
+    - name: conversation-knowledgebase-retriever-node
+      displayName: "从对话知识库提取信息的retriever"
+      description: "连接应用和知识库"
+      ref:
+        apiGroup: retriever.arcadia.kubeagi.k8s.com.cn
+        kind: KnowledgeBaseRetriever
+        name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+      nextNodeName: ["mergerretriever-node"]
+
+---
+apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: KnowledgeBaseRetriever
+metadata:
+  name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+  namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"KnowledgeBase","group":"arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
+spec:
+  displayName: "从知识库获取信息的Retriever"
+  scoreThreshold: 0.5
+  numDocuments: 3
+---
+apiVersion: retriever.arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: MergerRetriever
+metadata:
+  name: base-chat-with-multi-knowledgebase-pgvector-rerank-multiquery
+  namespace: arcadia
+  annotations:
+    arcadia.kubeagi.k8s.com.cn/input-rules: '[{"kind":"KnowledgeBase","group":"arcadia.kubeagi.k8s.com.cn","length":1}]'
+    arcadia.kubeagi.k8s.com.cn/output-rules: '[{"kind":"RetrievalQAChain","group":"chain.arcadia.kubeagi.k8s.com.cn","length":1}]'
+spec:
+  displayName: "整合多个Retriever"

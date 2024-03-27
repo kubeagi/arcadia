@@ -155,6 +155,22 @@ resources:
     crdVersion: v1
   controller: true
   domain: arcadia.kubeagi.k8s.com.cn
+  group: retriever
+  kind: MergerRetriever
+  path: github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
+  group: retriever
+  kind: MultiQueryRetriever
+  path: github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: arcadia.kubeagi.k8s.com.cn
   group: prompt
   kind: Prompt
   path: github.com/kubeagi/arcadia/api/app-node/prompt/v1alpha1

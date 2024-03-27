@@ -18,16 +18,16 @@ package retriever
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	appnode "github.com/kubeagi/arcadia/api/app-node"
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -101,7 +101,21 @@ func (l *KnowledgeBaseRetriever) Cleanup() {
 
 func GenerateKnowledgebaseRetriever(ctx context.Context, cli client.Client, knowledgebaseName, knowledgebaseNamespace string, retrieverConfig apiretriever.CommonRetrieverConfig, args map[string]any) (outArg map[string]any, finish func(), err error) {
 	knowledgebase := &v1alpha1.KnowledgeBase{}
+	isConversationKnowledgebase := appnode.IsPlaceholderConversationKnowledgebase(knowledgebaseName)
+	if isConversationKnowledgebase {
+		v, ok := args[base.ConversationIDInArg]
+		if ok {
+			conversationID, ok := v.(string)
+			if ok && conversationID != "" {
+				knowledgebaseName = conversationID
+			}
+		}
+	}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: knowledgebaseNamespace, Name: knowledgebaseName}, knowledgebase); err != nil {
+		if isConversationKnowledgebase && apierrors.IsNotFound(err) { // When there is a conversationID, look for the corresponding conversation knowledgebase. This knowledgebase may not exist. This is not a error
+			// TODO We can search for whether there should be a conversation knowledgebase from the pg
+			return args, nil, nil
+		}
 		return nil, nil, fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
 	}
 
@@ -138,39 +152,13 @@ func GenerateKnowledgebaseRetriever(ctx context.Context, cli client.Client, know
 	}
 	retriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
 
-	question, ok := args["question"]
-	if !ok {
-		return nil, finish, errors.New("no question in args")
-	}
-	query, ok := question.(string)
-	if !ok {
-		return nil, finish, errors.New("question not string")
+	query, err := base.GetInputQuestionFromArg(args)
+	if err != nil {
+		return nil, finish, err
 	}
 	docs, err := retriever.GetRelevantDocuments(ctx, query)
 	if err != nil {
 		return nil, finish, fmt.Errorf("can't get relevant documents: %w", err)
-	}
-	oldDocs := make([]langchaingoschema.Document, 0)
-	v, ok := args[base.LangchaingoRetrieverKeyInArg]
-	if ok {
-		// may exist other retriever, like conversation retriever
-		oldRetriever, ok := v.(langchaingoschema.Retriever)
-		if ok {
-			oldDocs, err = oldRetriever.GetRelevantDocuments(ctx, query)
-			if err != nil {
-				return nil, finish, fmt.Errorf("can't get old doc: %w", err)
-			}
-		}
-	}
-	if len(docs) == 0 && len(oldDocs) == 0 {
-		// FIXME: 需要决定当知识库找不到相关内容，但是conversation知识库存在文档时如何处理
-		v, exist := args[base.APPDocNullReturn]
-		if exist {
-			docNullReturn, ok := v.(string)
-			if ok && len(docNullReturn) > 0 {
-				return nil, finish, &base.RetrieverGetNullDocError{Msg: docNullReturn}
-			}
-		}
 	}
 	// pgvector get score means vector distance, similarity = 1 - vector distance
 	// chroma get score means similarity
@@ -181,7 +169,7 @@ func GenerateKnowledgebaseRetriever(ctx context.Context, cli client.Client, know
 		}
 	}
 	docs, refs := ConvertDocuments(ctx, docs, "knowledgebase")
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: append(docs, oldDocs...), Name: "KnowledgebaseRetriever"}
-	AddReferencesToArgs(args, refs)
+	args = AddReferencesToArgs(args, refs)
+	args = base.AddKnowledgebaseRetrieverToArg(args, &Fakeretriever{Docs: docs, Name: "KnowledgebaseRetriever"})
 	return args, finish, nil
 }

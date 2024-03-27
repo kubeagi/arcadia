@@ -87,6 +87,7 @@ type ComplexityRoot struct {
 		EnableRerank         func(childComplexity int) int
 		EnableUploadFile     func(childComplexity int) int
 		Knowledgebase        func(childComplexity int) int
+		Knowledgebases       func(childComplexity int) int
 		Llm                  func(childComplexity int) int
 		MaxLength            func(childComplexity int) int
 		MaxTokens            func(childComplexity int) int
@@ -1096,6 +1097,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Knowledgebase(childComplexity), true
+
+	case "Application.knowledgebases":
+		if e.complexity.Application.Knowledgebases == nil {
+			break
+		}
+
+		return e.complexity.Application.Knowledgebases(childComplexity), true
 
 	case "Application.llm":
 		if e.complexity.Application.Llm == nil {
@@ -5181,9 +5189,14 @@ type Application {
     conversionWindowSize: Int
 
     """
+    knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+    """
+    knowledgebases: [String]
+
+    """
     knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
     """
-    knowledgebase: String
+    knowledgebase: String @deprecated(reason: "Use knowledgebases")
 
     """
     scoreThreshold 最终返回结果的最低相似度
@@ -5504,7 +5517,12 @@ input UpdateApplicationConfigInput {
     """
     knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
     """
-    knowledgebase: String
+    knowledgebase: String @deprecated(reason: "Use knowledgebases")
+
+    """
+    knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+    """
+    knowledgebases: [String]
 
     """
     scoreThreshold 最终返回结果的最低相似度
@@ -10008,6 +10026,47 @@ func (ec *executionContext) fieldContext_Application_conversionWindowSize(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_knowledgebases(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_knowledgebases(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Knowledgebases, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_knowledgebases(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Application_knowledgebase(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Application_knowledgebase(ctx, field)
 	if err != nil {
@@ -11699,6 +11758,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_maxTokens(ctx, field)
 			case "conversionWindowSize":
 				return ec.fieldContext_Application_conversionWindowSize(ctx, field)
+			case "knowledgebases":
+				return ec.fieldContext_Application_knowledgebases(ctx, field)
 			case "knowledgebase":
 				return ec.fieldContext_Application_knowledgebase(ctx, field)
 			case "scoreThreshold":
@@ -11808,6 +11869,8 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_maxTokens(ctx, field)
 			case "conversionWindowSize":
 				return ec.fieldContext_Application_conversionWindowSize(ctx, field)
+			case "knowledgebases":
+				return ec.fieldContext_Application_knowledgebases(ctx, field)
 			case "knowledgebase":
 				return ec.fieldContext_Application_knowledgebase(ctx, field)
 			case "scoreThreshold":
@@ -28890,6 +28953,8 @@ func (ec *executionContext) fieldContext_RAG_application(ctx context.Context, fi
 				return ec.fieldContext_Application_maxTokens(ctx, field)
 			case "conversionWindowSize":
 				return ec.fieldContext_Application_conversionWindowSize(ctx, field)
+			case "knowledgebases":
+				return ec.fieldContext_Application_knowledgebases(ctx, field)
 			case "knowledgebase":
 				return ec.fieldContext_Application_knowledgebase(ctx, field)
 			case "scoreThreshold":
@@ -39224,7 +39289,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "systemPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "enableUploadFile", "chunkSize", "chunkOverlap", "batchSize"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "knowledgebases", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "systemPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "enableUploadFile", "chunkSize", "chunkOverlap", "batchSize"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -39301,6 +39366,13 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.Knowledgebase = data
+		case "knowledgebases":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("knowledgebases"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Knowledgebases = data
 		case "scoreThreshold":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scoreThreshold"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
@@ -40622,6 +40694,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_maxTokens(ctx, field, obj)
 		case "conversionWindowSize":
 			out.Values[i] = ec._Application_conversionWindowSize(ctx, field, obj)
+		case "knowledgebases":
+			out.Values[i] = ec._Application_knowledgebases(ctx, field, obj)
 		case "knowledgebase":
 			out.Values[i] = ec._Application_knowledgebase(ctx, field, obj)
 		case "scoreThreshold":

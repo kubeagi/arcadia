@@ -29,7 +29,6 @@ import (
 	langchainllms "github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/memory"
 	"github.com/tmc/langchaingo/prompts"
-	langchainschema "github.com/tmc/langchaingo/schema"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -302,32 +301,29 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 		if finish != nil {
 			defer finish()
 		}
-		v, ok := outArg[base.LangchaingoRetrieverKeyInArg]
-		if ok {
-			r, ok := v.(langchainschema.Retriever)
-			if ok {
-				doc, err := r.GetRelevantDocuments(ctx, "")
-				if err != nil {
-					return nil, err
-				}
-				for _, d := range doc {
-					hasAnswer := false
-					// has answer, means qa.csv, just return the question
-					v, ok := d.Metadata[documentloaders.AnswerCol]
-					if ok {
-						answer, ok := v.(string)
-						if ok && answer != "" {
-							question := strings.TrimSuffix(d.PageContent, "\na: "+answer)
-							promptStarters = append(promptStarters, strings.TrimPrefix(question, "q: "))
-							hasAnswer = true
-							if len(promptStarters) == limit {
-								break
-							}
+		retrievers, err := base.GetRetrieversFromArg(outArg)
+		if err == nil && len(retrievers) > 0 {
+			doc, err := retrievers[0].GetRelevantDocuments(ctx, "")
+			if err != nil {
+				return nil, err
+			}
+			for _, d := range doc {
+				hasAnswer := false
+				// has answer, means qa.csv, just return the question
+				v, ok := d.Metadata[documentloaders.AnswerCol]
+				if ok {
+					answer, ok := v.(string)
+					if ok && answer != "" {
+						question := strings.TrimSuffix(d.PageContent, "\na: "+answer)
+						promptStarters = append(promptStarters, strings.TrimPrefix(question, "q: "))
+						hasAnswer = true
+						if len(promptStarters) == limit {
+							break
 						}
 					}
-					if !hasAnswer {
-						content.WriteString(d.PageContent + "\n")
-					}
+				}
+				if !hasAnswer {
+					content.WriteString(d.PageContent + "\n")
 				}
 			}
 		}

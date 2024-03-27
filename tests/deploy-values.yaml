@@ -140,3 +140,8 @@ postgresql:
     repository: kubeagi/postgresql
     tag: 16.1.0-debian-11-r18-pgvector-v0.5.1
     pullPolicy: IfNotPresent
+
+config:
+  embedder:
+    enabled: true
+    model: "arcadia-embedder"

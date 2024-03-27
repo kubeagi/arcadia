@@ -66,14 +66,8 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 		return args, errors.New("empty references")
 	}
 	if len(references) == 0 {
-		v, exist := args[base.APPDocNullReturn]
-		if exist {
-			docNullReturn, ok := v.(string)
-			if ok && len(docNullReturn) > 0 {
-				return nil, &base.RetrieverGetNullDocError{Msg: docNullReturn}
-			}
-		}
-		args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: nil, Name: "RerankRetriever"}
+		klog.FromContext(ctx).V(3).Info("rerank retriever get no references, skip rerank")
+		args[base.LangchaingoRetrieversKeyInArg] = []langchainschema.Retriever{&Fakeretriever{Docs: nil, Name: "RerankRetriever"}}
 		return args, nil
 	}
 	q, ok := args[base.InputQuestionKeyInArg]
@@ -143,15 +137,14 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 	// note: the references in args will be replaced, not append
 	args[base.RuntimeRetrieverReferencesKeyInArg] = newRef
 
-	v, ok := args[base.LangchaingoRetrieverKeyInArg]
-	if !ok {
-		return args, errors.New("no retriever")
+	retrievers, err := base.GetRetrieversFromArg(args)
+	if err != nil {
+		if errors.Is(err, base.ErrNoRetrievers) {
+			return args, nil
+		}
+		return args, err
 	}
-	retriever, ok := v.(langchainschema.Retriever)
-	if !ok {
-		return args, errors.New("retriever not schema.Retriever")
-	}
-	docs, err := retriever.GetRelevantDocuments(ctx, query)
+	docs, err := retrievers[0].GetRelevantDocuments(ctx, query)
 	if err != nil {
 		return args, fmt.Errorf("get relevant documents failed: %w", err)
 	}
@@ -159,11 +152,15 @@ func (l *RerankRetriever) Run(ctx context.Context, cli client.Client, args map[s
 	for i := range newRef {
 		for j := range docs {
 			if newRef[i].Score == docs[j].Score && reflect.DeepEqual(newRef[i].Metadata, docs[j].Metadata) {
+				if v := docs[j].Metadata; len(v) == 0 {
+					docs[j].Metadata = make(map[string]any, 1)
+				}
+				docs[j].Metadata[RerankScoreCol] = newRef[i].RerankScore
 				newDocs = append(newDocs, docs[j])
 			}
 		}
 	}
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: newDocs, Name: "RerankRetriever"}
+	args[base.LangchaingoRetrieversKeyInArg] = []langchainschema.Retriever{&Fakeretriever{Docs: newDocs, Name: "RerankRetriever"}}
 	return args, nil
 }
 
