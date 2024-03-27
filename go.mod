@@ -27,6 +27,7 @@ require (
 	github.com/tmc/langchaingo v0.1.3
 	github.com/valyala/fasthttp v1.51.0
 	github.com/vektah/gqlparser/v2 v2.5.10
+	golang.org/x/sync v0.5.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
 	k8s.io/api v0.24.2
@@ -112,7 +113,6 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20230302034142-4b1e35fe2254 // indirect
 	golang.org/x/arch v0.6.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	google.golang.org/api v0.152.0 // indirect
 	google.golang.org/genproto v0.0.0-20231120223509-83a465c0220f // indirect

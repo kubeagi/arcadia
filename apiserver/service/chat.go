@@ -226,7 +226,7 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
-		if pointer.BoolDeref(app.Spec.EnableUploadFile, false) {
+		if !pointer.BoolDeref(app.Spec.EnableUploadFile, true) {
 			c.JSON(http.StatusForbidden, chat.ErrorResp{Err: "file upload is not enabled"})
 			return
 		}
@@ -279,6 +279,10 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 			klog.FromContext(c.Request.Context()).Error(err, "error list conversation")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
 			return
+		}
+		if err := cs.server.FillAppIconToConversations(c, &resp); err != nil {
+			// note: fill app icon is try our best, don't need to return error
+			klog.FromContext(c.Request.Context()).Error(err, "error fill app icon to conversations")
 		}
 		klog.FromContext(c.Request.Context()).V(3).Info("list conversation done", "req", req)
 		c.JSON(http.StatusOK, resp)

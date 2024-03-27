@@ -2037,6 +2037,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "arcadia"
                 },
+                "icon": {
+                    "description": "icon only valid in conversation list api",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string",
                     "example": "5a41f3ca-763b-41ec-91c3-4bbbb00736d0"

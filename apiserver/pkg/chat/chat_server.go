@@ -30,6 +30,7 @@ import (
 	"github.com/tmc/langchaingo/memory"
 	"github.com/tmc/langchaingo/prompts"
 	langchainschema "github.com/tmc/langchaingo/schema"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -403,3 +404,46 @@ func (cs *ChatServer) GetApp(ctx context.Context, appName, appNamespace string) 
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question
+
+func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversations *[]storage.Conversation) error {
+	if conversations == nil {
+		return nil
+	}
+	appMap := make(map[string]int, len(*conversations))
+	i := 0
+	for _, c := range *conversations {
+		key := fmt.Sprintf("%s/%s", c.AppNamespace, c.AppName)
+		if _, exist := appMap[key]; exist {
+			continue
+		}
+		appMap[key] = i
+		i++
+	}
+	result := make([]string, len(appMap))
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(10)
+	for key, index := range appMap {
+		key, index := key, index
+		g.Go(func() error {
+			app := &v1alpha1.Application{}
+			ns, name, ok := strings.Cut(key, "/")
+			if !ok {
+				return nil
+			}
+			err := cs.cli.Get(ctx, types.NamespacedName{Namespace: ns, Name: name}, app)
+			if err != nil {
+				return err
+			}
+			result[index] = app.Spec.Icon
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	for i, c := range *conversations {
+		c.Icon = result[appMap[fmt.Sprintf("%s/%s", c.AppNamespace, c.AppName)]]
+		(*conversations)[i] = c
+	}
+	return nil
+}
