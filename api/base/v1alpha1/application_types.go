@@ -58,7 +58,7 @@ type WebConfig struct {
 	ShowRetrievalInfo bool `json:"showRetrievalInfo,omitempty"`
 	ShowNextGuide     bool `json:"showNextGuide,omitempty"`
 	// +kubebuilder:default:=true
-	EnableUploadFile bool `json:"enableUploadFile,omitempty"`
+	EnableUploadFile *bool `json:"enableUploadFile,omitempty"`
 }
 
 type Node struct {
