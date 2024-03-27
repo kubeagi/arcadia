@@ -47,16 +47,70 @@ func app2gpt(app *v1alpha1.Application, c client.Client) (*generated.Gpt, error)
 	}
 
 	gpt := &generated.Gpt{
-		Name:        pointer.String(strings.Join([]string{app.Namespace, app.Name}, "/")),
-		DisplayName: pointer.String(app.Spec.DisplayName),
-		Description: pointer.String(app.Spec.Description),
-		Hot:         pointer.Int64(getHot(app, c)),
-		Creator:     pointer.String(app.Spec.Creator),
-		Category:    common.GetAppCategory(app),
-		Icon:        pointer.String(app.Spec.Icon),
-		Prologue:    pointer.String(app.Spec.Prologue),
+		Name:               pointer.String(strings.Join([]string{app.Namespace, app.Name}, "/")),
+		DisplayName:        pointer.String(app.Spec.DisplayName),
+		Description:        pointer.String(app.Spec.Description),
+		Hot:                pointer.Int64(getHot(app, c)),
+		Creator:            pointer.String(app.Spec.Creator),
+		Category:           common.GetAppCategory(app),
+		Icon:               pointer.String(app.Spec.Icon),
+		Prologue:           pointer.String(app.Spec.Prologue),
+		ShowRespInfo:       pointer.Bool(app.Spec.ShowRespInfo),
+		ShowRetrievalInfo:  pointer.Bool(app.Spec.ShowRetrievalInfo),
+		ShowNextGuide:      pointer.Bool(app.Spec.ShowNextGuide),
+		EnableUploadFile:   app.Spec.EnableUploadFile,
+		NotReadyReasonCode: pointer.String(string(GetGPTNotReadyReasonCode(app))),
 	}
 	return gpt, nil
+}
+
+type GPTNotReadyReasonCode string
+
+const (
+	GPTIsReady            GPTNotReadyReasonCode = ""
+	VectorStoreIsNotReady GPTNotReadyReasonCode = "VectorStoreIsNotReady"
+	EmbedderIsNotReady    GPTNotReadyReasonCode = "EmbedderIsNotReady"
+	LLMNotReady           GPTNotReadyReasonCode = "LLMNotReady"
+	KnowledgeBaseNotReady GPTNotReadyReasonCode = "KnowledgeBaseNotReady"
+	ConfigError           GPTNotReadyReasonCode = "ConfigError"
+)
+
+func GetGPTNotReadyReasonCode(application *v1alpha1.Application) GPTNotReadyReasonCode {
+	isReady, msg := application.Status.IsReadyOrGetReadyMessage()
+	if isReady {
+		return GPTIsReady
+	}
+	_, conditionMessage, find := strings.Cut(msg, "[message]: ")
+	if !find {
+		return ConfigError
+	}
+	groupKind, detail, find := strings.Cut(conditionMessage, " || ")
+	if !find {
+		return ConfigError
+	}
+	group, kind, find := strings.Cut(groupKind, ":")
+	if !find {
+		return ConfigError
+	}
+	switch group {
+	case "":
+		switch kind {
+		case "llm":
+			return LLMNotReady
+		case "knowledgebase":
+			if strings.Contains(detail, "vectorstore") {
+				return VectorStoreIsNotReady
+			}
+			if strings.Contains(detail, "embedder") {
+				return EmbedderIsNotReady
+			}
+			return KnowledgeBaseNotReady
+		default:
+			return ConfigError
+		}
+	default:
+		return ConfigError
+	}
 }
 
 func getHot(app *v1alpha1.Application, cli client.Client) int64 {

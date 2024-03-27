@@ -871,6 +871,23 @@ type Gpt struct {
 	Icon *string `json:"icon,omitempty"`
 	// 对话开场白
 	Prologue *string `json:"prologue,omitempty"`
+	// showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
+	ShowRespInfo *bool `json:"showRespInfo,omitempty"`
+	// showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+	ShowRetrievalInfo *bool `json:"showRetrievalInfo,omitempty"`
+	// showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
+	// enableUploadFile 是否开启对话上传文档功能
+	EnableUploadFile *bool `json:"enableUploadFile,omitempty"`
+	// notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+	// 可选值:
+	// - 空：就绪，gpt 可以使用
+	// - VectorStoreIsNotReady: 向量数据库没有就绪
+	// - EmbedderIsNotReady: embedder服务没有就绪
+	// - KnowledgeBaseNotReady: 知识库未就绪，指向量数据库和embedder出错之外的其他情况
+	// - LLMNotReady: 模型服务没有就绪
+	// - ConfigError: 应用配置错误，比如写了多个Output节点，比如节点名称重复等其他错误
+	NotReadyReasonCode *string `json:"notReadyReasonCode,omitempty"`
 }
 
 func (Gpt) IsPageNode() {}

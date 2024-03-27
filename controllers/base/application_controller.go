@@ -212,7 +212,7 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logg
 				}
 				// Only allow chain group or agent node as the ending node
 				if *group != chainv1alpha1.Group && (*group != agentv1alpha1.Group && node.Ref.Kind != "agent") {
-					r.setCondition(app, app.Status.ErrorCondition("ending node should be chain or agent")...)
+					r.setCondition(app, app.Status.ErrorCondition("ending node should be a chain or agent")...)
 					return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 				}
 			}
@@ -254,11 +254,12 @@ func (r *ApplicationReconciler) validateNodes(ctx context.Context, log logr.Logg
 				waitRunningNodes.PushBack(e)
 				continue
 			}
+			log.V(5).Info("runtimeApp try to check node...", "node", e.Name())
 			if isReady, errMsg := e.Ready(); !isReady {
-				r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("node %s init failed: %s", e.Name(), errMsg))...)
+				r.setCondition(app, app.Status.ErrorCondition(fmt.Sprintf("%s:%s || node %s get failed status: %s", e.Group(), e.Kind(), e.Name(), errMsg))...)
 				return app, ctrl.Result{RequeueAfter: waitMedium}, nil
 			}
-			log.V(5).Info("runtimeApp check node", "node", e.Name())
+			log.V(5).Info("runtimeApp check node done", "node", e.Name())
 			visited[e.Name()] = true
 		}
 		for _, n := range e.GetNextNode() {
