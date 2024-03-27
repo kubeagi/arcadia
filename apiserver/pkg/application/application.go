@@ -101,7 +101,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		ShowRetrievalInfo: pointer.Bool(app.Spec.ShowRetrievalInfo),
 		DocNullReturn:     pointer.String(app.Spec.DocNullReturn),
 		ChatTimeout:       pointer.Float64(app.Spec.ChatTimeoutSecond),
-		EnableUploadFile:  pointer.Bool(app.Spec.EnableUploadFile),
+		EnableUploadFile:  app.Spec.EnableUploadFile,
 	}
 	if prompt != nil {
 		gApp.UserPrompt = pointer.String(prompt.Spec.UserMessage)
@@ -741,7 +741,9 @@ func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfi
 	app.Spec.ShowNextGuide = pointer.BoolDeref(input.ShowNextGuide, app.Spec.ShowNextGuide)
 	app.Spec.DocNullReturn = pointer.StringDeref(input.DocNullReturn, app.Spec.DocNullReturn)
 	app.Spec.ChatTimeoutSecond = pointer.Float64Deref(input.ChatTimeout, v1alpha1.DefaultChatTimeoutSeconds)
-	app.Spec.EnableUploadFile = pointer.BoolDeref(input.EnableUploadFile, app.Spec.EnableUploadFile)
+	if input.EnableUploadFile != nil {
+		app.Spec.EnableUploadFile = input.EnableUploadFile
+	}
 	return nil
 }
 

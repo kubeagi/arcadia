@@ -226,7 +226,7 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
-		if !app.Spec.EnableUploadFile {
+		if pointer.BoolDeref(app.Spec.EnableUploadFile, false) {
 			c.JSON(http.StatusForbidden, chat.ErrorResp{Err: "file upload is not enabled"})
 			return
 		}
