@@ -857,9 +857,16 @@ type Gpt struct {
 
 func (Gpt) IsPageNode() {}
 
+type GPTCategory struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	NameEn string `json:"nameEn"`
+}
+
 type GPTQuery struct {
-	GetGpt  Gpt             `json:"getGPT"`
-	ListGpt PaginatedResult `json:"listGPT"`
+	GetGpt          Gpt             `json:"getGPT"`
+	ListGpt         PaginatedResult `json:"listGPT"`
+	ListGPTCategory []*GPTCategory  `json:"listGPTCategory"`
 }
 
 // 知识库

@@ -45,6 +45,7 @@ const (
 )
 
 type (
+	// FrowarAPI is the forward api handler which forward requests to other services
 	FrowarAPI   struct{}
 	SummaryResp struct {
 		Summary string `json:"summary"`

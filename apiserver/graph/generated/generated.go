@@ -384,9 +384,16 @@ type ComplexityRoot struct {
 		Prologue    func(childComplexity int) int
 	}
 
+	GPTCategory struct {
+		ID     func(childComplexity int) int
+		Name   func(childComplexity int) int
+		NameEn func(childComplexity int) int
+	}
+
 	GPTQuery struct {
-		GetGpt  func(childComplexity int, name string) int
-		ListGpt func(childComplexity int, input ListGPTInput) int
+		GetGpt          func(childComplexity int, name string) int
+		ListGPTCategory func(childComplexity int) int
+		ListGpt         func(childComplexity int, input ListGPTInput) int
 	}
 
 	KnowledgeBase struct {
@@ -857,6 +864,7 @@ type EmbedderQueryResolver interface {
 type GPTQueryResolver interface {
 	GetGpt(ctx context.Context, obj *GPTQuery, name string) (*Gpt, error)
 	ListGpt(ctx context.Context, obj *GPTQuery, input ListGPTInput) (*PaginatedResult, error)
+	ListGPTCategory(ctx context.Context, obj *GPTQuery) ([]*GPTCategory, error)
 }
 type KnowledgeBaseMutationResolver interface {
 	CreateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input CreateKnowledgeBaseInput) (*KnowledgeBase, error)
@@ -2611,6 +2619,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GPT.Prologue(childComplexity), true
 
+	case "GPTCategory.id":
+		if e.complexity.GPTCategory.ID == nil {
+			break
+		}
+
+		return e.complexity.GPTCategory.ID(childComplexity), true
+
+	case "GPTCategory.name":
+		if e.complexity.GPTCategory.Name == nil {
+			break
+		}
+
+		return e.complexity.GPTCategory.Name(childComplexity), true
+
+	case "GPTCategory.nameEn":
+		if e.complexity.GPTCategory.NameEn == nil {
+			break
+		}
+
+		return e.complexity.GPTCategory.NameEn(childComplexity), true
+
 	case "GPTQuery.getGPT":
 		if e.complexity.GPTQuery.GetGpt == nil {
 			break
@@ -2622,6 +2651,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GPTQuery.GetGpt(childComplexity, args["name"].(string)), true
+
+	case "GPTQuery.listGPTCategory":
+		if e.complexity.GPTQuery.ListGPTCategory == nil {
+			break
+		}
+
+		return e.complexity.GPTQuery.ListGPTCategory(childComplexity), true
 
 	case "GPTQuery.listGPT":
 		if e.complexity.GPTQuery.ListGpt == nil {
@@ -6274,16 +6310,7 @@ type Tool {
 
 union PageNode = Datasource | Model | Embedder | KnowledgeBase | Dataset | VersionedDataset | F | Worker | ApplicationMetadata | LLM | ModelService | RayCluster | RAG | GPT | Node
 `, BuiltIn: false},
-	{Name: "../schema/gpt.graphqls", Input: `type GPTQuery {
-    getGPT(name: String!): GPT!
-    listGPT(input: ListGPTInput!): PaginatedResult!
-}
-
-extend type Query{
-    GPT: GPTQuery
-}
-
-input ListGPTInput {
+	{Name: "../schema/gpt.graphqls", Input: `input ListGPTInput {
 
     """
     category: gpt所属分类
@@ -6354,6 +6381,23 @@ type GPT {
     对话开场白
     """
     prologue: String
+}
+
+# GPTCategory in gpt store
+type GPTCategory {
+    id: String!
+    name: String!
+    nameEn: String!
+}
+
+type GPTQuery {
+    getGPT(name: String!): GPT!
+    listGPT(input: ListGPTInput!): PaginatedResult!
+    listGPTCategory: [GPTCategory]!
+}
+
+extend type Query{
+    GPT: GPTQuery
 }
 `, BuiltIn: false},
 	{Name: "../schema/k8s.graphqls", Input: `type LabelSelectorRequirement {
@@ -19312,6 +19356,138 @@ func (ec *executionContext) fieldContext_GPT_prologue(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _GPTCategory_id(ctx context.Context, field graphql.CollectedField, obj *GPTCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTCategory_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTCategory_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTCategory_name(ctx context.Context, field graphql.CollectedField, obj *GPTCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTCategory_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTCategory_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTCategory_nameEn(ctx context.Context, field graphql.CollectedField, obj *GPTCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTCategory_nameEn(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NameEn, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTCategory_nameEn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GPTQuery_getGPT(ctx context.Context, field graphql.CollectedField, obj *GPTQuery) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GPTQuery_getGPT(ctx, field)
 	if err != nil {
@@ -19448,6 +19624,58 @@ func (ec *executionContext) fieldContext_GPTQuery_listGPT(ctx context.Context, f
 	if fc.Args, err = ec.field_GPTQuery_listGPT_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTQuery_listGPTCategory(ctx context.Context, field graphql.CollectedField, obj *GPTQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTQuery_listGPTCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.GPTQuery().ListGPTCategory(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*GPTCategory)
+	fc.Result = res
+	return ec.marshalNGPTCategory2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTQuery_listGPTCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_GPTCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_GPTCategory_name(ctx, field)
+			case "nameEn":
+				return ec.fieldContext_GPTCategory_nameEn(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GPTCategory", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -26563,6 +26791,8 @@ func (ec *executionContext) fieldContext_Query_GPT(ctx context.Context, field gr
 				return ec.fieldContext_GPTQuery_getGPT(ctx, field)
 			case "listGPT":
 				return ec.fieldContext_GPTQuery_listGPT(ctx, field)
+			case "listGPTCategory":
+				return ec.fieldContext_GPTQuery_listGPTCategory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GPTQuery", field.Name)
 		},
@@ -41800,6 +42030,55 @@ func (ec *executionContext) _GPT(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
+var gPTCategoryImplementors = []string{"GPTCategory"}
+
+func (ec *executionContext) _GPTCategory(ctx context.Context, sel ast.SelectionSet, obj *GPTCategory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gPTCategoryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GPTCategory")
+		case "id":
+			out.Values[i] = ec._GPTCategory_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._GPTCategory_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nameEn":
+			out.Values[i] = ec._GPTCategory_nameEn(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var gPTQueryImplementors = []string{"GPTQuery"}
 
 func (ec *executionContext) _GPTQuery(ctx context.Context, sel ast.SelectionSet, obj *GPTQuery) graphql.Marshaler {
@@ -41857,6 +42136,42 @@ func (ec *executionContext) _GPTQuery(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._GPTQuery_listGPT(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "listGPTCategory":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GPTQuery_listGPTCategory(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -46488,6 +46803,44 @@ func (ec *executionContext) marshalNGPT2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋap
 	return ec._GPT(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNGPTCategory2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTCategory(ctx context.Context, sel ast.SelectionSet, v []*GPTCategory) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOGPTCategory2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTCategory(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -48046,6 +48399,13 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	}
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalOGPTCategory2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTCategory(ctx context.Context, sel ast.SelectionSet, v *GPTCategory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GPTCategory(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOGPTQuery2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTQuery(ctx context.Context, sel ast.SelectionSet, v *GPTQuery) graphql.Marshaler {

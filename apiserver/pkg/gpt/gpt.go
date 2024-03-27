@@ -33,6 +33,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	"github.com/kubeagi/arcadia/pkg/config"
 )
 
 var (
@@ -92,6 +93,7 @@ func GetGPT(ctx context.Context, c client.Client, name string) (*generated.Gpt, 
 	return app2gpt(app, c)
 }
 
+// ListGPT list all gpt
 func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput) (*generated.PaginatedResult, error) {
 	keyword := pointer.StringDeref(input.Keyword, "")
 	category := pointer.StringDeref(input.Category, "")
@@ -120,4 +122,21 @@ func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput)
 		}
 		return app2gpt(app, c)
 	}, filter...)
+}
+
+// ListGPTCategory list all categories
+func ListGPTCategory(ctx context.Context, c client.Client) ([]*generated.GPTCategory, error) {
+	categories, err := config.GetGPTsCategories(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*generated.GPTCategory, len(categories))
+	for i := range categories {
+		resp[i] = &generated.GPTCategory{
+			Name:   categories[i].Name,
+			NameEn: categories[i].NameEn,
+			ID:     categories[i].ID,
+		}
+	}
+	return resp, nil
 }

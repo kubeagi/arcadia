@@ -33,30 +33,41 @@ type Config struct {
 	// Gateway to access LLM api services
 	Gateway *Gateway `json:"gateway,omitempty"`
 
-	// Embedder specifies the default embedder for Arcadia to generate embeddings
-	Embedder *arcadiav1alpha1.TypedObjectReference `json:"embedder,omitempty"`
-
-	// VectorStore to access VectorStore api services
-	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
-
-	// Streamlit to get the Streamlit configuration
-	Streamlit *Streamlit `json:"streamlit,omitempty"`
+	// EmbeddingSuite here represents the system embedding service provided by the system
+	EmbeddingSuite
 
 	// Resource pool managed by Ray cluster
 	RayClusters []RayCluster `json:"rayClusters,omitempty"`
 
 	// the default rerank model
 	Rerank *arcadiav1alpha1.TypedObjectReference `json:"rerank,omitempty"`
+
+	// Streamlit to get the Streamlit configuration
+	// Deprecated: this field no longer maintained
+	Streamlit *Streamlit `json:"streamlit,omitempty"`
+}
+
+// EmbeddingSuite contains everything required to provide embedding service
+type EmbeddingSuite struct {
+	// Embedder specifies the default embedder for Arcadia to generate embeddings
+	Embedder *arcadiav1alpha1.TypedObjectReference `json:"embedder,omitempty"`
+
+	// VectorStore to access VectorStore api services
+	VectorStore *arcadiav1alpha1.TypedObjectReference `json:"vectorStore,omitempty"`
 }
 
 // Gateway defines the way to access llm apis host by Arcadia
 type Gateway struct {
+	// ExternalAPIServer is the api(LLM/Embedding) server address that can be accessed from internet
 	ExternalAPIServer string `json:"externalApiServer,omitempty"`
-	APIServer         string `json:"apiServer,omitempty"`
-	Controller        string `json:"controller,omitempty"`
+	// APIServer is api(LLM/Embedding) server which can be accessed within platform
+	APIServer string `json:"apiServer,omitempty"`
+	// Controller is the server address which is responsible for llm/embedding service registration
+	Controller string `json:"controller,omitempty"`
 }
 
 // Streamlit defines the configuration of streamlit app
+// Deprecated: no longer maintained
 type Streamlit struct {
 	Image            string `json:"image"`
 	IngressClassName string `json:"ingressClassName"`
@@ -78,6 +89,7 @@ type RayCluster struct {
 	RayVersion string `json:"rayVersion,omitempty"`
 }
 
+// String format raycluster into string
 func (rayCluster RayCluster) String() string {
 	return fmt.Sprintf("Name:%s HeadAddress: %s DashboardHost:%s PythonVersion:%s RayVersion: %s", rayCluster.Name, rayCluster.HeadAddress, rayCluster.DashboardHost, rayCluster.PythonVersion, rayCluster.RayVersion)
 }
@@ -91,6 +103,7 @@ func (rayCluster RayCluster) GetRayVersion() string {
 	return rayCluster.RayVersion
 }
 
+// GetPythonVersion in ray cluster
 func (rayCluster RayCluster) GetPythonVersion() string {
 	// Default python version is 3.9.5
 	if rayCluster.PythonVersion == "" {
@@ -99,6 +112,7 @@ func (rayCluster RayCluster) GetPythonVersion() string {
 	return rayCluster.PythonVersion
 }
 
+// DefaultRayCluster which can be used for vllm worker as local ray cluster
 func DefaultRayCluster() RayCluster {
 	return RayCluster{
 		Name:          "default",
