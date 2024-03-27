@@ -81,7 +81,9 @@ func generateDatasourceFileStatus(instance *v1alpha1.VersionedDataset) []v1alpha
 		if _, ok := fileGroup[key]; !ok {
 			fileGroup[key] = make([]string, 0)
 		}
-		fileGroup[key] = append(fileGroup[key], fg.Paths...)
+		for i := range fg.Files {
+			fileGroup[key] = append(fileGroup[key], fg.Files[i].Path)
+		}
 	}
 
 	// 3. Convert fileGroup to []DatasourceFileStatus format

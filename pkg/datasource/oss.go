@@ -46,11 +46,6 @@ type OSS struct {
 	*minio.Core
 }
 
-var (
-	ossDefaultGetOpt    = minio.GetObjectOptions{}
-	ossDefaultGetTagOpt = minio.GetObjectTaggingOptions{}
-)
-
 func NewOSS(ctx context.Context, c client.Client, endpoint *v1alpha1.Endpoint) (*OSS, error) {
 	var accessKeyID, secretAccessKey string
 	if endpoint.AuthSecret != nil {
@@ -172,7 +167,7 @@ func (oss *OSS) ReadFile(ctx context.Context, info any) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return oss.Client.GetObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
+	return oss.Client.GetObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.GetObjectOptions{VersionID: ossInfo.VersionID})
 }
 
 func (oss *OSS) StatFile(ctx context.Context, info any) (any, error) {
@@ -180,7 +175,7 @@ func (oss *OSS) StatFile(ctx context.Context, info any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetOpt)
+	return oss.Client.StatObject(ctx, ossInfo.Bucket, ossInfo.Object, minio.GetObjectOptions{VersionID: ossInfo.VersionID})
 }
 
 func (oss *OSS) GetTags(ctx context.Context, info any) (map[string]string, error) {
@@ -188,7 +183,7 @@ func (oss *OSS) GetTags(ctx context.Context, info any) (map[string]string, error
 	if err != nil {
 		return nil, err
 	}
-	tags, err := oss.Client.GetObjectTagging(ctx, ossInfo.Bucket, ossInfo.Object, ossDefaultGetTagOpt)
+	tags, err := oss.Client.GetObjectTagging(ctx, ossInfo.Bucket, ossInfo.Object, minio.GetObjectTaggingOptions{VersionID: ossInfo.VersionID})
 	if err != nil {
 		return nil, err
 	}

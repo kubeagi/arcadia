@@ -1,3 +1,7 @@
+type FileWithVersion {
+    path: String!
+    version: String
+}
 """
 文件组
 规则: 属于同一个源(数据集)的文件要放在同一个filegroup中
@@ -12,6 +16,8 @@ type filegroup{
     路径数组
     """
     path: [String!]
+
+    files: [FileWithVersion!]
 }
 
 """
@@ -51,6 +57,11 @@ type filedetail{
     规则: enum { Pending , Processing , Succeeded, Failed, Skipped}
     """
     phase: String!
+
+    """
+    文件版本，""或者"null"的情况表示是文件最新版本。
+    """
+    version: String!
 }
 
 """
@@ -155,12 +166,18 @@ type KnowledgeBase {
     message: String
 }
 
+input FileWithVersionInput {
+    path: String!
+    version: String
+}
 """源文件输入"""
 input filegroupinput {
     """数据源字段"""
     source: TypedObjectReferenceInput!
     """路径"""
     path: [String!]
+
+    files: [FileWithVersionInput!]
 }
 
 """创建知识库的输入"""

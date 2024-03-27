@@ -13,8 +13,8 @@ spec:
         kind: Datasource
         name: datasource-sample
         namespace: arcadia
-      paths:
-        - qa.csv
-        - chunk.csv
+      files:
+      - path: qa.csv
+      - path: chunk.csv
   released: 0
   version: v1

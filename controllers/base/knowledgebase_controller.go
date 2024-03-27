@@ -139,6 +139,13 @@ func (r *KnowledgeBaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
+	// The previous version of the knowledge base used the paths field to store files.
+	// After the change, the files field is used.
+	// without migration, which will lead to incorrect data display and the inability to vectorize the data normally.
+	if migrated := r.migratePaths2Files(ctx, kb); migrated {
+		return reconcile.Result{}, r.Client.Update(ctx, kb)
+	}
+
 	kb, result, err = r.reconcile(ctx, log, kb)
 
 	// Update status after reconciliation.
@@ -431,9 +438,6 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 	for i, detail := range kb.Status.FileGroupDetail {
 		if detail.Source != nil && detail.Source.Name == group.Source.Name && detail.Source.GetNamespace(kb.GetNamespace()) == ns {
 			fileGroupDetail = &kb.Status.FileGroupDetail[i]
-			for i, detail := range fileGroupDetail.FileDetails {
-				pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
-			}
 			break
 		}
 	}
@@ -443,24 +447,24 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		fileGroupDetail = &arcadiav1alpha1.FileGroupDetail{}
 		fileGroupDetail.Init(group)
 		kb.Status.FileGroupDetail = append(kb.Status.FileGroupDetail, *fileGroupDetail)
-		for i, detail := range fileGroupDetail.FileDetails {
-			pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
-		}
+	}
+	for i, detail := range fileGroupDetail.FileDetails {
+		pathMap[detail.Path] = &fileGroupDetail.FileDetails[i]
 	}
 
 	errs := make([]error, 0)
-	for _, path := range group.Paths {
+	for _, path := range group.Files {
 		r.mu.Lock()
-		hasHandled := r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)]
+		hasHandled := r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path.Path, path.Version)]
 		r.mu.Unlock()
 		if hasHandled {
 			continue
 		}
-		fileDetail, ok := pathMap[path]
+		fileDetail, ok := pathMap[path.Path]
 		if !ok {
 			// this path is newly added
 			fileGroupDetail.FileDetails = append(fileGroupDetail.FileDetails, arcadiav1alpha1.FileDetails{
-				Path:           path,
+				Path:           path.Path,
 				Checksum:       "",
 				LastUpdateTime: metav1.Now(),
 				Phase:          arcadiav1alpha1.FileProcessPhasePending,
@@ -471,13 +475,13 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 
 		switch strings.ToLower(group.Source.Kind) {
 		case "versioneddataset":
-			// info.Object has been
-			info.Object = filepath.Join(vsBasePath, path)
+			info.Object = filepath.Join(vsBasePath, path.Path)
 		case "datasource", "":
-			info.Object = path
+			info.Object = path.Path
 		default:
 			return fmt.Errorf("source type %s not supported yet", group.Source.Kind)
 		}
+		info.VersionID = path.Version
 
 		stat, err := ds.StatFile(ctx, info)
 		log.V(5).Info(fmt.Sprintf("raw StatFile:%#v", stat), "path", path)
@@ -495,6 +499,9 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 			fileDetail.UpdateErr(err, arcadiav1alpha1.FileProcessPhaseFailed)
 			continue
 		}
+		// NOTE: 如果path.Version是空值，表示最新版本，那么在status中直接更新version为版本号， 而不是保持空值
+		fileDetail.Version = objectStat.VersionID
+		// NOTE: If the version changes, the etag will not necessarily change.
 		if objectStat.ETag == fileDetail.Checksum {
 			fileDetail.LastUpdateTime = metav1.Now()
 			continue
@@ -536,7 +543,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(ctx context.Context, log lo
 		// time cost for file process
 		fileDetail.TimeCost = int64(time.Since(startTime).Milliseconds())
 		r.mu.Lock()
-		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path)] = true
+		r.HasHandledSuccessPath[r.hasHandledPathKey(kb, group, path.Path, path.Version)] = true
 		r.mu.Unlock()
 		fileDetail.UpdateErr(nil, arcadiav1alpha1.FileProcessPhaseSucceeded)
 		log.Info("handle FileGroup succeeded", "timecost(milliseconds)", fileDetail.TimeCost)
@@ -633,19 +640,19 @@ func (r *KnowledgeBaseReconciler) reconcileDelete(ctx context.Context, log logr.
 	}()
 }
 
-func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path string) string {
+func (r *KnowledgeBaseReconciler) hasHandledPathKey(kb *arcadiav1alpha1.KnowledgeBase, filegroup arcadiav1alpha1.FileGroup, path, version string) string {
 	sourceName := ""
 	if filegroup.Source != nil {
 		sourceName = filegroup.Source.Name
 	}
-	return kb.Name + "/" + kb.Namespace + "/" + sourceName + "/" + path
+	return kb.Name + "/" + kb.Namespace + "/" + sourceName + "/" + path + "/" + version
 }
 
 func (r *KnowledgeBaseReconciler) cleanupHasHandledSuccessPath(kb *arcadiav1alpha1.KnowledgeBase) {
 	r.mu.Lock()
 	for _, fg := range kb.Spec.FileGroups {
-		for _, path := range fg.Paths {
-			delete(r.HasHandledSuccessPath, r.hasHandledPathKey(kb, fg, path))
+		for _, path := range fg.Files {
+			delete(r.HasHandledSuccessPath, r.hasHandledPathKey(kb, fg, path.Path, path.Version))
 		}
 	}
 	r.mu.Unlock()
@@ -668,4 +675,33 @@ func (r *KnowledgeBaseReconciler) unready(log logr.Logger, kb *arcadiav1alpha1.K
 func (r *KnowledgeBaseReconciler) isReady(kb *arcadiav1alpha1.KnowledgeBase) bool {
 	v, ok := r.ReadyMap[string(kb.GetUID())]
 	return ok && v
+}
+
+// migratePaths2Files The paths field will be deprecated in version 0.3,
+// the function is compatible with old version data in the cluster.
+func (r *KnowledgeBaseReconciler) migratePaths2Files(ctx context.Context, kb *arcadiav1alpha1.KnowledgeBase) bool {
+	migrated := false
+	logger, _ := logr.FromContext(ctx)
+	for idx, fg := range kb.Spec.FileGroups {
+		if len(fg.Paths) == 0 { // nolint
+			logger.Info(fmt.Sprintf("source: %v don't have any file", fg))
+			continue
+		}
+		if kb.Spec.FileGroups[idx].Files == nil {
+			kb.Spec.FileGroups[idx].Files = make([]arcadiav1alpha1.FileWithVersion, 0)
+		}
+		exists := make(map[string]struct{})
+		for _, f := range kb.Spec.FileGroups[idx].Files {
+			exists[f.Path] = struct{}{}
+		}
+		for _, p := range fg.Paths { // nolint
+			if _, ok := exists[p]; ok {
+				continue
+			}
+			kb.Spec.FileGroups[idx].Files = append(kb.Spec.FileGroups[idx].Files, arcadiav1alpha1.FileWithVersion{Path: p})
+			migrated = true
+		}
+		kb.Spec.FileGroups[idx].Paths = nil // nolint
+	}
+	return migrated
 }

@@ -363,6 +363,7 @@ type ComplexityRoot struct {
 		Path              func(childComplexity int) int
 		Size              func(childComplexity int) int
 		Time              func(childComplexity int) int
+		Versions          func(childComplexity int) int
 	}
 
 	FileDetails struct {
@@ -371,6 +372,11 @@ type ComplexityRoot struct {
 		FileSize  func(childComplexity int) int
 		StartTime func(childComplexity int) int
 		Status    func(childComplexity int) int
+	}
+
+	FileWithVersion struct {
+		Path    func(childComplexity int) int
+		Version func(childComplexity int) int
 	}
 
 	GPT struct {
@@ -793,9 +799,11 @@ type ComplexityRoot struct {
 		Size            func(childComplexity int) int
 		TimeCost        func(childComplexity int) int
 		UpdateTimestamp func(childComplexity int) int
+		Version         func(childComplexity int) int
 	}
 
 	Filegroup struct {
+		Files  func(childComplexity int) int
 		Path   func(childComplexity int) int
 		Source func(childComplexity int) int
 	}
@@ -2528,6 +2536,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.F.Time(childComplexity), true
 
+	case "F.versions":
+		if e.complexity.F.Versions == nil {
+			break
+		}
+
+		return e.complexity.F.Versions(childComplexity), true
+
 	case "FileDetails.end_time":
 		if e.complexity.FileDetails.EndTime == nil {
 			break
@@ -2562,6 +2577,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FileDetails.Status(childComplexity), true
+
+	case "FileWithVersion.path":
+		if e.complexity.FileWithVersion.Path == nil {
+			break
+		}
+
+		return e.complexity.FileWithVersion.Path(childComplexity), true
+
+	case "FileWithVersion.version":
+		if e.complexity.FileWithVersion.Version == nil {
+			break
+		}
+
+		return e.complexity.FileWithVersion.Version(childComplexity), true
 
 	case "GPT.category":
 		if e.complexity.GPT.Category == nil {
@@ -4740,6 +4769,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filedetail.UpdateTimestamp(childComplexity), true
 
+	case "filedetail.version":
+		if e.complexity.Filedetail.Version == nil {
+			break
+		}
+
+		return e.complexity.Filedetail.Version(childComplexity), true
+
+	case "filegroup.files":
+		if e.complexity.Filegroup.Files == nil {
+			break
+		}
+
+		return e.complexity.Filegroup.Files(childComplexity), true
+
 	case "filegroup.path":
 		if e.complexity.Filegroup.Path == nil {
 			break
@@ -4804,6 +4847,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFileFilter,
 		ec.unmarshalInputFileGroup,
 		ec.unmarshalInputFileItem,
+		ec.unmarshalInputFileWithVersionInput,
 		ec.unmarshalInputLLMConfigItem,
 		ec.unmarshalInputLabelSelectorRequirementInput,
 		ec.unmarshalInputListCommonInput,
@@ -6453,7 +6497,11 @@ input PersistentVolumeClaimSpecInput {
     dataSourceRef: TypedObjectReferenceInput
 }
 `, BuiltIn: false},
-	{Name: "../schema/knowledgebase.graphqls", Input: `"""
+	{Name: "../schema/knowledgebase.graphqls", Input: `type FileWithVersion {
+    path: String!
+    version: String
+}
+"""
 文件组
 规则: 属于同一个源(数据集)的文件要放在同一个filegroup中
 规则: path直接读取文件里表中的文件路径即可
@@ -6467,6 +6515,8 @@ type filegroup{
     路径数组
     """
     path: [String!]
+
+    files: [FileWithVersion!]
 }
 
 """
@@ -6506,6 +6556,11 @@ type filedetail{
     规则: enum { Pending , Processing , Succeeded, Failed, Skipped}
     """
     phase: String!
+
+    """
+    文件版本，""或者"null"的情况表示是文件最新版本。
+    """
+    version: String!
 }
 
 """
@@ -6610,12 +6665,18 @@ type KnowledgeBase {
     message: String
 }
 
+input FileWithVersionInput {
+    path: String!
+    version: String
+}
 """源文件输入"""
 input filegroupinput {
     """数据源字段"""
     source: TypedObjectReferenceInput!
     """路径"""
     path: [String!]
+
+    files: [FileWithVersionInput!]
 }
 
 """创建知识库的输入"""
@@ -7647,6 +7708,11 @@ type F {
 
     """文件创建时间"""
     creationTimestamp: Time    
+
+    """
+    文件版本列表
+    """
+    versions: [String!]
 }
 
 """
@@ -7672,6 +7738,8 @@ input FileGroup {
 
     """用到的文件路径，注意⚠️ 一定不要加bucket的名字"""
     paths: [String!]
+
+    files: [FileWithVersionInput!]
 }
 
 
@@ -18808,6 +18876,47 @@ func (ec *executionContext) fieldContext_F_creationTimestamp(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _F_versions(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_F_versions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Versions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_F_versions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "F",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FileDetails_file_name(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FileDetails_file_name(ctx, field)
 	if err != nil {
@@ -19018,6 +19127,91 @@ func (ec *executionContext) _FileDetails_file_size(ctx context.Context, field gr
 func (ec *executionContext) fieldContext_FileDetails_file_size(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "FileDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileWithVersion_path(ctx context.Context, field graphql.CollectedField, obj *FileWithVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileWithVersion_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileWithVersion_path(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileWithVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FileWithVersion_version(ctx context.Context, field graphql.CollectedField, obj *FileWithVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FileWithVersion_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FileWithVersion_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FileWithVersion",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -28378,6 +28572,8 @@ func (ec *executionContext) fieldContext_RAGDataset_files(ctx context.Context, f
 				return ec.fieldContext_F_size(ctx, field)
 			case "creationTimestamp":
 				return ec.fieldContext_F_creationTimestamp(ctx, field)
+			case "versions":
+				return ec.fieldContext_F_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type F", field.Name)
 		},
@@ -34679,6 +34875,50 @@ func (ec *executionContext) fieldContext_filedetail_phase(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _filedetail_version(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filedetail_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filedetail_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filedetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _filegroup_source(ctx context.Context, field graphql.CollectedField, obj *Filegroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_filegroup_source(ctx, field)
 	if err != nil {
@@ -34768,6 +35008,53 @@ func (ec *executionContext) fieldContext_filegroup_path(ctx context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _filegroup_files(ctx context.Context, field graphql.CollectedField, obj *Filegroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filegroup_files(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Files, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*FileWithVersion)
+	fc.Result = res
+	return ec.marshalOFileWithVersion2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filegroup_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filegroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_FileWithVersion_path(ctx, field)
+			case "version":
+				return ec.fieldContext_FileWithVersion_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FileWithVersion", field.Name)
 		},
 	}
 	return fc, nil
@@ -34876,6 +35163,8 @@ func (ec *executionContext) fieldContext_filegroupdetail_filedetails(ctx context
 				return ec.fieldContext_filedetail_timeCost(ctx, field)
 			case "phase":
 				return ec.fieldContext_filedetail_phase(ctx, field)
+			case "version":
+				return ec.fieldContext_filedetail_version(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type filedetail", field.Name)
 		},
@@ -36548,7 +36837,7 @@ func (ec *executionContext) unmarshalInputFileGroup(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"source", "paths"}
+	fieldsInOrder := [...]string{"source", "paths", "files"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -36569,6 +36858,13 @@ func (ec *executionContext) unmarshalInputFileGroup(ctx context.Context, obj int
 				return it, err
 			}
 			it.Paths = data
+		case "files":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+			data, err := ec.unmarshalOFileWithVersionInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Files = data
 		}
 	}
 
@@ -36603,6 +36899,40 @@ func (ec *executionContext) unmarshalInputFileItem(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Size = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFileWithVersionInput(ctx context.Context, obj interface{}) (FileWithVersionInput, error) {
+	var it FileWithVersionInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"path", "version"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "path":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("path"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Path = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
 		}
 	}
 
@@ -39078,7 +39408,7 @@ func (ec *executionContext) unmarshalInputfilegroupinput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"source", "path"}
+	fieldsInOrder := [...]string{"source", "path", "files"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -39099,6 +39429,13 @@ func (ec *executionContext) unmarshalInputfilegroupinput(ctx context.Context, ob
 				return it, err
 			}
 			it.Path = data
+		case "files":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+			data, err := ec.unmarshalOFileWithVersionInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Files = data
 		}
 	}
 
@@ -41898,6 +42235,8 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 			out.Values[i] = ec._F_size(ctx, field, obj)
 		case "creationTimestamp":
 			out.Values[i] = ec._F_creationTimestamp(ctx, field, obj)
+		case "versions":
+			out.Values[i] = ec._F_versions(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41957,6 +42296,47 @@ func (ec *executionContext) _FileDetails(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var fileWithVersionImplementors = []string{"FileWithVersion"}
+
+func (ec *executionContext) _FileWithVersion(ctx context.Context, sel ast.SelectionSet, obj *FileWithVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fileWithVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FileWithVersion")
+		case "path":
+			out.Values[i] = ec._FileWithVersion_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "version":
+			out.Values[i] = ec._FileWithVersion_version(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -46442,6 +46822,11 @@ func (ec *executionContext) _filedetail(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "version":
+			out.Values[i] = ec._filedetail_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -46480,6 +46865,8 @@ func (ec *executionContext) _filegroup(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._filegroup_source(ctx, field, obj)
 		case "path":
 			out.Values[i] = ec._filegroup_path(ctx, field, obj)
+		case "files":
+			out.Values[i] = ec._filegroup_files(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -46786,6 +47173,21 @@ func (ec *executionContext) unmarshalNFileGroup2ᚖgithubᚗcomᚋkubeagiᚋarca
 
 func (ec *executionContext) unmarshalNFileItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileItem(ctx context.Context, v interface{}) (*FileItem, error) {
 	res, err := ec.unmarshalInputFileItem(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFileWithVersion2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersion(ctx context.Context, sel ast.SelectionSet, v *FileWithVersion) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FileWithVersion(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFileWithVersionInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionInput(ctx context.Context, v interface{}) (*FileWithVersionInput, error) {
+	res, err := ec.unmarshalInputFileWithVersionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -48378,6 +48780,73 @@ func (ec *executionContext) unmarshalOFileItem2ᚕᚖgithubᚗcomᚋkubeagiᚋar
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNFileItem2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileItem(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOFileWithVersion2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*FileWithVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFileWithVersion2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOFileWithVersionInput2ᚕᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionInputᚄ(ctx context.Context, v interface{}) ([]*FileWithVersionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*FileWithVersionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFileWithVersionInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐFileWithVersionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}

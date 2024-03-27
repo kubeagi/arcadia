@@ -88,6 +88,9 @@ type FileDetails struct {
 
 	// ErrMessage defines the error message
 	ErrMessage string `json:"errMessage,omitempty"`
+
+	// Version file version
+	Version string `json:"version,omitempty"`
 }
 
 type FileProcessPhase string

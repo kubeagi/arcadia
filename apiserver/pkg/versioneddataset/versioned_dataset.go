@@ -262,14 +262,25 @@ func UpdateVersionedDataset(ctx context.Context, c client.Client, input *generat
 	obj.Spec.Description = pointer.StringDeref(input.Description, obj.Spec.Description)
 	fg := make([]v1alpha1.FileGroup, 0)
 	for _, item := range input.FileGroups {
-		fg = append(fg, v1alpha1.FileGroup{
+		tmp := v1alpha1.FileGroup{
 			Source: &v1alpha1.TypedObjectReference{
 				Kind:      item.Source.Kind,
 				Name:      item.Source.Name,
 				Namespace: item.Source.Namespace,
 			},
-			Paths: item.Paths,
-		})
+			Files: make([]v1alpha1.FileWithVersion, 0),
+		}
+		for _, fv := range item.Files {
+			tmpFv := v1alpha1.FileWithVersion{
+				Path:    fv.Path,
+				Version: "",
+			}
+			if fv.Version != nil {
+				tmpFv.Version = *fv.Version
+			}
+			tmp.Files = append(tmp.Files, tmpFv)
+		}
+		fg = append(fg, tmp)
 	}
 	obj.Spec.FileGroups = fg
 	err = c.Update(ctx, obj)
@@ -300,14 +311,25 @@ func CreateVersionedDataset(ctx context.Context, c client.Client, input *generat
 	if len(input.FileGrups) > 0 {
 		fg := make([]v1alpha1.FileGroup, 0)
 		for _, item := range input.FileGrups {
-			fg = append(fg, v1alpha1.FileGroup{
+			tmp := v1alpha1.FileGroup{
 				Source: &v1alpha1.TypedObjectReference{
 					Kind:      item.Source.Kind,
 					Name:      item.Source.Name,
 					Namespace: item.Source.Namespace,
 				},
-				Paths: item.Paths,
-			})
+				Files: make([]v1alpha1.FileWithVersion, 0),
+			}
+			for _, fv := range item.Files {
+				tmpFv := v1alpha1.FileWithVersion{
+					Path:    fv.Path,
+					Version: "",
+				}
+				if fv.Version != nil {
+					tmpFv.Version = *fv.Version
+				}
+				tmp.Files = append(tmp.Files, tmpFv)
+			}
+			fg = append(fg, tmp)
 		}
 		vds.Spec.FileGroups = fg
 	}
