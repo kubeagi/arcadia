@@ -684,6 +684,11 @@ info "8.4 check other chat rest api"
 info "8.4.1 conversation list"
 resp=$(curl --max-time $TimeoutSeconds -s --show-error -XPOST http://127.0.0.1:8081/chat/conversations --data '{"app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')
 echo $resp | jq .
+icon=$(echo $resp | jq -r '.[0].icon')
+if [[ $icon == "null" ]] || [[ -z $icon ]]; then
+	echo "should has icon."
+	exit 1
+fi
 delete_conversation_id=$(echo $resp | jq -r '.[0].id')
 info "8.4.2 message list"
 data=$(jq -n --arg conversationID "$delete_conversation_id" '{"conversation_id":$conversationID, "app_name": "base-chat-with-bot", "app_namespace": "arcadia"}')

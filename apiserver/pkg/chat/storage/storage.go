@@ -41,6 +41,8 @@ type Conversation struct {
 	User         string         `gorm:"column:user;type:string;comment:the conversation chat user" json:"-"`
 	Debug        bool           `gorm:"column:debug;type:bool;comment:debug mode" json:"-"`
 	DeletedAt    gorm.DeletedAt `gorm:"column:deleted_at;type:time;comment:the time the conversation deleted at" json:"-"`
+	// icon only valid in conversation list api
+	Icon string `gorm:"-" json:"icon,omitempty"`
 }
 
 // Message represent a message in storage
