@@ -29,6 +29,15 @@ func (r *gPTQueryResolver) ListGpt(ctx context.Context, obj *generated.GPTQuery,
 	return gpt.ListGPT(ctx, c, input)
 }
 
+// ListGPTCategory is the resolver for the listGPTCategory field.
+func (r *gPTQueryResolver) ListGPTCategory(ctx context.Context, obj *generated.GPTQuery) ([]*generated.GPTCategory, error) {
+	c, err := getAdminClient()
+	if err != nil {
+		return nil, err
+	}
+	return gpt.ListGPTCategory(ctx, c)
+}
+
 // Gpt is the resolver for the GPT field.
 func (r *queryResolver) Gpt(ctx context.Context) (*generated.GPTQuery, error) {
 	return &generated.GPTQuery{}, nil

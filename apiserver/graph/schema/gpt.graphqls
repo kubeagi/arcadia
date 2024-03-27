@@ -1,12 +1,3 @@
-type GPTQuery {
-    getGPT(name: String!): GPT!
-    listGPT(input: ListGPTInput!): PaginatedResult!
-}
-
-extend type Query{
-    GPT: GPTQuery
-}
-
 input ListGPTInput {
 
     """
@@ -78,4 +69,21 @@ type GPT {
     对话开场白
     """
     prologue: String
+}
+
+# GPTCategory in gpt store
+type GPTCategory {
+    id: String!
+    name: String!
+    nameEn: String!
+}
+
+type GPTQuery {
+    getGPT(name: String!): GPT!
+    listGPT(input: ListGPTInput!): PaginatedResult!
+    listGPTCategory: [GPTCategory]!
+}
+
+extend type Query{
+    GPT: GPTQuery
 }

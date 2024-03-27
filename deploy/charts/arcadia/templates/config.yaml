@@ -69,6 +69,36 @@ data:
       user: {{ .Values.postgresql.global.postgresql.auth.username }}
       password: {{ .Values.postgresql.global.postgresql.auth.password }}
       database: {{ .Values.postgresql.global.postgresql.auth.database }}
+  # configurations for gpts
+  gptsConfig: |
+    categories:
+      - id: 1
+        name: "通用对话"
+        nameEn: "General Conversation"
+      - id: 2
+        name: "工作"
+        nameEn: "Work"
+      - id: 3
+        name: "学习"
+        nameEn: "Learning"
+      - id: 4
+        name: "效率"
+        nameEn: "Efficiency"
+      - id: 4
+        name: "人物扮演"
+        nameEn: "Character Play"
+      - id: 5
+        name: "游戏"
+        nameEn: "Game"
+      - id: 6
+        name: "生活"
+        nameEn: "Life"
+      - id: 7
+        name: "情感"
+        nameEn: "Emotion"
+      - id: 8
+        name: "动漫"
+        nameEn: "Anime"
 {{- end }}
 kind: ConfigMap
 metadata:
