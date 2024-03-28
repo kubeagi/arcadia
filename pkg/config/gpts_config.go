@@ -35,7 +35,9 @@ var (
 
 // GPTsConfig is the configurations for GPT Store
 type GPTsConfig struct {
-	Categories []Category `json:"categories,omitempty"`
+	// PublicNamespace is the namespace which all gpt-releated resources are public
+	PublicNamespace string     `json:"public_namespace,omitempty"`
+	Categories      []Category `json:"categories,omitempty"`
 }
 
 // Category in gpt store

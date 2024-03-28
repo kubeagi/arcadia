@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -258,5 +259,5 @@ func (r *ModelReconciler) UpdateStatus(ctx context.Context, instance *arcadiav1a
 		newCondition = instance.ReadyCondition()
 	}
 	instanceCopy.Status.SetConditions(newCondition)
-	return r.Client.Status().Update(ctx, instanceCopy)
+	return errors.Join(err, r.Client.Status().Update(ctx, instanceCopy))
 }

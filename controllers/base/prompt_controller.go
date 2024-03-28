@@ -172,7 +172,7 @@ func (r *PromptReconciler) UpdateStatus(ctx context.Context, prompt *arcadiav1al
 	if response != nil {
 		promptDeepCodpy.Status.Data = response.Bytes()
 	}
-	return r.Status().Update(ctx, promptDeepCodpy)
+	return errors.Join(err, r.Client.Status().Update(ctx, promptDeepCodpy))
 }
 
 // SetupWithManager sets up the controller with the Manager.

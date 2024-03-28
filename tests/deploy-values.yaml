@@ -1,4 +1,5 @@
 global:
+  storageClass: &default-storage-class "standard"
   defaultVectorStoreType: pgvector
 
   # Enable and update the ip if nip.io is NOT accessible in deployed environment
@@ -47,13 +48,14 @@ opsconsole:
     host: portal.test.nip.io
 
 # @section portal for arcadia gpts
-agentportal:
+gpts:
   enabled: true
-  kubebbEnabled: false
-  image: kubeagi/agent-portal:latest
-  ingress:
-    path: ""
-    host: gpts.test.nip.io
+  public_namespace: gpts
+  agentportal:
+    image: kubeagi/agent-portal:latest
+    ingress:
+      path: ""
+      host: gpts.test.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:
@@ -74,7 +76,7 @@ minio:
   rootPassword: "Passw0rd!"
   persistence:
     enabled: true
-    storageClass: "standard"
+    storageClass: *default-storage-class
     size: 30Gi
   ingress:
     enabled: false
@@ -104,7 +106,7 @@ chromadb:
     auth:
       enabled: false
     serverHttpPort: 8000
-    dataVolumeStorageClass: "standard"
+    dataVolumeStorageClass: *default-storage-class
     dataVolumeSize: "1Gi"
 
 # @section dataprocess is used to configure data processing service
@@ -124,7 +126,7 @@ dataprocess:
 # - used as vector store with pgvector enabled
 postgresql:
   global:
-    storageClass: "standard"
+    storageClass: *default-storage-class
     postgresql:
       auth:
         # default username and password

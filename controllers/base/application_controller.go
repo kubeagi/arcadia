@@ -283,14 +283,25 @@ func (r *ApplicationReconciler) reconcile(ctx context.Context, log logr.Logger, 
 		}
 	}
 	appRaw := app.DeepCopy()
+	// Set public label
 	if app.Spec.IsPublic {
 		if app.Labels == nil {
 			app.Labels = make(map[string]string, 1)
 		}
-		app.Labels[arcadiav1alpha1.AppPublicLabelKey] = ""
+		app.Labels[arcadiav1alpha1.AppPublicLabelKey] = "true"
 	} else {
 		delete(app.Labels, arcadiav1alpha1.AppPublicLabelKey)
 	}
+	// Set recommended label
+	if app.Spec.IsRecommended {
+		if app.Labels == nil {
+			app.Labels = make(map[string]string, 1)
+		}
+		app.Labels[arcadiav1alpha1.AppRecommendedLabelKey] = "true"
+	} else {
+		delete(app.Labels, arcadiav1alpha1.AppRecommendedLabelKey)
+	}
+
 	if !reflect.DeepEqual(app, appRaw) {
 		return app, ctrl.Result{Requeue: true}, r.Patch(ctx, app, client.MergeFrom(appRaw))
 	}

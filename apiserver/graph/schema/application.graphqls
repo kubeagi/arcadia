@@ -195,6 +195,11 @@ type ApplicationMetadata {
     isPublic: Boolean
 
     """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
+
+    """
     应用状态
     """
     status: String
@@ -249,6 +254,11 @@ input CreateApplicationMetadataInput {
     isPublic: Boolean
 
     """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
+
+    """
     category：所属分类
     """
     category: [String]
@@ -296,6 +306,11 @@ input UpdateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
 
     """
     category：所属分类

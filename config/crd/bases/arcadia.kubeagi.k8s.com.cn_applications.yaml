@@ -65,6 +65,10 @@ spec:
                 description: IsPublic Set whether the current application provides
                   services to the public
                 type: boolean
+              isRecommended:
+                description: IsRecommended Set whether the current application is
+                  recognized as recommended to users
+                type: boolean
               nodes:
                 description: Nodes
                 items:

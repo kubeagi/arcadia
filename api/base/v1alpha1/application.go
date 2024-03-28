@@ -28,6 +28,9 @@ const (
 	// AppPublicLabelKey will add to app which is public
 	AppPublicLabelKey = Group + "/app-is-public"
 
+	// AppRecommendedLabelKey will add to app which is recommended
+	AppRecommendedLabelKey = Group + "/app-is-recommended"
+
 	DefaultChatTimeoutSeconds = 60
 )
 

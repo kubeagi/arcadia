@@ -67,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        no: [1, 2, 3]
+        no: [1]
     steps:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master

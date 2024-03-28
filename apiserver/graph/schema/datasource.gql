@@ -146,6 +146,9 @@ query getDatasource($name: String!, $namespace: String!) {
           bucket
           object
         }
+        pg {
+          database
+        }
         web {
           recommendIntervalTime
         }

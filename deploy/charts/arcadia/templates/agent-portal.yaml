@@ -1,4 +1,4 @@
-{{- if .Values.agentportal.enabled }}
+{{- if .Values.gpts.enabled }}
 apiVersion: v1
 data:
   .env.production: |
@@ -32,7 +32,7 @@ spec:
         app: {{ .Release.Name }}-agentportal
     spec:
       containers:
-      - image: {{ .Values.agentportal.image }}
+      - image: {{ .Values.gpts.agentportal.image }}
         imagePullPolicy: IfNotPresent
         name: agentportal
         env:
@@ -116,7 +116,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-  - host: {{ .Values.agentportal.ingress.host }}
+  - host: {{ .Values.gpts.agentportal.ingress.host }}
     http:
       paths:
       - backend:
@@ -124,6 +124,6 @@ spec:
             name: {{ .Release.Name }}-agentportal
             port:
               number: 3000
-        path: "/{{ .Values.agentportal.ingress.path }}"
+        path: "/{{ .Values.gpts.agentportal.ingress.path }}"
         pathType: ImplementationSpecific
 {{- end }}

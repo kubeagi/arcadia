@@ -292,5 +292,5 @@ func (r *EmbedderReconciler) UpdateStatus(ctx context.Context, instance *arcadia
 		newCondition = instance.ReadyCondition(msg)
 	}
 	instanceCopy.Status.SetConditions(newCondition)
-	return r.Client.Status().Update(ctx, instanceCopy)
+	return errors.Join(err, r.Client.Status().Update(ctx, instanceCopy))
 }
