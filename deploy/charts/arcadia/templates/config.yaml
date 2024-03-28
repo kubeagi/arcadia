@@ -71,6 +71,7 @@ data:
       database: {{ .Values.postgresql.global.postgresql.auth.database }}
   # configurations for gpts
   gptsConfig: |
+    public_namespace: {{ .Values.gpts.public_namespace }}
     categories:
       - id: 1
         name: "通用对话"

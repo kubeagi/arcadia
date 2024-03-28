@@ -6,6 +6,7 @@ query getGPT($name: String!){
             description
             hot
             creator
+            isRecommended
             category
             icon
             prologue
@@ -32,6 +33,7 @@ query listGPTs($input: ListGPTInput!) {
                     description
                     hot
                     creator
+                    isRecommended
                     category
                     icon
                     prologue

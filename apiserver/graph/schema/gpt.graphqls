@@ -56,6 +56,11 @@ type GPT {
     creator: String
 
     """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
+
+    """
     category：gpt所属分类
     """
     category: [String]

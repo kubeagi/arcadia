@@ -1,6 +1,5 @@
 global:
-  oss:
-    bucket: &default-oss-bucket "arcadia"
+  storageClass: &default-storage-class "standard"
   ## @param global.defaultVectorStoreType Defines the default vector database type, currently `chroma` and `pgvector` are available
   ## When the option is `chroma`, it needs `chromadb.enabled` to be `true` as well to work.
   ## When the option is `pgvector`, it needs `postgresql.enabled` to be `true` as well to work.
@@ -36,6 +35,7 @@ config:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 controller:
+  # 1: error 3: info  5: debug 
   loglevel: 3
   image: kubeagi/arcadia:v0.2.1
   imagePullPolicy: IfNotPresent
@@ -74,15 +74,17 @@ opsconsole:
   ingress:
     path: kubeagi-portal-public
     host: portal.<replaced-ingress-nginx-ip>.nip.io
-  
-# @section portal for arcadia GPT store
-agentportal:
+
+# @section configurations for GPT Store
+gpts:
   enabled: true
-  kubebbEnabled: true
-  image: kubeagi/agent-portal:latest
-  ingress:
-    path: ""
-    host: gpts.<replaced-ingress-nginx-ip>.nip.io
+  # all gpt resources are public in this namespace
+  public_namespace: gpts
+  agentportal:
+    image: kubeagi/agent-portal:latest
+    ingress:
+      path: ""
+      host: gpts.<replaced-ingress-nginx-ip>.nip.io
 
 # @section fastchat is used as fastchat configurations for arcadia
 fastchat:
@@ -104,7 +106,7 @@ minio:
   rootPassword: "Passw0rd!"
   persistence:
     enabled: true
-    storageClass: "standard"
+    storageClass: *default-storage-class
     size: 30Gi
   ingress:
     enabled: true
@@ -124,19 +126,6 @@ minio:
       dnsNames:
       - minio-api.<replaced-ingress-nginx-ip>.nip.io
       - minio-console.<replaced-ingress-nginx-ip>.nip.io
-  buckets:
-    # Name of the bucket
-    - name: *default-oss-bucket
-      # Policy to be set on the
-      # bucket [none|download|upload|public|custom]
-      # if set to custom, customPolicy must be set.
-      policy: "none"
-      # set versioning for
-      # bucket [true|false]
-      versioning: false
-      # set objectlocking for
-      # bucket [true|false] NOTE: versioning is enabled by default if you use locking
-      objectlocking: false
 
 # @section dataprocess is used to configure data processing service
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
@@ -150,8 +139,6 @@ dataprocess:
     worker: 1
     chunkSize: 500
 
-    
-
 # @section postgresql is used to configure postgresql service
 # Posgresql service will be used in two parts:
 # - dataprocessing
@@ -160,7 +147,7 @@ dataprocess:
 postgresql:
   enabled: true
   global:
-    storageClass: "standard"
+    storageClass: *default-storage-class
     postgresql:
       auth:
         # default username and password
@@ -188,7 +175,7 @@ chromadb:
     auth:
       enabled: false
     serverHttpPort: 8000
-    dataVolumeStorageClass: "standard"
+    dataVolumeStorageClass: *default-storage-class
     dataVolumeSize: "1Gi"
 
 # @section ray is a unified framework for scaling AI and Python applications.In kubeagi,we use ray for distributed inference

@@ -120,6 +120,8 @@ type ApplicationMetadata struct {
 	UpdateTimestamp *time.Time `json:"updateTimestamp,omitempty"`
 	// IsPublic, 是否发布，即是否公开提供服务
 	IsPublic *bool `json:"isPublic,omitempty"`
+	// isRecommended, 是否推荐
+	IsRecommended *bool `json:"isRecommended,omitempty"`
 	// 应用状态
 	Status *string `json:"status,omitempty"`
 	// category：所属分类
@@ -170,6 +172,8 @@ type CreateApplicationMetadataInput struct {
 	Icon string `json:"icon"`
 	// IsPublic, 是否发布，即是否公开提供服务
 	IsPublic *bool `json:"isPublic,omitempty"`
+	// isRecommended, 是否推荐
+	IsRecommended *bool `json:"isRecommended,omitempty"`
 	// category：所属分类
 	Category []*string `json:"category,omitempty"`
 }
@@ -865,6 +869,8 @@ type Gpt struct {
 	Hot *int64 `json:"hot,omitempty"`
 	// creator: 创造者
 	Creator *string `json:"creator,omitempty"`
+	// isRecommended, 是否推荐
+	IsRecommended *bool `json:"isRecommended,omitempty"`
 	// category：gpt所属分类
 	Category []*string `json:"category,omitempty"`
 	// icon: base64的图标
@@ -1735,6 +1741,8 @@ type UpdateApplicationMetadataInput struct {
 	Icon string `json:"icon"`
 	// IsPublic, 是否发布，即是否公开提供服务
 	IsPublic *bool `json:"isPublic,omitempty"`
+	// isRecommended, 是否推荐
+	IsRecommended *bool `json:"isRecommended,omitempty"`
 	// category：所属分类
 	Category []*string `json:"category,omitempty"`
 }

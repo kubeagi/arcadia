@@ -35,6 +35,8 @@ type ApplicationSpec struct {
 	Icon string `json:"icon,omitempty"`
 	// IsPublic Set whether the current application provides services to the public
 	IsPublic bool `json:"isPublic,omitempty"`
+	// IsRecommended Set whether the current application is recognized as recommended to users
+	IsRecommended bool `json:"isRecommended,omitempty"`
 	// WebConfig is the configuration for web interface
 	WebConfig `json:",inline"`
 	// prologue, show in the chat top

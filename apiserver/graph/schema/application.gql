@@ -13,6 +13,7 @@ mutation createApplication($input:CreateApplicationMetadataInput!){
             creationTimestamp
             updateTimestamp
             isPublic
+            isRecommended
             status
             category
         }
@@ -34,6 +35,7 @@ mutation updateApplication($input: UpdateApplicationMetadataInput!){
             creationTimestamp
             updateTimestamp
             isPublic
+            isRecommended
             status
             category
         }
@@ -61,6 +63,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
                 creationTimestamp
                 updateTimestamp
                 isPublic
+                isRecommended
                 status
                 category
             }
@@ -111,6 +114,7 @@ query getApplication($name: String!, $namespace: String!){
                 creationTimestamp
                 updateTimestamp
                 isPublic
+                isRecommended
                 status
                 category
             }
@@ -166,6 +170,7 @@ query listApplications($input: ListCommonInput!) {
                     creationTimestamp
                     updateTimestamp
                     isPublic
+                    isRecommended
                     status
                     category
                 }

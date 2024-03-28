@@ -114,6 +114,7 @@ type ComplexityRoot struct {
 		ID                func(childComplexity int) int
 		Icon              func(childComplexity int) int
 		IsPublic          func(childComplexity int) int
+		IsRecommended     func(childComplexity int) int
 		Labels            func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
@@ -388,6 +389,7 @@ type ComplexityRoot struct {
 		EnableUploadFile   func(childComplexity int) int
 		Hot                func(childComplexity int) int
 		Icon               func(childComplexity int) int
+		IsRecommended      func(childComplexity int) int
 		Name               func(childComplexity int) int
 		NotReadyReasonCode func(childComplexity int) int
 		Prologue           func(childComplexity int) int
@@ -1251,6 +1253,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationMetadata.IsPublic(childComplexity), true
+
+	case "ApplicationMetadata.isRecommended":
+		if e.complexity.ApplicationMetadata.IsRecommended == nil {
+			break
+		}
+
+		return e.complexity.ApplicationMetadata.IsRecommended(childComplexity), true
 
 	case "ApplicationMetadata.labels":
 		if e.complexity.ApplicationMetadata.Labels == nil {
@@ -2657,6 +2666,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GPT.Icon(childComplexity), true
+
+	case "GPT.isRecommended":
+		if e.complexity.GPT.IsRecommended == nil {
+			break
+		}
+
+		return e.complexity.GPT.IsRecommended(childComplexity), true
 
 	case "GPT.name":
 		if e.complexity.GPT.Name == nil {
@@ -5240,6 +5256,11 @@ type ApplicationMetadata {
     isPublic: Boolean
 
     """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
+
+    """
     应用状态
     """
     status: String
@@ -5294,6 +5315,11 @@ input CreateApplicationMetadataInput {
     isPublic: Boolean
 
     """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
+
+    """
     category：所属分类
     """
     category: [String]
@@ -5341,6 +5367,11 @@ input UpdateApplicationMetadataInput {
     IsPublic, 是否发布，即是否公开提供服务
     """
     isPublic: Boolean
+
+    """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
 
     """
     category：所属分类
@@ -6492,6 +6523,11 @@ type GPT {
     creator: 创造者
     """
     creator: String
+
+    """
+    isRecommended, 是否推荐
+    """
+    isRecommended: Boolean
 
     """
     category：gpt所属分类
@@ -9572,6 +9608,8 @@ func (ec *executionContext) fieldContext_Application_metadata(ctx context.Contex
 				return ec.fieldContext_ApplicationMetadata_updateTimestamp(ctx, field)
 			case "isPublic":
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
+			case "isRecommended":
+				return ec.fieldContext_ApplicationMetadata_isRecommended(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
@@ -11074,6 +11112,47 @@ func (ec *executionContext) fieldContext_ApplicationMetadata_isPublic(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ApplicationMetadata_isRecommended(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationMetadata_isRecommended(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRecommended, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationMetadata_isRecommended(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMetadata_status(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMetadata_status(ctx, field)
 	if err != nil {
@@ -11219,6 +11298,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_createApplication(c
 				return ec.fieldContext_ApplicationMetadata_updateTimestamp(ctx, field)
 			case "isPublic":
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
+			case "isRecommended":
+				return ec.fieldContext_ApplicationMetadata_isRecommended(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
@@ -11304,6 +11385,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplication(c
 				return ec.fieldContext_ApplicationMetadata_updateTimestamp(ctx, field)
 			case "isPublic":
 				return ec.fieldContext_ApplicationMetadata_isPublic(ctx, field)
+			case "isRecommended":
+				return ec.fieldContext_ApplicationMetadata_isRecommended(ctx, field)
 			case "status":
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
@@ -19593,6 +19676,47 @@ func (ec *executionContext) fieldContext_GPT_creator(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _GPT_isRecommended(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_isRecommended(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRecommended, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_isRecommended(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GPT_category(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GPT_category(ctx, field)
 	if err != nil {
@@ -20102,6 +20226,8 @@ func (ec *executionContext) fieldContext_GPTQuery_getGPT(ctx context.Context, fi
 				return ec.fieldContext_GPT_hot(ctx, field)
 			case "creator":
 				return ec.fieldContext_GPT_creator(ctx, field)
+			case "isRecommended":
+				return ec.fieldContext_GPT_isRecommended(ctx, field)
 			case "category":
 				return ec.fieldContext_GPT_category(ctx, field)
 			case "icon":
@@ -35818,7 +35944,7 @@ func (ec *executionContext) unmarshalInputCreateApplicationMetadataInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "category"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "isRecommended", "category"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35881,6 +36007,13 @@ func (ec *executionContext) unmarshalInputCreateApplicationMetadataInput(ctx con
 				return it, err
 			}
 			it.IsPublic = data
+		case "isRecommended":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isRecommended"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsRecommended = data
 		case "category":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
@@ -38875,7 +39008,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationMetadataInput(ctx con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "category"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "icon", "isPublic", "isRecommended", "category"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38938,6 +39071,13 @@ func (ec *executionContext) unmarshalInputUpdateApplicationMetadataInput(ctx con
 				return it, err
 			}
 			it.IsPublic = data
+		case "isRecommended":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isRecommended"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsRecommended = data
 		case "category":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
 			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
@@ -40155,6 +40295,8 @@ func (ec *executionContext) _ApplicationMetadata(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._ApplicationMetadata_updateTimestamp(ctx, field, obj)
 		case "isPublic":
 			out.Values[i] = ec._ApplicationMetadata_isPublic(ctx, field, obj)
+		case "isRecommended":
+			out.Values[i] = ec._ApplicationMetadata_isRecommended(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._ApplicationMetadata_status(ctx, field, obj)
 		case "category":
@@ -42846,6 +42988,8 @@ func (ec *executionContext) _GPT(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._GPT_hot(ctx, field, obj)
 		case "creator":
 			out.Values[i] = ec._GPT_creator(ctx, field, obj)
+		case "isRecommended":
+			out.Values[i] = ec._GPT_isRecommended(ctx, field, obj)
 		case "category":
 			out.Values[i] = ec._GPT_category(ctx, field, obj)
 		case "icon":

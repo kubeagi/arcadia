@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -208,7 +209,7 @@ func (r *DatasourceReconciler) UpdateStatus(ctx context.Context, instance *arcad
 		newCondition = instance.ReadyCondition()
 	}
 	instanceCopy.Status.SetConditions(newCondition)
-	return r.Client.Status().Update(ctx, instanceCopy)
+	return errors.Join(err, r.Client.Status().Update(ctx, instanceCopy))
 }
 
 func (r *DatasourceReconciler) RemoveDatasource(logger logr.Logger, instance *arcadiav1alpha1.Datasource) {

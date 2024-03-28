@@ -93,6 +93,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 			CreationTimestamp: &app.CreationTimestamp.Time,
 			UpdateTimestamp:   UpdateTimestamp,
 			IsPublic:          pointer.Bool(app.Spec.IsPublic),
+			IsRecommended:     pointer.Bool(app.Spec.IsRecommended),
 			Status:            pointer.String(status),
 		},
 		Prologue:          pointer.String(app.Spec.Prologue),
@@ -174,6 +175,7 @@ func app2metadata(app *v1alpha1.Application) (*generated.ApplicationMetadata, er
 		UpdateTimestamp:   UpdateTimestamp,
 		Icon:              pointer.String(app.Spec.Icon),
 		IsPublic:          pointer.Bool(app.Spec.IsPublic),
+		IsRecommended:     pointer.Bool(app.Spec.IsRecommended),
 		Status:            pointer.String(status),
 		Category:          common.GetAppCategory(app),
 	}, nil
@@ -192,10 +194,11 @@ func CreateApplication(ctx context.Context, c client.Client, input generated.Cre
 				DisplayName: input.DisplayName,
 				Description: pointer.StringPtrDerefOr(input.Description, ""),
 			},
-			Icon:     input.Icon,
-			IsPublic: pointer.BoolDeref(input.IsPublic, false),
-			Prologue: "",
-			Nodes:    []v1alpha1.Node{},
+			Icon:          input.Icon,
+			IsPublic:      pointer.BoolDeref(input.IsPublic, false),
+			IsRecommended: pointer.BoolDeref(input.IsRecommended, false),
+			Prologue:      "",
+			Nodes:         []v1alpha1.Node{},
 		},
 	}
 	app = addCategory(app, input.Category)
@@ -219,6 +222,7 @@ func UpdateApplication(ctx context.Context, c client.Client, input generated.Upd
 	app.Spec.Description = pointer.StringDeref(input.Description, app.Spec.Description)
 	app.Spec.Icon = input.Icon
 	app.Spec.IsPublic = pointer.BoolDeref(input.IsPublic, app.Spec.IsPublic)
+	app.Spec.IsRecommended = pointer.BoolDeref(input.IsRecommended, app.Spec.IsRecommended)
 	if !reflect.DeepEqual(app, oldApp) {
 		if err := c.Update(ctx, app); err != nil {
 			return nil, err
