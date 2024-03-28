@@ -69,7 +69,7 @@ var (
 	errNoSource            = fmt.Errorf("no source")
 	errDataSourceNotReady  = fmt.Errorf("datasource is not ready")
 	errEmbedderNotReady    = fmt.Errorf("embedder is not ready")
-	errVectorStoreNotReady = fmt.Errorf("vector store is not ready")
+	errVectorStoreNotReady = fmt.Errorf("vectorstore is not ready")
 	errFileSkipped         = fmt.Errorf("file is skipped")
 )
 

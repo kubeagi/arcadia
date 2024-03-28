@@ -258,7 +258,7 @@ func (s *ConditionedStatus) IsReadyOrGetReadyMessage() (isReady bool, msg string
 		return true, ""
 	}
 	for _, cond := range s.Conditions {
-		msg += fmt.Sprintf("%s:%s", cond.Reason, cond.Message)
+		msg += fmt.Sprintf(" [reason]: %s [message]: %s ", cond.Reason, cond.Message)
 	}
 	return false, msg
 }

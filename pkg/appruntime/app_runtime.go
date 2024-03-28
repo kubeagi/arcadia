@@ -105,7 +105,7 @@ func (a *Application) Init(ctx context.Context, cli client.Client) (err error) {
 			return fmt.Errorf("initnode %s failed: %w", node.Name, err)
 		}
 		if err := n.Init(ctx, cli, map[string]any{}); err != nil { // TODO arg
-			return fmt.Errorf("node %s init failed: %w", node.Name, err)
+			return fmt.Errorf("%s:%s || node %s init failed: %w", n.Group(), n.Kind(), n.Name(), err)
 		}
 		a.Nodes[node.Name] = n
 		if node.Name == inputNodeName {

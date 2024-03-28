@@ -9,6 +9,11 @@ query getGPT($name: String!){
             category
             icon
             prologue
+            showRespInfo
+            showRetrievalInfo
+            showNextGuide
+            enableUploadFile
+            notReadyReasonCode
         }
     }
 }
@@ -30,6 +35,11 @@ query listGPTs($input: ListGPTInput!) {
                     category
                     icon
                     prologue
+                    showRespInfo
+                    showRetrievalInfo
+                    showNextGuide
+                    enableUploadFile
+                    notReadyReasonCode
                 }
             }
         }

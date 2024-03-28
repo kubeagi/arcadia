@@ -65,9 +65,13 @@ func NewServerAndRun(conf config.ServerConfig) {
 	ragGroup := r.Group("/rags")
 	registerRAG(ragGroup, conf)
 
-	// for chat server with Restful apis
+	// for admin chat server with Restful apis
 	chatGroup := r.Group("/chat")
 	registerChat(chatGroup, conf)
+
+	// for gpts chat server with Restful apis
+	gptsGroup := r.Group("/gpts/chat")
+	registerGptsChat(gptsGroup, conf)
 
 	fg := r.Group("/forward")
 	registerForward(fg, conf)

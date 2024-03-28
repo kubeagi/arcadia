@@ -381,14 +381,19 @@ type ComplexityRoot struct {
 	}
 
 	GPT struct {
-		Category    func(childComplexity int) int
-		Creator     func(childComplexity int) int
-		Description func(childComplexity int) int
-		DisplayName func(childComplexity int) int
-		Hot         func(childComplexity int) int
-		Icon        func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Prologue    func(childComplexity int) int
+		Category           func(childComplexity int) int
+		Creator            func(childComplexity int) int
+		Description        func(childComplexity int) int
+		DisplayName        func(childComplexity int) int
+		EnableUploadFile   func(childComplexity int) int
+		Hot                func(childComplexity int) int
+		Icon               func(childComplexity int) int
+		Name               func(childComplexity int) int
+		NotReadyReasonCode func(childComplexity int) int
+		Prologue           func(childComplexity int) int
+		ShowNextGuide      func(childComplexity int) int
+		ShowRespInfo       func(childComplexity int) int
+		ShowRetrievalInfo  func(childComplexity int) int
 	}
 
 	GPTCategory struct {
@@ -2632,6 +2637,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GPT.DisplayName(childComplexity), true
 
+	case "GPT.enableUploadFile":
+		if e.complexity.GPT.EnableUploadFile == nil {
+			break
+		}
+
+		return e.complexity.GPT.EnableUploadFile(childComplexity), true
+
 	case "GPT.hot":
 		if e.complexity.GPT.Hot == nil {
 			break
@@ -2653,12 +2665,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GPT.Name(childComplexity), true
 
+	case "GPT.notReadyReasonCode":
+		if e.complexity.GPT.NotReadyReasonCode == nil {
+			break
+		}
+
+		return e.complexity.GPT.NotReadyReasonCode(childComplexity), true
+
 	case "GPT.prologue":
 		if e.complexity.GPT.Prologue == nil {
 			break
 		}
 
 		return e.complexity.GPT.Prologue(childComplexity), true
+
+	case "GPT.showNextGuide":
+		if e.complexity.GPT.ShowNextGuide == nil {
+			break
+		}
+
+		return e.complexity.GPT.ShowNextGuide(childComplexity), true
+
+	case "GPT.showRespInfo":
+		if e.complexity.GPT.ShowRespInfo == nil {
+			break
+		}
+
+		return e.complexity.GPT.ShowRespInfo(childComplexity), true
+
+	case "GPT.showRetrievalInfo":
+		if e.complexity.GPT.ShowRetrievalInfo == nil {
+			break
+		}
+
+		return e.complexity.GPT.ShowRetrievalInfo(childComplexity), true
 
 	case "GPTCategory.id":
 		if e.complexity.GPTCategory.ID == nil {
@@ -6467,6 +6507,37 @@ type GPT {
     对话开场白
     """
     prologue: String
+
+    """
+    showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
+    """
+    showRespInfo: Boolean
+
+    """
+    showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
+    """
+    showRetrievalInfo: Boolean
+
+    """
+    showNextGuide 下一步引导，即是否在chat界面显示下一步引导
+    """
+    showNextGuide: Boolean
+
+    """
+    enableUploadFile 是否开启对话上传文档功能
+    """
+    enableUploadFile: Boolean
+    """
+    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+    可选值:
+    - 空：就绪，gpt 可以使用
+    - VectorStoreIsNotReady: 向量数据库没有就绪
+    - EmbedderIsNotReady: embedder服务没有就绪
+    - KnowledgeBaseNotReady: 知识库未就绪，指向量数据库和embedder出错之外的其他情况
+    - LLMNotReady: 模型服务没有就绪
+    - ConfigError: 应用配置错误，比如写了多个Output节点，比如节点名称重复等其他错误
+    """
+    notReadyReasonCode: String
 }
 
 # GPTCategory in gpt store
@@ -19645,6 +19716,211 @@ func (ec *executionContext) fieldContext_GPT_prologue(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _GPT_showRespInfo(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_showRespInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShowRespInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_showRespInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_showRetrievalInfo(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_showRetrievalInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShowRetrievalInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_showRetrievalInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_showNextGuide(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_showNextGuide(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShowNextGuide, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_showNextGuide(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_enableUploadFile(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_enableUploadFile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableUploadFile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_enableUploadFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPT_notReadyReasonCode(ctx context.Context, field graphql.CollectedField, obj *Gpt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPT_notReadyReasonCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotReadyReasonCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPT_notReadyReasonCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPT",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GPTCategory_id(ctx context.Context, field graphql.CollectedField, obj *GPTCategory) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GPTCategory_id(ctx, field)
 	if err != nil {
@@ -19832,6 +20108,16 @@ func (ec *executionContext) fieldContext_GPTQuery_getGPT(ctx context.Context, fi
 				return ec.fieldContext_GPT_icon(ctx, field)
 			case "prologue":
 				return ec.fieldContext_GPT_prologue(ctx, field)
+			case "showRespInfo":
+				return ec.fieldContext_GPT_showRespInfo(ctx, field)
+			case "showRetrievalInfo":
+				return ec.fieldContext_GPT_showRetrievalInfo(ctx, field)
+			case "showNextGuide":
+				return ec.fieldContext_GPT_showNextGuide(ctx, field)
+			case "enableUploadFile":
+				return ec.fieldContext_GPT_enableUploadFile(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_GPT_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GPT", field.Name)
 		},
@@ -42566,6 +42852,16 @@ func (ec *executionContext) _GPT(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._GPT_icon(ctx, field, obj)
 		case "prologue":
 			out.Values[i] = ec._GPT_prologue(ctx, field, obj)
+		case "showRespInfo":
+			out.Values[i] = ec._GPT_showRespInfo(ctx, field, obj)
+		case "showRetrievalInfo":
+			out.Values[i] = ec._GPT_showRetrievalInfo(ctx, field, obj)
+		case "showNextGuide":
+			out.Values[i] = ec._GPT_showNextGuide(ctx, field, obj)
+		case "enableUploadFile":
+			out.Values[i] = ec._GPT_enableUploadFile(ctx, field, obj)
+		case "notReadyReasonCode":
+			out.Values[i] = ec._GPT_notReadyReasonCode(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

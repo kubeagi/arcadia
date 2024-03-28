@@ -105,7 +105,7 @@ func AuthInterceptor(needAuth bool, oidcVerifier *oidc.IDTokenVerifier, groupVer
 			return
 		}
 
-		oidcIDtoken, err := oidcVerifier.Verify(context.TODO(), rawToken)
+		oidcIDtoken, err := oidcVerifier.Verify(ctx.Request.Context(), rawToken)
 		if err != nil {
 			klog.Errorf("auth error: illegal token, rawtoken %s, error %s", rawToken, err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -174,6 +174,38 @@ func AuthInterceptorInGraphql(needAuth bool, oidcVerifier *oidc.IDTokenVerifier)
 			}
 		}
 
+		ctx.Next()
+	}
+}
+
+func AuthTokenIsValid(needAuth bool, oidcVerifier *oidc.IDTokenVerifier) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if !needAuth {
+			ctx.Next()
+			return
+		}
+		bearerToken := ctx.GetHeader("Authorization")
+		rawToken, ok := isBearerToken(bearerToken)
+		if !ok {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized, not bearer token",
+			})
+			return
+		}
+
+		oidcIDtoken, err := oidcVerifier.Verify(ctx.Request.Context(), rawToken)
+		if err != nil {
+			klog.Errorf("auth error: illegal token, rawtoken %s, error %s", rawToken, err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": fmt.Sprintf("illegal token. error %s", err),
+			})
+			return
+		}
+		u := &User{}
+		if err := oidcIDtoken.Claims(u); err == nil {
+			ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), UserNameContextKey, u.Name))
+		}
+		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), idTokenContextKey, rawToken))
 		ctx.Next()
 	}
 }
