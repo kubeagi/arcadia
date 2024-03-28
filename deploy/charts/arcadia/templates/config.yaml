@@ -84,19 +84,19 @@ data:
       - id: 4
         name: "效率"
         nameEn: "Efficiency"
-      - id: 4
+      - id: 5
         name: "人物扮演"
         nameEn: "Character Play"
-      - id: 5
+      - id: 6
         name: "游戏"
         nameEn: "Game"
-      - id: 6
+      - id: 7
         name: "生活"
         nameEn: "Life"
-      - id: 7
+      - id: 8
         name: "情感"
         nameEn: "Emotion"
-      - id: 8
+      - id: 9
         name: "动漫"
         nameEn: "Anime"
 {{- end }}
