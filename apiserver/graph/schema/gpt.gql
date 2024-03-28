@@ -35,3 +35,13 @@ query listGPTs($input: ListGPTInput!) {
         }
     }
 }
+
+query listGPTCategory() {
+    GPT {
+        listGPTCategory {
+            id
+            name
+            nameEn
+        }
+    }
+}
