@@ -302,6 +302,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		Oss               func(childComplexity int) int
+		Pg                func(childComplexity int) int
 		Status            func(childComplexity int) int
 		Type              func(childComplexity int) int
 		UpdateTimestamp   func(childComplexity int) int
@@ -606,6 +607,10 @@ type ComplexityRoot struct {
 		StorageClassName func(childComplexity int) int
 		VolumeMode       func(childComplexity int) int
 		VolumeName       func(childComplexity int) int
+	}
+
+	Pg struct {
+		Database func(childComplexity int) int
 	}
 
 	Query struct {
@@ -2201,6 +2206,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datasource.Oss(childComplexity), true
 
+	case "Datasource.pg":
+		if e.complexity.Datasource.Pg == nil {
+			break
+		}
+
+		return e.complexity.Datasource.Pg(childComplexity), true
+
 	case "Datasource.status":
 		if e.complexity.Datasource.Status == nil {
 			break
@@ -3785,6 +3797,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PersistentVolumeClaimSpec.VolumeName(childComplexity), true
 
+	case "Pg.database":
+		if e.complexity.Pg.Database == nil {
+			break
+		}
+
+		return e.complexity.Pg.Database(childComplexity), true
+
 	case "Query.Application":
 		if e.complexity.Query.Application == nil {
 			break
@@ -4864,6 +4883,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputOssInput,
 		ec.unmarshalInputParameterInput,
 		ec.unmarshalInputPersistentVolumeClaimSpecInput,
+		ec.unmarshalInputPgInput,
 		ec.unmarshalInputRAGDatasetInput,
 		ec.unmarshalInputRAGMetricInput,
 		ec.unmarshalInputRemoveDuplicateConfig,
@@ -5935,6 +5955,12 @@ type Oss {
     object: String
 }
 
+"""Postgresql的使用信息"""
+type Pg {
+    """所用的数据库名称"""
+    database: String
+}
+
 type Web {
     recommendIntervalTime: Int
 }
@@ -5986,6 +6012,12 @@ type Datasource {
     oss: Oss
 
     """
+    Postgresql访问信息
+    规则: 非空代表当前数据源为Postgresql数据源
+    """
+    pg: Pg
+
+    """
     Web数据访问信息
     规则: 非空代表当前数据源为web在线数据
     """
@@ -6006,6 +6038,10 @@ type Datasource {
 input OssInput {
     bucket: String!
     object: String
+}
+
+input PgInput {
+    database: String!
 }
 
 input WebInput {
@@ -6043,6 +6079,9 @@ input CreateDatasourceInput {
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
 
+    """数据源为Postgresql时的输入"""
+    pginput: PgInput
+
     """数据源为Web数据时的输入"""
     webinput: WebInput
 }
@@ -6075,6 +6114,9 @@ input UpdateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Postgresql时的输入"""
+    pginput: PgInput
 
     """数据源为Web数据时的输入"""
     webinput: WebInput
@@ -16754,6 +16796,51 @@ func (ec *executionContext) fieldContext_Datasource_oss(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Datasource_pg(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Datasource_pg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Pg)
+	fc.Result = res
+	return ec.marshalOPg2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPg(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Datasource_pg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Datasource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "database":
+				return ec.fieldContext_Pg_database(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Pg", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Datasource_web(ctx context.Context, field graphql.CollectedField, obj *Datasource) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Datasource_web(ctx, field)
 	if err != nil {
@@ -17024,6 +17111,8 @@ func (ec *executionContext) fieldContext_DatasourceMutation_createDatasource(ctx
 				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "pg":
+				return ec.fieldContext_Datasource_pg(ctx, field)
 			case "web":
 				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
@@ -17113,6 +17202,8 @@ func (ec *executionContext) fieldContext_DatasourceMutation_updateDatasource(ctx
 				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "pg":
+				return ec.fieldContext_Datasource_pg(ctx, field)
 			case "web":
 				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
@@ -17254,6 +17345,8 @@ func (ec *executionContext) fieldContext_DatasourceQuery_getDatasource(ctx conte
 				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "pg":
+				return ec.fieldContext_Datasource_pg(ctx, field)
 			case "web":
 				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
@@ -17343,6 +17436,8 @@ func (ec *executionContext) fieldContext_DatasourceQuery_checkDatasource(ctx con
 				return ec.fieldContext_Datasource_type(ctx, field)
 			case "oss":
 				return ec.fieldContext_Datasource_oss(ctx, field)
+			case "pg":
+				return ec.fieldContext_Datasource_pg(ctx, field)
 			case "web":
 				return ec.fieldContext_Datasource_web(ctx, field)
 			case "status":
@@ -26641,6 +26736,47 @@ func (ec *executionContext) fieldContext_PersistentVolumeClaimSpec_dataSourceRef
 	return fc, nil
 }
 
+func (ec *executionContext) _Pg_database(ctx context.Context, field graphql.CollectedField, obj *Pg) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Pg_database(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Database, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Pg_database(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Pg",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_hello(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_hello(ctx, field)
 	if err != nil {
@@ -35555,7 +35691,7 @@ func (ec *executionContext) unmarshalInputCreateDatasourceInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "webinput"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "pginput", "webinput"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35618,6 +35754,13 @@ func (ec *executionContext) unmarshalInputCreateDatasourceInput(ctx context.Cont
 				return it, err
 			}
 			it.Ossinput = data
+		case "pginput":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pginput"))
+			data, err := ec.unmarshalOPgInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPgInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Pginput = data
 		case "webinput":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webinput"))
 			data, err := ec.unmarshalOWebInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWebInput(ctx, v)
@@ -37889,6 +38032,33 @@ func (ec *executionContext) unmarshalInputPersistentVolumeClaimSpecInput(ctx con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPgInput(ctx context.Context, obj interface{}) (PgInput, error) {
+	var it PgInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"database"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "database":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("database"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Database = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRAGDatasetInput(ctx context.Context, obj interface{}) (RAGDatasetInput, error) {
 	var it RAGDatasetInput
 	asMap := map[string]interface{}{}
@@ -38564,7 +38734,7 @@ func (ec *executionContext) unmarshalInputUpdateDatasourceInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "webinput"}
+	fieldsInOrder := [...]string{"name", "namespace", "labels", "annotations", "displayName", "description", "endpointinput", "ossinput", "pginput", "webinput"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38627,6 +38797,13 @@ func (ec *executionContext) unmarshalInputUpdateDatasourceInput(ctx context.Cont
 				return it, err
 			}
 			it.Ossinput = data
+		case "pginput":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pginput"))
+			data, err := ec.unmarshalOPgInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPgInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Pginput = data
 		case "webinput":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webinput"))
 			data, err := ec.unmarshalOWebInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐWebInput(ctx, v)
@@ -41532,6 +41709,8 @@ func (ec *executionContext) _Datasource(ctx context.Context, sel ast.SelectionSe
 			}
 		case "oss":
 			out.Values[i] = ec._Datasource_oss(ctx, field, obj)
+		case "pg":
+			out.Values[i] = ec._Datasource_pg(ctx, field, obj)
 		case "web":
 			out.Values[i] = ec._Datasource_web(ctx, field, obj)
 		case "status":
@@ -44372,6 +44551,42 @@ func (ec *executionContext) _PersistentVolumeClaimSpec(ctx context.Context, sel 
 			out.Values[i] = ec._PersistentVolumeClaimSpec_datasource(ctx, field, obj)
 		case "dataSourceRef":
 			out.Values[i] = ec._PersistentVolumeClaimSpec_dataSourceRef(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var pgImplementors = []string{"Pg"}
+
+func (ec *executionContext) _Pg(ctx context.Context, sel ast.SelectionSet, obj *Pg) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pgImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Pg")
+		case "database":
+			out.Values[i] = ec._Pg_database(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -49320,6 +49535,21 @@ func (ec *executionContext) unmarshalOPersistentVolumeClaimSpecInput2ᚖgithub�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputPersistentVolumeClaimSpecInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPg2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPg(ctx context.Context, sel ast.SelectionSet, v *Pg) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Pg(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPgInput2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐPgInput(ctx context.Context, v interface{}) (*PgInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPgInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
