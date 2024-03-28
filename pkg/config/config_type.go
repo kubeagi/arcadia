@@ -112,7 +112,7 @@ func (rayCluster RayCluster) GetPythonVersion() string {
 	return rayCluster.PythonVersion
 }
 
-// DefaultRayCluster which can be used for vllm worker as local ray cluster
+// DefaultRayCluster which can be used for vllm worker as local ray cluster which can only utilize single node gpus
 func DefaultRayCluster() RayCluster {
 	return RayCluster{
 		Name:          "default",

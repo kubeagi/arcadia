@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -196,8 +197,12 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 	additionalEnvs := []corev1.EnvVar{}
 
 	// configure ray cluster
+	resources := runner.w.Spec.Resources
+	gpus := runner.NumberOfGPUs()
+	// default ray cluster which can only utilize gpus on single nodes
 	rayCluster := config.DefaultRayCluster()
 	for _, envItem := range runner.w.Spec.AdditionalEnvs {
+		// using existing ray cluster
 		if envItem.Name == "RAY_CLUSTER_INDEX" {
 			externalRayClusterIndex, _ := strconv.Atoi(envItem.Value)
 			rayClusters, err := config.GetRayClusters(ctx, runner.c)
@@ -208,6 +213,8 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 				return nil, fmt.Errorf("no ray clusters configured")
 			}
 			rayCluster = rayClusters[externalRayClusterIndex]
+			// Hardcoded directly requested gpu to 1 if using existing ray cluster
+			resources.Limits[ResourceNvidiaGPU] = resource.MustParse("1")
 		}
 
 		// set gpu memory utilization
@@ -224,6 +231,8 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			extraAgrs = envItem.Value
 		}
 	}
+	klog.V(5).Infof("run worker with raycluster:\n %s", rayCluster.String())
+
 	// set ray configurations into additional environments
 	additionalEnvs = append(additionalEnvs,
 		corev1.EnvVar{
@@ -237,8 +246,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			Value: rayCluster.GetPythonVersion(),
 		})
 	// Set gpu number to the number of GPUs in the worker's resource
-	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()})
-	klog.V(5).Infof("run worker with raycluster:\n %s", rayCluster.String())
+	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "NUMBER_GPUS", Value: gpus})
 
 	modelFileDir := fmt.Sprintf("%s/%s", defaultModelMountPath, model.Name)
 	// --enforce-eager to disable cupy
@@ -287,7 +295,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			// mount volume to /dev/shm to avoid Bus error
 			{Name: "models", MountPath: defaultShmMountPath},
 		},
-		Resources: runner.w.Spec.Resources,
+		Resources: resources,
 	}
 	container.Env = append(container.Env, additionalEnvs...)
 	return container, nil
