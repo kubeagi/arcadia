@@ -73,6 +73,10 @@ func datasource2model(datasource *v1alpha1.Datasource) (*generated.Datasource, e
 		oss.Bucket = &datasource.Spec.OSS.Bucket
 		oss.Object = &datasource.Spec.OSS.Object
 	}
+	pg := generated.Pg{}
+	if datasource.Spec.PostgreSQL != nil {
+		pg.Database = &datasource.Spec.PostgreSQL.Database
+	}
 	web := generated.Web{}
 	if datasource.Spec.Web != nil {
 		web.RecommendIntervalTime = &datasource.Spec.Web.RecommendIntervalTime
@@ -90,6 +94,7 @@ func datasource2model(datasource *v1alpha1.Datasource) (*generated.Datasource, e
 		Endpoint:          &endpoint,
 		Type:              string(datasource.Spec.Type()),
 		Oss:               &oss,
+		Pg:                &pg,
 		Web:               &web,
 		Status:            &status,
 		Message:           &message,
@@ -118,6 +123,7 @@ func CreateDatasource(ctx context.Context, c client.Client, input generated.Crea
 	}
 	datasource.Spec.Endpoint = endpoint
 
+	// For object storage service
 	if input.Ossinput != nil {
 		datasource.Spec.OSS = &v1alpha1.OSS{
 			Bucket: input.Ossinput.Bucket,
@@ -126,7 +132,13 @@ func CreateDatasource(ctx context.Context, c client.Client, input generated.Crea
 			datasource.Spec.OSS.Object = *input.Ossinput.Object
 		}
 	}
-
+	// For postgresql
+	if input.Pginput != nil {
+		datasource.Spec.PostgreSQL = &v1alpha1.PostgreSQL{
+			Database: input.Pginput.Database,
+		}
+	}
+	// For web input
 	if input.Webinput != nil {
 		datasource.Spec.Web = &v1alpha1.Web{
 			RecommendIntervalTime: input.Webinput.RecommendIntervalTime,
@@ -179,6 +191,13 @@ func UpdateDatasource(ctx context.Context, c client.Client, input *generated.Upd
 			oss.Object = *input.Ossinput.Object
 		}
 		datasource.Spec.OSS = oss
+	}
+
+	// Update postgresql
+	if input.Pginput != nil {
+		datasource.Spec.PostgreSQL = &v1alpha1.PostgreSQL{
+			Database: input.Pginput.Database,
+		}
 	}
 
 	// Update webinput

@@ -219,6 +219,8 @@ type CreateDatasourceInput struct {
 	Endpointinput EndpointInput `json:"endpointinput"`
 	// 数据源为对象存储类型时的输入
 	Ossinput *OssInput `json:"ossinput,omitempty"`
+	// 数据源为Postgresql时的输入
+	Pginput *PgInput `json:"pginput,omitempty"`
 	// 数据源为Web数据时的输入
 	Webinput *WebInput `json:"webinput,omitempty"`
 }
@@ -669,6 +671,9 @@ type Datasource struct {
 	// 对象存储访问信息
 	// 规则: 非空代表当前数据源为对象存储数据源
 	Oss *Oss `json:"oss,omitempty"`
+	// Postgresql访问信息
+	// 规则: 非空代表当前数据源为Postgresql数据源
+	Pg *Pg `json:"pg,omitempty"`
 	// Web数据访问信息
 	// 规则: 非空代表当前数据源为web在线数据
 	Web *Web `json:"web,omitempty"`
@@ -1394,6 +1399,16 @@ type PersistentVolumeClaimSpecInput struct {
 	DataSourceRef    *TypedObjectReferenceInput `json:"dataSourceRef,omitempty"`
 }
 
+// Postgresql的使用信息
+type Pg struct {
+	// 所用的数据库名称
+	Database *string `json:"database,omitempty"`
+}
+
+type PgInput struct {
+	Database string `json:"database"`
+}
+
 type Query struct {
 }
 
@@ -1745,6 +1760,8 @@ type UpdateDatasourceInput struct {
 	Endpointinput *EndpointInput `json:"endpointinput,omitempty"`
 	// 数据源为对象存储类型时的输入
 	Ossinput *OssInput `json:"ossinput,omitempty"`
+	// 数据源为Postgresql时的输入
+	Pginput *PgInput `json:"pginput,omitempty"`
 	// 数据源为Web数据时的输入
 	Webinput *WebInput `json:"webinput,omitempty"`
 }

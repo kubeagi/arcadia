@@ -21,6 +21,9 @@ mutation createDatasource($input: CreateDatasourceInput!) {
           bucket
           object
         }
+        pg {
+          database
+        }
         web {
           recommendIntervalTime
         }
@@ -54,6 +57,9 @@ mutation updateDatasource($input: UpdateDatasourceInput) {
         oss {
           bucket
           object
+        }
+        pg {
+          database
         }
         web {
           recommendIntervalTime
@@ -100,6 +106,9 @@ query listDatasources($input: ListCommonInput!) {
         oss {
           bucket
           object
+        }
+        pg {
+          database
         }
         web {
           recommendIntervalTime

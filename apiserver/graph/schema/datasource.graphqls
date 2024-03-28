@@ -16,6 +16,12 @@ type Oss {
     object: String
 }
 
+"""Postgresql的使用信息"""
+type Pg {
+    """所用的数据库名称"""
+    database: String
+}
+
 type Web {
     recommendIntervalTime: Int
 }
@@ -67,6 +73,12 @@ type Datasource {
     oss: Oss
 
     """
+    Postgresql访问信息
+    规则: 非空代表当前数据源为Postgresql数据源
+    """
+    pg: Pg
+
+    """
     Web数据访问信息
     规则: 非空代表当前数据源为web在线数据
     """
@@ -87,6 +99,10 @@ type Datasource {
 input OssInput {
     bucket: String!
     object: String
+}
+
+input PgInput {
+    database: String!
 }
 
 input WebInput {
@@ -124,6 +140,9 @@ input CreateDatasourceInput {
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
 
+    """数据源为Postgresql时的输入"""
+    pginput: PgInput
+
     """数据源为Web数据时的输入"""
     webinput: WebInput
 }
@@ -156,6 +175,9 @@ input UpdateDatasourceInput {
 
     """数据源为对象存储类型时的输入"""
     ossinput: OssInput
+
+    """数据源为Postgresql时的输入"""
+    pginput: PgInput
 
     """数据源为Web数据时的输入"""
     webinput: WebInput
