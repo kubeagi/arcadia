@@ -43,9 +43,10 @@ type (
 		// Do you want to force an update?
 		ForceUpdate bool `json:"forceUpdate"`
 
-		UpdateLines []CSVLine  `json:"updateLines"`
-		NewLines    [][]string `json:"newLines,omitempty"`
-		DelLines    []int      `json:"delLines"`
+		UpdateLines   []CSVLine  `json:"updateLines"`
+		NewLines      [][]string `json:"newLines,omitempty"`
+		DelLines      []int      `json:"delLines"`
+		Knowledgebase string     `json:"knowledgebase,omitempty"`
 	}
 )
 
