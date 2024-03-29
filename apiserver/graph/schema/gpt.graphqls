@@ -91,7 +91,7 @@ type GPT {
     showNextGuide: Boolean
 
     """
-    enableUploadFile 是否开启对话上传文档功能
+    enableUploadFile 是否开启对话上传文档功
     """
     enableUploadFile: Boolean
     """

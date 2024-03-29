@@ -58,16 +58,12 @@ jobs:
           key: operator.image-${{ github.sha }}
           path: /tmp/operator.image.tar
 
-  example-test:
+  build-bff-sdk:
     env:
       GRL_SDK_TEST_ONLY: true
     needs:
       - build-image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        no: [1]
     steps:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
@@ -104,16 +100,6 @@ jobs:
         run: |
           command -v mc >/dev/null 2>&1 || (curl https://dl.min.io/client/mc/release/linux-amd64/mc \
           	--create-dirs -o /usr/local/bin/mc && chmod +x /usr/local/bin/mc )
-      - name: Example test
-        run: tests/example-test.sh
-        env:
-          GITHUB_ACTION_NO: ${{ matrix.no }}
-      - name: Upload logs if test fail
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.sha }}-${{ matrix.no }}.logs
-          path: ${{ env.LOG_DIR }}
       - uses: dorny/paths-filter@v2
         if: matrix.no == 1
         id: gql-changes
@@ -124,7 +110,6 @@ jobs:
       - name: setting token to npmrc
         if: (( github.event_name == 'push' && steps.gql-changes.outputs.gql == 'true') || github.event_name == 'workflow_dispatch') && matrix.no == 1
         run: |
-          echo '//dev-npm.k8s.com.cn/:_authToken="${{ secrets.TENX_NPM_TOKEN }}"' >> ~/.npmrc
           echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
       - name: Set variable on Merge pull request
         if: github.event_name == 'push' && matrix.no == 1
@@ -138,9 +123,61 @@ jobs:
           TEST_ONLY: ${{ inputs.OnlyTestGeneratedSdk }}
       - name: make sdk
         if: (steps.gql-changes.outputs.gql == 'true' || github.event_name == 'workflow_dispatch') && matrix.no == 1
-        run: |
-          kubectl port-forward svc/arcadia-apiserver -n arcadia 8888:8081 --address 0.0.0.0 >/dev/null 2>&1 &
-          export GRAPH_API_ENDPOINT="http://0.0.0.0:8888/bff"
-          make bff-sdk-generator
+        run: tests/build-bff-sdk.sh
         env:
           GRL_SDK_TEST_ONLY: ${{ env.GRL_SDK_TEST_ONLY }}
+  
+  # example-test:
+  #   needs:
+  #     - build-image
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       no: [1]
+  #   steps:
+  #     - name: Maximize build space
+  #       uses: easimon/maximize-build-space@master
+  #       with:
+  #         overprovision-lvm: true
+  #         remove-dotnet: 'true'
+  #         remove-android: 'true'
+  #         remove-haskell: 'true'
+  #         remove-codeql: 'true'
+  #         remove-docker-images: 'true'
+  #     - uses: actions/checkout@v4
+  #     - name: Download operator image from cache
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         key: operator.image-${{ github.sha }}
+  #         path: /tmp/operator.image.tar
+  #     - name: Load component image to /tmp from cache
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         key: component-image-cache-${{ github.sha }}
+  #         restore-keys: component-image-cache-
+  #         path: |
+  #           /home/runner/work/kubeagi/kubeagi/tmp/images/
+  #           /home/runner/work/kubeagi/kubeagi/tmp/all.image.list
+  #     - name: Load kubeagi image to docker
+  #       run: |
+  #         docker load --input /tmp/operator.image.tar
+  #     - name: Copy the existing kustomize
+  #       # avoid kustomize installation to bypass the rate limit of GitHub.
+  #       run: |
+  #         mkdir -p ${GITHUB_WORKSPACE}/bin 
+  #         cp /usr/local/bin/kustomize ${GITHUB_WORKSPACE}/bin/kustomize
+  #     - name: Install mc
+  #       run: |
+  #         command -v mc >/dev/null 2>&1 || (curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+  #         	--create-dirs -o /usr/local/bin/mc && chmod +x /usr/local/bin/mc )
+  #     - name: Example test
+  #       run: tests/example-test.sh
+  #       env:
+  #         GITHUB_ACTION_NO: ${{ matrix.no }}
+  #     - name: Upload logs if test fail
+  #       if: failure()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ github.sha }}-${{ matrix.no }}.logs
+  #         path: ${{ env.LOG_DIR }}
