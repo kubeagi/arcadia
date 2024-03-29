@@ -113,8 +113,9 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 		return nil, err
 	}
 	anyObjectInfoList, err := oss.ListObjects(ctx, input.Namespace, miniogo.ListObjectsOptions{
-		Prefix:    prefix,
-		Recursive: true,
+		Prefix:       prefix,
+		Recursive:    true,
+		WithVersions: true,
 	})
 	if err != nil {
 		return nil, err
@@ -124,13 +125,27 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
 	})
 
+	existMap := make(map[string]struct{})
+	objMap := make(map[string][]string)
+	for _, obj := range objectInfoList {
+		objMap[obj.Key] = append(objMap[obj.Key], obj.VersionID)
+	}
+
 	result := make([]generated.PageNode, 0)
 	for _, obj := range objectInfoList {
+		if _, ok := existMap[obj.Key]; ok {
+			continue
+		}
+		if obj.IsDeleteMarker {
+			continue
+		}
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
+			existMap[obj.Key] = struct{}{}
 			lastModifiedTime := obj.LastModified
 			tf := generated.F{
-				Path: strings.TrimPrefix(obj.Key, prefix),
-				Time: &lastModifiedTime,
+				Path:     strings.TrimPrefix(obj.Key, prefix),
+				Time:     &lastModifiedTime,
+				Versions: objMap[obj.Key],
 			}
 
 			size := utils.BytesToSizedStr(obj.Size)
