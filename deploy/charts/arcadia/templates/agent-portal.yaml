@@ -96,11 +96,14 @@ metadata:
     ingress-lb: portal-ingress
     kubernetes.io/ingress.class: portal-ingress
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_cache static-cache;
-      proxy_cache_valid 404 10m;
-      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
-      proxy_cache_bypass $http_x_purge;
-      add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+      location /_next {
+        proxy_pass http://{{ .Release.Name }}-agentportal:3000;
+        proxy_cache static-cache;
+        proxy_cache_valid 404 10m;
+        proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+        proxy_cache_bypass $http_x_purge;
+        add_header X-Cache-Status $upstream_cache_status; # check X-Cache-Status to see if it's HIT
+      }
     nginx.ingress.kubernetes.io/enable-access-log: "false"
     nginx.ingress.kubernetes.io/enable-rewrite-log: "false"
     nginx.ingress.kubernetes.io/load-balance: round_robin
