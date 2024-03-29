@@ -71,6 +71,7 @@ data:
       database: {{ .Values.postgresql.global.postgresql.auth.database }}
   # configurations for gpts
   gptsConfig: |
+    url: https://{{ .Values.gpts.agentportal.ingress.host }}/{{ .Values.gpts.agentportal.ingress.path }}
     public_namespace: {{ .Values.gpts.public_namespace }}
     categories:
       - id: 1

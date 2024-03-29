@@ -19,6 +19,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -35,6 +36,8 @@ var (
 
 // GPTsConfig is the configurations for GPT Store
 type GPTsConfig struct {
+	// URL is the url of gpt store
+	URL string `json:"url,omitempty"`
 	// PublicNamespace is the namespace which all gpt-releated resources are public
 	PublicNamespace string     `json:"public_namespace,omitempty"`
 	Categories      []Category `json:"categories,omitempty"`
@@ -65,6 +68,10 @@ func GetGPTsConfig(ctx context.Context, c client.Client) (gptsConfig *GPTsConfig
 	if err = yaml.Unmarshal([]byte(value), &gptsConfig); err != nil {
 		return nil, err
 	}
+
+	// trim suffix /
+	gptsConfig.URL = strings.TrimSuffix(gptsConfig.URL, "/")
+
 	return gptsConfig, nil
 }
 

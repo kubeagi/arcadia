@@ -300,6 +300,8 @@ models:
         resolver: true
       listGPTCategory:
         resolver: true
+      getGPTStore:
+        resolver: true
   NodeQuery:
     fields:
       listNodes:

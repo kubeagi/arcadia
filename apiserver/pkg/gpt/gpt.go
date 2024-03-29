@@ -194,3 +194,15 @@ func ListGPTCategory(ctx context.Context, c client.Client) ([]*generated.GPTCate
 	}
 	return resp, nil
 }
+
+// GetGPTStore get gpt store info
+func GetGPTStore(ctx context.Context, cli client.Client) (*generated.GPTStore, error) {
+	cfg, err := common.GetGPTStoreConfig(ctx, cli)
+	if err != nil {
+		return nil, err
+	}
+	return &generated.GPTStore{
+		URL:             cfg.URL,
+		PublicNamespace: cfg.PublicNamespace,
+	}, nil
+}

@@ -109,6 +109,11 @@ func GetAPIServer(ctx context.Context, cli client.Client, external bool) (string
 	return api, nil
 }
 
+// GetGPTsURL returns the gpts url to access arcadia's gpt store
+func GetGPTStoreConfig(ctx context.Context, cli client.Client) (*config.GPTsConfig, error) {
+	return config.GetGPTsConfig(ctx, cli)
+}
+
 // GetObjStatus is used to calculate the state of the resource, unified management,
 // in general, a resource will only record its own state,
 // then the state calculation of this resource, should be written to this function.
