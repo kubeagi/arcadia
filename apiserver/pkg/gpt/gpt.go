@@ -154,7 +154,11 @@ func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput)
 	page := pointer.IntDeref(input.Page, 1)
 	pageSize := pointer.IntDeref(input.PageSize, 10)
 	res := &v1alpha1.ApplicationList{}
-	l := labels.Set{v1alpha1.AppPublicLabelKey: ""}
+	l := labels.Set{v1alpha1.AppPublicLabelKey: "true"}
+	// if category is empty,then list recommend apps
+	if category == "" {
+		l[v1alpha1.AppRecommendedLabelKey] = "true"
+	}
 	if err := c.List(ctx, res, &client.ListOptions{LabelSelector: l.AsSelector(), Namespace: ""}); err != nil {
 		return nil, err
 	}
@@ -162,6 +166,7 @@ func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput)
 	if keyword != "" {
 		filter = append(filter, common.FilterApplicationByKeyword(keyword))
 	}
+	// if catetory is not empty,then filter based on category
 	if category != "" {
 		filter = append(filter, common.FilterApplicationByCategory(category))
 	}

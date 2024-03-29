@@ -74,6 +74,9 @@ data:
     url: https://{{ .Values.gpts.agentportal.ingress.host }}/{{ .Values.gpts.agentportal.ingress.path }}
     public_namespace: {{ .Values.gpts.public_namespace }}
     categories:
+      - id: -1
+        name: "其他"
+        nameEn: "Other"
       - id: 1
         name: "通用对话"
         nameEn: "General Conversation"
