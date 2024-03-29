@@ -405,9 +405,15 @@ type ComplexityRoot struct {
 	}
 
 	GPTQuery struct {
+		GetGPTStore     func(childComplexity int) int
 		GetGpt          func(childComplexity int, name string) int
 		ListGPTCategory func(childComplexity int) int
 		ListGpt         func(childComplexity int, input ListGPTInput) int
+	}
+
+	GPTStore struct {
+		PublicNamespace func(childComplexity int) int
+		URL             func(childComplexity int) int
 	}
 
 	KnowledgeBase struct {
@@ -885,6 +891,7 @@ type GPTQueryResolver interface {
 	GetGpt(ctx context.Context, obj *GPTQuery, name string) (*Gpt, error)
 	ListGpt(ctx context.Context, obj *GPTQuery, input ListGPTInput) (*PaginatedResult, error)
 	ListGPTCategory(ctx context.Context, obj *GPTQuery) ([]*GPTCategory, error)
+	GetGPTStore(ctx context.Context, obj *GPTQuery) (*GPTStore, error)
 }
 type KnowledgeBaseMutationResolver interface {
 	CreateKnowledgeBase(ctx context.Context, obj *KnowledgeBaseMutation, input CreateKnowledgeBaseInput) (*KnowledgeBase, error)
@@ -2737,6 +2744,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GPTCategory.NameEn(childComplexity), true
 
+	case "GPTQuery.getGPTStore":
+		if e.complexity.GPTQuery.GetGPTStore == nil {
+			break
+		}
+
+		return e.complexity.GPTQuery.GetGPTStore(childComplexity), true
+
 	case "GPTQuery.getGPT":
 		if e.complexity.GPTQuery.GetGpt == nil {
 			break
@@ -2767,6 +2781,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GPTQuery.ListGpt(childComplexity, args["input"].(ListGPTInput)), true
+
+	case "GPTStore.public_namespace":
+		if e.complexity.GPTStore.PublicNamespace == nil {
+			break
+		}
+
+		return e.complexity.GPTStore.PublicNamespace(childComplexity), true
+
+	case "GPTStore.url":
+		if e.complexity.GPTStore.URL == nil {
+			break
+		}
+
+		return e.complexity.GPTStore.URL(childComplexity), true
 
 	case "KnowledgeBase.annotations":
 		if e.complexity.KnowledgeBase.Annotations == nil {
@@ -6576,17 +6604,24 @@ type GPT {
     notReadyReasonCode: String
 }
 
-# GPTCategory in gpt store
+"""GPTCategory in gpt store"""
 type GPTCategory {
     id: String!
     name: String!
     nameEn: String!
 }
 
+type GPTStore {
+    url: String!
+    public_namespace: String!
+}
+
 type GPTQuery {
     getGPT(name: String!): GPT!
     listGPT(input: ListGPTInput!): PaginatedResult!
     listGPTCategory: [GPTCategory]!
+    """get the gpt store info"""
+    getGPTStore: GPTStore!
 }
 
 extend type Query{
@@ -20381,6 +20416,144 @@ func (ec *executionContext) fieldContext_GPTQuery_listGPTCategory(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _GPTQuery_getGPTStore(ctx context.Context, field graphql.CollectedField, obj *GPTQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTQuery_getGPTStore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.GPTQuery().GetGPTStore(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*GPTStore)
+	fc.Result = res
+	return ec.marshalNGPTStore2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTStore(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTQuery_getGPTStore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTQuery",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "url":
+				return ec.fieldContext_GPTStore_url(ctx, field)
+			case "public_namespace":
+				return ec.fieldContext_GPTStore_public_namespace(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GPTStore", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTStore_url(ctx context.Context, field graphql.CollectedField, obj *GPTStore) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTStore_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTStore_url(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTStore",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GPTStore_public_namespace(ctx context.Context, field graphql.CollectedField, obj *GPTStore) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GPTStore_public_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PublicNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GPTStore_public_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GPTStore",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _KnowledgeBase_id(ctx context.Context, field graphql.CollectedField, obj *KnowledgeBase) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_KnowledgeBase_id(ctx, field)
 	if err != nil {
@@ -27535,6 +27708,8 @@ func (ec *executionContext) fieldContext_Query_GPT(ctx context.Context, field gr
 				return ec.fieldContext_GPTQuery_listGPT(ctx, field)
 			case "listGPTCategory":
 				return ec.fieldContext_GPTQuery_listGPTCategory(ctx, field)
+			case "getGPTStore":
+				return ec.fieldContext_GPTQuery_getGPTStore(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GPTQuery", field.Name)
 		},
@@ -43197,6 +43372,86 @@ func (ec *executionContext) _GPTQuery(ctx context.Context, sel ast.SelectionSet,
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "getGPTStore":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GPTQuery_getGPTStore(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var gPTStoreImplementors = []string{"GPTStore"}
+
+func (ec *executionContext) _GPTStore(ctx context.Context, sel ast.SelectionSet, obj *GPTStore) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gPTStoreImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GPTStore")
+		case "url":
+			out.Values[i] = ec._GPTStore_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "public_namespace":
+			out.Values[i] = ec._GPTStore_public_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -47896,6 +48151,20 @@ func (ec *executionContext) marshalNGPTCategory2ᚕᚖgithubᚗcomᚋkubeagiᚋa
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) marshalNGPTStore2githubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTStore(ctx context.Context, sel ast.SelectionSet, v GPTStore) graphql.Marshaler {
+	return ec._GPTStore(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGPTStore2ᚖgithubᚗcomᚋkubeagiᚋarcadiaᚋapiserverᚋgraphᚋgeneratedᚐGPTStore(ctx context.Context, sel ast.SelectionSet, v *GPTStore) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GPTStore(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {

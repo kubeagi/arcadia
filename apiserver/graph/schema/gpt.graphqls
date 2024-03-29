@@ -107,17 +107,24 @@ type GPT {
     notReadyReasonCode: String
 }
 
-# GPTCategory in gpt store
+"""GPTCategory in gpt store"""
 type GPTCategory {
     id: String!
     name: String!
     nameEn: String!
 }
 
+type GPTStore {
+    url: String!
+    public_namespace: String!
+}
+
 type GPTQuery {
     getGPT(name: String!): GPT!
     listGPT(input: ListGPTInput!): PaginatedResult!
     listGPTCategory: [GPTCategory]!
+    """get the gpt store info"""
+    getGPTStore: GPTStore!
 }
 
 extend type Query{

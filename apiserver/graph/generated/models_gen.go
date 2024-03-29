@@ -898,6 +898,7 @@ type Gpt struct {
 
 func (Gpt) IsPageNode() {}
 
+// GPTCategory in gpt store
 type GPTCategory struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
@@ -908,6 +909,13 @@ type GPTQuery struct {
 	GetGpt          Gpt             `json:"getGPT"`
 	ListGpt         PaginatedResult `json:"listGPT"`
 	ListGPTCategory []*GPTCategory  `json:"listGPTCategory"`
+	// get the gpt store info
+	GetGPTStore GPTStore `json:"getGPTStore"`
+}
+
+type GPTStore struct {
+	URL             string `json:"url"`
+	PublicNamespace string `json:"public_namespace"`
 }
 
 // 知识库

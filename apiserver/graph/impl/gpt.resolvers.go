@@ -38,6 +38,15 @@ func (r *gPTQueryResolver) ListGPTCategory(ctx context.Context, obj *generated.G
 	return gpt.ListGPTCategory(ctx, c)
 }
 
+// GetGPTStore is the resolver for the getGPTStore field.
+func (r *gPTQueryResolver) GetGPTStore(ctx context.Context, obj *generated.GPTQuery) (*generated.GPTStore, error) {
+	c, err := getAdminClient()
+	if err != nil {
+		return nil, err
+	}
+	return gpt.GetGPTStore(ctx, c)
+}
+
 // Gpt is the resolver for the GPT field.
 func (r *queryResolver) Gpt(ctx context.Context) (*generated.GPTQuery, error) {
 	return &generated.GPTQuery{}, nil

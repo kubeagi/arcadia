@@ -57,3 +57,12 @@ query listGPTCategory {
         }
     }
 }
+
+query getGPTStore {
+    GPT {
+        getGPTStore {
+            url
+            public_namespace
+        }
+    }
+}
