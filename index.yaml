@@ -3,6 +3,48 @@ entries:
   arcadia:
   - apiVersion: v2
     appVersion: 0.2.1
+    created: "2024-03-29T08:26:42.791917012Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: ""
+      version: 13.2.14
+    - name: minio
+      repository: ""
+      version: 5.0.13
+    - condition: fastchat.enabled
+      name: fastchat
+      repository: ""
+      version: 0.0.4
+    - condition: chromadb.enabled
+      name: chromadb
+      repository: ""
+      version: 0.1.19
+    description: A Helm chart(Also a KubeBB Component) for KubeAGI Arcadia
+    digest: 15d99ebf0db021ec6cb02d7fa3602c5a48784928eb1cb694300d8edf0b4d9c18
+    keywords:
+    - LLMOps
+    - Kubernetes
+    maintainers:
+    - name: nkwangleiGIT
+      url: https://github.com/nkwangleiGIT
+    - name: bjwswang
+      url: https://github.com/bjwswang
+    - name: Abirdcfly
+      url: https://github.com/Abirdcfly
+    - name: 0xff-dev
+      url: https://github.com/0xff-dev
+    - name: lanture1064
+      url: https://github.com/lanture1064
+    name: arcadia
+    sources:
+    - https://github.com/kubeagi/arcadia
+    type: application
+    urls:
+    - https://github.com/kubeagi/arcadia/releases/download/arcadia-0.3.28/arcadia-0.3.28.tgz
+    version: 0.3.28
+  - apiVersion: v2
+    appVersion: 0.2.1
     created: "2024-03-29T06:27:51.265229509Z"
     dependencies:
     - condition: postgresql.enabled
@@ -4175,4 +4217,4 @@ entries:
     urls:
     - https://github.com/kubeagi/arcadia/releases/download/llms-0.1.0/llms-0.1.0.tgz
     version: 0.1.0
-generated: "2024-03-29T06:27:51.265578359Z"
+generated: "2024-03-29T08:26:42.792278083Z"
