@@ -432,7 +432,10 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 			}
 			err := cs.cli.Get(ctx, types.NamespacedName{Namespace: ns, Name: name}, app)
 			if err != nil {
-				return err
+				// FIXME: Currently, there is a request for an application that cannot be found in a conversation in the database,
+				// causing other conversations to be unable to add icons, so an error is encountered here and no error is returned.
+				klog.Errorf("failed to get application %s in namespace %s, error %s", name, ns, err)
+				return nil
 			}
 			result[index] = app.Spec.Icon
 			return nil
