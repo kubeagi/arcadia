@@ -35,9 +35,9 @@ config:
 # @param imagePullPolcy ImagePullPolicy
 # @param resources Resources to be used
 controller:
-  # 1: error 3: info  5: debug 
+  # 1: error 3:info 5:debug
   loglevel: 3
-  image: kubeagi/arcadia:v0.2.1-20240329-f4655d3
+  image: kubeagi/arcadia:v0.2.1-20240401-b80e4e4
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -51,7 +51,7 @@ controller:
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
   loglevel: 3
-  image: kubeagi/arcadia:v0.2.1-20240329-f4655d3
+  image: kubeagi/arcadia:v0.2.1-20240401-b80e4e4
   enableplayground: false
   port: 8081
   ingress:
@@ -70,7 +70,7 @@ apiserver:
 opsconsole:
   enabled: true
   kubebbEnabled: true
-  image: kubeagi/ops-console:v0.2.1-20240329-87ae2e0
+  image: kubeagi/ops-console:v0.2.1-20240401-2e63d80
   ingress:
     path: kubeagi-portal-public
     host: portal.<replaced-ingress-nginx-ip>.nip.io
@@ -81,7 +81,7 @@ gpts:
   # all gpt resources are public in this namespace
   public_namespace: gpts
   agentportal:
-    image: kubeagi/agent-portal:v0.1.0-20240329-cc3d5f4
+    image: kubeagi/agent-portal:v0.1.0-20240401-bc9e42d
     ingress:
       path: ""
       host: gpts.<replaced-ingress-nginx-ip>.nip.io
