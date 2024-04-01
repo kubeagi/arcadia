@@ -74,9 +74,6 @@ data:
     url: https://{{ .Values.gpts.agentportal.ingress.host }}/{{ .Values.gpts.agentportal.ingress.path }}
     public_namespace: {{ .Values.gpts.public_namespace }}
     categories:
-      - id: -1
-        name: "其他"
-        nameEn: "Other"
       - id: 1
         name: "通用对话"
         nameEn: "General Conversation"
@@ -104,6 +101,10 @@ data:
       - id: 9
         name: "动漫"
         nameEn: "Anime"
+      # -1 means `Other` which should be placed at the end
+      - id: -1
+        name: "其他"
+        nameEn: "Other"
 {{- end }}
 kind: ConfigMap
 metadata:
