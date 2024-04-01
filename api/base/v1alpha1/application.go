@@ -22,8 +22,9 @@ const (
 	InputNode  = "Input"
 	OutputNode = "Output"
 
-	// AppCategoryAnnotationKey app category, like "recommend" or "recommend,chat,role-playing". Multiple types are separated by commas
-	AppCategoryAnnotationKey = Group + "/app-category"
+	// AppCategoryLabelKey app category, the value is the id of the category.
+	// here are multiple categories separated by commas. For example 1,2,3
+	AppCategoryLabelKey = Group + "/app-category"
 
 	// AppPublicLabelKey will add to app which is public
 	AppPublicLabelKey = Group + "/app-is-public"

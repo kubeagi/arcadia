@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,6 +126,10 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{Requeue: true}, nil
 	}
 
+	if MigrateAppCategory(app) {
+		return ctrl.Result{}, r.Client.Update(ctx, app)
+	}
+
 	// Check if the Application instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	if app.GetDeletionTimestamp() != nil && controllerutil.ContainsFinalizer(app, arcadiav1alpha1.Finalizer) {
@@ -150,6 +155,21 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	log.V(5).Info("Application Reconcile Done")
 	return result, err
+}
+
+// MigrateAppCategory Migrate the application categories information in annotations to labels to support selection through labels.
+//
+// Deprecated: The function will be removed in 0.3.
+func MigrateAppCategory(app *arcadiav1alpha1.Application) bool {
+	if v, ok := app.Annotations[arcadiav1alpha1.AppCategoryLabelKey]; ok && len(validation.IsValidLabelValue(v)) == 0 {
+		// TODO: In version 0.3, the categories in annotations will be removed.
+		if app.Labels == nil {
+			app.Labels = make(map[string]string)
+		}
+		app.Labels[arcadiav1alpha1.AppCategoryLabelKey] = v
+		return true
+	}
+	return false
 }
 
 // validate nodes:

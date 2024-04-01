@@ -239,7 +239,7 @@ func TypedObjectReferenceToInput(ref generated.TypedObjectReference) generated.T
 
 func GetAppCategory(app *v1alpha1.Application) []*string {
 	category := make([]*string, 0)
-	categoryStr, ok := app.GetAnnotations()[v1alpha1.AppCategoryAnnotationKey]
+	categoryStr, ok := app.GetLabels()[v1alpha1.AppCategoryLabelKey]
 	if ok && len(categoryStr) > 0 {
 		for _, v := range strings.Split(categoryStr, ",") {
 			v := v

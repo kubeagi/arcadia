@@ -44,7 +44,7 @@ import (
 
 func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
 	if len(category) == 0 {
-		delete(app.Annotations, v1alpha1.AppCategoryAnnotationKey)
+		delete(app.Labels, v1alpha1.AppCategoryLabelKey)
 		return app
 	}
 	if app.Annotations == nil {
@@ -54,7 +54,7 @@ func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Applic
 	for i := range category {
 		c[i] = *category[i]
 	}
-	app.Annotations[v1alpha1.AppCategoryAnnotationKey] = strings.Join(c, ",")
+	app.Labels[v1alpha1.AppCategoryLabelKey] = strings.Join(c, ",")
 	return app
 }
 
