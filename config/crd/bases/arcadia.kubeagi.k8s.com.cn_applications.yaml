@@ -35,6 +35,9 @@ spec:
           spec:
             description: ApplicationSpec defines the desired state of Application
             properties:
+              category:
+                description: Category Application category
+                type: string
               chatTimeoutSecond:
                 default: 60
                 description: ChatTimeoutSecond is the timeout of chat
