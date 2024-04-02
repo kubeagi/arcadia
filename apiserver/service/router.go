@@ -57,24 +57,28 @@ func NewServerAndRun(conf config.ServerConfig) {
 	}
 
 	bffGroup := r.Group("/bff")
-	// for file operations
-	registerMinIOAPI(bffGroup, conf)
+
 	// for ops apis with graphql
 	registerGraphQL(r, bffGroup, conf)
 
-	ragGroup := r.Group("/rags")
-	registerRAG(ragGroup, conf)
+	// when debug model is disabled
+	if !config.GetConfig().Debug {
+		// for file operations
+		registerMinIOAPI(bffGroup, conf)
+		ragGroup := r.Group("/rags")
+		registerRAG(ragGroup, conf)
 
-	// for admin chat server with Restful apis
-	chatGroup := r.Group("/chat")
-	registerChat(chatGroup, conf)
+		// for admin chat server with Restful apis
+		chatGroup := r.Group("/chat")
+		registerChat(chatGroup, conf)
 
-	// for gpts chat server with Restful apis
-	gptsGroup := r.Group("/gpts/chat")
-	registerGptsChat(gptsGroup, conf)
+		// for gpts chat server with Restful apis
+		gptsGroup := r.Group("/gpts/chat")
+		registerGptsChat(gptsGroup, conf)
 
-	fg := r.Group("/forward")
-	registerForward(fg, conf)
+		fg := r.Group("/forward")
+		registerForward(fg, conf)
+	}
 
 	//  for swagger
 	if conf.EnableSwagger {

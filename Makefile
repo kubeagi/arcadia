@@ -257,8 +257,8 @@ gql-gen:
 	@go run github.com/99designs/gqlgen@v0.17.44 generate
 build-apiserver: gql-gen
 	@CGO_ENABLED=0 GOOS=linux go build -o bin/apiserver apiserver/main.go
-run-apiserver:
-	POD_NAMESPACE=arcadia go run apiserver/main.go --enable-playground=true &
+run-apiserver: gql-gen
+	nohup go run apiserver/main.go --enable-playground=true --debug  > apiserver.log 2>&1 &
 
 # sdk for apiserver api
 GRL_SDK_GENERATOR_IMAGE ?= yuntijs/gql-sdk-generator:latest
