@@ -33,20 +33,29 @@ import (
 var s = &ServerConfig{}
 
 type ServerConfig struct {
+	Scheme *runtime.Scheme
+
+	// Debug mode which only have graphql server running
+	Debug bool
+	// SystemNamespace which hosts system resources
 	SystemNamespace string
 
-	Host             string
-	Port             int
-	EnablePlayground bool
-	EnableSwagger    bool
-	EnableOIDC       bool
+	Host string
+	Port int
 
-	PlaygroundEndpointPrefix                     string
+	PlaygroundEndpointPrefix string
+
+	// EnablePlayground is true when graphql playground is going to be utilized
+	EnablePlayground bool
+	// EnableSwagger is true when swagger is going to be utilized
+	EnableSwagger bool
+
+	// OIDC configurations
+	EnableOIDC                                   bool
 	IssuerURL, MasterURL, ClientID, ClientSecret string
 
+	// DataProcessURL is the URL of the data process service
 	DataProcessURL string
-
-	Scheme *runtime.Scheme
 }
 
 func NewServerFlags() ServerConfig {
@@ -62,6 +71,7 @@ func NewServerFlags() ServerConfig {
 	flag.StringVar(&s.ClientID, "client-id", "", "oidc client id(required when enable odic)")
 	flag.StringVar(&s.ClientSecret, "client-secret", "", "oidc client secret(required when enable odic)")
 	flag.StringVar(&s.DataProcessURL, "data-processing-url", "http://127.0.0.1:28888", "url to access data processing server")
+	flag.BoolVar(&s.Debug, "debug", false, "debug model for apiserver")
 
 	klog.InitFlags(nil)
 	flag.Parse()

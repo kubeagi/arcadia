@@ -1,0 +1,59 @@
+name: BFF SDK Tests/Push
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      OnlyTestGeneratedSdk:
+        description: 'only test bff-sdk-generator, but not push'
+        required: true
+        default: 'true'
+        type: boolean
+
+env:
+  GOPROXY: https://proxy.golang.org/,direct
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  build-bff-sdk:
+    env:
+      GRL_SDK_TEST_ONLY: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - uses: dorny/paths-filter@v2
+        id: gql-changes
+        with:
+          filters: |
+            gql:
+              - 'apiserver/graph/schema/*.gql'
+      - name: setting token to npmrc
+        if: (( github.event_name == 'push' && steps.gql-changes.outputs.gql == 'true') || github.event_name == 'workflow_dispatch')
+        run: |
+          echo '//registry.npmjs.org/:_authToken="${{ secrets.NPM_TOKEN }}"' >> ~/.npmrc
+      - name: Set variable on Merge pull request
+        if: github.event_name == 'push'
+        run: |
+          echo "GRL_SDK_TEST_ONLY=false" >> $GITHUB_ENV
+      - name: Set variable on workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "GRL_SDK_TEST_ONLY=$TEST_ONLY" >> $GITHUB_ENV
+        env:
+          TEST_ONLY: ${{ inputs.OnlyTestGeneratedSdk }}
+      - name: make sdk
+        if: (steps.gql-changes.outputs.gql == 'true' || github.event_name == 'workflow_dispatch')
+        run: tests/build-bff-sdk.sh
+        env:
+          GRL_SDK_TEST_ONLY: ${{ env.GRL_SDK_TEST_ONLY }}
