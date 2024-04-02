@@ -89,7 +89,7 @@ func FilterApplicationByKeyword(keyword string) ResourceFilter {
 
 func FilterApplicationByCategory(category string) ResourceFilter {
 	return func(u client.Object) bool {
-		categoryStr, ok := u.GetAnnotations()[v1alpha1.AppCategoryAnnotationKey]
+		categoryStr, ok := u.GetLabels()[v1alpha1.AppCategoryLabelKey]
 		if !ok {
 			return false
 		}
