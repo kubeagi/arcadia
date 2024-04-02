@@ -127,7 +127,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	if MigrateAppCategory(app) {
-		return ctrl.Result{}, r.Client.Update(ctx, app)
+		return ctrl.Result{Requeue: true}, r.Client.Update(ctx, app)
 	}
 
 	// Check if the Application instance is marked to be deleted, which is
@@ -166,8 +166,10 @@ func MigrateAppCategory(app *arcadiav1alpha1.Application) bool {
 		if app.Labels == nil {
 			app.Labels = make(map[string]string)
 		}
-		app.Labels[arcadiav1alpha1.AppCategoryLabelKey] = v
-		return true
+		if _, ok := app.Labels[arcadiav1alpha1.AppCategoryLabelKey]; !ok {
+			app.Labels[arcadiav1alpha1.AppCategoryLabelKey] = v
+			return true
+		}
 	}
 	return false
 }
