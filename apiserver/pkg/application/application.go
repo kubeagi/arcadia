@@ -17,12 +17,14 @@ limitations under the License.
 package application
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/minio/minio-go/v7"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +42,9 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	"github.com/kubeagi/arcadia/pkg/config"
+	"github.com/kubeagi/arcadia/pkg/datasource"
+	pkgutils "github.com/kubeagi/arcadia/pkg/utils"
 )
 
 func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
@@ -68,7 +73,7 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	gApp.ConversionWindowSize = pointer.Int(5)
 }
 
-func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.CommonRetrieverConfig, app *v1alpha1.Application, agent *apiagent.Agent, doc *apidocumentloader.DocumentLoader, enableRerank, enableMultiQuery *bool, rerankModel *string) (*generated.Application, error) {
+func cr2app(ctx context.Context, c client.Client, prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, retriever *apiretriever.CommonRetrieverConfig, app *v1alpha1.Application, agent *apiagent.Agent, doc *apidocumentloader.DocumentLoader, enableRerank, enableMultiQuery *bool, rerankModel *string) (*generated.Application, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
@@ -76,6 +81,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	UpdateTimestamp := &condition.LastTransitionTime.Time
 	status := common.GetObjStatus(app)
 
+	icon, _ := common.AppIconLink(ctx, app, c)
 	gApp := &generated.Application{
 		Metadata: &generated.ApplicationMetadata{
 			Name:              app.Name,
@@ -85,7 +91,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 			Annotations:       utils.MapStr2Any(app.Annotations),
 			DisplayName:       pointer.String(app.Spec.DisplayName),
 			Description:       pointer.String(app.Spec.Description),
-			Icon:              pointer.String(app.Spec.Icon),
+			Icon:              &icon,
 			Creator:           pointer.String(app.Spec.Creator),
 			CreationTimestamp: &app.CreationTimestamp.Time,
 			UpdateTimestamp:   UpdateTimestamp,
@@ -147,19 +153,22 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	return gApp, nil
 }
 
-func app2metadataConverter(objApp client.Object) (generated.PageNode, error) {
-	app, ok := objApp.(*v1alpha1.Application)
-	if !ok {
-		return nil, errors.New("can't convert client.Object to Application")
+func appConverterHelper(ctx context.Context, c client.Client) common.ResourceConverter {
+	return func(objApp client.Object) (generated.PageNode, error) {
+		app, ok := objApp.(*v1alpha1.Application)
+		if !ok {
+			return nil, errors.New("can't convert client.Object to Application")
+		}
+		return app2metadata(ctx, c, app)
 	}
-	return app2metadata(app)
 }
 
-func app2metadata(app *v1alpha1.Application) (*generated.ApplicationMetadata, error) {
+func app2metadata(ctx context.Context, c client.Client, app *v1alpha1.Application) (*generated.ApplicationMetadata, error) {
 	condition := app.Status.GetCondition(v1alpha1.TypeReady)
 	UpdateTimestamp := &condition.LastTransitionTime.Time
 	status := common.GetObjStatus(app)
 
+	icon, _ := common.AppIconLink(ctx, app, c)
 	return &generated.ApplicationMetadata{
 		Name:              app.Name,
 		Namespace:         app.Namespace,
@@ -171,7 +180,7 @@ func app2metadata(app *v1alpha1.Application) (*generated.ApplicationMetadata, er
 		Description:       pointer.String(app.Spec.Description),
 		CreationTimestamp: &app.CreationTimestamp.Time,
 		UpdateTimestamp:   UpdateTimestamp,
-		Icon:              pointer.String(app.Spec.Icon),
+		Icon:              &icon,
 		IsPublic:          pointer.Bool(app.Spec.IsPublic),
 		IsRecommended:     pointer.Bool(app.Spec.IsRecommended),
 		Status:            pointer.String(status),
@@ -192,7 +201,6 @@ func CreateApplication(ctx context.Context, c client.Client, input generated.Cre
 				DisplayName: input.DisplayName,
 				Description: pointer.StringPtrDerefOr(input.Description, ""),
 			},
-			Icon:          input.Icon,
 			IsPublic:      pointer.BoolDeref(input.IsPublic, false),
 			IsRecommended: pointer.BoolDeref(input.IsRecommended, false),
 			Prologue:      "",
@@ -202,11 +210,16 @@ func CreateApplication(ctx context.Context, c client.Client, input generated.Cre
 	if len(input.Category) > 0 {
 		app = addCategory(app, input.Category)
 	}
+
+	_, err := UploadIcon(ctx, c, input.Icon, input.Name, input.Namespace)
+	if err != nil {
+		return nil, err
+	}
 	common.SetCreator(ctx, &app.Spec.CommonSpec)
 	if err := c.Create(ctx, app); err != nil {
 		return nil, err
 	}
-	return app2metadata(app)
+	return app2metadata(ctx, c, app)
 }
 
 func UpdateApplication(ctx context.Context, c client.Client, input generated.UpdateApplicationMetadataInput) (*generated.ApplicationMetadata, error) {
@@ -226,15 +239,18 @@ func UpdateApplication(ctx context.Context, c client.Client, input generated.Upd
 	}
 	app.Spec.DisplayName = input.DisplayName
 	app.Spec.Description = pointer.StringDeref(input.Description, app.Spec.Description)
-	app.Spec.Icon = input.Icon
 	app.Spec.IsPublic = pointer.BoolDeref(input.IsPublic, app.Spec.IsPublic)
 	app.Spec.IsRecommended = pointer.BoolDeref(input.IsRecommended, app.Spec.IsRecommended)
+	_, err := UploadIcon(ctx, c, input.Icon, input.Name, input.Namespace)
+	if err != nil {
+		return nil, err
+	}
 	if !reflect.DeepEqual(app, oldApp) {
 		if err := c.Update(ctx, app); err != nil {
 			return nil, err
 		}
 	}
-	return app2metadata(app)
+	return app2metadata(ctx, c, app)
 }
 
 func DeleteApplication(ctx context.Context, c client.Client, input generated.DeleteCommonInput) (*string, error) {
@@ -386,7 +402,7 @@ func GetApplication(ctx context.Context, c client.Client, name, namespace string
 		return nil, err
 	}
 
-	return cr2app(prompt, chainConfig, retriever, app, agent, doc, pointer.Bool(enableRerankRetriever), pointer.Bool(enableMultiQueryRetriever), pointer.String(rerankModel))
+	return cr2app(ctx, c, prompt, chainConfig, retriever, app, agent, doc, pointer.Bool(enableRerankRetriever), pointer.Bool(enableMultiQueryRetriever), pointer.String(rerankModel))
 }
 
 func ListApplicationMeatadatas(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
@@ -409,7 +425,7 @@ func ListApplicationMeatadatas(ctx context.Context, c client.Client, input gener
 	for i := range res.Items {
 		items[i] = &res.Items[i]
 	}
-	return common.ListReources(items, page, pageSize, app2metadataConverter, filter...)
+	return common.ListReources(items, page, pageSize, appConverterHelper(ctx, c), filter...)
 }
 
 func UpdateApplicationConfig(ctx context.Context, c client.Client, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {
@@ -743,7 +759,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}
 	}
 
-	return cr2app(prompt, chainConfig, retriever, app, agent, documentLoader, pointer.Bool(hasRerankRetriever), pointer.Bool(hasMultiQueryRetriever), pointer.String(rerankModel))
+	return cr2app(ctx, c, prompt, chainConfig, retriever, app, agent, documentLoader, pointer.Bool(hasRerankRetriever), pointer.Bool(hasMultiQueryRetriever), pointer.String(rerankModel))
 }
 
 func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfigInput, hasMultiQueryRetriever, hasRerankRetriever bool) error {
@@ -962,4 +978,31 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 		},
 	})
 	return nodes
+}
+
+func UploadIcon(ctx context.Context, client client.Client, icon, appName, namespace string) (string, error) {
+	if strings.HasPrefix(icon, "data:image") {
+		imgBytes, err := pkgutils.ParseBase64ImageBytes(icon)
+		if err != nil {
+			return "", err
+		}
+
+		system, err := config.GetSystemDatasource(ctx, client)
+		if err != nil {
+			return "", err
+		}
+
+		endpoint := system.Spec.Endpoint.DeepCopy()
+		if endpoint != nil && endpoint.AuthSecret != nil {
+			endpoint.AuthSecret.WithNameSpace(namespace)
+		}
+		ds, err := datasource.NewOSS(ctx, client, endpoint)
+		if err != nil {
+			return "", err
+		}
+		iconName := fmt.Sprintf("application/%s/icon/%s", appName, appName)
+		_, err = ds.Client.PutObject(ctx, namespace, iconName, bytes.NewReader(imgBytes), int64(len(imgBytes)), minio.PutObjectOptions{})
+		return icon, err
+	}
+	return icon, nil
 }

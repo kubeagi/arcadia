@@ -40,6 +40,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
+	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 	appruntimechain "github.com/kubeagi/arcadia/pkg/appruntime/chain"
@@ -430,14 +431,16 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 			if !ok {
 				return nil
 			}
-			err := cs.cli.Get(ctx, types.NamespacedName{Namespace: ns, Name: name}, app)
+			app.Name = name
+			app.Namespace = ns
+			link, err := common.AppIconLink(ctx, app, cs.cli)
 			if err != nil {
 				// FIXME: Currently, there is a request for an application that cannot be found in a conversation in the database,
 				// causing other conversations to be unable to add icons, so an error is encountered here and no error is returned.
 				klog.Errorf("failed to get application %s in namespace %s, error %s", name, ns, err)
 				return nil
 			}
-			result[index] = app.Spec.Icon
+			result[index] = link
 			return nil
 		})
 	}

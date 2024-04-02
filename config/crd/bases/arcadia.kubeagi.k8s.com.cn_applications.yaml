@@ -61,9 +61,6 @@ spec:
               enableUploadFile:
                 default: true
                 type: boolean
-              icon:
-                description: Icon base64 image icon
-                type: string
               isPublic:
                 description: IsPublic Set whether the current application provides
                   services to the public
