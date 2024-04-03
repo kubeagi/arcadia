@@ -1,0 +1,189 @@
+{{ if .Capabilities.APIVersions.Has "iam.tenxcloud.com/v1alpha1/RoleTemplate" -}}
+apiVersion: iam.tenxcloud.com/v1alpha1
+kind: RoleTemplate
+metadata:
+  annotations:
+    description: "kubeagi 内置默认项目角色模板"
+    displayName: KubeAGI
+  labels:
+    buildin: "true"
+  name: kubeagi
+spec:
+  kindType: Role
+  resources:
+  - category: 数据管理
+    displayName: 权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - datasources
+      - datasets
+      - versioneddatasets
+      - knowledgebases
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 数据管理
+    displayName: 状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - datasources/status
+      - datasets/status
+      - versioneddatasets/status
+      - embedders/status
+      - knowledgebases/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 模型仓库
+    displayName: 权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - models
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 模型仓库
+    displayName: 状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - models/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 模型服务
+    displayName: 权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - workers
+      - llms
+      - embedders
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 模型服务
+    displayName: 状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - workers/status
+      - llms/status
+      - embedders/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - applications
+      - agents
+      - prompts
+      - documentloaders
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - applications/status
+      - agents/status
+      - prompts/status
+      - documentloaders/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 链权限
+    rules:
+    - apiGroups:
+      - chain.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - apichains
+      - llmchains
+      - retrievalqachains
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 链状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - apichains/status
+      - llmchains/status
+      - retrievalqachains/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 召回器权限
+    rules:
+    - apiGroups:
+      - retriever.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - knowledgebaseretrievers
+      - multiqueryRetrievers
+      - rerankretrievers
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 召回器状态权限
+    rules:
+    - apiGroups:
+      - retriever.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - knowledgebaseretrievers/status
+      - multiqueryRetrievers/status
+      - rerankretrievers/status
+      verbs:
+      - get
+      - patch
+      - update
+{{- end }}
