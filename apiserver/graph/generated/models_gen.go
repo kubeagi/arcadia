@@ -64,6 +64,8 @@ type Application struct {
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
 	// userPrompt 用户级别的 Prompt
 	UserPrompt *string `json:"userPrompt,omitempty"`
+	// systemPrompt 系统级别的 Prompt
+	SystemPrompt *string `json:"systemPrompt,omitempty"`
 	// showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
 	ShowRespInfo *bool `json:"showRespInfo,omitempty"`
 	// showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息
@@ -1704,6 +1706,8 @@ type UpdateApplicationConfigInput struct {
 	DocNullReturn *string `json:"docNullReturn,omitempty"`
 	// userPrompt 用户级别的 Prompt
 	UserPrompt *string `json:"userPrompt,omitempty"`
+	// systemPrompt 系统级别的 Prompt
+	SystemPrompt *string `json:"systemPrompt,omitempty"`
 	// showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
 	ShowRespInfo *bool `json:"showRespInfo,omitempty"`
 	// showRetrievalInfo 查看引用配置，即是否在chat界面显示引用信息

@@ -79,6 +79,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             numDocuments
             docNullReturn
             userPrompt
+            systemPrompt
             showRespInfo
             showRetrievalInfo
             showNextGuide
@@ -130,6 +131,7 @@ query getApplication($name: String!, $namespace: String!){
             numDocuments
             docNullReturn
             userPrompt
+            systemPrompt
             showRespInfo
             showRetrievalInfo
             showNextGuide
