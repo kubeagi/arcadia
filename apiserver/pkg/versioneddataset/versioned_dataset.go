@@ -279,6 +279,7 @@ func UpdateVersionedDataset(ctx context.Context, c client.Client, input *generat
 	for _, item := range input.FileGroups {
 		tmp := v1alpha1.FileGroup{
 			Source: &v1alpha1.TypedObjectReference{
+				APIGroup:  item.Source.APIGroup,
 				Kind:      item.Source.Kind,
 				Name:      item.Source.Name,
 				Namespace: item.Source.Namespace,
@@ -312,6 +313,7 @@ func CreateVersionedDataset(ctx context.Context, c client.Client, input *generat
 	vds.Spec = v1alpha1.VersionedDatasetSpec{
 		Version: input.Version,
 		Dataset: &v1alpha1.TypedObjectReference{
+			APIGroup:  pointer.String(v1alpha1.GroupVersion.String()),
 			Kind:      "Dataset",
 			Name:      input.DatasetName,
 			Namespace: &input.Namespace,
@@ -328,6 +330,7 @@ func CreateVersionedDataset(ctx context.Context, c client.Client, input *generat
 		for _, item := range input.FileGrups {
 			tmp := v1alpha1.FileGroup{
 				Source: &v1alpha1.TypedObjectReference{
+					APIGroup:  item.Source.APIGroup,
 					Kind:      item.Source.Kind,
 					Name:      item.Source.Name,
 					Namespace: item.Source.Namespace,

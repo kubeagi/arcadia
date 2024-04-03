@@ -21,6 +21,8 @@ rules:
       - knowledgebases
       - embedders
       - vectorstores
+      - documentloaders
+      - agents
     verbs:
       - get
       - list
@@ -36,6 +38,7 @@ rules:
     resources:
       - llmchains
       - retrievalqachains
+      - apichains
     verbs:
       - get
       - list
@@ -50,6 +53,8 @@ rules:
       - retriever.arcadia.kubeagi.k8s.com.cn
     resources:
       - knowledgebaseretrievers
+      - multiqueryretrievers
+      - rerankretrievers
     verbs:
       - list
       - get

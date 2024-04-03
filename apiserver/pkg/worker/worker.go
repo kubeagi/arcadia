@@ -211,6 +211,7 @@ func CreateWorker(ctx context.Context, c client.Client, input generated.CreateWo
 			},
 			Type: workerType,
 			Model: &v1alpha1.TypedObjectReference{
+				APIGroup:  pointer.String(v1alpha1.GroupVersion.String()),
 				Name:      input.Model.Name,
 				Namespace: &modelNs,
 				Kind:      "Model",
