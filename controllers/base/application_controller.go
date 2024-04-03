@@ -163,11 +163,8 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func MigrateAppCategory(app *arcadiav1alpha1.Application) bool {
 	if v, ok := app.Annotations[arcadiav1alpha1.AppCategoryLabelKey]; ok && len(validation.IsValidLabelValue(v)) == 0 {
 		// TODO: In version 0.3, the categories in annotations will be removed.
-		if app.Labels == nil {
-			app.Labels = make(map[string]string)
-		}
-		if _, ok := app.Labels[arcadiav1alpha1.AppCategoryLabelKey]; !ok {
-			app.Labels[arcadiav1alpha1.AppCategoryLabelKey] = v
+		if app.Spec.Category == "" {
+			app.Spec.Category = v
 			return true
 		}
 	}
@@ -322,6 +319,16 @@ func (r *ApplicationReconciler) reconcile(ctx context.Context, log logr.Logger, 
 		app.Labels[arcadiav1alpha1.AppRecommendedLabelKey] = "true"
 	} else {
 		delete(app.Labels, arcadiav1alpha1.AppRecommendedLabelKey)
+	}
+	if app.Spec.Category != "" {
+		if app.Labels == nil {
+			app.Labels = make(map[string]string)
+		}
+		if v, ok := app.Labels[arcadiav1alpha1.AppCategoryLabelKey]; !ok || v != app.Spec.Category {
+			app.Labels[arcadiav1alpha1.AppCategoryLabelKey] = app.Spec.Category
+		}
+	} else {
+		delete(app.Labels, arcadiav1alpha1.AppCategoryLabelKey)
 	}
 
 	if !reflect.DeepEqual(app, appRaw) {

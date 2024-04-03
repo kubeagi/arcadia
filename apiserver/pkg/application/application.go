@@ -44,17 +44,14 @@ import (
 
 func addCategory(app *v1alpha1.Application, category []*string) *v1alpha1.Application {
 	if len(category) == 0 {
-		delete(app.Labels, v1alpha1.AppCategoryLabelKey)
+		app.Spec.Category = ""
 		return app
-	}
-	if app.Annotations == nil {
-		app.Annotations = make(map[string]string, 1)
 	}
 	c := make([]string, len(category))
 	for i := range category {
 		c[i] = *category[i]
 	}
-	app.Labels[v1alpha1.AppCategoryLabelKey] = strings.Join(c, ",")
+	app.Spec.Category = strings.Join(c, ",")
 	return app
 }
 
@@ -202,7 +199,9 @@ func CreateApplication(ctx context.Context, c client.Client, input generated.Cre
 			Nodes:         []v1alpha1.Node{},
 		},
 	}
-	app = addCategory(app, input.Category)
+	if len(input.Category) > 0 {
+		app = addCategory(app, input.Category)
+	}
 	common.SetCreator(ctx, &app.Spec.CommonSpec)
 	if err := c.Create(ctx, app); err != nil {
 		return nil, err
@@ -216,9 +215,15 @@ func UpdateApplication(ctx context.Context, c client.Client, input generated.Upd
 		return nil, err
 	}
 	oldApp := app.DeepCopy()
-	app.Labels = utils.MapAny2Str(input.Labels)
-	app.Annotations = utils.MapAny2Str(input.Annotations)
-	app = addCategory(app, input.Category)
+	if len(input.Labels) > 0 {
+		app.Labels = utils.MapAny2Str(input.Labels)
+	}
+	if len(input.Annotations) > 0 {
+		app.Annotations = utils.MapAny2Str(input.Annotations)
+	}
+	if len(input.Category) > 0 {
+		app = addCategory(app, input.Category)
+	}
 	app.Spec.DisplayName = input.DisplayName
 	app.Spec.Description = pointer.StringDeref(input.Description, app.Spec.Description)
 	app.Spec.Icon = input.Icon
