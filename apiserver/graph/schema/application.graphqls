@@ -82,7 +82,10 @@ type Application {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
-
+    """
+    systemPrompt 系统级别的 Prompt
+    """
+    systemPrompt: String
     """
     showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
@@ -389,6 +392,10 @@ input UpdateApplicationConfigInput {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
+    """
+    systemPrompt 系统级别的 Prompt
+    """
+    systemPrompt: String
     """
     showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """

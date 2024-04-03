@@ -106,6 +106,7 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	}
 	if prompt != nil {
 		gApp.UserPrompt = pointer.String(prompt.Spec.UserMessage)
+		gApp.SystemPrompt = pointer.String(prompt.Spec.SystemMessage)
 	}
 	if chainConfig != nil {
 		gApp.Model = pointer.String(chainConfig.Model)
@@ -444,9 +445,12 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		} else {
 			userMessage = *input.UserPrompt
 		}
-		prompt.Spec.CommonPromptConfig = apiprompt.CommonPromptConfig{
-			UserMessage: userMessage,
+		if utils.HasValue(input.SystemPrompt) {
+			prompt.Spec.CommonPromptConfig.SystemMessage = *input.SystemPrompt
+		} else {
+			prompt.Spec.CommonPromptConfig.SystemMessage = ""
 		}
+		prompt.Spec.CommonPromptConfig.UserMessage = userMessage
 		return nil
 	}); err != nil {
 		return nil, err

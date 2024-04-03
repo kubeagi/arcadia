@@ -99,6 +99,7 @@ type ComplexityRoot struct {
 		ShowNextGuide        func(childComplexity int) int
 		ShowRespInfo         func(childComplexity int) int
 		ShowRetrievalInfo    func(childComplexity int) int
+		SystemPrompt         func(childComplexity int) int
 		Temperature          func(childComplexity int) int
 		Tools                func(childComplexity int) int
 		UserPrompt           func(childComplexity int) int
@@ -1176,6 +1177,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.ShowRetrievalInfo(childComplexity), true
+
+	case "Application.systemPrompt":
+		if e.complexity.Application.SystemPrompt == nil {
+			break
+		}
+
+		return e.complexity.Application.SystemPrompt(childComplexity), true
 
 	case "Application.temperature":
 		if e.complexity.Application.Temperature == nil {
@@ -5171,7 +5179,10 @@ type Application {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
-
+    """
+    systemPrompt 系统级别的 Prompt
+    """
+    systemPrompt: String
     """
     showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
@@ -5478,6 +5489,10 @@ input UpdateApplicationConfigInput {
     userPrompt 用户级别的 Prompt
     """
     userPrompt: String
+    """
+    systemPrompt 系统级别的 Prompt
+    """
+    systemPrompt: String
     """
     showRespInfo 查看关联信息配置，即是否在chat界面显示关联信息
     """
@@ -10151,6 +10166,47 @@ func (ec *executionContext) fieldContext_Application_userPrompt(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_systemPrompt(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_systemPrompt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemPrompt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_systemPrompt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Application_showRespInfo(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Application_showRespInfo(ctx, field)
 	if err != nil {
@@ -11561,6 +11617,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplicationCo
 				return ec.fieldContext_Application_docNullReturn(ctx, field)
 			case "userPrompt":
 				return ec.fieldContext_Application_userPrompt(ctx, field)
+			case "systemPrompt":
+				return ec.fieldContext_Application_systemPrompt(ctx, field)
 			case "showRespInfo":
 				return ec.fieldContext_Application_showRespInfo(ctx, field)
 			case "showRetrievalInfo":
@@ -11668,6 +11726,8 @@ func (ec *executionContext) fieldContext_ApplicationQuery_getApplication(ctx con
 				return ec.fieldContext_Application_docNullReturn(ctx, field)
 			case "userPrompt":
 				return ec.fieldContext_Application_userPrompt(ctx, field)
+			case "systemPrompt":
+				return ec.fieldContext_Application_systemPrompt(ctx, field)
 			case "showRespInfo":
 				return ec.fieldContext_Application_showRespInfo(ctx, field)
 			case "showRetrievalInfo":
@@ -28707,6 +28767,8 @@ func (ec *executionContext) fieldContext_RAG_application(ctx context.Context, fi
 				return ec.fieldContext_Application_docNullReturn(ctx, field)
 			case "userPrompt":
 				return ec.fieldContext_Application_userPrompt(ctx, field)
+			case "systemPrompt":
+				return ec.fieldContext_Application_systemPrompt(ctx, field)
 			case "showRespInfo":
 				return ec.fieldContext_Application_showRespInfo(ctx, field)
 			case "showRetrievalInfo":
@@ -38981,7 +39043,7 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "enableUploadFile", "chunkSize", "chunkOverlap", "batchSize"}
+	fieldsInOrder := [...]string{"name", "namespace", "prologue", "model", "llm", "temperature", "maxLength", "maxTokens", "conversionWindowSize", "knowledgebase", "scoreThreshold", "numDocuments", "docNullReturn", "userPrompt", "systemPrompt", "showRespInfo", "showRetrievalInfo", "showNextGuide", "tools", "enableRerank", "rerankModel", "enableMultiQuery", "chatTimeout", "enableUploadFile", "chunkSize", "chunkOverlap", "batchSize"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -39086,6 +39148,13 @@ func (ec *executionContext) unmarshalInputUpdateApplicationConfigInput(ctx conte
 				return it, err
 			}
 			it.UserPrompt = data
+		case "systemPrompt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemPrompt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SystemPrompt = data
 		case "showRespInfo":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showRespInfo"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -40382,6 +40451,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_docNullReturn(ctx, field, obj)
 		case "userPrompt":
 			out.Values[i] = ec._Application_userPrompt(ctx, field, obj)
+		case "systemPrompt":
+			out.Values[i] = ec._Application_systemPrompt(ctx, field, obj)
 		case "showRespInfo":
 			out.Values[i] = ec._Application_showRespInfo(ctx, field, obj)
 		case "showRetrievalInfo":
