@@ -168,6 +168,7 @@ func (worker Worker) BuildEmbedder() *Embedder {
 			Type:       embeddings.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
+					APIGroup:  pointer.String(GroupVersion.String()),
 					Kind:      "Worker",
 					Namespace: &worker.Namespace,
 					Name:      worker.Name,
@@ -188,6 +189,7 @@ func (worker Worker) BuildLLM() *LLM {
 			Type:       llms.OpenAI,
 			Provider: Provider{
 				Worker: &TypedObjectReference{
+					APIGroup:  pointer.String(GroupVersion.String()),
 					Kind:      "Worker",
 					Namespace: &worker.Namespace,
 					Name:      worker.Name,

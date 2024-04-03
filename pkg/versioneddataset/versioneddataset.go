@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/datasource"
@@ -61,6 +62,7 @@ func generateInheritedFileStatus(oss *datasource.OSS, instance *v1alpha1.Version
 	return []v1alpha1.FileStatus{
 		{
 			TypedObjectReference: v1alpha1.TypedObjectReference{
+				APIGroup:  pointer.String(v1alpha1.GroupVersion.String()),
 				Name:      name,
 				Namespace: &instance.Namespace,
 				Kind:      "VersionedDataset",
@@ -93,6 +95,7 @@ func generateDatasourceFileStatus(instance *v1alpha1.VersionedDataset) []v1alpha
 		_, _ = fmt.Sscanf(datasource, "%s %s", &namespace, &name)
 		item := v1alpha1.FileStatus{
 			TypedObjectReference: v1alpha1.TypedObjectReference{
+				APIGroup:  pointer.String(v1alpha1.GroupVersion.String()),
 				Name:      name,
 				Namespace: &namespace,
 				Kind:      "Datasource",
@@ -168,6 +171,8 @@ func CopiedFileGroup2Status(oss *datasource.OSS, instance *v1alpha1.VersionedDat
 		if len(datasourceFiles) > 0 {
 			ds := v1alpha1.FileStatus{
 				TypedObjectReference: v1alpha1.TypedObjectReference{
+					APIGroup:  item.APIGroup,
+					Kind:      item.Kind,
 					Name:      item.Name,
 					Namespace: item.Namespace,
 				},

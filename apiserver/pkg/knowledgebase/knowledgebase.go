@@ -85,6 +85,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		}
 
 		source := &generated.TypedObjectReference{
+			APIGroup:  fg.Source.APIGroup,
 			Kind:      fg.Source.Kind,
 			Name:      fg.Source.Name,
 			Namespace: new(string),
@@ -122,6 +123,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 
 	embedderResource := &v1alpha1.Embedder{}
 	embedder := generated.TypedObjectReference{
+		APIGroup:  knowledgebase.Spec.Embedder.APIGroup,
 		Kind:      knowledgebase.Spec.Embedder.Kind,
 		Name:      knowledgebase.Spec.Embedder.Name,
 		Namespace: knowledgebase.Spec.Embedder.Namespace,
@@ -156,6 +158,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		EmbedderType: &embedderType,
 		// Vector info
 		VectorStore: &generated.TypedObjectReference{
+			APIGroup:  knowledgebase.Spec.VectorStore.APIGroup,
 			Kind:      knowledgebase.Spec.VectorStore.Kind,
 			Name:      knowledgebase.Spec.VectorStore.Name,
 			Namespace: knowledgebase.Spec.VectorStore.Namespace,
@@ -246,6 +249,7 @@ func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.C
 				Description: description,
 			},
 			Embedder: &v1alpha1.TypedObjectReference{
+				APIGroup:  pointer.String(v1alpha1.GroupVersion.String()),
 				Kind:      "Embedder",
 				Name:      embedder,
 				Namespace: &input.Namespace,

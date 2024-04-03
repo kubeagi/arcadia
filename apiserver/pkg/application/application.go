@@ -742,7 +742,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 }
 
 func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfigInput, hasMultiQueryRetriever, hasRerankRetriever bool) error {
-	app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Name, input.Llm, input.Tools, hasMultiQueryRetriever, hasRerankRetriever, input.EnableUploadFile)
+	app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Namespace, input.Name, input.Llm, input.Tools, hasMultiQueryRetriever, hasRerankRetriever, input.EnableUploadFile)
 	app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
 	app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
 	app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
@@ -755,7 +755,8 @@ func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfi
 	return nil
 }
 
-func redefineNodes(knowledgebase *string, name string, llmName string, tools []*generated.ToolInput, hasMultiQueryRetriever, hasRerankRetriever bool, enableUploadFile *bool) (nodes []v1alpha1.Node) {
+// redefineNodes redefine nodes in application
+func redefineNodes(knowledgebase *string, namespace string, name string, llmName string, tools []*generated.ToolInput, hasMultiQueryRetriever, hasRerankRetriever bool, enableUploadFile *bool) (nodes []v1alpha1.Node) {
 	nodes = []v1alpha1.Node{
 		{
 			NodeConfig: v1alpha1.NodeConfig{
@@ -763,8 +764,9 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				DisplayName: "用户输入",
 				Description: "用户输入节点，必须",
 				Ref: &v1alpha1.TypedObjectReference{
-					Kind: "Input",
-					Name: "Input",
+					Kind:      "Input",
+					Name:      "Input",
+					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"prompt-node"},
@@ -775,9 +777,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				DisplayName: "prompt",
 				Description: "设定prompt，template中可以使用{{.}}来替换变量",
 				Ref: &v1alpha1.TypedObjectReference{
-					APIGroup: pointer.String("prompt.arcadia.kubeagi.k8s.com.cn"),
-					Kind:     "Prompt",
-					Name:     name,
+					APIGroup:  pointer.String("prompt.arcadia.kubeagi.k8s.com.cn"),
+					Kind:      "Prompt",
+					Name:      name,
+					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"chain-node"},
@@ -790,9 +793,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				DisplayName: "documentloader",
 				Description: "文档加载，可选",
 				Ref: &v1alpha1.TypedObjectReference{
-					APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
-					Kind:     "DocumentLoader",
-					Name:     name,
+					APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+					Kind:      "DocumentLoader",
+					Name:      name,
+					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"chain-node"},
@@ -804,9 +808,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 			DisplayName: "llm",
 			Description: "设定大模型的访问信息",
 			Ref: &v1alpha1.TypedObjectReference{
-				APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
-				Kind:     "LLM",
-				Name:     llmName,
+				APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+				Kind:      "LLM",
+				Name:      llmName,
+				Namespace: &namespace,
 			},
 		},
 		NextNodeName: []string{"chain-node"},
@@ -821,9 +826,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				DisplayName: "llm chain",
 				Description: "chain是langchain的核心概念，llmChain用于连接prompt和llm",
 				Ref: &v1alpha1.TypedObjectReference{
-					APIGroup: pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
-					Kind:     "LLMChain",
-					Name:     name,
+					APIGroup:  pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
+					Kind:      "LLMChain",
+					Name:      name,
+					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"Output"},
@@ -836,9 +842,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 					DisplayName: "知识库",
 					Description: "连接知识库",
 					Ref: &v1alpha1.TypedObjectReference{
-						APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
-						Kind:     "KnowledgeBase",
-						Name:     pointer.StringDeref(knowledgebase, ""),
+						APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+						Kind:      "KnowledgeBase",
+						Name:      pointer.StringDeref(knowledgebase, ""),
+						Namespace: &namespace,
 					},
 				},
 				NextNodeName: []string{"retriever-node"},
@@ -849,9 +856,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 					DisplayName: "从知识库提取信息的retriever",
 					Description: "连接应用和知识库",
 					Ref: &v1alpha1.TypedObjectReference{
-						APIGroup: pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
-						Kind:     "KnowledgeBaseRetriever",
-						Name:     name,
+						APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
+						Kind:      "KnowledgeBaseRetriever",
+						Name:      name,
+						Namespace: &namespace,
 					},
 				},
 				NextNodeName: []string{"chain-node"},
@@ -878,9 +886,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 						DisplayName: "多查询retriever",
 						Description: "多查询retriever",
 						Ref: &v1alpha1.TypedObjectReference{
-							APIGroup: pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
-							Kind:     "MultiQueryRetriever",
-							Name:     name,
+							APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "MultiQueryRetriever",
+							Name:      name,
+							Namespace: &namespace,
 						},
 					},
 					NextNodeName: []string{nextNodeName},
@@ -894,9 +903,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 						DisplayName: "rerank retriever",
 						Description: "rerank retriever",
 						Ref: &v1alpha1.TypedObjectReference{
-							APIGroup: pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
-							Kind:     "RerankRetriever",
-							Name:     name,
+							APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "RerankRetriever",
+							Name:      name,
+							Namespace: &namespace,
 						},
 					},
 					NextNodeName: []string{"chain-node"},
@@ -909,9 +919,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 					DisplayName: "RetrievalQA chain",
 					Description: "chain是langchain的核心概念RetrievalQAChain用于从retriever中提取信息，供llm调用",
 					Ref: &v1alpha1.TypedObjectReference{
-						APIGroup: pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
-						Kind:     "RetrievalQAChain",
-						Name:     name,
+						APIGroup:  pointer.String("chain.arcadia.kubeagi.k8s.com.cn"),
+						Kind:      "RetrievalQAChain",
+						Name:      name,
+						Namespace: &namespace,
 					},
 				},
 				NextNodeName: []string{"Output"},
@@ -924,9 +935,10 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 				DisplayName: "agent",
 				Description: "agent 调用复杂工具完成任务",
 				Ref: &v1alpha1.TypedObjectReference{
-					APIGroup: pointer.String("arcadia.kubeagi.k8s.com.cn"),
-					Kind:     "Agent",
-					Name:     name,
+					APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+					Kind:      "Agent",
+					Name:      name,
+					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"chain-node"},
@@ -938,8 +950,9 @@ func redefineNodes(knowledgebase *string, name string, llmName string, tools []*
 			DisplayName: "最终输出",
 			Description: "最终输出节点，必须",
 			Ref: &v1alpha1.TypedObjectReference{
-				Kind: "Output",
-				Name: "Output",
+				Kind:      "Output",
+				Name:      "Output",
+				Namespace: &namespace,
 			},
 		},
 	})
