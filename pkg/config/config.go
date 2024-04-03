@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	arcadiav1alpha1 "github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/pkg/datasource"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -161,4 +162,16 @@ func GetDefaultRerankModel(ctx context.Context, c client.Client) (*arcadiav1alph
 		return nil, ErrNoConfigRerank
 	}
 	return config.Rerank, nil
+}
+
+func GetSystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
+	systemDatasource, err := GetSystemDatasource(ctx, mgrClient)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
+	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
+		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
+	}
+	return datasource.NewOSS(ctx, mgrClient, endpoint)
 }

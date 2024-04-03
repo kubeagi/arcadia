@@ -31,8 +31,6 @@ type NodeConfig struct {
 // ApplicationSpec defines the desired state of Application
 type ApplicationSpec struct {
 	CommonSpec `json:",inline"`
-	// Icon base64 image icon
-	Icon string `json:"icon,omitempty"`
 	// IsPublic Set whether the current application provides services to the public
 	IsPublic bool `json:"isPublic,omitempty"`
 	// IsRecommended Set whether the current application is recognized as recommended to users

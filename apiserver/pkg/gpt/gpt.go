@@ -41,11 +41,12 @@ var (
 	chatStorage storage.Storage
 )
 
-func app2gpt(app *v1alpha1.Application, c client.Client) (*generated.Gpt, error) {
+func app2gpt(ctx context.Context, app *v1alpha1.Application, c client.Client) (*generated.Gpt, error) {
 	if app == nil {
 		return nil, errors.New("no app found")
 	}
 
+	icon, _ := common.AppIconLink(ctx, app, c)
 	gpt := &generated.Gpt{
 		Name:               pointer.String(strings.Join([]string{app.Namespace, app.Name}, "/")),
 		DisplayName:        pointer.String(app.Spec.DisplayName),
@@ -53,7 +54,7 @@ func app2gpt(app *v1alpha1.Application, c client.Client) (*generated.Gpt, error)
 		Hot:                pointer.Int64(getHot(app, c)),
 		Creator:            pointer.String(app.Spec.Creator),
 		Category:           common.GetAppCategory(app),
-		Icon:               pointer.String(app.Spec.Icon),
+		Icon:               &icon,
 		Prologue:           pointer.String(app.Spec.Prologue),
 		ShowRespInfo:       pointer.Bool(app.Spec.ShowRespInfo),
 		ShowRetrievalInfo:  pointer.Bool(app.Spec.ShowRetrievalInfo),
@@ -144,7 +145,7 @@ func GetGPT(ctx context.Context, c client.Client, name string) (*generated.Gpt, 
 		return nil, fmt.Errorf("not a valid app or the app is not public")
 	}
 
-	return app2gpt(app, c)
+	return app2gpt(ctx, app, c)
 }
 
 // ListGPT list all gpt
@@ -179,7 +180,7 @@ func ListGPT(ctx context.Context, c client.Client, input generated.ListGPTInput)
 		if !ok {
 			return nil, errors.New("can't convert obj to Application")
 		}
-		return app2gpt(app, c)
+		return app2gpt(ctx, app, c)
 	}, filter...)
 }
 
