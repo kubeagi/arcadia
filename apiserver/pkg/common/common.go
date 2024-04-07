@@ -20,9 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -309,15 +307,10 @@ func NewListOptions(input generated.ListCommonInput) ([]client.ListOption, error
 	return opts, nil
 }
 
-func AppIconLink(ctx context.Context, app *v1alpha1.Application, client client.Client) (string, error) {
-	ds, err := SystemDatasourceOSS(ctx, client)
-	if err != nil {
-		return "", err
+func AppIconLink(app *v1alpha1.Application, endpointPrefix string) string {
+	base := fmt.Sprintf("/bff/icon?namespace=%s&application=%s", app.Namespace, app.Name)
+	if endpointPrefix != "" {
+		base = "/" + endpointPrefix + base
 	}
-	name := fmt.Sprintf("application/%s/icon/%s", app.Name, app.Name)
-	u, err := ds.Client.PresignedGetObject(ctx, app.Namespace, name, 24*time.Hour, url.Values{})
-	if err != nil {
-		return "", err
-	}
-	return u.String(), nil
+	return base
 }
