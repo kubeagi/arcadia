@@ -90,7 +90,7 @@ func GetLangchainEmbedder(ctx context.Context, e *v1alpha1.Embedder, c client.Cl
 			return langchaingoembeddings.NewEmbedder(llm, opts...)
 		}
 	case v1alpha1.ProviderTypeWorker:
-		gateway, err := config.GetGateway(ctx, c)
+		gateway, err := config.GetGateway(ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -78,7 +78,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 			return googleLLM, nil
 		}
 	case v1alpha1.ProviderTypeWorker:
-		gateway, err := config.GetGateway(ctx, c)
+		gateway, err := config.GetGateway(ctx)
 		if err != nil {
 			return nil, err
 		}

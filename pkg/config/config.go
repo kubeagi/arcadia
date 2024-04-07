@@ -45,7 +45,9 @@ var (
 	ErrNoConfigStreamlit   = fmt.Errorf("config Streamlit in comfigmap is not found")
 	ErrNoConfigRayClusters = fmt.Errorf("config RayClusters in comfigmap is not found")
 	ErrNoConfigRerank      = fmt.Errorf("config rerankDefaultEndpoint in comfigmap is not found")
+	ErrSystemCliNotFound   = fmt.Errorf("systemCli is not found")
 )
+var systemCli client.Client
 
 func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client) (ds *arcadiav1alpha1.Datasource, err error) {
 	name := ref.Name
@@ -57,24 +59,24 @@ func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference
 	return source, err
 }
 
-func GetSystemDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c)
+func GetSystemDatasource(ctx context.Context) (*arcadiav1alpha1.Datasource, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return getDatasource(ctx, config.SystemDatasource, c)
+	return getDatasource(ctx, config.SystemDatasource, systemCli)
 }
 
-func GetRelationalDatasource(ctx context.Context, c client.Client) (*arcadiav1alpha1.Datasource, error) {
-	config, err := GetConfig(ctx, c)
+func GetRelationalDatasource(ctx context.Context) (*arcadiav1alpha1.Datasource, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return getDatasource(ctx, config.RelationalDatasource, c)
+	return getDatasource(ctx, config.RelationalDatasource, systemCli)
 }
 
-func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
-	config, err := GetConfig(ctx, c)
+func GetGateway(ctx context.Context) (*Gateway, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +86,17 @@ func GetGateway(ctx context.Context, c client.Client) (*Gateway, error) {
 	return config.Gateway, nil
 }
 
-func GetConfig(ctx context.Context, c client.Client) (config *Config, err error) {
+func getConfig(ctx context.Context) (config *Config, err error) {
+	if systemCli == nil {
+		return nil, ErrSystemCliNotFound
+	}
 	cmName := env.GetString(EnvConfigKey, EnvConfigDefaultValue)
 	if cmName == "" {
 		return nil, ErrNoConfigEnv
 	}
 	cmNamespace := utils.GetCurrentNamespace()
 	cm := &corev1.ConfigMap{}
-	if err = c.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
+	if err = systemCli.Get(ctx, client.ObjectKey{Name: cmName, Namespace: cmNamespace}, cm); err != nil {
 		return nil, err
 	}
 	value, ok := cm.Data["config"]
@@ -105,8 +110,8 @@ func GetConfig(ctx context.Context, c client.Client) (config *Config, err error)
 }
 
 // GetEmbedder get the default embedder from config
-func GetEmbedder(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, c)
+func GetEmbedder(ctx context.Context) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +122,8 @@ func GetEmbedder(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedOb
 }
 
 // GetVectorStore get the default vector store from config
-func GetVectorStore(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, c)
+func GetVectorStore(ctx context.Context) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +134,8 @@ func GetVectorStore(ctx context.Context, c client.Client) (*arcadiav1alpha1.Type
 }
 
 // Get the configuration of streamlit tool
-func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
-	config, err := GetConfig(ctx, c)
+func GetStreamlit(ctx context.Context) (*Streamlit, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +146,8 @@ func GetStreamlit(ctx context.Context, c client.Client) (*Streamlit, error) {
 }
 
 // Get the ray cluster that can be used a resource pool
-func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) {
-	config, err := GetConfig(ctx, c)
+func GetRayClusters(ctx context.Context) ([]RayCluster, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +158,8 @@ func GetRayClusters(ctx context.Context, c client.Client) ([]RayCluster, error) 
 }
 
 // GetDefaultRerankModel gets the default reranking model which is recommended by kubeagi
-func GetDefaultRerankModel(ctx context.Context, c client.Client) (*arcadiav1alpha1.TypedObjectReference, error) {
-	config, err := GetConfig(ctx, c)
+func GetDefaultRerankModel(ctx context.Context) (*arcadiav1alpha1.TypedObjectReference, error) {
+	config, err := getConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +169,8 @@ func GetDefaultRerankModel(ctx context.Context, c client.Client) (*arcadiav1alph
 	return config.Rerank, nil
 }
 
-func GetSystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
-	systemDatasource, err := GetSystemDatasource(ctx, mgrClient)
+func GetSystemDatasourceOSS(ctx context.Context) (*datasource.OSS, error) {
+	systemDatasource, err := GetSystemDatasource(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,5 +178,9 @@ func GetSystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*data
 	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
-	return datasource.NewOSS(ctx, mgrClient, endpoint)
+	return datasource.NewOSS(ctx, systemCli, endpoint)
+}
+
+func InitSystemClient(cli client.Client) {
+	systemCli = cli
 }

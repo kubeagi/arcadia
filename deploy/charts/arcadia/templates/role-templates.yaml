@@ -186,4 +186,54 @@ spec:
       - get
       - patch
       - update
+  - category: 智能体管理
+    displayName: Prompt 权限
+    rules:
+    - apiGroups:
+      - prompt.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - prompts
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: Prompt 状态权限
+    rules:
+    - apiGroups:
+      - prompt.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - prompts/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 向量数据库权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - vectorstores
+      verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 向量数据库状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - vectorstores/status
+      verbs:
+      - get
+      - patch
+      - update
 {{- end }}

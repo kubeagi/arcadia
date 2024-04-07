@@ -987,7 +987,7 @@ func UploadIcon(ctx context.Context, client client.Client, icon, appName, namesp
 			return "", err
 		}
 
-		system, err := config.GetSystemDatasource(ctx, client)
+		system, err := config.GetSystemDatasource(ctx)
 		if err != nil {
 			return "", err
 		}

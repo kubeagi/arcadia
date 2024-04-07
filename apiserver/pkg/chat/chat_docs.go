@@ -206,7 +206,7 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 		return err
 	}
 	// systemDatasource which stores the document
-	systemDatasource, err := config.GetSystemDatasource(ctx, cs.cli)
+	systemDatasource, err := config.GetSystemDatasource(ctx)
 	if err != nil {
 		return err
 	}

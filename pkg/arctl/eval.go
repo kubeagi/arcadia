@@ -259,7 +259,7 @@ var (
 
 func SysatemDatasource(ctx context.Context, kubeClient client.Client) (*basev1alpha1.Datasource, error) {
 	once.Do(func() {
-		systemDatasource, systemError = config.GetSystemDatasource(ctx, kubeClient)
+		systemDatasource, systemError = config.GetSystemDatasource(ctx)
 	})
 	return systemDatasource, systemError
 }

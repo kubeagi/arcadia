@@ -188,7 +188,7 @@ func (r *ModelReconciler) CheckModel(ctx context.Context, logger logr.Logger, in
 	// otherwise we consider the model file for the trans-core service to be ready.
 	if instance.Spec.Source == nil && (instance.Spec.HuggingFaceRepo == "" && instance.Spec.ModelScopeRepo == "") {
 		logger.V(5).Info(fmt.Sprintf("model %s source is empty, check minio status.", instance.Name))
-		system, err := config.GetSystemDatasource(ctx, r.Client)
+		system, err := config.GetSystemDatasource(ctx)
 		if err != nil {
 			return r.UpdateStatus(ctx, instance, err)
 		}
@@ -223,7 +223,7 @@ func (r *ModelReconciler) RemoveModel(ctx context.Context, logger logr.Logger, i
 	var ds datasource.Datasource
 	var info any
 
-	system, err := config.GetSystemDatasource(ctx, r.Client)
+	system, err := config.GetSystemDatasource(ctx)
 	if err != nil {
 		return r.UpdateStatus(ctx, instance, err)
 	}

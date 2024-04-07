@@ -32,7 +32,7 @@ func registerGptsChat(g *gin.RouterGroup, conf config.ServerConfig) {
 		panic(err)
 	}
 
-	chatService, err := NewChatService(c)
+	chatService, err := NewChatService(c, true)
 	if err != nil {
 		panic(err)
 	}

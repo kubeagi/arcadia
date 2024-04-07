@@ -9,7 +9,7 @@ COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go env -w GOPROXY=${GOPROXY}
-RUN go mod download
+RUN go mod download -x
 
 # Copy the go source
 COPY main.go main.go
@@ -19,8 +19,8 @@ COPY pkg/ pkg/
 COPY apiserver/ apiserver/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o apiserver-bin apiserver/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o apiserver-bin apiserver/main.go
 
 # Use alpine as minimal base image to package the manager binary
 FROM alpine:3.19.1

@@ -51,8 +51,8 @@ type ChatService struct {
 	server *chat.ChatServer
 }
 
-func NewChatService(cli runtimeclient.Client) (*ChatService, error) {
-	return &ChatService{chat.NewChatServer(cli)}, nil
+func NewChatService(cli runtimeclient.Client, isGpts bool) (*ChatService, error) {
+	return &ChatService{chat.NewChatServer(cli, isGpts)}, nil
 }
 
 // @Summary	chat with application
@@ -450,7 +450,7 @@ func registerChat(g *gin.RouterGroup, conf config.ServerConfig) {
 		panic(err)
 	}
 
-	chatService, err := NewChatService(c)
+	chatService, err := NewChatService(c, false)
 	if err != nil {
 		panic(err)
 	}
