@@ -145,7 +145,7 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 	out := map[string]any{
 		base.InputQuestionKeyInArg:                 input.Question,
 		"files":                                    input.Files,
-		base.OutputAnserStreamChanKeyInArg:         respStream,
+		base.OutputAnswerStreamChanKeyInArg:        respStream,
 		base.InputIsNeedStreamKeyInArg:             input.NeedStream,
 		base.LangchaingoChatMessageHistoryKeyInArg: input.History,
 		// Use an empty context before run
@@ -205,7 +205,7 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 				var er *base.RetrieverGetNullDocError
 				if errors.As(err, &er) {
 					agentReturnNothing := true
-					v, ok := out[base.OutputAnserKeyInArg]
+					v, ok := out[base.OutputAnswerKeyInArg]
 					if ok {
 						if answer, ok := v.(string); ok && len(answer) > 0 {
 							agentReturnNothing = false
@@ -229,7 +229,7 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 			waitRunningNodes.PushBack(n)
 		}
 	}
-	if a, ok := out[base.OutputAnserKeyInArg]; ok {
+	if a, ok := out[base.OutputAnswerKeyInArg]; ok {
 		if answer, ok := a.(string); ok && len(answer) > 0 {
 			output = Output{Answer: answer}
 		}

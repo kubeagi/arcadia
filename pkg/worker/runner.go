@@ -34,9 +34,9 @@ import (
 
 const (
 	// tag is the same version as fastchat
-	defaultFastChatImage = "kubeagi/arcadia-fastchat-worker:v0.2.36"
+	defaultFastChatImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.4.0-hotfix"
 	// For ease of maintenance and stability, VLLM module is now included in standard image as a default feature.
-	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:v0.2.36"
+	defaultFastchatVLLMImage = "kubeagi/arcadia-fastchat-worker:vllm-v0.4.0-hotfix"
 	// defaultKubeAGIImage for RunnerKubeAGI
 	defaultKubeAGIImage = "kubeagi/core-library-cli:v0.0.1"
 
@@ -249,9 +249,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "NUMBER_GPUS", Value: gpus})
 
 	modelFileDir := fmt.Sprintf("%s/%s", defaultModelMountPath, model.Name)
-	// --enforce-eager to disable cupy
-	// TODO: remove --enforce-eager when https://github.com/kubeagi/arcadia/issues/878 is fixed
-	extraAgrs = fmt.Sprintf("%s --trust-remote-code --enforce-eager", extraAgrs)
+	extraAgrs = fmt.Sprintf("%s --trust-remote-code", extraAgrs)
 	if runner.modelFileFromRemote {
 		m := arcadiav1alpha1.Model{}
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {

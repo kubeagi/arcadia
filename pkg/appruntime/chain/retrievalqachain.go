@@ -186,7 +186,7 @@ func (l *RetrievalQAChain) Run(ctx context.Context, cli client.Client, args map[
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.ConversationalRetrievalQA, args, options)
 	klog.FromContext(ctx).V(5).Info("use retrievalqachain, blocking out:" + out)
 	if err == nil {
-		args[base.OutputAnserKeyInArg] = out
+		args[base.OutputAnswerKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("retrievalqachain run error: %w", err)

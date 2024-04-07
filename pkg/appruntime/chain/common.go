@@ -33,11 +33,11 @@ import (
 
 func stream(res map[string]any) func(ctx context.Context, chunk []byte) error {
 	return func(ctx context.Context, chunk []byte) error {
-		if _, ok := res[base.OutputAnserStreamChanKeyInArg]; ok {
+		if _, ok := res[base.OutputAnswerStreamChanKeyInArg]; ok {
 			logger := klog.FromContext(ctx)
-			streamChan, ok := res[base.OutputAnserStreamChanKeyInArg].(chan string)
+			streamChan, ok := res[base.OutputAnswerStreamChanKeyInArg].(chan string)
 			if !ok {
-				err := fmt.Errorf("answer_stream is not chan string, but %T", res[base.OutputAnserStreamChanKeyInArg])
+				err := fmt.Errorf("answer_stream is not chan string, but %T", res[base.OutputAnswerStreamChanKeyInArg])
 				logger.Error(err, "answer_stream is not chan string")
 				return err
 			}

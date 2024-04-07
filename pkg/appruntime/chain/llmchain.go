@@ -153,7 +153,7 @@ func (l *LLMChain) Run(ctx context.Context, cli client.Client, args map[string]a
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.LLMChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use llmchain, blocking out:" + out)
 	if err == nil {
-		args[base.OutputAnserKeyInArg] = out
+		args[base.OutputAnswerKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("llmchain run error: %w", err)
