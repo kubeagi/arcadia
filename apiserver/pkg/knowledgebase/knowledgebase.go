@@ -20,8 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
+	"github.com/minio/minio-go/v7"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
@@ -29,6 +31,7 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
+	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/config"
@@ -97,12 +100,32 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		})
 	}
 	if len(knowledgebase.Status.FileGroupDetail) > 0 {
+		systemClient, _ := pkgclient.GetClient(nil)
+		oss, _ := common.SystemDatasourceOSS(ctx, systemClient)
+
 		for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
 			ns := knowledgebase.Namespace
 			if filegroupdetail.Source.Namespace != nil {
 				ns = *filegroupdetail.Source.Namespace
 			}
+			var vsBasePath string
+			if filegroupdetail.Source.Kind == "VersionedDataset" {
+				versioneddataset := &v1alpha1.VersionedDataset{}
+				if err := c.Get(ctx, types.NamespacedName{Name: filegroupdetail.Source.Name, Namespace: ns}, versioneddataset); err == nil {
+					if versioneddataset.Spec.Dataset != nil && versioneddataset.Status.IsReady() {
+						vsBasePath = filepath.Join("dataset", versioneddataset.Spec.Dataset.Name, versioneddataset.Spec.Version)
+					}
+				}
+			}
 			for _, detail := range filegroupdetail.FileDetails {
+				var detailStat minio.ObjectInfo
+				if vsBasePath != "" && oss != nil {
+					info := &v1alpha1.OSS{Bucket: ns, Object: filepath.Join(vsBasePath, detail.Path)}
+					detailInfo, err := oss.StatFile(ctx, info)
+					if err == nil {
+						detailStat, _ = detailInfo.(minio.ObjectInfo)
+					}
+				}
 				key := fmt.Sprintf("%s/%s/%s", ns, filegroupdetail.Source.Name, detail.Path)
 				if v, ok := cache[key]; ok {
 					filegroupdetails[v[0]].Filedetails[v[1]] = &generated.Filedetail{
@@ -114,6 +137,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 						TimeCost:        int(detail.TimeCost),
 						UpdateTimestamp: new(time.Time),
 						Version:         detail.Version,
+						LatestVersion:   detailStat.VersionID,
 					}
 					*filegroupdetails[v[0]].Filedetails[v[1]].UpdateTimestamp = detail.LastUpdateTime.Time
 				}
