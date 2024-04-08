@@ -59,7 +59,7 @@ func (r *RagAPI) Summary(ctx *gin.Context) {
 	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
-	if err := r.c.Get(ctx, types.NamespacedName{
+	if err := r.c.Get(ctx.Request.Context(), types.NamespacedName{
 		Namespace: namespace, Name: ragName,
 	}, &rr); err != nil {
 		klog.Error(fmt.Sprintf("can't get rag by name %s", ragName))
@@ -109,7 +109,7 @@ func (r *RagAPI) ReportDetail(ctx *gin.Context) {
 	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
-	if err := r.c.Get(ctx, types.NamespacedName{
+	if err := r.c.Get(ctx.Request.Context(), types.NamespacedName{
 		Namespace: namespace, Name: ragName,
 	}, &rr); err != nil {
 		klog.Error(fmt.Sprintf("can't get rag by name %s", ragName))
@@ -145,7 +145,7 @@ func (r *RagAPI) ReportScatter(ctx *gin.Context) {
 	namespace := NamespaceInHeader(ctx)
 
 	rr := v1alpha1.RAG{}
-	if err := r.c.Get(ctx, types.NamespacedName{
+	if err := r.c.Get(ctx.Request.Context(), types.NamespacedName{
 		Namespace: namespace, Name: ragName,
 	}, &rr); err != nil {
 		klog.Error(fmt.Sprintf("can't get rag by name %s", ragName))

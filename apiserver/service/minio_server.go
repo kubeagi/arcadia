@@ -834,7 +834,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	namespace := NamespaceInHeader(ctx)
 
 	// read versioneddataset
-	vds, err := versioneddataset.GetVersionedDataset(ctx, m.client, body.VersionedDataset, namespace)
+	vds, err := versioneddataset.GetVersionedDataset(ctx.Request.Context(), m.client, body.VersionedDataset, namespace)
 	if err != nil {
 		klog.Errorf("failed to get versioneddataset error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -843,7 +843,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 		return
 	}
 	// read datasource
-	ds, err := apiserverds.ReadDatasource(ctx, m.client, body.Datasource, namespace)
+	ds, err := apiserverds.ReadDatasource(ctx.Request.Context(), m.client, body.Datasource, namespace)
 	if err != nil {
 		klog.Errorf("failed to get datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -882,7 +882,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 	}
 
 	object := fmt.Sprintf("dataset/%s/%s/%s-%s.web", vds.Dataset.Name, vds.Version, ds.Namespace, ds.Name)
-	_, err = source.Client.PutObject(ctx, namespace, object, bytes.NewReader(content), int64(len(content)), minio.PutObjectOptions{})
+	_, err = source.Client.PutObject(ctx.Request.Context(), namespace, object, bytes.NewReader(content), int64(len(content)), minio.PutObjectOptions{})
 	if err != nil {
 		klog.Errorf("failed to put webcrawler file error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
