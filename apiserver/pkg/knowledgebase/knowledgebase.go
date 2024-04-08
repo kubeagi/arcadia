@@ -179,7 +179,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.CreateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
 	var filegroups []v1alpha1.FileGroup
 	var vectorstore v1alpha1.TypedObjectReference
-	vector, _ := config.GetVectorStore(ctx, c)
+	vector, _ := config.GetVectorStore(ctx)
 	displayname, description, embedder := "", "", ""
 	if input.DisplayName != nil {
 		displayname = *input.DisplayName

@@ -118,7 +118,7 @@ func getHot(app *v1alpha1.Application, cli client.Client) int64 {
 	if chatStorage == nil {
 		once.Do(
 			func() {
-				chatStorage = chat.NewChatServer(cli).Storage()
+				chatStorage = chat.NewChatServer(cli, true).Storage()
 			})
 	}
 	if chatStorage == nil {

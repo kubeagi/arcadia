@@ -325,6 +325,7 @@ func main() {
 		_ = mgr.AddMetricsExtraHandler("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 	}
 
+	config.InitSystemClient(mgr.GetClient())
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")

@@ -403,7 +403,8 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(
 	kb *arcadiav1alpha1.KnowledgeBase,
 	vectorStore *arcadiav1alpha1.VectorStore,
 	embedder *arcadiav1alpha1.Embedder,
-	groupIndex, fileIndex int) (err error) {
+	groupIndex, fileIndex int,
+) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("failed to reconcile FileGroup: %w", err)
@@ -436,7 +437,7 @@ func (r *KnowledgeBaseReconciler) reconcileFileGroup(
 		if !versionedDataset.Status.IsReady() {
 			return errDataSourceNotReady
 		}
-		system, err := config.GetSystemDatasource(ctx, r.Client)
+		system, err := config.GetSystemDatasource(ctx)
 		if err != nil {
 			return err
 		}

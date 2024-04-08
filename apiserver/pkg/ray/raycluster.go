@@ -27,7 +27,7 @@ import (
 )
 
 func ListRayClusters(ctx context.Context, c client.Client, input generated.ListCommonInput) (*generated.PaginatedResult, error) {
-	clusters, err := config.GetRayClusters(ctx, c)
+	clusters, err := config.GetRayClusters(ctx)
 	if err != nil {
 		return nil, err
 	}

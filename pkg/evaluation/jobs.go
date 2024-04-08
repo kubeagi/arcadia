@@ -58,7 +58,7 @@ func PhaseJobName(instance *evav1alpha1.RAG, phase evav1alpha1.RAGPhase) string 
 }
 func systemEmbeddingSuite(ctx context.Context, mgrClient client.Client) (*v1alpha1.Embedder, error) {
 	// get the built-in system embedder
-	emd, err := config.GetEmbedder(ctx, mgrClient)
+	emd, err := config.GetEmbedder(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func JudgeJobGenerator(ctx context.Context, c client.Client) func(*evav1alpha1.R
 
 func UploadJobGenerator(ctx context.Context, client client.Client) func(*evav1alpha1.RAG) (*batchv1.Job, error) {
 	return func(instance *evav1alpha1.RAG) (*batchv1.Job, error) {
-		datasource, err := config.GetSystemDatasource(ctx, client)
+		datasource, err := config.GetSystemDatasource(ctx)
 		if err != nil {
 			return nil, err
 		}

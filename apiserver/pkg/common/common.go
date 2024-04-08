@@ -62,7 +62,7 @@ var (
 )
 
 func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
-	systemDatasource, err := config.GetSystemDatasource(ctx, mgrClient)
+	systemDatasource, err := config.GetSystemDatasource(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasou
 // Embedder and vectorstore are both required when generating a new embedding.That's why we call it a `EmbeddingSuit`
 func SystemEmbeddingSuite(ctx context.Context, cli client.Client) (*v1alpha1.Embedder, *v1alpha1.VectorStore, error) {
 	// get the built-in system embedder
-	emd, err := config.GetEmbedder(ctx, cli)
+	emd, err := config.GetEmbedder(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,7 +86,7 @@ func SystemEmbeddingSuite(ctx context.Context, cli client.Client) (*v1alpha1.Emb
 		return nil, nil, err
 	}
 	// get the built-in system vectorstore
-	vs, err := config.GetVectorStore(ctx, cli)
+	vs, err := config.GetVectorStore(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -100,7 +100,7 @@ func SystemEmbeddingSuite(ctx context.Context, cli client.Client) (*v1alpha1.Emb
 // GetAPIServer returns the api server url to access arcadia's worker
 // if external is true,then this func will return the external api server
 func GetAPIServer(ctx context.Context, cli client.Client, external bool) (string, error) {
-	gateway, err := config.GetGateway(ctx, cli)
+	gateway, err := config.GetGateway(ctx)
 	if err != nil {
 		return "", err
 	}

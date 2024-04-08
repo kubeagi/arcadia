@@ -56,11 +56,13 @@ type ChatServer struct {
 	cli     runtimeclient.Client
 	storage storage.Storage
 	once    sync.Once
+	isGpts  bool
 }
 
-func NewChatServer(cli runtimeclient.Client) *ChatServer {
+func NewChatServer(cli runtimeclient.Client, isGpts bool) *ChatServer {
 	return &ChatServer{
-		cli: cli,
+		cli:    cli,
+		isGpts: isGpts,
 	}
 }
 
@@ -68,7 +70,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 	if cs.storage == nil {
 		cs.once.Do(func() {
 			ctx := context.TODO()
-			ds, err := pkgconfig.GetRelationalDatasource(ctx, cs.cli)
+			ds, err := pkgconfig.GetRelationalDatasource(ctx)
 			if err != nil || ds == nil {
 				if err != nil {
 					klog.Infof("get relational datasource failed: %s, use memory storage for chat", err.Error())
@@ -183,7 +185,7 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 
 func (cs *ChatServer) ListConversations(ctx context.Context, req APPMetadata) ([]storage.Conversation, error) {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
-	return cs.Storage().ListConversations(storage.WithAppNamespace(req.AppNamespace), storage.WithAppName(req.APPName), storage.WithUser(currentUser), storage.WithUser(currentUser))
+	return cs.Storage().ListConversations(storage.WithAppNamespace(req.AppNamespace), storage.WithAppName(req.APPName), storage.WithUser(currentUser))
 }
 
 func (cs *ChatServer) DeleteConversation(ctx context.Context, conversationID string) error {
@@ -390,7 +392,13 @@ The question you asked is:`
 
 func (cs *ChatServer) GetApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, runtimeclient.Client, error) {
 	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	var c runtimeclient.Client
+	var err error
+	if !cs.isGpts {
+		c, err = client.GetClient(token)
+	} else {
+		c = cs.cli
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get a client: %w", err)
 	}
