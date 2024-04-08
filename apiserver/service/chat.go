@@ -274,13 +274,13 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 		req := chat.APPMetadata{}
 		_ = c.ShouldBindJSON(&req)
 		req.AppNamespace = NamespaceInHeader(c)
-		resp, err := cs.server.ListConversations(c, req)
+		resp, err := cs.server.ListConversations(c.Request.Context(), req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error list conversation")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
 			return
 		}
-		if err := cs.server.FillAppIconToConversations(c, &resp); err != nil {
+		if err := cs.server.FillAppIconToConversations(c.Request.Context(), &resp); err != nil {
 			// note: fill app icon is try our best, don't need to return error
 			klog.FromContext(c.Request.Context()).Error(err, "error fill app icon to conversations")
 		}
@@ -309,7 +309,7 @@ func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
-		err := cs.server.DeleteConversation(c, conversationID)
+		err := cs.server.DeleteConversation(c.Request.Context(), conversationID)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error delete conversation")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
@@ -341,7 +341,7 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 			return
 		}
 		req.AppNamespace = NamespaceInHeader(c)
-		resp, err := cs.server.ListMessages(c, req)
+		resp, err := cs.server.ListMessages(c.Request.Context(), req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error list messages")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
@@ -383,7 +383,7 @@ func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
 			return
 		}
-		resp, err := cs.server.GetMessageReferences(c, req)
+		resp, err := cs.server.GetMessageReferences(c.Request.Context(), req)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "error get message references")
 			c.JSON(http.StatusInternalServerError, chat.ErrorResp{Err: err.Error()})
