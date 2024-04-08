@@ -42,6 +42,7 @@ import (
 	pkgconf "github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	"github.com/kubeagi/arcadia/apiserver/pkg/gpt"
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
@@ -85,20 +86,21 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 	icon := common.AppIconLink(app, pkgconf.GetConfig().PlaygroundEndpointPrefix)
 	gApp := &generated.Application{
 		Metadata: &generated.ApplicationMetadata{
-			Name:              app.Name,
-			Namespace:         app.Namespace,
-			ID:                pointer.String(string(app.UID)),
-			Labels:            utils.MapStr2Any(app.Labels),
-			Annotations:       utils.MapStr2Any(app.Annotations),
-			DisplayName:       pointer.String(app.Spec.DisplayName),
-			Description:       pointer.String(app.Spec.Description),
-			Icon:              &icon,
-			Creator:           pointer.String(app.Spec.Creator),
-			CreationTimestamp: &app.CreationTimestamp.Time,
-			UpdateTimestamp:   UpdateTimestamp,
-			IsPublic:          pointer.Bool(app.Spec.IsPublic),
-			IsRecommended:     pointer.Bool(app.Spec.IsRecommended),
-			Status:            pointer.String(status),
+			Name:               app.Name,
+			Namespace:          app.Namespace,
+			ID:                 pointer.String(string(app.UID)),
+			Labels:             utils.MapStr2Any(app.Labels),
+			Annotations:        utils.MapStr2Any(app.Annotations),
+			DisplayName:        pointer.String(app.Spec.DisplayName),
+			Description:        pointer.String(app.Spec.Description),
+			Icon:               &icon,
+			Creator:            pointer.String(app.Spec.Creator),
+			CreationTimestamp:  &app.CreationTimestamp.Time,
+			UpdateTimestamp:    UpdateTimestamp,
+			IsPublic:           pointer.Bool(app.Spec.IsPublic),
+			IsRecommended:      pointer.Bool(app.Spec.IsRecommended),
+			Status:             pointer.String(status),
+			NotReadyReasonCode: pointer.String(string(gpt.GetGPTNotReadyReasonCode(app))),
 		},
 		Prologue:          pointer.String(app.Spec.Prologue),
 		ShowNextGuide:     pointer.Bool(app.Spec.ShowNextGuide),
@@ -491,11 +493,13 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 				},
 				ChunkSize:    pointer.IntDeref(input.ChunkSize, 1024),
 				ChunkOverlap: input.ChunkOverlap,
+				BatchSize:    pointer.IntDeref(input.BatchSize, 3),
 				LoaderConfig: apidocumentloader.LoaderConfig{},
 			},
 		}
 		if _, err := controllerutil.CreateOrUpdate(ctx, c, documentLoader, func() error {
 			documentLoader.Spec.ChunkSize = pointer.IntDeref(input.ChunkSize, documentLoader.Spec.ChunkSize)
+			documentLoader.Spec.BatchSize = pointer.IntDeref(input.BatchSize, documentLoader.Spec.BatchSize)
 			if input.ChunkOverlap == nil {
 				documentLoader.Spec.ChunkOverlap = pointer.Int(50)
 			} else {

@@ -106,21 +106,22 @@ type ComplexityRoot struct {
 	}
 
 	ApplicationMetadata struct {
-		Annotations       func(childComplexity int) int
-		Category          func(childComplexity int) int
-		CreationTimestamp func(childComplexity int) int
-		Creator           func(childComplexity int) int
-		Description       func(childComplexity int) int
-		DisplayName       func(childComplexity int) int
-		ID                func(childComplexity int) int
-		Icon              func(childComplexity int) int
-		IsPublic          func(childComplexity int) int
-		IsRecommended     func(childComplexity int) int
-		Labels            func(childComplexity int) int
-		Name              func(childComplexity int) int
-		Namespace         func(childComplexity int) int
-		Status            func(childComplexity int) int
-		UpdateTimestamp   func(childComplexity int) int
+		Annotations        func(childComplexity int) int
+		Category           func(childComplexity int) int
+		CreationTimestamp  func(childComplexity int) int
+		Creator            func(childComplexity int) int
+		Description        func(childComplexity int) int
+		DisplayName        func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		Icon               func(childComplexity int) int
+		IsPublic           func(childComplexity int) int
+		IsRecommended      func(childComplexity int) int
+		Labels             func(childComplexity int) int
+		Name               func(childComplexity int) int
+		Namespace          func(childComplexity int) int
+		NotReadyReasonCode func(childComplexity int) int
+		Status             func(childComplexity int) int
+		UpdateTimestamp    func(childComplexity int) int
 	}
 
 	ApplicationMutation struct {
@@ -1297,6 +1298,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationMetadata.Namespace(childComplexity), true
+
+	case "ApplicationMetadata.notReadyReasonCode":
+		if e.complexity.ApplicationMetadata.NotReadyReasonCode == nil {
+			break
+		}
+
+		return e.complexity.ApplicationMetadata.NotReadyReasonCode(childComplexity), true
 
 	case "ApplicationMetadata.status":
 		if e.complexity.ApplicationMetadata.Status == nil {
@@ -5316,6 +5324,17 @@ type ApplicationMetadata {
     category：所属分类
     """
     category: [String]
+    """
+    notReadyReasonCode: 用于指明当前应用状态不正常的原因。状态码要和gpts中同字段保持一致。
+    可选值:
+    - 空：就绪，应用 可以使用
+    - VectorStoreIsNotReady: 向量数据库没有就绪
+    - EmbedderIsNotReady: embedder服务没有就绪
+    - KnowledgeBaseNotReady: 知识库未就绪，指向量数据库和embedder出错之外的其他情况
+    - LLMNotReady: 模型服务没有就绪
+    - ConfigError: 应用配置错误，比如写了多个Output节点，比如节点名称重复等其他错误
+    """
+    notReadyReasonCode: String
 }
 
 input CreateApplicationMetadataInput {
@@ -6615,7 +6634,7 @@ type GPT {
     """
     enableUploadFile: Boolean
     """
-    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。状态码要和应用中同字段保持一致。
     可选值:
     - 空：就绪，gpt 可以使用
     - VectorStoreIsNotReady: 向量数据库没有就绪
@@ -9677,6 +9696,8 @@ func (ec *executionContext) fieldContext_Application_metadata(ctx context.Contex
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -11339,6 +11360,47 @@ func (ec *executionContext) fieldContext_ApplicationMetadata_category(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ApplicationMetadata_notReadyReasonCode(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotReadyReasonCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationMetadata_notReadyReasonCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMutation_createApplication(ctx context.Context, field graphql.CollectedField, obj *ApplicationMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMutation_createApplication(ctx, field)
 	if err != nil {
@@ -11408,6 +11470,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_createApplication(c
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -11495,6 +11559,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplication(c
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -40606,6 +40672,8 @@ func (ec *executionContext) _ApplicationMetadata(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._ApplicationMetadata_status(ctx, field, obj)
 		case "category":
 			out.Values[i] = ec._ApplicationMetadata_category(ctx, field, obj)
+		case "notReadyReasonCode":
+			out.Values[i] = ec._ApplicationMetadata_notReadyReasonCode(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

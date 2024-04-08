@@ -95,7 +95,7 @@ type GPT {
     """
     enableUploadFile: Boolean
     """
-    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。状态码要和应用中同字段保持一致。
     可选值:
     - 空：就绪，gpt 可以使用
     - VectorStoreIsNotReady: 向量数据库没有就绪

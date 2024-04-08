@@ -16,6 +16,7 @@ mutation createApplication($input:CreateApplicationMetadataInput!){
             isRecommended
             status
             category
+            notReadyReasonCode
         }
     }
 }
@@ -38,6 +39,7 @@ mutation updateApplication($input: UpdateApplicationMetadataInput!){
             isRecommended
             status
             category
+            notReadyReasonCode
         }
     }
 }
@@ -66,6 +68,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
                 isRecommended
                 status
                 category
+                notReadyReasonCode
             }
             prologue
             model
@@ -118,6 +121,7 @@ query getApplication($name: String!, $namespace: String!){
                 isRecommended
                 status
                 category
+                notReadyReasonCode
             }
             prologue
             model
@@ -175,6 +179,7 @@ query listApplications($input: ListCommonInput!) {
                     isRecommended
                     status
                     category
+                    notReadyReasonCode
                 }
             }
         }
