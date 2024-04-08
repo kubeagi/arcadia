@@ -29,6 +29,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -1009,6 +1010,55 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "")
 }
 
+// @Summary	Get app image
+// @Schemes
+// @Description	Get app image
+// @Tags			MinioAPI
+// @Accept			json
+// @Produce		json
+// @Param			application	query		string	true	"application name"
+// @Param			namespace	query		string	true	"namespace of application"
+// @Success		200			{object}	string
+// @Failure		400			{object}	map[string]string
+// @Failure		500			{object}	map[string]string
+// @Router			/bff/icon [GET]
+func (m *minioAPI) Image(ctx *gin.Context) {
+	namespace := ctx.Query("namespace")
+	appName := ctx.Query("application")
+	app := &v1alpha1.Application{}
+	if err := m.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: appName}, app); err != nil {
+		klog.Errorf("failed to get application %s in namespace, error %s", appName, namespace, err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("failed to get system datasource error %s", err.Error()),
+		})
+		return
+	}
+
+	objectName := fmt.Sprintf("application/%s/icon/%s", appName, appName)
+	info, err := source.Client.GetObject(ctx.Request.Context(), namespace, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		klog.Errorf("failed to get system datasource error %s", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("failed to get system datasource error %s", err.Error()),
+		})
+		return
+	}
+
+	bs, _ := io.ReadAll(info)
+	ct := http.DetectContentType(bs)
+	ctx.Writer.Header().Set("Content-Type", ct)
+	_, _ = io.Copy(ctx.Writer, bytes.NewReader(bs))
+}
+
 func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	c, err := pkgclient.GetClient(nil)
 	if err != nil {
@@ -1049,4 +1099,5 @@ func registerMinIOAPI(group *gin.RouterGroup, conf gqlconfig.ServerConfig) {
 	}
 
 	group.GET("/rags/files/downloadlink", auth.AuthInterceptor(conf.EnableOIDC, oidc.Verifier, evaluationarcadiav1alpha1.GroupVersion, "get", "rags"), api.GetDownloadLink)
+	group.GET("/icon", api.Image)
 }

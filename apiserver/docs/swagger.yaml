@@ -515,6 +515,44 @@ info:
   title: ApiServer Swagger API
   version: "1.0"
 paths:
+  /bff/icon:
+    get:
+      consumes:
+      - application/json
+      description: Get app image
+      parameters:
+      - description: application name
+        in: query
+        name: application
+        required: true
+        type: string
+      - description: namespace of application
+        in: query
+        name: namespace
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get app image
+      tags:
+      - MinioAPI
   /bff/model/files:
     delete:
       consumes:

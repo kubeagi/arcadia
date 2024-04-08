@@ -14,6 +14,63 @@
     "host": "localhost:8081",
     "basePath": "/",
     "paths": {
+        "/bff/icon": {
+            "get": {
+                "description": "Get app image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MinioAPI"
+                ],
+                "summary": "Get app image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "application name",
+                        "name": "application",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "namespace of application",
+                        "name": "namespace",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/bff/model/files": {
             "delete": {
                 "description": "Delete files",

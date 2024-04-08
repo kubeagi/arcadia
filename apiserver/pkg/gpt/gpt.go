@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	pkgconf "github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
@@ -46,7 +47,7 @@ func app2gpt(ctx context.Context, app *v1alpha1.Application, c client.Client) (*
 		return nil, errors.New("no app found")
 	}
 
-	icon, _ := common.AppIconLink(ctx, app, c)
+	icon := common.AppIconLink(app, pkgconf.GetConfig().PlaygroundEndpointPrefix)
 	gpt := &generated.Gpt{
 		Name:               pointer.String(strings.Join([]string{app.Namespace, app.Name}, "/")),
 		DisplayName:        pointer.String(app.Spec.DisplayName),

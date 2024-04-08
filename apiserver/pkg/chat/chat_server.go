@@ -37,6 +37,7 @@ import (
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	"github.com/kubeagi/arcadia/apiserver/pkg/client"
@@ -429,7 +430,7 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 		i++
 	}
 	result := make([]string, len(appMap))
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 	g.SetLimit(10)
 	for key, index := range appMap {
 		key, index := key, index
@@ -441,13 +442,7 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 			}
 			app.Name = name
 			app.Namespace = ns
-			link, err := common.AppIconLink(ctx, app, cs.cli)
-			if err != nil {
-				// FIXME: Currently, there is a request for an application that cannot be found in a conversation in the database,
-				// causing other conversations to be unable to add icons, so an error is encountered here and no error is returned.
-				klog.Errorf("failed to get application %s in namespace %s, error %s", name, ns, err)
-				return nil
-			}
+			link := common.AppIconLink(app, config.GetConfig().PlaygroundEndpointPrefix)
 			result[index] = link
 			return nil
 		})
