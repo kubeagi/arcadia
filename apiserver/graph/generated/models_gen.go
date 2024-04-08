@@ -2152,6 +2152,8 @@ type Filedetail struct {
 	Phase string `json:"phase"`
 	// 文件版本，""或者"null"的情况表示是文件最新版本。
 	Version string `json:"version"`
+	// 文件最新版本
+	LatestVersion string `json:"latestVersion"`
 }
 
 // 文件组

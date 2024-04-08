@@ -813,6 +813,7 @@ type ComplexityRoot struct {
 	Filedetail struct {
 		Count           func(childComplexity int) int
 		FileType        func(childComplexity int) int
+		LatestVersion   func(childComplexity int) int
 		Path            func(childComplexity int) int
 		Phase           func(childComplexity int) int
 		Size            func(childComplexity int) int
@@ -4845,6 +4846,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filedetail.FileType(childComplexity), true
 
+	case "filedetail.latestVersion":
+		if e.complexity.Filedetail.LatestVersion == nil {
+			break
+		}
+
+		return e.complexity.Filedetail.LatestVersion(childComplexity), true
+
 	case "filedetail.path":
 		if e.complexity.Filedetail.Path == nil {
 			break
@@ -6760,6 +6768,11 @@ type filedetail{
     文件版本，""或者"null"的情况表示是文件最新版本。
     """
     version: String!
+
+    """
+    文件最新版本
+    """
+    latestVersion: String!
 }
 
 """
@@ -35704,6 +35717,50 @@ func (ec *executionContext) fieldContext_filedetail_version(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _filedetail_latestVersion(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filedetail_latestVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LatestVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filedetail_latestVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filedetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _filegroup_source(ctx context.Context, field graphql.CollectedField, obj *Filegroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_filegroup_source(ctx, field)
 	if err != nil {
@@ -35950,6 +36007,8 @@ func (ec *executionContext) fieldContext_filegroupdetail_filedetails(ctx context
 				return ec.fieldContext_filedetail_phase(ctx, field)
 			case "version":
 				return ec.fieldContext_filedetail_version(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_filedetail_latestVersion(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type filedetail", field.Name)
 		},
@@ -47805,6 +47864,11 @@ func (ec *executionContext) _filedetail(ctx context.Context, sel ast.SelectionSe
 			}
 		case "version":
 			out.Values[i] = ec._filedetail_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "latestVersion":
+			out.Values[i] = ec._filedetail_latestVersion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
