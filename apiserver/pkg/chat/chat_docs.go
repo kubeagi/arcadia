@@ -38,8 +38,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
 	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
-	"github.com/kubeagi/arcadia/apiserver/pkg/common"
-	"github.com/kubeagi/arcadia/pkg/config"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 )
 
 // ReceiveConversationDocs receive and process docs for a conversation
@@ -80,7 +79,7 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 	}
 
 	// upload files to system datasource
-	ds, err := common.SystemDatasourceOSS(ctx, cs.cli)
+	ds, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		klog.Errorf("no storage service found with err %s", err)
 		return nil, fmt.Errorf("no storage service found with err %s", err.Error())
@@ -174,7 +173,7 @@ func (cs *ChatServer) ReceiveConversationFile(ctx context.Context, messageID str
 // Knoweledgebase will embed the document into vectorstore which can be used in this conversation as references(similarity search)
 func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req ConversationFilesReqBody, document storage.Document) error {
 	// get system embedding suite
-	embedder, vs, err := common.SystemEmbeddingSuite(ctx, cs.cli)
+	embedder, vs, err := pkgconfig.GetSystemEmbeddingSuite(ctx)
 	if err != nil {
 		return err
 	}
@@ -206,7 +205,7 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 		return err
 	}
 	// systemDatasource which stores the document
-	systemDatasource, err := config.GetSystemDatasource(ctx)
+	systemDatasource, err := pkgconfig.GetSystemDatasource(ctx)
 	if err != nil {
 		return err
 	}

@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +60,7 @@ func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference
 	return source, err
 }
 
+// GetSystemDatasource get the system datasource of kubeagi
 func GetSystemDatasource(ctx context.Context) (*arcadiav1alpha1.Datasource, error) {
 	config, err := getConfig(ctx)
 	if err != nil {
@@ -107,6 +109,30 @@ func getConfig(ctx context.Context) (config *Config, err error) {
 		return nil, err
 	}
 	return config, nil
+}
+
+// GetSystemEmbeddingSuite returns the embedder and vectorstore which are built-in in system config
+// Embedder and vectorstore are both required when generating a new embedding.That's why we call it a `EmbeddingSuit`
+func GetSystemEmbeddingSuite(ctx context.Context) (*arcadiav1alpha1.Embedder, *arcadiav1alpha1.VectorStore, error) {
+	// get the built-in system embedder
+	emd, err := GetEmbedder(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	embedder := &arcadiav1alpha1.Embedder{}
+	if err := systemCli.Get(ctx, types.NamespacedName{Namespace: *emd.Namespace, Name: emd.Name}, embedder); err != nil {
+		return nil, nil, err
+	}
+	// get the built-in system vectorstore
+	vs, err := GetVectorStore(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	vectorStore := &arcadiav1alpha1.VectorStore{}
+	if err := systemCli.Get(ctx, types.NamespacedName{Namespace: *vs.Namespace, Name: vs.Name}, vectorStore); err != nil {
+		return nil, nil, err
+	}
+	return embedder, vectorStore, nil
 }
 
 // GetEmbedder get the default embedder from config

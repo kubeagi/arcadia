@@ -45,7 +45,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/gpt"
 	"github.com/kubeagi/arcadia/apiserver/pkg/utils"
 	"github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/datasource"
 	pkgutils "github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -990,19 +989,11 @@ func UploadIcon(ctx context.Context, client client.Client, icon, appName, namesp
 			return "", err
 		}
 
-		system, err := config.GetSystemDatasource(ctx)
+		ds, err := config.GetSystemDatasourceOSS(ctx)
 		if err != nil {
 			return "", err
 		}
 
-		endpoint := system.Spec.Endpoint.DeepCopy()
-		if endpoint != nil && endpoint.AuthSecret != nil {
-			endpoint.AuthSecret.WithNameSpace(namespace)
-		}
-		ds, err := datasource.NewOSS(ctx, client, endpoint)
-		if err != nil {
-			return "", err
-		}
 		iconName := fmt.Sprintf("application/%s/icon/%s", appName, appName)
 		_, err = ds.Client.PutObject(ctx, namespace, iconName, bytes.NewReader(imgBytes), int64(len(imgBytes)), minio.PutObjectOptions{})
 		return icon, err

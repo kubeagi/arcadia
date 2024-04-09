@@ -31,10 +31,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
-	"github.com/kubeagi/arcadia/pkg/config"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 )
 
 func knowledgebase2modelConverter(ctx context.Context, c client.Client) func(obj client.Object) (generated.PageNode, error) {
@@ -100,8 +99,10 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 		})
 	}
 	if len(knowledgebase.Status.FileGroupDetail) > 0 {
-		systemClient, _ := pkgclient.GetClient(nil)
-		oss, _ := common.SystemDatasourceOSS(ctx, systemClient)
+		oss, err := pkgconfig.GetSystemDatasourceOSS(ctx)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, filegroupdetail := range knowledgebase.Status.FileGroupDetail {
 			ns := knowledgebase.Namespace
@@ -203,7 +204,7 @@ func knowledgebase2model(ctx context.Context, c client.Client, knowledgebase *v1
 func CreateKnowledgeBase(ctx context.Context, c client.Client, input generated.CreateKnowledgeBaseInput) (*generated.KnowledgeBase, error) {
 	var filegroups []v1alpha1.FileGroup
 	var vectorstore v1alpha1.TypedObjectReference
-	vector, _ := config.GetVectorStore(ctx)
+	vector, _ := pkgconfig.GetVectorStore(ctx)
 	displayname, description, embedder := "", "", ""
 	if input.DisplayName != nil {
 		displayname = *input.DisplayName
