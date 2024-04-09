@@ -210,7 +210,7 @@ func (cs *ChatServer) BuildConversationKnowledgeBase(ctx context.Context, req Co
 		return err
 	}
 	// create or update the conversation knowledgebase
-	_, err = controllerutil.CreateOrUpdate(ctx, cs.cli, kb, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, cs.systemCli, kb, func() error {
 		if err := controllerutil.SetControllerReference(app, kb, pkgclient.Scheme); err != nil {
 			return err
 		}

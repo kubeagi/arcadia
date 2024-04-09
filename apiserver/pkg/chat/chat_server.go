@@ -54,16 +54,16 @@ import (
 )
 
 type ChatServer struct {
-	cli     runtimeclient.Client
-	storage storage.Storage
-	once    sync.Once
-	isGpts  bool
+	systemCli runtimeclient.Client
+	storage   storage.Storage
+	once      sync.Once
+	isGpts    bool
 }
 
 func NewChatServer(cli runtimeclient.Client, isGpts bool) *ChatServer {
 	return &ChatServer{
-		cli:    cli,
-		isGpts: isGpts,
+		systemCli: cli,
+		isGpts:    isGpts,
 	}
 }
 
@@ -81,7 +81,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 				cs.storage = storage.NewMemoryStorage()
 				return
 			}
-			pg, err := datasource.GetPostgreSQLPool(ctx, cs.cli, ds)
+			pg, err := datasource.GetPostgreSQLPool(ctx, cs.systemCli, ds)
 			if err != nil {
 				klog.Errorf("get postgresql pool failed : %s", err.Error())
 				cs.storage = storage.NewMemoryStorage()
@@ -154,12 +154,12 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 		Answer: "",
 	})
 	// since authenticattion already passed by http handler,we should use chatserver's client which is also the system client to new/ini appruntime
-	appRun, err := appruntime.NewAppOrGetFromCache(ctx, cs.cli, app)
+	appRun, err := appruntime.NewAppOrGetFromCache(ctx, cs.systemCli, app)
 	if err != nil {
 		return nil, err
 	}
 	klog.FromContext(ctx).Info("begin to run application", "appName", req.APPName, "appNamespace", req.AppNamespace)
-	out, err := appRun.Run(ctx, cs.cli, respStream, appruntime.Input{Question: req.Query, Files: req.Files, NeedStream: req.ResponseMode.IsStreaming(), History: history, ConversationID: req.ConversationID})
+	out, err := appRun.Run(ctx, cs.systemCli, respStream, appruntime.Input{Question: req.Query, Files: req.Files, NeedStream: req.ResponseMode.IsStreaming(), History: history, ConversationID: req.ConversationID})
 	if err != nil {
 		return nil, err
 	}
@@ -254,19 +254,19 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			switch baseNode.Kind() {
 			case "llmchain":
 				ch := appruntimechain.NewLLMChain(baseNode)
-				if err := ch.Init(ctx, cs.cli, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init llmchain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
 			case "retrievalqachain":
 				ch := appruntimechain.NewRetrievalQAChain(baseNode)
-				if err := ch.Init(ctx, cs.cli, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init retrievalqachain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
 			case "apichain":
 				ch := appruntimechain.NewAPIChain(baseNode)
-				if err := ch.Init(ctx, cs.cli, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init apichain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
@@ -277,14 +277,14 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			switch baseNode.Kind() {
 			case "llm":
 				l := llm.NewLLM(baseNode)
-				if err := l.Init(ctx, cs.cli, nil); err != nil {
+				if err := l.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init llm err:%s, abort", err)
 					return nil, err
 				}
 				model = l.Model
 			case "knowledgebase":
 				k := knowledgebase.NewKnowledgebase(baseNode)
-				if err := k.Init(ctx, cs.cli, nil); err != nil {
+				if err := k.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init knowledgebase err:%s, abort", err)
 					return nil, err
 				}
@@ -296,7 +296,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	content := bytes.Buffer{}
 	// if there is a knowledgebase, use it to generate prompt starter
 	if kb != nil {
-		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, cs.cli, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit * 2}, map[string]any{"question": "开始"})
+		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, cs.systemCli, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit * 2}, map[string]any{"question": "开始"})
 		if err != nil {
 			return nil, err
 		}
@@ -394,11 +394,14 @@ The question you asked is:`
 
 func (cs *ChatServer) GetApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, error) {
 	app := &v1alpha1.Application{}
-	if err := cs.cli.Get(ctx, types.NamespacedName{Namespace: appNamespace, Name: appName}, app); err != nil {
+	if err := cs.systemCli.Get(ctx, types.NamespacedName{Namespace: appNamespace, Name: appName}, app); err != nil {
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
 	if !app.Status.IsReady() {
 		return nil, fmt.Errorf("application not ready: %s", app.Status.GetCondition(v1alpha1.TypeReady).Message)
+	}
+	if !cs.IsGPTUserHasPermissionForApp(ctx, app) {
+		return nil, fmt.Errorf("user don't have permission for app: %s", app.Name)
 	}
 	return app, nil
 }
@@ -445,4 +448,21 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 		(*conversations)[i] = c
 	}
 	return nil
+}
+
+func (cs *ChatServer) IsGPTUserHasPermissionForApp(ctx context.Context, app *v1alpha1.Application) (ok bool) {
+	if !cs.isGpts {
+		return true
+	}
+	// currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	if app.Spec.IsPublic {
+		return true
+	}
+	gptCofig, err := pkgconfig.GetGPTsConfig(ctx, cs.systemCli)
+	if err != nil {
+		klog.FromContext(ctx).Error(err, "failed to get gpt config")
+		return false
+	}
+	publicNs := gptCofig.PublicNamespace
+	return app.Namespace == publicNs
 }
