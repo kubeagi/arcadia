@@ -50,6 +50,10 @@ var (
 )
 var systemCli client.Client
 
+func InitSystemClient(cli client.Client) {
+	systemCli = cli
+}
+
 func getDatasource(ctx context.Context, ref arcadiav1alpha1.TypedObjectReference, c client.Client) (ds *arcadiav1alpha1.Datasource, err error) {
 	name := ref.Name
 	namespace := ref.GetNamespace(utils.GetCurrentNamespace())
@@ -205,8 +209,4 @@ func GetSystemDatasourceOSS(ctx context.Context) (*datasource.OSS, error) {
 		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
 	}
 	return datasource.NewOSS(ctx, systemCli, endpoint)
-}
-
-func InitSystemClient(cli client.Client) {
-	systemCli = cli
 }

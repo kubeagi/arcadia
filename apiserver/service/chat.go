@@ -220,7 +220,7 @@ func (cs *ChatService) ChatFile() gin.HandlerFunc {
 			return
 		}
 		req.AppNamespace = NamespaceInHeader(c)
-		app, _, err := cs.server.GetApp(c.Request.Context(), req.APPName, req.AppNamespace)
+		app, err := cs.server.GetApp(c.Request.Context(), req.APPName, req.AppNamespace)
 		if err != nil {
 			klog.FromContext(c.Request.Context()).Error(err, "conversationFileHandler: error get app")
 			c.JSON(http.StatusBadRequest, chat.ErrorResp{Err: err.Error()})
