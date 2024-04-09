@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/pkg/config"
-	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
 var (
@@ -58,42 +56,6 @@ var (
 	ModelSourceModelscope  = "modelscope"
 	ModelSourceHuggingface = "huggingface"
 )
-
-func SystemDatasourceOSS(ctx context.Context, mgrClient client.Client) (*datasource.OSS, error) {
-	systemDatasource, err := config.GetSystemDatasource(ctx)
-	if err != nil {
-		return nil, err
-	}
-	endpoint := systemDatasource.Spec.Endpoint.DeepCopy()
-	if endpoint.AuthSecret != nil && endpoint.AuthSecret.Namespace == nil {
-		endpoint.AuthSecret.WithNameSpace(systemDatasource.Namespace)
-	}
-	return datasource.NewOSS(ctx, mgrClient, endpoint)
-}
-
-// SystemEmbeddingSuite returns the embedder and vectorstore which are built-in in system config
-// Embedder and vectorstore are both required when generating a new embedding.That's why we call it a `EmbeddingSuit`
-func SystemEmbeddingSuite(ctx context.Context, cli client.Client) (*v1alpha1.Embedder, *v1alpha1.VectorStore, error) {
-	// get the built-in system embedder
-	emd, err := config.GetEmbedder(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	embedder := &v1alpha1.Embedder{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: *emd.Namespace, Name: emd.Name}, embedder); err != nil {
-		return nil, nil, err
-	}
-	// get the built-in system vectorstore
-	vs, err := config.GetVectorStore(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	vectorStore := &v1alpha1.VectorStore{}
-	if err := cli.Get(ctx, types.NamespacedName{Namespace: *vs.Namespace, Name: vs.Name}, vectorStore); err != nil {
-		return nil, nil, err
-	}
-	return embedder, vectorStore, nil
-}
 
 // GetAPIServer returns the api server url to access arcadia's worker
 // if external is true,then this func will return the external api server

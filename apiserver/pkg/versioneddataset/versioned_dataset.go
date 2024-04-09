@@ -32,9 +32,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -104,11 +104,7 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 		keyword = *filter.Keyword
 	}
 
-	systemClient, err := pkgclient.GetClient(nil)
-	if err != nil {
-		return nil, err
-	}
-	oss, err := common.SystemDatasourceOSS(ctx, systemClient)
+	oss, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		return nil, err
 	}

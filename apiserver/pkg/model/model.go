@@ -33,9 +33,9 @@ import (
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -247,18 +247,14 @@ func ReadModel(ctx context.Context, c client.Client, name, namespace string) (*g
 	return obj2model(u)
 }
 
-func ModelFiles(ctx context.Context, c client.Client, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {
+func ModelFiles(ctx context.Context, modelName, namespace string, input *generated.FileFilter) (*generated.PaginatedResult, error) {
 	prefix := fmt.Sprintf("model/%s/", modelName)
 	keyword := ""
 	if input != nil && input.Keyword != nil {
 		keyword = *input.Keyword
 	}
 
-	systemClient, err := pkgclient.GetClient(nil)
-	if err != nil {
-		return nil, err
-	}
-	oss, err := common.SystemDatasourceOSS(ctx, systemClient)
+	oss, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		return nil, err
 	}

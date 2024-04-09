@@ -43,6 +43,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
 	"github.com/kubeagi/arcadia/apiserver/pkg/versioneddataset"
 	"github.com/kubeagi/arcadia/pkg/cache"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/datasource"
 )
 
@@ -174,7 +175,7 @@ func (m *minioAPI) GetSuccessChunks(ctx *gin.Context) {
 		Done: false,
 	}
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -295,7 +296,7 @@ func (m *minioAPI) NewMultipart(ctx *gin.Context) {
 	}
 
 	body.Bucket = NamespaceInHeader(ctx)
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -376,7 +377,7 @@ func (m *minioAPI) GetMultipartUploadURL(ctx *gin.Context) {
 	}
 
 	body.Bucket = NamespaceInHeader(ctx)
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -446,7 +447,7 @@ func (m *minioAPI) CompleteMultipart(ctx *gin.Context) {
 		})
 		return
 	}
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -492,7 +493,7 @@ func (m *minioAPI) DeleteFiles(ctx *gin.Context) {
 		})
 		return
 	}
-	source, err := common.SystemDatasourceOSS(context.TODO(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -535,7 +536,7 @@ func (m *minioAPI) Abort(ctx *gin.Context) {
 		return
 	}
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -575,7 +576,7 @@ func (m *minioAPI) StatFile(ctx *gin.Context) {
 	bucket := NamespaceInHeader(ctx)
 	bucketPath := ctx.Query(bucketPathQuery)
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -648,7 +649,7 @@ func (m *minioAPI) Download(ctx *gin.Context) {
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
 	opt := minio.GetObjectOptions{VersionID: versionID}
 	_ = opt.SetRange(from, end)
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -712,7 +713,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 	fileName = ctx.Query("fileName")
 
 	objectName := fmt.Sprintf("%s/%s", bucketPath, fileName)
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -779,7 +780,7 @@ func (m *minioAPI) ReadCSVLines(ctx *gin.Context) {
 // @Failure		500			{object}	map[string]string
 // @Router			/bff/model/files/downloadlink [get]
 func (m *minioAPI) GetDownloadLink(ctx *gin.Context) {
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get datasource %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -872,7 +873,7 @@ func (m *minioAPI) CreateWebCrawlerFile(ctx *gin.Context) {
 		return
 	}
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -933,7 +934,7 @@ func (m *minioAPI) EditCSV(ctx *gin.Context) {
 		return
 	}
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -1034,7 +1035,7 @@ func (m *minioAPI) Image(ctx *gin.Context) {
 		return
 	}
 
-	source, err := common.SystemDatasourceOSS(ctx.Request.Context(), m.client)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx.Request.Context())
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{

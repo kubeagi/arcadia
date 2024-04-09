@@ -73,7 +73,7 @@ func (r *RagAPI) Summary(ctx *gin.Context) {
 		thresholds[string(param.Kind)] = float64(param.ToleranceThreshbold) / 100.0
 	}
 
-	report, err := rag.ParseSummary(ctx.Request.Context(), r.c, rr.Spec.Application.Name, ragName, namespace, thresholds)
+	report, err := rag.ParseSummary(ctx.Request.Context(), rr.Spec.Application.Name, ragName, namespace, thresholds)
 	if err != nil {
 		klog.Errorf("an error occurred generating the report, error %s", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -118,7 +118,7 @@ func (r *RagAPI) ReportDetail(ctx *gin.Context) {
 		})
 		return
 	}
-	result, err := rag.ParseResult(ctx.Request.Context(), r.c, page, pageSize, rr.Spec.Application.Name, ragName, namespace, sortBy, order)
+	result, err := rag.ParseResult(ctx.Request.Context(), page, pageSize, rr.Spec.Application.Name, ragName, namespace, sortBy, order)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -154,7 +154,7 @@ func (r *RagAPI) ReportScatter(ctx *gin.Context) {
 		})
 		return
 	}
-	result, err := rag.PraseScatterChart(ctx.Request.Context(), r.c, rr.Spec.Application.Name, ragName, namespace)
+	result, err := rag.PraseScatterChart(ctx.Request.Context(), rr.Spec.Application.Name, ragName, namespace)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),

@@ -36,6 +36,7 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -517,7 +518,7 @@ func GetV1alpha1RAG(ctx context.Context, kubeClient client.Client, name, namespa
 }
 
 func getFiles(ctx context.Context, kubeClient client.Client, bucket string, files []string) ([]*generated.F, error) {
-	oss, err := common.SystemDatasourceOSS(ctx, kubeClient)
+	oss, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		return nil, err
 	}

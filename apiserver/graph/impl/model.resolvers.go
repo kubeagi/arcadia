@@ -13,11 +13,7 @@ import (
 
 // Files is the resolver for the files field.
 func (r *modelResolver) Files(ctx context.Context, obj *generated.Model, input *generated.FileFilter) (*generated.PaginatedResult, error) {
-	c, err := getClientFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return md.ModelFiles(ctx, c, obj.Name, obj.Namespace, input)
+	return md.ModelFiles(ctx, obj.Name, obj.Namespace, input)
 }
 
 // CreateModel is the resolver for the createModel field.
