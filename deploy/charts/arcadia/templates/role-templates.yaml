@@ -169,7 +169,7 @@ spec:
       - retriever.arcadia.kubeagi.k8s.com.cn
       resources:
       - knowledgebaseretrievers
-      - multiqueryRetrievers
+      - multiqueryretrievers
       - rerankretrievers
       verbs:
       - create
@@ -186,7 +186,7 @@ spec:
       - retriever.arcadia.kubeagi.k8s.com.cn
       resources:
       - knowledgebaseretrievers/status
-      - multiqueryRetrievers/status
+      - multiqueryretrievers/status
       - rerankretrievers/status
       verbs:
       - get
