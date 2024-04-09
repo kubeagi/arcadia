@@ -160,6 +160,35 @@ def update_document_progress(req_json, pool):
     return res
 
 
+def update_document_status_and_progress(req_json, pool):
+    """Update the status and progress with id"""
+    now = date_time_utils.now_str()
+    program = "文件处理完成-修改"
+
+    params = {
+        "id": req_json["id"],
+        "status": req_json["status"],
+        "end_time": now,
+        "progress": req_json["progress"],
+        "update_datetime": now,
+        "update_program": program,
+    }
+
+    sql = """
+        update public.data_process_task_document set
+          status = %(status)s,
+          end_time = %(end_time)s,
+          progress = %(progress)s,
+          update_datetime = %(update_datetime)s,
+          update_program = %(update_program)s
+        where
+          id = %(id)s
+    """.strip()
+
+    res = postgresql_pool_client.execute_update(pool, sql, params)
+    return res
+
+
 def list_file_by_task_id(req_json, pool):
     """info with id"""
     params = {"task_id": req_json["task_id"]}
