@@ -40,7 +40,6 @@ import (
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -194,24 +193,24 @@ func (cs *ChatServer) DeleteConversation(ctx context.Context, conversationID str
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	// Note: in pg table, this data is marked as deleted, deleted_at column is not null. the pdf in minio is not deleted. we only delete the conversation knowledgebase.
 	// delete conversation knowledgebase if it exists
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	// when delete is successful, it means currentuser is the creator of this conversation
+	err := cs.Storage().Delete(storage.WithConversationID(conversationID), storage.WithUser(currentUser))
 	if err != nil {
-		return fmt.Errorf("failed to get a client: %w", err)
-	}
-	kbList := &v1alpha1.KnowledgeBaseList{}
-	if err = runtimeclient.IgnoreNotFound(c.List(ctx, kbList, runtimeclient.MatchingFields(map[string]string{"metadata.name": conversationID}))); err != nil {
 		return err
 	}
+	kbList := &v1alpha1.KnowledgeBaseList{}
+	if err = runtimeclient.IgnoreNotFound(cs.systemCli.List(ctx, kbList, runtimeclient.MatchingFields(map[string]string{"metadata.name": conversationID}))); err != nil {
+		return err
+	}
+	// delete when conversation knowledgebase found(only one conversation knowledgebase at most)
 	if len(kbList.Items) == 1 {
 		kb := &kbList.Items[0]
-		if err = c.Delete(ctx, kb); err != nil {
-			return err
+		if err = cs.systemCli.Delete(ctx, kb); err != nil {
+			klog.Errorf("conversation %s deleted but knowledgebase for this conversation failed to delete: %s", conversationID, err.Error())
+			return fmt.Errorf("failed to delete conversation knowledgebase:%s", err.Error())
 		}
-	} else if len(kbList.Items) > 1 {
-		return fmt.Errorf("multiple conversation knowledgebases found")
 	}
-	return cs.Storage().Delete(storage.WithConversationID(conversationID), storage.WithUser(currentUser))
+	return nil
 }
 
 func (cs *ChatServer) ListMessages(ctx context.Context, req ConversationReqBody) (storage.Conversation, error) {
