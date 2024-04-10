@@ -364,6 +364,7 @@ type ComplexityRoot struct {
 		Count             func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		FileType          func(childComplexity int) int
+		LatestVersion     func(childComplexity int) int
 		Path              func(childComplexity int) int
 		Size              func(childComplexity int) int
 		Time              func(childComplexity int) int
@@ -2564,6 +2565,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.F.FileType(childComplexity), true
+
+	case "F.latestVersion":
+		if e.complexity.F.LatestVersion == nil {
+			break
+		}
+
+		return e.complexity.F.LatestVersion(childComplexity), true
 
 	case "F.path":
 		if e.complexity.F.Path == nil {
@@ -7944,6 +7952,11 @@ type F {
     文件版本列表
     """
     versions: [String!]
+
+    """
+    文件最新版本
+    """
+    latestVersion: String
 }
 
 """
@@ -19340,6 +19353,47 @@ func (ec *executionContext) fieldContext_F_versions(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _F_latestVersion(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_F_latestVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LatestVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_F_latestVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "F",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FileDetails_file_name(ctx context.Context, field graphql.CollectedField, obj *FileDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FileDetails_file_name(ctx, field)
 	if err != nil {
@@ -29438,6 +29492,8 @@ func (ec *executionContext) fieldContext_RAGDataset_files(ctx context.Context, f
 				return ec.fieldContext_F_creationTimestamp(ctx, field)
 			case "versions":
 				return ec.fieldContext_F_versions(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_F_latestVersion(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type F", field.Name)
 		},
@@ -43217,6 +43273,8 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 			out.Values[i] = ec._F_creationTimestamp(ctx, field, obj)
 		case "versions":
 			out.Values[i] = ec._F_versions(ctx, field, obj)
+		case "latestVersion":
+			out.Values[i] = ec._F_latestVersion(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -820,6 +820,8 @@ type F struct {
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 文件版本列表
 	Versions []string `json:"versions,omitempty"`
+	// 文件最新版本
+	LatestVersion *string `json:"latestVersion,omitempty"`
 }
 
 func (F) IsPageNode() {}
