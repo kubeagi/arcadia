@@ -58,6 +58,7 @@ query getVersionedDataset($name: String!, $namespace: String!, $fileInput: FileF
             count
             size
             versions
+            latestVersion
             creationTimestamp
           }
         }
@@ -98,6 +99,7 @@ query listVersionedDatasets($input: ListVersionedDatasetInput!, $fileInput: File
                   count
                   size
                   versions
+                  latestVersion
                   creationTimestamp
               }
             }
