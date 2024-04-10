@@ -61,7 +61,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 				}
 				model = models[0]
 			}
-			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model), openai.WithCallback(log.KLogHandler{LogLevel: 3}))
+			return openai.New(openai.WithToken(apiKey), openai.WithBaseURL(llm.Get3rdPartyLLMBaseURL()), openai.WithModel(model), openai.WithCallback(log.KLogHandler{LogLevel: 3}), openai.WithHTTPClient(DebugHTTPClient))
 		case llms.Gemini:
 			if model == "" {
 				models := llm.GetModelList()
@@ -104,7 +104,7 @@ func GetLangchainLLM(ctx context.Context, llm *v1alpha1.LLM, c client.Client, mo
 		if os.Getenv(GatewayUseExternalURLEnv) == "true" {
 			gatewayURL = gateway.ExternalAPIServer
 		}
-		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatewayURL), openai.WithToken("fake"), openai.WithCallback(log.KLogHandler{LogLevel: 3}))
+		return openai.New(openai.WithModel(modelName), openai.WithBaseURL(gatewayURL), openai.WithToken("fake"), openai.WithCallback(log.KLogHandler{LogLevel: 3}), openai.WithHTTPClient(DebugHTTPClient))
 	}
 	return nil, fmt.Errorf("unknown provider type")
 }
