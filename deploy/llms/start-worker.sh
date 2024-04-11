@@ -31,4 +31,4 @@ python3.9 -m $FASTCHAT_WORKER_NAME --model-names $FASTCHAT_REGISTRATION_MODEL_NA
     --model-path $FASTCHAT_MODEL_NAME_PATH --worker-address $FASTCHAT_WORKER_ADDRESS \
     --controller-address $FASTCHAT_CONTROLLER_ADDRESS \
     --num-gpus $NUMBER_GPUS  \
-    --host 0.0.0.0 --port 21002 $EXTRA_ARGS
+    --host 0.0.0.0 --port 21002 $SYSTEM_ARGS $EXTRA_ARGS

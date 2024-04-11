@@ -18,7 +18,7 @@ spec:
           runAsGroup: 0
           fsGroup: 0
         containers:
-          - image: kubeagi/ray-ml:2.9.3-py39-vllm
+          - image: kubeagi/ray-ml:2.9.3-py39-vllm-0.4.0
             name: ray-head
             resources:
               limits:
@@ -48,7 +48,7 @@ spec:
             app.kubernetes.io/name: kuberay
         spec:
           containers:
-            - image: kubeagi/ray-ml:2.9.3-py39-vllm
+            - image: kubeagi/ray-ml:2.9.3-py39-vllm-0.4.0
               name: ray-worker
               resources:
                 limits:

@@ -93,24 +93,16 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
-	extraAgrs := ""
-	for _, envItem := range runner.w.Spec.AdditionalEnvs {
-		if envItem.Name == "EXTRA_ARGS" {
-			extraAgrs = envItem.Value
-			break
-		}
-	}
-
 	modelFileDir := fmt.Sprintf("%s/%s", defaultModelMountPath, model.Name)
 	additionalEnvs := []corev1.EnvVar{}
-	extraArgs := fmt.Sprintf("--device %s %s", runner.Device().String(), extraAgrs)
+	systemArgs := fmt.Sprintf("--device %s", runner.Device().String())
 	if runner.modelFileFromRemote {
 		m := arcadiav1alpha1.Model{}
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
 			return nil, err
 		}
 		if m.Spec.Revision != "" {
-			extraArgs += fmt.Sprintf(" --revision %s ", m.Spec.Revision)
+			systemArgs += fmt.Sprintf(" --revision %s ", m.Spec.Revision)
 		}
 		if m.Spec.ModelSource == modelSourceFromHugginfFace {
 			modelFileDir = m.Spec.HuggingFaceRepo
@@ -139,7 +131,6 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:%d", runner.w.Name+WokerCommonSuffix, runner.w.Namespace, arcadiav1alpha1.DefaultWorkerPort)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
 			{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()},
-			{Name: "EXTRA_ARGS", Value: extraArgs},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
@@ -149,6 +140,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 		},
 		Resources: runner.w.Spec.Resources,
 	}
+	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "SYSTEM_ARGS", Value: systemArgs})
 
 	container.Env = append(container.Env, additionalEnvs...)
 	return container, nil
@@ -193,12 +185,12 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
 
-	extraAgrs := ""
+	systemArgs := ""
 	additionalEnvs := []corev1.EnvVar{}
 
 	// configure ray cluster
 	resources := runner.w.Spec.Resources
-	gpus := runner.NumberOfGPUs()
+	gpuEnvExist := false
 	// default ray cluster which can only utilize gpus on single nodes
 	rayCluster := config.DefaultRayCluster()
 	for _, envItem := range runner.w.Spec.AdditionalEnvs {
@@ -223,12 +215,10 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		// By default, gpu_memory_utilization will be 0.9
 		if envItem.Name == "GPU_MEMORY_UTILIZATION" {
 			gpuMemoryUtilization, _ := strconv.ParseFloat(envItem.Value, 64)
-			extraAgrs += fmt.Sprintf(" --gpu_memory_utilization %f", gpuMemoryUtilization)
+			systemArgs += fmt.Sprintf(" --gpu_memory_utilization %f", gpuMemoryUtilization)
 		}
-
-		// extra arguments to run llm
-		if envItem.Name == "EXTRA_ARGS" {
-			extraAgrs = envItem.Value
+		if envItem.Name == "NUMBER_GPUS" {
+			gpuEnvExist = true
 		}
 	}
 	klog.V(5).Infof("run worker with raycluster:\n %s", rayCluster.String())
@@ -245,18 +235,16 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			Name:  "PYTHON_VERSION",
 			Value: rayCluster.GetPythonVersion(),
 		})
-	// Set gpu number to the number of GPUs in the worker's resource
-	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "NUMBER_GPUS", Value: gpus})
 
 	modelFileDir := fmt.Sprintf("%s/%s", defaultModelMountPath, model.Name)
-	extraAgrs = fmt.Sprintf("%s --trust-remote-code", extraAgrs)
+	systemArgs = fmt.Sprintf("%s --trust-remote-code", systemArgs)
 	if runner.modelFileFromRemote {
 		m := arcadiav1alpha1.Model{}
 		if err := runner.c.Get(ctx, types.NamespacedName{Namespace: *model.Namespace, Name: model.Name}, &m); err != nil {
 			return nil, err
 		}
 		if m.Spec.Revision != "" {
-			extraAgrs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
+			systemArgs += fmt.Sprintf(" --revision %s", m.Spec.Revision)
 		}
 		if m.Spec.ModelSource == modelSourceFromHugginfFace {
 			modelFileDir = m.Spec.HuggingFaceRepo
@@ -283,7 +271,6 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 			{Name: "FASTCHAT_MODEL_NAME", Value: model.Name},
 			{Name: "FASTCHAT_WORKER_ADDRESS", Value: fmt.Sprintf("http://%s.%s:%d", runner.w.Name+WokerCommonSuffix, runner.w.Namespace, arcadiav1alpha1.DefaultWorkerPort)},
 			{Name: "FASTCHAT_CONTROLLER_ADDRESS", Value: gw.Controller},
-			{Name: "EXTRA_ARGS", Value: extraAgrs},
 		},
 		Ports: []corev1.ContainerPort{
 			{Name: "http", ContainerPort: arcadiav1alpha1.DefaultWorkerPort},
@@ -295,6 +282,13 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		},
 		Resources: resources,
 	}
+	if !gpuEnvExist {
+		// if env doesn't exist, set gpu number to the number of GPUs in the worker's resource
+		additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "NUMBER_GPUS", Value: runner.NumberOfGPUs()})
+	}
+
+	additionalEnvs = append(additionalEnvs, corev1.EnvVar{Name: "SYSTEM_ARGS", Value: systemArgs})
+
 	container.Env = append(container.Env, additionalEnvs...)
 	return container, nil
 }
