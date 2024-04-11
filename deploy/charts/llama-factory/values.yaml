@@ -1,0 +1,28 @@
+# ingress configurations for component
+ingress:
+  # set enable to `true` to enable ingress
+  enable: true
+  ingressClassName: portal-ingress
+  ingressDomain: <replaced-ingress-nginx-ip>.nip.io
+
+# volume configurations for llama-factory
+volume:
+  # hfcache is the cache path for huggingface model from host
+  hfcache: ""
+  # data is the data path for llama-factory from host
+  data: ""
+  # output is the output path for llama-factory from host
+  output: ""
+
+# llama-factory configurations
+image: kubeagi/llama-factory:v0.6.1
+imagePullPolicy: IfNotPresent
+resources:
+  limits:
+    cpu: "4"
+    memory: 12Gi
+    nvidia.com/gpu: "0"
+  requests:
+    cpu: "1"
+    memory: 1Gi
+    nvidia.com/gpu: "0"
