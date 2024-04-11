@@ -26,16 +26,16 @@ metadata:
     nginx.ingress.kubernetes.io/upstream-vhost: $host
   labels:
     ingress-lb: {{ .Values.ingress.ingressClassName }}
-  name: llama-factory
+  name: {{ .Release.Name }}-llama-factory
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-    - host: portal.{{ .Values.ingress.ingressDomain }}
+    - host: {{ .Release.Name }}.{{ .Values.ingress.ingressDomain }}
       http:
         paths:
           - backend:
               service:
-                name: llama-factory
+                name: {{ .Release.Name }}-llama-factory
                 port:
                   number: 7860
             path: /
