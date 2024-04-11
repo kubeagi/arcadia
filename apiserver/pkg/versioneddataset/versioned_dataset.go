@@ -32,9 +32,9 @@ import (
 
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/graph/generated"
-	pkgclient "github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	graphqlutils "github.com/kubeagi/arcadia/apiserver/pkg/utils"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 	"github.com/kubeagi/arcadia/pkg/utils"
 )
 
@@ -104,11 +104,7 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 		keyword = *filter.Keyword
 	}
 
-	systemClient, err := pkgclient.GetClient(nil)
-	if err != nil {
-		return nil, err
-	}
-	oss, err := common.SystemDatasourceOSS(ctx, systemClient)
+	oss, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,27 +121,26 @@ func VersionFiles(ctx context.Context, _ client.Client, input *generated.Version
 		return objectInfoList[i].LastModified.After(objectInfoList[j].LastModified)
 	})
 
-	existMap := make(map[string]struct{})
 	objMap := make(map[string][]string)
 	for _, obj := range objectInfoList {
-		objMap[obj.Key] = append(objMap[obj.Key], obj.VersionID)
-	}
-
-	result := make([]generated.PageNode, 0)
-	for _, obj := range objectInfoList {
-		if _, ok := existMap[obj.Key]; ok {
-			continue
-		}
 		if obj.IsDeleteMarker {
 			continue
 		}
+		objMap[obj.Key] = append(objMap[obj.Key], obj.VersionID)
+	}
+	result := make([]generated.PageNode, 0)
+	for _, obj := range objectInfoList {
+		if !obj.IsLatest || obj.IsDeleteMarker {
+			continue
+		}
 		if keyword == "" || strings.Contains(obj.Key, keyword) {
-			existMap[obj.Key] = struct{}{}
 			lastModifiedTime := obj.LastModified
+			versionID := obj.VersionID
 			tf := generated.F{
-				Path:     strings.TrimPrefix(obj.Key, prefix),
-				Time:     &lastModifiedTime,
-				Versions: objMap[obj.Key],
+				Path:          strings.TrimPrefix(obj.Key, prefix),
+				Time:          &lastModifiedTime,
+				Versions:      objMap[obj.Key],
+				LatestVersion: &versionID,
 			}
 
 			size := utils.BytesToSizedStr(obj.Size)

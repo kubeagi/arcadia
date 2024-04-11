@@ -128,6 +128,15 @@ type ApplicationMetadata struct {
 	Status *string `json:"status,omitempty"`
 	// category：所属分类
 	Category []*string `json:"category,omitempty"`
+	// notReadyReasonCode: 用于指明当前应用状态不正常的原因。状态码要和gpts中同字段保持一致。
+	// 可选值:
+	// - 空：就绪，应用 可以使用
+	// - VectorStoreIsNotReady: 向量数据库没有就绪
+	// - EmbedderIsNotReady: embedder服务没有就绪
+	// - KnowledgeBaseNotReady: 知识库未就绪，指向量数据库和embedder出错之外的其他情况
+	// - LLMNotReady: 模型服务没有就绪
+	// - ConfigError: 应用配置错误，比如写了多个Output节点，比如节点名称重复等其他错误
+	NotReadyReasonCode *string `json:"notReadyReasonCode,omitempty"`
 }
 
 func (ApplicationMetadata) IsPageNode() {}
@@ -811,6 +820,8 @@ type F struct {
 	CreationTimestamp *time.Time `json:"creationTimestamp,omitempty"`
 	// 文件版本列表
 	Versions []string `json:"versions,omitempty"`
+	// 文件最新版本
+	LatestVersion *string `json:"latestVersion,omitempty"`
 }
 
 func (F) IsPageNode() {}
@@ -887,7 +898,7 @@ type Gpt struct {
 	ShowNextGuide *bool `json:"showNextGuide,omitempty"`
 	// enableUploadFile 是否开启对话上传文档功能
 	EnableUploadFile *bool `json:"enableUploadFile,omitempty"`
-	// notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+	// notReadyReasonCode: 用于指明当前gpt状态不正常的原因。状态码要和应用中同字段保持一致。
 	// 可选值:
 	// - 空：就绪，gpt 可以使用
 	// - VectorStoreIsNotReady: 向量数据库没有就绪
@@ -2152,6 +2163,8 @@ type Filedetail struct {
 	Phase string `json:"phase"`
 	// 文件版本，""或者"null"的情况表示是文件最新版本。
 	Version string `json:"version"`
+	// 文件最新版本
+	LatestVersion string `json:"latestVersion"`
 }
 
 // 文件组

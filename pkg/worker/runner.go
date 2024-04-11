@@ -88,7 +88,7 @@ func (runner *RunnerFastchat) Build(ctx context.Context, model *arcadiav1alpha1.
 	if model == nil {
 		return nil, errors.New("nil model")
 	}
-	gw, err := config.GetGateway(ctx, runner.c)
+	gw, err := config.GetGateway(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
@@ -188,7 +188,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 	if model == nil {
 		return nil, errors.New("nil model")
 	}
-	gw, err := config.GetGateway(ctx, runner.c)
+	gw, err := config.GetGateway(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get arcadia config with %w", err)
 	}
@@ -205,7 +205,7 @@ func (runner *RunnerFastchatVLLM) Build(ctx context.Context, model *arcadiav1alp
 		// using existing ray cluster
 		if envItem.Name == "RAY_CLUSTER_INDEX" {
 			externalRayClusterIndex, _ := strconv.Atoi(envItem.Value)
-			rayClusters, err := config.GetRayClusters(ctx, runner.c)
+			rayClusters, err := config.GetRayClusters(ctx)
 			if err != nil || len(rayClusters) == 0 {
 				return nil, fmt.Errorf("failed to find ray clusters: %s", err.Error())
 			}

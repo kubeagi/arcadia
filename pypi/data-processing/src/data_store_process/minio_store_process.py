@@ -407,7 +407,7 @@ async def text_manipulate(
         return {"status": 400, "message": str(ex), "data": traceback.format_exc()}
 
 
-def text_manipulate_retry(req_json, pool):
+async def text_manipulate_retry(req_json, pool):
     task_id = req_json.get("id")
     creator = req_json.get("creator")
     log_id = ulid.ulid()
@@ -470,7 +470,7 @@ def text_manipulate_retry(req_json, pool):
                         ]
                     )
                 )
-                result = _text_manipulate_retry_for_document(
+                result = await _text_manipulate_retry_for_document(
                     document=document,
                     task_info=task_info_dict,
                     log_id=log_id,
@@ -937,7 +937,7 @@ def _insert_log_info(id, task_id, execute_type, creator, pool):
         return {"status": 400, "message": str(ex), "data": traceback.format_exc()}
 
 
-def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creator):
+async def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creator):
     file_name = document.get("file_name")
     task_id = task_info.get("id")
     document_id = document.get("id")
@@ -1025,6 +1025,16 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
                 task_id=task_id,
                 create_user=creator,
             )
+        elif file_extension == "web":
+            # 处理.web文件
+            result = await web_handle.web_manipulate(
+                file_name=file_name,
+                document_id=item.get("document_id"),
+                support_type=support_type,
+                conn_pool=pool,
+                task_id=id,
+                create_user=req_json["creator"],
+            )
 
         # 将下载的本地文件删除
         _remove_local_file(file_name)
@@ -1042,6 +1052,7 @@ def _text_manipulate_retry_for_document(document, task_info, log_id, pool, creat
                 file_name=file_name,
                 all_document_for_process=document_chunk_dict.get("data"),
                 support_type=support_type,
+                progress=int(document.get("progress")),
                 conn_pool=pool,
                 create_user=creator,
             )

@@ -24,6 +24,7 @@ spec:
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -53,6 +54,7 @@ spec:
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -80,6 +82,7 @@ spec:
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -110,6 +113,7 @@ spec:
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -140,6 +144,7 @@ spec:
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -164,11 +169,12 @@ spec:
       - retriever.arcadia.kubeagi.k8s.com.cn
       resources:
       - knowledgebaseretrievers
-      - multiqueryRetrievers
+      - multiqueryretrievers
       - rerankretrievers
       verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -180,8 +186,60 @@ spec:
       - retriever.arcadia.kubeagi.k8s.com.cn
       resources:
       - knowledgebaseretrievers/status
-      - multiqueryRetrievers/status
+      - multiqueryretrievers/status
       - rerankretrievers/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: Prompt 权限
+    rules:
+    - apiGroups:
+      - prompt.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - prompts
+      verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: Prompt 状态权限
+    rules:
+    - apiGroups:
+      - prompt.arcadia.kubeagi.k8s.com.cn
+      resources:
+      - prompts/status
+      verbs:
+      - get
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 向量数据库权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - vectorstores
+      verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+  - category: 智能体管理
+    displayName: 向量数据库状态权限
+    rules:
+    - apiGroups:
+      - arcadia.kubeagi.k8s.com.cn
+      resources:
+      - vectorstores/status
       verbs:
       - get
       - patch

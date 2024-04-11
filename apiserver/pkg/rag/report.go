@@ -27,10 +27,10 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeagi/arcadia/api/evaluation/v1alpha1"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 )
 
 const (
@@ -135,11 +135,11 @@ type (
 )
 
 func ParseSummary(
-	ctx context.Context, c client.Client,
+	ctx context.Context,
 	appName, ragName, namespace string,
 	metricThresholds map[string]float64,
 ) (Report, error) {
-	source, err := common.SystemDatasourceOSS(ctx, c)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		return Report{}, err
@@ -212,8 +212,8 @@ func ParseSummary(
 	return report, nil
 }
 
-func PraseScatterChart(ctx context.Context, c client.Client, appName, ragName, namespace string) ([]ScatterData, error) {
-	source, err := common.SystemDatasourceOSS(ctx, c)
+func PraseScatterChart(ctx context.Context, appName, ragName, namespace string) ([]ScatterData, error) {
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		return nil, err
@@ -271,11 +271,11 @@ func PraseScatterChart(ctx context.Context, c client.Client, appName, ragName, n
 }
 
 func ParseResult(
-	ctx context.Context, c client.Client,
+	ctx context.Context,
 	page, pageSize int,
 	appName, ragName, namespace, sortBy, order string,
 ) (ReportDetail, error) {
-	source, err := common.SystemDatasourceOSS(ctx, c)
+	source, err := pkgconfig.GetSystemDatasourceOSS(ctx)
 	if err != nil {
 		klog.Errorf("failed to get system datasource error %s", err)
 		return ReportDetail{}, err

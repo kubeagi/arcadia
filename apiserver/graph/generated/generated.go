@@ -106,21 +106,22 @@ type ComplexityRoot struct {
 	}
 
 	ApplicationMetadata struct {
-		Annotations       func(childComplexity int) int
-		Category          func(childComplexity int) int
-		CreationTimestamp func(childComplexity int) int
-		Creator           func(childComplexity int) int
-		Description       func(childComplexity int) int
-		DisplayName       func(childComplexity int) int
-		ID                func(childComplexity int) int
-		Icon              func(childComplexity int) int
-		IsPublic          func(childComplexity int) int
-		IsRecommended     func(childComplexity int) int
-		Labels            func(childComplexity int) int
-		Name              func(childComplexity int) int
-		Namespace         func(childComplexity int) int
-		Status            func(childComplexity int) int
-		UpdateTimestamp   func(childComplexity int) int
+		Annotations        func(childComplexity int) int
+		Category           func(childComplexity int) int
+		CreationTimestamp  func(childComplexity int) int
+		Creator            func(childComplexity int) int
+		Description        func(childComplexity int) int
+		DisplayName        func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		Icon               func(childComplexity int) int
+		IsPublic           func(childComplexity int) int
+		IsRecommended      func(childComplexity int) int
+		Labels             func(childComplexity int) int
+		Name               func(childComplexity int) int
+		Namespace          func(childComplexity int) int
+		NotReadyReasonCode func(childComplexity int) int
+		Status             func(childComplexity int) int
+		UpdateTimestamp    func(childComplexity int) int
 	}
 
 	ApplicationMutation struct {
@@ -363,6 +364,7 @@ type ComplexityRoot struct {
 		Count             func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		FileType          func(childComplexity int) int
+		LatestVersion     func(childComplexity int) int
 		Path              func(childComplexity int) int
 		Size              func(childComplexity int) int
 		Time              func(childComplexity int) int
@@ -813,6 +815,7 @@ type ComplexityRoot struct {
 	Filedetail struct {
 		Count           func(childComplexity int) int
 		FileType        func(childComplexity int) int
+		LatestVersion   func(childComplexity int) int
 		Path            func(childComplexity int) int
 		Phase           func(childComplexity int) int
 		Size            func(childComplexity int) int
@@ -1296,6 +1299,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationMetadata.Namespace(childComplexity), true
+
+	case "ApplicationMetadata.notReadyReasonCode":
+		if e.complexity.ApplicationMetadata.NotReadyReasonCode == nil {
+			break
+		}
+
+		return e.complexity.ApplicationMetadata.NotReadyReasonCode(childComplexity), true
 
 	case "ApplicationMetadata.status":
 		if e.complexity.ApplicationMetadata.Status == nil {
@@ -2555,6 +2565,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.F.FileType(childComplexity), true
+
+	case "F.latestVersion":
+		if e.complexity.F.LatestVersion == nil {
+			break
+		}
+
+		return e.complexity.F.LatestVersion(childComplexity), true
 
 	case "F.path":
 		if e.complexity.F.Path == nil {
@@ -4845,6 +4862,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filedetail.FileType(childComplexity), true
 
+	case "filedetail.latestVersion":
+		if e.complexity.Filedetail.LatestVersion == nil {
+			break
+		}
+
+		return e.complexity.Filedetail.LatestVersion(childComplexity), true
+
 	case "filedetail.path":
 		if e.complexity.Filedetail.Path == nil {
 			break
@@ -5308,6 +5332,17 @@ type ApplicationMetadata {
     category：所属分类
     """
     category: [String]
+    """
+    notReadyReasonCode: 用于指明当前应用状态不正常的原因。状态码要和gpts中同字段保持一致。
+    可选值:
+    - 空：就绪，应用 可以使用
+    - VectorStoreIsNotReady: 向量数据库没有就绪
+    - EmbedderIsNotReady: embedder服务没有就绪
+    - KnowledgeBaseNotReady: 知识库未就绪，指向量数据库和embedder出错之外的其他情况
+    - LLMNotReady: 模型服务没有就绪
+    - ConfigError: 应用配置错误，比如写了多个Output节点，比如节点名称重复等其他错误
+    """
+    notReadyReasonCode: String
 }
 
 input CreateApplicationMetadataInput {
@@ -6607,7 +6642,7 @@ type GPT {
     """
     enableUploadFile: Boolean
     """
-    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。
+    notReadyReasonCode: 用于指明当前gpt状态不正常的原因。状态码要和应用中同字段保持一致。
     可选值:
     - 空：就绪，gpt 可以使用
     - VectorStoreIsNotReady: 向量数据库没有就绪
@@ -6760,6 +6795,11 @@ type filedetail{
     文件版本，""或者"null"的情况表示是文件最新版本。
     """
     version: String!
+
+    """
+    文件最新版本
+    """
+    latestVersion: String!
 }
 
 """
@@ -7912,6 +7952,11 @@ type F {
     文件版本列表
     """
     versions: [String!]
+
+    """
+    文件最新版本
+    """
+    latestVersion: String
 }
 
 """
@@ -9664,6 +9709,8 @@ func (ec *executionContext) fieldContext_Application_metadata(ctx context.Contex
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -11326,6 +11373,47 @@ func (ec *executionContext) fieldContext_ApplicationMetadata_category(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ApplicationMetadata_notReadyReasonCode(ctx context.Context, field graphql.CollectedField, obj *ApplicationMetadata) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotReadyReasonCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationMetadata_notReadyReasonCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApplicationMutation_createApplication(ctx context.Context, field graphql.CollectedField, obj *ApplicationMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApplicationMutation_createApplication(ctx, field)
 	if err != nil {
@@ -11395,6 +11483,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_createApplication(c
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -11482,6 +11572,8 @@ func (ec *executionContext) fieldContext_ApplicationMutation_updateApplication(c
 				return ec.fieldContext_ApplicationMetadata_status(ctx, field)
 			case "category":
 				return ec.fieldContext_ApplicationMetadata_category(ctx, field)
+			case "notReadyReasonCode":
+				return ec.fieldContext_ApplicationMetadata_notReadyReasonCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApplicationMetadata", field.Name)
 		},
@@ -19249,6 +19341,47 @@ func (ec *executionContext) _F_versions(ctx context.Context, field graphql.Colle
 }
 
 func (ec *executionContext) fieldContext_F_versions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "F",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _F_latestVersion(ctx context.Context, field graphql.CollectedField, obj *F) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_F_latestVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LatestVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_F_latestVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "F",
 		Field:      field,
@@ -29359,6 +29492,8 @@ func (ec *executionContext) fieldContext_RAGDataset_files(ctx context.Context, f
 				return ec.fieldContext_F_creationTimestamp(ctx, field)
 			case "versions":
 				return ec.fieldContext_F_versions(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_F_latestVersion(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type F", field.Name)
 		},
@@ -35704,6 +35839,50 @@ func (ec *executionContext) fieldContext_filedetail_version(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _filedetail_latestVersion(ctx context.Context, field graphql.CollectedField, obj *Filedetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_filedetail_latestVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LatestVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_filedetail_latestVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "filedetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _filegroup_source(ctx context.Context, field graphql.CollectedField, obj *Filegroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_filegroup_source(ctx, field)
 	if err != nil {
@@ -35950,6 +36129,8 @@ func (ec *executionContext) fieldContext_filegroupdetail_filedetails(ctx context
 				return ec.fieldContext_filedetail_phase(ctx, field)
 			case "version":
 				return ec.fieldContext_filedetail_version(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_filedetail_latestVersion(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type filedetail", field.Name)
 		},
@@ -40547,6 +40728,8 @@ func (ec *executionContext) _ApplicationMetadata(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._ApplicationMetadata_status(ctx, field, obj)
 		case "category":
 			out.Values[i] = ec._ApplicationMetadata_category(ctx, field, obj)
+		case "notReadyReasonCode":
+			out.Values[i] = ec._ApplicationMetadata_notReadyReasonCode(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43090,6 +43273,8 @@ func (ec *executionContext) _F(ctx context.Context, sel ast.SelectionSet, obj *F
 			out.Values[i] = ec._F_creationTimestamp(ctx, field, obj)
 		case "versions":
 			out.Values[i] = ec._F_versions(ctx, field, obj)
+		case "latestVersion":
+			out.Values[i] = ec._F_latestVersion(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -47805,6 +47990,11 @@ func (ec *executionContext) _filedetail(ctx context.Context, sel ast.SelectionSe
 			}
 		case "version":
 			out.Values[i] = ec._filedetail_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "latestVersion":
+			out.Values[i] = ec._filedetail_latestVersion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

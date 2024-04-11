@@ -75,7 +75,7 @@ func (dl *DocumentLoader) Run(ctx context.Context, cli client.Client, args map[s
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: dl.RefNamespace(), Name: dl.Ref.Name}, dl.Instance); err != nil {
 		return args, fmt.Errorf("can't find the documentloader in cluster: %w", err)
 	}
-	system, err := config.GetSystemDatasource(ctx, cli)
+	system, err := config.GetSystemDatasource(ctx)
 	if err != nil {
 		return nil, err
 	}

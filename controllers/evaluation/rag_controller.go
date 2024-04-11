@@ -468,7 +468,7 @@ func (r *RAGReconciler) WhenJobChanged(job *batchv1.Job) {
 
 func (r *RAGReconciler) RemoveRAGFiles(ctx context.Context, rag *evaluationarcadiav1alpha1.RAG) {
 	logger := log.FromContext(ctx, "RAG", rag.Name, "Namespace", rag.Namespace, "Action", "DeleteRAGFiles")
-	systemDatasource, err := config.GetSystemDatasource(ctx, r.Client)
+	systemDatasource, err := config.GetSystemDatasource(ctx)
 	if err != nil {
 		logger.Error(err, "failed to get system datasource")
 		return

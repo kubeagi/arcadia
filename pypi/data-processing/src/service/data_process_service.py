@@ -209,7 +209,7 @@ def retry(req_json, pool):
         logger.debug(f"{log_tag_const.DATA_PROCESS_SERVICE} The task retry start")
 
         async def async_text_manipulate_retry(req_json, pool):
-            minio_store_process.text_manipulate_retry(req_json, pool=pool)
+            await minio_store_process.text_manipulate_retry(req_json, pool=pool)
 
         def execute_text_manipulate_task_retry(loop):
             asyncio.set_event_loop(loop)

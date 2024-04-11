@@ -35,7 +35,7 @@ class QARemoveDuplicate():
         self.embeddings = embeddings
         self.pool = pool
 
-    def _import_qa_embedding_data(
+    def embedding_qa_data(
         self,
         qa_pairs
     ):
@@ -99,23 +99,7 @@ class QARemoveDuplicate():
             self.pool
         )
 
-    def _remove_qa_embedding_data_by_document(
-        self,
-        document_id,
-        task_id
-    ):
-        """Remove QA data by Document ID and Task ID
-        """
-        params = {
-            "document_id": document_id,
-            "task_id": task_id
-        }
-        dp_document_qa_remove_duplicate_db_operate.delete_by_task_document(
-            params,
-            self.pool
-        )
-
-    def _remove_duplicate_qa_data(
+    def remove_duplicate_qa_data(
         self,
         qa_pairs,
         distance
@@ -167,80 +151,3 @@ class QARemoveDuplicate():
                 )
             )
             return {"status": 1000, "message": "QA去重失败，未知原因，请联系管理员！", "data": traceback.format_exc()}
-
-    def qa_remove_duplicate(
-        self,
-        qa_pairs,
-        distance
-    ):
-        """Vectorize QA data and remove semantically similar QA based on a similarity threshold
-        
-        Args:
-            qa_pairs (list): QA datasets
-            distance (float): similarity threshold
-            
-        Example:
-            "qa_pairs": [
-                {
-                   "id": "01",
-                   "document_id": "100",
-                   "task_id": "200",
-                   "question": "哈密瓜主要产地",
-                   "answer": "哈密瓜主要产自新疆、甘肃等地"
-               },
-               {
-                   "id": "02",
-                   "document_id": "100",
-                   "task_id": "200",
-                   "question": "哈密瓜主要来源地",
-                   "answer": "哈密瓜的主要产地包括新疆和甘肃"
-               },
-                {
-                   "id": "03",
-                   "document_id": "100",
-                   "task_id": "200",
-                   "question": "哈密瓜主要产地在哪里",
-                   "answer": "哈密瓜主产于吐哈盆地（即吐鲁番盆地和哈密盆地的统称），它形态各异，风味独特，瓜肉肥厚，清脆爽口。哈密瓜营养丰富，含糖量最高达21%。哈密的甜瓜在东汉永平年间就成为进贡的异瓜种了。至清代，被哈密王作为贡品，受康熙赏赐而得名哈密瓜。时哈密瓜“往年进贡”、“瓜莫盛于哈密”、“瓜则充贡品者真出哈密”。追根溯源，哈密瓜却源于吐鲁番鄯善县一带"
-               }
-            ]
-            "distance": 0.9
-        
-        Returns:
-            [
-              {
-                "id": "01",
-                "document_id": "100",
-                "task_id": "200",
-                "question": "哈密瓜主要产地",
-                "answer": "哈密瓜主要产自新疆、甘肃等地"
-              },
-              {
-                "id": "02",
-                "task_id": "200",
-                "document_id": "100",
-                "question": "哈密瓜主要来源地",
-                "answer": "哈密瓜的主要产地包括新疆和甘肃",
-                "question_distance": 0.9919387102127075,
-                "answer_distance": 0.9851632118225098,
-                "duplicated_flag": true
-              },
-              {
-                "id": "03",
-                "document_id": "100",
-                "task_id": "200",
-                "question": "哈密瓜主要产地在哪里",
-                "answer": "哈密瓜主产于吐哈盆地（即吐鲁番盆地和哈密盆地的统称），它形态各异，风味独特，瓜肉肥厚，清脆爽口。哈密瓜营养丰富，含糖量最高达21%。哈密的甜瓜在东汉永平年间就成为进贡的异瓜种了。至清代，被哈密王作为贡品，受康熙赏赐而得名哈密瓜。时哈密瓜“往年进贡”、“瓜莫盛于哈密”、“瓜则充贡品者真出哈密”。追根溯源，哈密瓜却源于吐鲁番鄯善县一带"
-              }
-            ]
-        """
-        qa_embedding_res = self._import_qa_embedding_data(
-            qa_pairs
-        )
-
-        if qa_embedding_res.get("status") != 200:
-            return qa_embedding_res
-
-        return self._remove_duplicate_qa_data(
-            qa_pairs,
-            distance
-        )

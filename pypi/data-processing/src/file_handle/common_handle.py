@@ -37,7 +37,12 @@ logger = logging.getLogger(__name__)
 
 
 def text_manipulate(
-    all_document_for_process, file_name, support_type, conn_pool, create_user
+    all_document_for_process,
+    file_name,
+    support_type,
+    conn_pool,
+    create_user,
+    progress=0
 ):
     """Manipulate the text content.
 
@@ -63,7 +68,7 @@ def text_manipulate(
             conn_pool=conn_pool,
         )
 
-        text_process_success_num = 0
+        text_process_success_num = progress
         for document in all_document_for_process:
             document_chunk_id = document.get("id")
             # Clean the data such as removing invisible characters.
@@ -115,11 +120,6 @@ def text_manipulate(
 
                 if qa_response.get("status") != 200:
                     return qa_response
-
-        # 文件处理成功，更新data_process_task_document中的文件状态
-        _updata_document_status_and_end_time(
-            id=document_id, status="success", conn_pool=conn_pool
-        )
 
         if support_type_map.get("qa_split"):
             # 是否选择了QA拆分
@@ -196,6 +196,13 @@ def text_manipulate(
                 file_name=file_name_csv, phase_value="final", data=qa_data_dict
             )
 
+            _update_document_status_and_progress(
+                id=document_id,
+                status="success",
+                progress=100,
+                conn_pool=conn_pool
+            )
+
             logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
             return {
                 "status": 200,
@@ -225,12 +232,24 @@ def text_manipulate(
                 file_name=file_name_csv, phase_value="final", data=chunk_data_dict
             )
 
+            _update_document_status_and_progress(
+                id=document_id,
+                status="success",
+                progress=100,
+                conn_pool=conn_pool
+            )
+
             logger.debug(f"{log_tag_const.COMMON_HANDLE} Finish manipulating the text")
             return {
                 "status": 200,
                 "message": "",
                 "data": "",
             }
+
+        # 文件处理成功，更新data_process_task_document中的文件状态
+        _updata_document_status_and_end_time(
+            id=document_id, status="success", conn_pool=conn_pool
+        )
 
         return {"status": 200, "message": "", "data": ""}
     except Exception as ex:
@@ -914,6 +933,7 @@ def _qa_split(
 ):
     qa_list_dict = support_type_map.get("qa_split")
     llm_config = qa_list_dict.get("llm_config")
+    remove_duplicate_config = qa_list_dict.get("remove_duplicate_config")
 
     # 更新chunk状态为开始
     _update_document_chunk_status_and_start_time(
@@ -937,6 +957,7 @@ def _qa_split(
             id=document_id, status="fail", conn_pool=conn_pool
         )
     else:
+        qa_list = []
         # 将QA数据存入表中
         qa_data = qa_response.get("data")
         for _, item in enumerate(qa_data):
@@ -955,6 +976,34 @@ def _qa_split(
                 qa_insert_item, pool=conn_pool
             )
 
+            qa_list.append(qa_insert_item)
+
+        # 是否需要进行去重
+        if remove_duplicate_config:
+            for qa in qa_list:
+                embedding_response = _embedding_qa(
+                    qa_list=[qa],
+                    remove_duplicate_config=remove_duplicate_config,
+                    conn_pool=conn_pool
+                )
+
+                if embedding_response.get("status") != 200:
+                    # 处理失败
+                    # 更新data_process_task_document_chunk中的状态
+                    _updata_document_chunk_status_and_end_time(
+                        id=document_chunk_id,
+                        update_user=create_user,
+                        status="fail",
+                        conn_pool=conn_pool,
+                    )
+
+                    # 更新data_process_task_document中的文件状态
+                    _updata_document_status_and_end_time(
+                        id=document_id, status="fail", conn_pool=conn_pool
+                    )
+
+                    return embedding_response
+
         # 更新data_process_task_document_chunk中的状态
         _updata_document_chunk_status_and_end_time(
             id=document_chunk_id,
@@ -965,6 +1014,9 @@ def _qa_split(
 
         # 更新文件处理进度
         progress = int(text_process_success_num / document_chunk_size * 100)
+        if text_process_success_num == document_chunk_size:
+            progress = 99
+
         _updata_document_progress(
             id=document_id,
             progress=progress,
@@ -994,7 +1046,7 @@ def _generate_qa_list(content, llm_config):
 
     # Generate the QA list.
     qa_list = []
-    if llm_spec_info.get("data").get("provider").get("worker"):
+    if llm_config.get("provider") == "worker":
         # get base url for configmap
         base_url = model_cr.get_worker_base_url_k8s_configmap(
             name=config.k8s_default_config, namespace=config.k8s_pod_namespace
@@ -1190,6 +1242,26 @@ def _updata_document_progress(id, progress, update_user, conn_pool):
         return {"status": 1000, "message": str(ex), "data": traceback.format_exc()}
 
 
+def _update_document_status_and_progress(id, status, progress, conn_pool):
+    try:
+        document_update_item = {"id": id, "status": status, "progress": progress}
+        data_process_document_db_operate.update_document_status_and_progress(
+            document_update_item, pool=conn_pool
+        )
+
+        return {"status": 200, "message": "", "data": ""}
+    except Exception as ex:
+        logger.error(
+            "".join(
+                [
+                    f"{log_tag_const.COMMON_HANDLE} update document status ",
+                    f"\n{traceback.format_exc()}",
+                ]
+            )
+        )
+        return {"status": 1000, "message": str(ex), "data": traceback.format_exc()}
+
+
 def _update_document_chunk_status_and_start_time(id, update_user, conn_pool):
     try:
         now = date_time_utils.now_str()
@@ -1292,8 +1364,8 @@ def _qa_remove_duplicate(qa_list, remove_duplicate_config, conn_pool):
     provider = remove_duplicate_config.get("embedding_provider")
     similarity = float(remove_duplicate_config.get("similarity"))
 
-    # llms cr 中模型相关信息
-    llm_spec_info = model_cr.get_spec_for_embedding_k8s_cr(name=name, namespace=namespace)
+    # embedding cr 中模型相关信息
+    embedding_spec_info = model_cr.get_spec_for_embedding_k8s_cr(name=name, namespace=namespace)
 
     if provider == "worker":
         # get base url for configmap
@@ -1319,11 +1391,11 @@ def _qa_remove_duplicate(qa_list, remove_duplicate_config, conn_pool):
         )
 
         remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
-        return remove_duplicate_loader.qa_remove_duplicate(qa_list, similarity)
+        return remove_duplicate_loader.remove_duplicate_qa_data(qa_list, similarity)
     else:
-        endpoint = llm_spec_info.get("data").get("provider").get("endpoint")
+        endpoint = embedding_spec_info.get("data").get("provider").get("endpoint")
         base_url = endpoint.get("url")
-        llm_type = llm_spec_info.get("data").get("type")
+        embedding_type = embedding_spec_info.get("data").get("type")
 
         logger.debug(
             "".join(
@@ -1332,12 +1404,12 @@ def _qa_remove_duplicate(qa_list, remove_duplicate_config, conn_pool):
                     f"name: {name}\n",
                     f"namespace: {namespace}\n",
                     f"model: {model}\n",
-                    f"llm_type: {llm_type}\n",
+                    f"embedding_type: {embedding_type}\n",
                 ]
             )
         )
 
-        if llm_type == "openai":
+        if embedding_type == "openai":
             qa_embeddings = OpenAIEmbeddings(
                 api_key="fake",
                 base_url=base_url,
@@ -1345,6 +1417,70 @@ def _qa_remove_duplicate(qa_list, remove_duplicate_config, conn_pool):
             )
 
             remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
-            return remove_duplicate_loader.qa_remove_duplicate(qa_list, similarity)
+            return remove_duplicate_loader.remove_duplicate_qa_data(qa_list, similarity)
         else:
-            return {"status": 1000, "message": f"暂时不支持{llm_type}类型的向量化模型模型", "data": ""}
+            return {"status": 1000, "message": f"暂时不支持{embedding_type}类型的向量化模型模型", "data": ""}
+
+
+def _embedding_qa(qa_list, remove_duplicate_config, conn_pool):
+    name = remove_duplicate_config.get("embedding_name")
+    namespace = remove_duplicate_config.get("embedding_namespace")
+    model = remove_duplicate_config.get("embedding_model")
+    provider = remove_duplicate_config.get("embedding_provider")
+
+    # embeddings cr 中模型相关信息
+    embedding_spec_info = model_cr.get_spec_for_embedding_k8s_cr(name=name, namespace=namespace)
+
+    if provider == "worker":
+        # get base url for configmap
+        base_url = model_cr.get_worker_base_url_k8s_configmap(
+            name=config.k8s_default_config, namespace=config.k8s_pod_namespace
+        )
+        logger.debug(
+            "".join(
+                [
+                    f"worker embedding \n",
+                    f"name: {name}\n",
+                    f"namespace: {namespace}\n",
+                    f"model: {model}\n",
+                    f"base_url: {base_url}\n",
+                ]
+            )
+        )
+
+        qa_embeddings = OpenAIEmbeddings(
+            api_key="fake",
+            base_url=base_url,
+            model=model,
+        )
+
+        remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
+        return remove_duplicate_loader.embedding_qa_data(qa_list)
+    else:
+        endpoint = embedding_spec_info.get("data").get("provider").get("endpoint")
+        base_url = endpoint.get("url")
+        embedding_type = embedding_spec_info.get("data").get("type")
+
+        logger.debug(
+            "".join(
+                [
+                    f"3rd_party embedding \n",
+                    f"name: {name}\n",
+                    f"namespace: {namespace}\n",
+                    f"model: {model}\n",
+                    f"embedding_type: {embedding_type}\n",
+                ]
+            )
+        )
+
+        if embedding_type == "openai":
+            qa_embeddings = OpenAIEmbeddings(
+                api_key="fake",
+                base_url=base_url,
+                model=model,
+            )
+
+            remove_duplicate_loader = QARemoveDuplicate(embeddings=qa_embeddings, pool=conn_pool)
+            return remove_duplicate_loader.embedding_qa_data(qa_list)
+        else:
+            return {"status": 1000, "message": f"暂时不支持{embedding_type}类型的向量化模型模型", "data": ""}

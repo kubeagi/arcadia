@@ -37,9 +37,9 @@ import (
 
 	apiretriever "github.com/kubeagi/arcadia/api/app-node/retriever/v1alpha1"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
+	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/pkg/auth"
 	"github.com/kubeagi/arcadia/apiserver/pkg/chat/storage"
-	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/common"
 	"github.com/kubeagi/arcadia/pkg/appruntime"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
@@ -53,14 +53,16 @@ import (
 )
 
 type ChatServer struct {
-	cli     runtimeclient.Client
-	storage storage.Storage
-	once    sync.Once
+	systemCli runtimeclient.Client
+	storage   storage.Storage
+	once      sync.Once
+	isGpts    bool
 }
 
-func NewChatServer(cli runtimeclient.Client) *ChatServer {
+func NewChatServer(cli runtimeclient.Client, isGpts bool) *ChatServer {
 	return &ChatServer{
-		cli: cli,
+		systemCli: cli,
+		isGpts:    isGpts,
 	}
 }
 
@@ -68,7 +70,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 	if cs.storage == nil {
 		cs.once.Do(func() {
 			ctx := context.TODO()
-			ds, err := pkgconfig.GetRelationalDatasource(ctx, cs.cli)
+			ds, err := pkgconfig.GetRelationalDatasource(ctx)
 			if err != nil || ds == nil {
 				if err != nil {
 					klog.Infof("get relational datasource failed: %s, use memory storage for chat", err.Error())
@@ -78,7 +80,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 				cs.storage = storage.NewMemoryStorage()
 				return
 			}
-			pg, err := datasource.GetPostgreSQLPool(ctx, cs.cli, ds)
+			pg, err := datasource.GetPostgreSQLPool(ctx, cs.systemCli, ds)
 			if err != nil {
 				klog.Errorf("get postgresql pool failed : %s", err.Error())
 				cs.storage = storage.NewMemoryStorage()
@@ -104,7 +106,7 @@ func (cs *ChatServer) Storage() storage.Storage {
 }
 
 func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream chan string, messageID string, timeout *float64) (*ChatRespBody, error) {
-	app, c, err := cs.GetApp(ctx, req.APPName, req.AppNamespace)
+	app, err := cs.GetApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +152,13 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 		Query:  req.Query,
 		Answer: "",
 	})
-	appRun, err := appruntime.NewAppOrGetFromCache(ctx, c, app)
+	// since authenticattion already passed by http handler,we should use chatserver's client which is also the system client to new/ini appruntime
+	appRun, err := appruntime.NewAppOrGetFromCache(ctx, cs.systemCli, app)
 	if err != nil {
 		return nil, err
 	}
 	klog.FromContext(ctx).Info("begin to run application", "appName", req.APPName, "appNamespace", req.AppNamespace)
-	out, err := appRun.Run(ctx, c, respStream, appruntime.Input{Question: req.Query, Files: req.Files, NeedStream: req.ResponseMode.IsStreaming(), History: history, ConversationID: req.ConversationID})
+	out, err := appRun.Run(ctx, cs.systemCli, respStream, appruntime.Input{Question: req.Query, Files: req.Files, NeedStream: req.ResponseMode.IsStreaming(), History: history, ConversationID: req.ConversationID})
 	if err != nil {
 		return nil, err
 	}
@@ -183,31 +186,31 @@ func (cs *ChatServer) AppRun(ctx context.Context, req ChatReqBody, respStream ch
 
 func (cs *ChatServer) ListConversations(ctx context.Context, req APPMetadata) ([]storage.Conversation, error) {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
-	return cs.Storage().ListConversations(storage.WithAppNamespace(req.AppNamespace), storage.WithAppName(req.APPName), storage.WithUser(currentUser), storage.WithUser(currentUser))
+	return cs.Storage().ListConversations(storage.WithAppNamespace(req.AppNamespace), storage.WithAppName(req.APPName), storage.WithUser(currentUser))
 }
 
 func (cs *ChatServer) DeleteConversation(ctx context.Context, conversationID string) error {
 	currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
 	// Note: in pg table, this data is marked as deleted, deleted_at column is not null. the pdf in minio is not deleted. we only delete the conversation knowledgebase.
 	// delete conversation knowledgebase if it exists
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
+	// when delete is successful, it means currentuser is the creator of this conversation
+	err := cs.Storage().Delete(storage.WithConversationID(conversationID), storage.WithUser(currentUser))
 	if err != nil {
-		return fmt.Errorf("failed to get a client: %w", err)
-	}
-	kbList := &v1alpha1.KnowledgeBaseList{}
-	if err = runtimeclient.IgnoreNotFound(c.List(ctx, kbList, runtimeclient.MatchingFields(map[string]string{"metadata.name": conversationID}))); err != nil {
 		return err
 	}
+	kbList := &v1alpha1.KnowledgeBaseList{}
+	if err = runtimeclient.IgnoreNotFound(cs.systemCli.List(ctx, kbList, runtimeclient.MatchingFields(map[string]string{"metadata.name": conversationID}))); err != nil {
+		return err
+	}
+	// delete when conversation knowledgebase found(only one conversation knowledgebase at most)
 	if len(kbList.Items) == 1 {
 		kb := &kbList.Items[0]
-		if err = c.Delete(ctx, kb); err != nil {
-			return err
+		if err = cs.systemCli.Delete(ctx, kb); err != nil {
+			klog.Errorf("conversation %s deleted but knowledgebase for this conversation failed to delete: %s", conversationID, err.Error())
+			return fmt.Errorf("failed to delete conversation knowledgebase:%s", err.Error())
 		}
-	} else if len(kbList.Items) > 1 {
-		return fmt.Errorf("multiple conversation knowledgebases found")
 	}
-	return cs.Storage().Delete(storage.WithConversationID(conversationID), storage.WithUser(currentUser))
+	return nil
 }
 
 func (cs *ChatServer) ListMessages(ctx context.Context, req ConversationReqBody) (storage.Conversation, error) {
@@ -236,7 +239,7 @@ func (cs *ChatServer) GetMessageReferences(ctx context.Context, req MessageReqBo
 
 // ListPromptStarters PromptStarter are examples for users to help them get up and running with the application quickly. We use same name with chatgpt
 func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, limit int) (promptStarters []string, err error) {
-	app, c, err := cs.GetApp(ctx, req.APPName, req.AppNamespace)
+	app, err := cs.GetApp(ctx, req.APPName, req.AppNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -250,19 +253,19 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			switch baseNode.Kind() {
 			case "llmchain":
 				ch := appruntimechain.NewLLMChain(baseNode)
-				if err := ch.Init(ctx, c, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init llmchain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
 			case "retrievalqachain":
 				ch := appruntimechain.NewRetrievalQAChain(baseNode)
-				if err := ch.Init(ctx, c, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init retrievalqachain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
 			case "apichain":
 				ch := appruntimechain.NewAPIChain(baseNode)
-				if err := ch.Init(ctx, c, nil); err != nil {
+				if err := ch.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init apichain err:%s, will use empty chain config", err)
 				}
 				chainOptions = appruntimechain.GetChainOptions(ch.Instance.Spec.CommonChainConfig)
@@ -273,14 +276,14 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 			switch baseNode.Kind() {
 			case "llm":
 				l := llm.NewLLM(baseNode)
-				if err := l.Init(ctx, c, nil); err != nil {
+				if err := l.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init llm err:%s, abort", err)
 					return nil, err
 				}
 				model = l.Model
 			case "knowledgebase":
 				k := knowledgebase.NewKnowledgebase(baseNode)
-				if err := k.Init(ctx, c, nil); err != nil {
+				if err := k.Init(ctx, cs.systemCli, nil); err != nil {
 					klog.Infof("init knowledgebase err:%s, abort", err)
 					return nil, err
 				}
@@ -292,7 +295,7 @@ func (cs *ChatServer) ListPromptStarters(ctx context.Context, req APPMetadata, l
 	content := bytes.Buffer{}
 	// if there is a knowledgebase, use it to generate prompt starter
 	if kb != nil {
-		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, c, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit * 2}, map[string]any{"question": "开始"})
+		outArg, finish, err := retriever.GenerateKnowledgebaseRetriever(ctx, cs.systemCli, kb.Name, kb.Namespace, apiretriever.CommonRetrieverConfig{NumDocuments: limit * 2}, map[string]any{"question": "开始"})
 		if err != nil {
 			return nil, err
 		}
@@ -388,20 +391,18 @@ Requires language consistent with the information, no restating of my words, que
 ---
 The question you asked is:`
 
-func (cs *ChatServer) GetApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, runtimeclient.Client, error) {
-	token := auth.ForOIDCToken(ctx)
-	c, err := client.GetClient(token)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get a client: %w", err)
-	}
+func (cs *ChatServer) GetApp(ctx context.Context, appName, appNamespace string) (*v1alpha1.Application, error) {
 	app := &v1alpha1.Application{}
-	if err := c.Get(ctx, types.NamespacedName{Namespace: appNamespace, Name: appName}, app); err != nil {
-		return nil, c, fmt.Errorf("failed to get application: %w", err)
+	if err := cs.systemCli.Get(ctx, types.NamespacedName{Namespace: appNamespace, Name: appName}, app); err != nil {
+		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
 	if !app.Status.IsReady() {
-		return nil, c, fmt.Errorf("application not ready: %s", app.Status.GetCondition(v1alpha1.TypeReady).Message)
+		return nil, fmt.Errorf("application not ready: %s", app.Status.GetCondition(v1alpha1.TypeReady).Message)
 	}
-	return app, c, nil
+	if !cs.IsGPTUserHasPermissionForApp(ctx, app) {
+		return nil, fmt.Errorf("user don't have permission for app: %s", app.Name)
+	}
+	return app, nil
 }
 
 // todo Reuse the flow without having to rebuild req same, not finish, Flow doesn't start with/contain nodes that depend on incomingInput.question
@@ -421,7 +422,7 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 		i++
 	}
 	result := make([]string, len(appMap))
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 	g.SetLimit(10)
 	for key, index := range appMap {
 		key, index := key, index
@@ -433,13 +434,7 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 			}
 			app.Name = name
 			app.Namespace = ns
-			link, err := common.AppIconLink(ctx, app, cs.cli)
-			if err != nil {
-				// FIXME: Currently, there is a request for an application that cannot be found in a conversation in the database,
-				// causing other conversations to be unable to add icons, so an error is encountered here and no error is returned.
-				klog.Errorf("failed to get application %s in namespace %s, error %s", name, ns, err)
-				return nil
-			}
+			link := common.AppIconLink(app, config.GetConfig().PlaygroundEndpointPrefix)
 			result[index] = link
 			return nil
 		})
@@ -452,4 +447,21 @@ func (cs *ChatServer) FillAppIconToConversations(ctx context.Context, conversati
 		(*conversations)[i] = c
 	}
 	return nil
+}
+
+func (cs *ChatServer) IsGPTUserHasPermissionForApp(ctx context.Context, app *v1alpha1.Application) (ok bool) {
+	if !cs.isGpts {
+		return true
+	}
+	// currentUser, _ := ctx.Value(auth.UserNameContextKey).(string)
+	if app.Spec.IsPublic {
+		return true
+	}
+	gptCofig, err := pkgconfig.GetGPTsConfig(ctx, cs.systemCli)
+	if err != nil {
+		klog.FromContext(ctx).Error(err, "failed to get gpt config")
+		return false
+	}
+	publicNs := gptCofig.PublicNamespace
+	return app.Namespace == publicNs
 }

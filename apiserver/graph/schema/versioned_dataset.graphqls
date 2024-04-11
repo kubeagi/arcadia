@@ -86,6 +86,11 @@ type F {
     文件版本列表
     """
     versions: [String!]
+
+    """
+    文件最新版本
+    """
+    latestVersion: String
 }
 
 """

@@ -25,7 +25,9 @@ import (
 
 	"github.com/kubeagi/arcadia/apiserver/config"
 	"github.com/kubeagi/arcadia/apiserver/docs"
+	"github.com/kubeagi/arcadia/apiserver/pkg/client"
 	"github.com/kubeagi/arcadia/apiserver/pkg/oidc"
+	pkgconfig "github.com/kubeagi/arcadia/pkg/config"
 )
 
 func Cors() gin.HandlerFunc {
@@ -55,6 +57,8 @@ func NewServerAndRun(conf config.ServerConfig) {
 	if conf.EnableOIDC {
 		oidc.InitOIDCArgs(conf.IssuerURL, conf.MasterURL, conf.ClientSecret, conf.ClientID)
 	}
+	systemcli, _ := client.GetClient(nil)
+	pkgconfig.InitSystemClient(systemcli)
 
 	bffGroup := r.Group("/bff")
 

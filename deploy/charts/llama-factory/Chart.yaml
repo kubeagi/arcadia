@@ -1,0 +1,19 @@
+apiVersion: v2
+name: llama-factory
+version: 0.0.1
+appVersion: 0.6.1
+description: llama-factory
+type: application
+
+keywords:
+  - llama-factory
+  - model tune
+sources:
+  - https://github.com/hiyouga/LLaMA-Factory
+maintainers:
+  - name: huangqg
+    url: https://github.com/huangqg
+  - name: bjwswang
+    url: https://github.com/bjwswang
+  - name: Lanture1064
+    url: https://github.com/Lanture1064

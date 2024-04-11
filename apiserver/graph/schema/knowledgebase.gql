@@ -47,6 +47,7 @@ query listKnowledgeBases($input: ListKnowledgeBaseInput!){
                 updateTimestamp
                 timeCost
                 version
+                latestVersion
             }
           }
         }
@@ -100,6 +101,7 @@ query getKnowledgeBase($name: String!, $namespace: String!) {
                 updateTimestamp
                 timeCost
                 version
+                latestVersion
             }
           }
     }
@@ -151,6 +153,7 @@ mutation createKnowledgeBase($input: CreateKnowledgeBaseInput!) {
                 updateTimestamp
                 timeCost
                 version
+                latestVersion
             }
           }
     }
@@ -202,6 +205,7 @@ mutation updateKnowledgeBase($input: UpdateKnowledgeBaseInput) {
                 updateTimestamp
                 timeCost
                 version
+                latestVersion
             }
           }
     }

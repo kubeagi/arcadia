@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-llama-factory
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-llama-factory
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-llama-factory
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-llama-factory
+    spec:
+      containers:
+      - image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        name: llama-factory
+        ports:
+        - containerPort: 7860
+          protocol: TCP
+        resources: {{ toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+          {{- if ne .Values.volume.hfcache "" }}
+          - name: hf-cache
+            mountPath: /root/.cache/huggingface/
+          {{- end }}
+          {{- if ne .Values.volume.data "" }}
+          - name: data
+            mountPath: /app/data
+          {{- end }}
+          {{- if ne .Values.volume.output "" }}
+          - name: output
+            mountPath: /app/output
+          {{- end }}
+      volumes:
+        {{- if ne .Values.volume.hfcache "" }}
+        - name: hf-cache
+          hostPath:
+            path: {{ .Values.volume.hfcache }}
+            type: "Directory"
+        {{- end }}
+        {{- if ne .Values.volume.data "" }}
+        - name: data
+          hostPath:
+            path: {{ .Values.volume.data }}
+            type: "Directory"
+        {{- end }}
+        {{- if ne .Values.volume.output "" }}
+        - name: output
+          hostPath:
+            path: {{ .Values.volume.output }}
+            type: "Directory"
+        {{- end }}
+      terminationGracePeriodSeconds: 30
