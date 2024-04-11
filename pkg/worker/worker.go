@@ -273,9 +273,10 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 		case Panic:
 			return err
 		case Update:
-			if err = podWorker.c.Update(ctx, pvc); err != nil {
-				return err
-			}
+			// DO NOT UPDATE PVC which is easily caused a conflict
+			// if err = podWorker.c.Update(ctx, pvc); err != nil {
+			// 	return err
+			// }
 		case Create:
 			err = podWorker.c.Create(ctx, pvc)
 			if err != nil {
