@@ -17,7 +17,8 @@ RUN apt-get update -y && apt-get install -y python3-distutils curl python3-pip p
 ARG PYTHON_INDEX_URL=https://pypi.mirrors.ustc.edu.cn/simple/
 
 WORKDIR /git
-RUN git clone https://github.com/lm-sys/FastChat.git
+RUN git clone https://github.com/lanture1064/FastK8ts.git
 
-WORKDIR /git/FastChat
+WORKDIR /git/FastK8ts
 RUN pip install --upgrade pip -i ${PYTHON_INDEX_URL} && pip install -e . -i ${PYTHON_INDEX_URL}
+RUN pip install pydantic==1.10.11 -i ${PYTHON_INDEX_URL}

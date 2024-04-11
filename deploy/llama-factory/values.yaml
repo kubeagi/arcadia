@@ -1,0 +1,23 @@
+image: kubeagi/llama-factory:v0.6.1
+imagePullPolicy: IfNotPresent
+resources:
+  limits:
+    cpu: "4"
+    memory: 12Gi
+    nvidia.com/gpu: "1"
+  requests:
+    cpu: "1"
+    memory: 1Gi
+    nvidia.com/gpu: "1"
+
+volume:
+  model: /path/to/model/or/cache
+  data: /path/to/data
+  output: /path/to/output
+
+# ingress configurations for component
+ingress:
+  # set enable to `true` to enable ingress
+  enable: true
+  ingressClassName: portal-ingress
+  ingressDomain: your.domain.nip.io

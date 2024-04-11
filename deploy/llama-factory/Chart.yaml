@@ -1,0 +1,15 @@
+apiVersion: v2
+name: llama-factory
+version: 0.1.1
+appVersion: 0.1.0
+description: llama-factory
+type: application
+
+keywords:
+  - llama-factory
+  - model tune
+sources:
+  - https://github.com/huangqg/LLaMA-Factory
+maintainers:
+  - name: huangqg
+    url: https://github.com/huangqg
