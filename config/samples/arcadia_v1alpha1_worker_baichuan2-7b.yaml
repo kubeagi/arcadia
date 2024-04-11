@@ -25,7 +25,7 @@ spec:
     image: kubeagi/minio-mc:RELEASE.2023-01-28T20-29-38Z
     imagePullPolicy: IfNotPresent
   runner: 
-    image: kubeagi/arcadia-fastchat-worker:v0.2.36
+    image: kubeagi/arcadia-fastchat-worker:vllm-v0.4.0-hotfix
     imagePullPolicy: IfNotPresent
   resources:
     limits:

@@ -112,7 +112,7 @@ func (l *APIChain) Run(ctx context.Context, _ client.Client, args map[string]any
 	out, err = handleNoErrNoOut(ctx, needStream, out, err, l.APIChain, args, options)
 	klog.FromContext(ctx).V(5).Info("use apichain, blocking out:" + out)
 	if err == nil {
-		args[base.OutputAnserKeyInArg] = out
+		args[base.OutputAnswerKeyInArg] = out
 		return args, nil
 	}
 	return args, fmt.Errorf("apichain run error: %w", err)
