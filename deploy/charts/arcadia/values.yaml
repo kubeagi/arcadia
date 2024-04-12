@@ -37,7 +37,7 @@ config:
 controller:
   # 1: error 3:info 5:debug
   loglevel: 3
-  image: kubeagi/arcadia:v0.2.1-20240401-b80e4e4
+  image: kubeagi/arcadia:v0.2.2
   imagePullPolicy: IfNotPresent
   resources:
     limits:
@@ -51,7 +51,7 @@ controller:
 # related project: https://github.com/kubeagi/arcadia/tree/main/apiserver
 apiserver:
   loglevel: 3
-  image: kubeagi/arcadia:v0.2.1-20240401-b80e4e4
+  image: kubeagi/arcadia:v0.2.2
   enableplayground: false
   port: 8081
   ingress:
@@ -70,7 +70,7 @@ apiserver:
 opsconsole:
   enabled: true
   kubebbEnabled: true
-  image: kubeagi/ops-console:v0.2.1-20240401-2e63d80
+  image: kubeagi/ops-console:v0.2.2
   ingress:
     path: kubeagi-portal-public
     host: portal.<replaced-ingress-nginx-ip>.nip.io
@@ -81,7 +81,7 @@ gpts:
   # all gpt resources are public in this namespace
   public_namespace: gpts
   agentportal:
-    image: kubeagi/agent-portal:v0.1.0-20240401-bc9e42d
+    image: kubeagi/agent-portal:v0.1.0-20240411-e26a310
     ingress:
       path: ""
       host: gpts.<replaced-ingress-nginx-ip>.nip.io
@@ -91,7 +91,7 @@ fastchat:
   enabled: true
   image:
     repository: kubeagi/arcadia-fastchat
-    tag: v0.2.36
+    tag: v0.2.36-patch
   ingress:
     enabled: true
     host: fastchat-api.<replaced-ingress-nginx-ip>.nip.io
@@ -131,7 +131,7 @@ minio:
 # Related project: https://github.com/kubeagi/arcadia/tree/main/data-processing
 dataprocess:
   enabled: true
-  image: kubeagi/data-processing:v0.2.1
+  image: kubeagi/data-processing:v0.2.2
   port: 28888
   config:
     llm:
