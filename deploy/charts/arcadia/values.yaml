@@ -11,6 +11,7 @@ global:
     hostAliases:
       - hostnames:
           - portal.<replaced-ingress-nginx-ip>.nip.io
+          - k8s.<replaced-ingress-nginx-ip>.nip.io
           - gpts.<replaced-ingress-nginx-ip>.nip.io
           - minio-api.<replaced-ingress-nginx-ip>.nip.io
           - fastchat-api.<replaced-ingress-nginx-ip>.nip.io
