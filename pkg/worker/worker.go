@@ -299,11 +299,13 @@ func (podWorker *PodWorker) BeforeStart(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = podWorker.c.Get(ctx, types.NamespacedName{Namespace: svc.Namespace, Name: svc.Name}, &corev1.Service{})
+	tmpSvc := &corev1.Service{}
+	err = podWorker.c.Get(ctx, types.NamespacedName{Namespace: svc.Namespace, Name: svc.Name}, tmpSvc)
 	switch ActionOnError(err) {
 	case Panic:
 		return err
 	case Update:
+		svc = tmpSvc
 		if err := podWorker.c.Update(ctx, svc); err != nil {
 			return err
 		}
@@ -607,6 +609,7 @@ func (podWorker *PodWorker) Stop(ctx context.Context) error {
 func (podWorker *PodWorker) State(ctx context.Context) (any, error) {
 	podList := &corev1.PodList{}
 	err := podWorker.c.List(ctx, podList, &client.ListOptions{
+		Namespace: podWorker.w.Namespace,
 		LabelSelector: labels.Set{
 			arcadiav1alpha1.WorkerPodSelectorLabel: podWorker.SuffixedName(),
 		}.AsSelector(),
