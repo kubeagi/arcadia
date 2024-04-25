@@ -980,50 +980,6 @@
                 }
             }
         },
-        "/chat/conversations/:conversationID": {
-            "delete": {
-                "description": "delete one conversation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "delete one conversation",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "conversationID",
-                        "name": "conversationID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/chat.SimpleResp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/chat.ErrorResp"
-                        }
-                    }
-                }
-            }
-        },
         "/chat/conversations/file": {
             "post": {
                 "description": "receive conversational files for one conversation",
@@ -1071,6 +1027,50 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/chat.ChatRespBody"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ErrorResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations/{conversationID}": {
+            "delete": {
+                "description": "delete one conversation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "delete one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "conversationID",
+                        "name": "conversationID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chat.SimpleResp"
                         }
                     },
                     "400": {
@@ -1141,7 +1141,7 @@
                 }
             }
         },
-        "/chat/messages/:messageID/references": {
+        "/chat/messages/{messageID}/references": {
             "post": {
                 "description": "get one message's references",
                 "consumes": [
@@ -1460,6 +1460,138 @@
                     }
                 }
             }
+        },
+        "/{repo}/revisions": {
+            "get": {
+                "description": "get the revisions of the model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forward"
+                ],
+                "summary": "get the revisions of the model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model ID",
+                        "name": "modelid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "huggingface of modelscope",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "only for huggingface",
+                        "name": "REPOTOKEN",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/forwardrepo.Revision"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{repo}/summary": {
+            "get": {
+                "description": "get the summary of the model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forward"
+                ],
+                "summary": "get the summary of the model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "model ID",
+                        "name": "modelid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "branch or tag, default is main",
+                        "name": "revision",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "huggingface of modelscope",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "only for huggingface",
+                        "name": "REPOTOKEN",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.SummaryResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1727,6 +1859,34 @@
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "forwardrepo.BranchTag": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "targetCommit": {
+                    "type": "string"
+                }
+            }
+        },
+        "forwardrepo.Revision": {
+            "type": "object",
+            "properties": {
+                "branches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/forwardrepo.BranchTag"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/forwardrepo.BranchTag"
+                    }
                 }
             }
         },
@@ -2010,6 +2170,14 @@
                     "type": "boolean"
                 },
                 "uploadID": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.SummaryResp": {
+            "type": "object",
+            "properties": {
+                "summary": {
                     "type": "string"
                 }
             }

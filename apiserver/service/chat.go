@@ -299,7 +299,7 @@ func (cs *ChatService) ListConversationHandler() gin.HandlerFunc {
 // @Success		200				{object}	chat.SimpleResp
 // @Failure		400				{object}	chat.ErrorResp
 // @Failure		500				{object}	chat.ErrorResp
-// @Router			/chat/conversations/:conversationID [delete]
+// @Router			/chat/conversations/{conversationID} [delete]
 func (cs *ChatService) DeleteConversationHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conversationID := c.Param("conversationID")
@@ -364,7 +364,7 @@ func (cs *ChatService) HistoryHandler() gin.HandlerFunc {
 // @Success		200			{object}	[]retriever.Reference
 // @Failure		400			{object}	chat.ErrorResp
 // @Failure		500			{object}	chat.ErrorResp
-// @Router			/chat/messages/:messageID/references [post]
+// @Router			/chat/messages/{messageID}/references [post]
 func (cs *ChatService) ReferenceHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		messageID := c.Param("messageID")

@@ -52,6 +52,20 @@ type (
 	}
 )
 
+// @Summary	get the summary of the model
+// @Schemes
+// @Description	get the summary of the model
+// @Tags			forward
+// @Accept			json
+// @Produce		json
+// @Param			modelid		query		string	true	"model ID"
+// @Param			revision	query		string	false	"branch or tag, default is main"
+// @Param			repo		path		string	true	"huggingface of modelscope"
+// @Param			REPOTOKEN	header		string	false	"only for huggingface"
+// @Success		200			{object}	SummaryResp
+// @Failure		400			{object}	map[string]string
+// @Failure		500			{object}	map[string]string
+// @Router			/{repo}/summary [get]
 func (f *FrowarAPI) Summary(ctx *gin.Context) {
 	modelID := ctx.Query(queryModelID)
 	revision := ctx.DefaultQuery(queryParamRevision, "main")
@@ -96,6 +110,19 @@ func (f *FrowarAPI) Summary(ctx *gin.Context) {
 	})
 }
 
+// @Summary	get the revisions of the model
+// @Schemes
+// @Description	get the revisions of the model
+// @Tags			forward
+// @Accept			json
+// @Produce		json
+// @Param			modelid		query		string	true	"model ID"
+// @Param			repo		path		string	true	"huggingface of modelscope"
+// @Param			REPOTOKEN	header		string	false	"only for huggingface"
+// @Success		200			{object}	forwardrepo.Revision
+// @Failure		400			{object}	map[string]string
+// @Failure		500			{object}	map[string]string
+// @Router			/{repo}/revisions [get]
 func (f *FrowarAPI) Revisions(ctx *gin.Context) {
 	modelID := ctx.Query(queryModelID)
 	repo := ctx.Param(pathParamRepo)
