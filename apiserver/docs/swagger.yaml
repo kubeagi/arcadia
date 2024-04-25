@@ -192,6 +192,24 @@ definitions:
       version:
         type: string
     type: object
+  forwardrepo.BranchTag:
+    properties:
+      name:
+        type: string
+      targetCommit:
+        type: string
+    type: object
+  forwardrepo.Revision:
+    properties:
+      branches:
+        items:
+          $ref: '#/definitions/forwardrepo.BranchTag'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/forwardrepo.BranchTag'
+        type: array
+    type: object
   rag.RadarData:
     properties:
       color:
@@ -386,6 +404,11 @@ definitions:
       uploadID:
         type: string
     type: object
+  service.SummaryResp:
+    properties:
+      summary:
+        type: string
+    type: object
   service.WebCrawlerFileBody:
     properties:
       datasource:
@@ -515,6 +538,94 @@ info:
   title: ApiServer Swagger API
   version: "1.0"
 paths:
+  /{repo}/revisions:
+    get:
+      consumes:
+      - application/json
+      description: get the revisions of the model
+      parameters:
+      - description: model ID
+        in: query
+        name: modelid
+        required: true
+        type: string
+      - description: huggingface of modelscope
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: only for huggingface
+        in: header
+        name: REPOTOKEN
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/forwardrepo.Revision'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: get the revisions of the model
+      tags:
+      - forward
+  /{repo}/summary:
+    get:
+      consumes:
+      - application/json
+      description: get the summary of the model
+      parameters:
+      - description: model ID
+        in: query
+        name: modelid
+        required: true
+        type: string
+      - description: branch or tag, default is main
+        in: query
+        name: revision
+        type: string
+      - description: huggingface of modelscope
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: only for huggingface
+        in: header
+        name: REPOTOKEN
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.SummaryResp'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: get the summary of the model
+      tags:
+      - forward
   /bff/icon:
     get:
       consumes:
@@ -1163,7 +1274,7 @@ paths:
       summary: list all conversations
       tags:
       - application
-  /chat/conversations/:conversationID:
+  /chat/conversations/{conversationID}:
     delete:
       consumes:
       - application/json
@@ -1270,7 +1381,7 @@ paths:
       summary: get all messages history for one conversation
       tags:
       - application
-  /chat/messages/:messageID/references:
+  /chat/messages/{messageID}/references:
     post:
       consumes:
       - application/json
