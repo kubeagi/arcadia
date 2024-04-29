@@ -1,0 +1,10 @@
+# Use vllm 0.4.1 and ray will be 2.11.0 for now
+# python version is py3.10.12
+FROM vllm/vllm-openai:v0.4.1
+
+# wget for health check and ray for default packages
+RUN apt-get install -y curl wget && pip install 'ray[default]' -i https://pypi.mirrors.ustc.edu.cn/simple/
+
+# Patch for vllm and can be remove once https://github.com/vllm-project/vllm/issues/2683 is fixed
+COPY vllm-patched/serving_chat.py /usr/local/lib/python3.10/dist-packages/vllm/entrypoints/openai/serving_chat.py
+COPY vllm-patched/serving_engine.py /usr/local/lib/python3.10/dist-packages/vllm/entrypoints/openai/serving_engine.py
