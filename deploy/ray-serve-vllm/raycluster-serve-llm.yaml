@@ -1,0 +1,118 @@
+apiVersion: ray.io/v1
+kind: RayService
+metadata:
+  name: rayservice-sample
+  namespace: kuberay-system
+spec:
+  # serveConfigV2 takes a yaml multi-line scalar, which should be a Ray Serve multi-application config. See https://docs.ray.io/en/latest/serve/multi-app.html.
+  serviceUnhealthySecondThreshold: 900
+  deploymentUnhealthySecondThreshold: 300
+  serveConfigV2: |
+    applications:
+      - name: llm-serving-app
+        import_path: llm-serving:deployment
+        route_prefix: /
+        runtime_env:
+          working_dir: FILE:///vllm-workspace/llm-app.zip
+        deployments:
+          - name: VLLMPredictDeployment
+            num_replicas: 1
+  rayClusterConfig:
+    rayVersion: '2.11.0' # should match the Ray version in the image of the containers
+    ######################headGroupSpecs#################################
+    # Ray head pod template.
+    headGroupSpec:
+      # The `rayStartParams` are used to configure the `ray start` command.
+      # See https://github.com/ray-project/kuberay/blob/master/docs/guidance/rayStartParams.md for the default settings of `rayStartParams` in KubeRay.
+      # See https://docs.ray.io/en/latest/cluster/cli.html#ray-start for all available options in `rayStartParams`.
+      rayStartParams:
+        resources: '"{\"accelerator_type_cpu\": 4}"'
+        dashboard-host: '0.0.0.0'
+      #pod template
+      template:
+        spec:
+          volumes:
+          # mount the model from hostPath
+          - name: model-data
+            hostPath:
+              path: /data/models
+              type: Directory
+          - name: tz-config
+            hostPath:
+              path: /etc/localtime
+          containers:
+            - name: ray-head
+              image: vllm/vllm-openai:ray-2.11.0-py3.10.12-llm-app
+              #image: rayproject/ray-ml:2.10.0-py310-zip
+              resources:
+                limits:
+                  cpu: 4
+                  memory: 16Gi
+                requests:
+                  cpu: 2
+                  memory: 2Gi
+              ports:
+                - containerPort: 6379
+                  name: gcs-server
+                - containerPort: 8265 # Ray dashboard
+                  name: dashboard
+                - containerPort: 10001
+                  name: client
+                - containerPort: 8000
+                  name: serve
+              volumeMounts:
+              - mountPath: /data/models
+                name: model-data
+              - name: tz-config
+                mountPath: /etc/localtime
+    workerGroupSpecs:
+      # the pod replicas in this group typed worker
+      - replicas: 1
+        minReplicas: 0
+        maxReplicas: 5
+        # logical group name, for this called small-group, also can be functional
+        groupName: small-group
+        # The `rayStartParams` are used to configure the `ray start` command.
+        # See https://github.com/ray-project/kuberay/blob/master/docs/guidance/rayStartParams.md for the default settings of `rayStartParams` in KubeRay.
+        # See https://docs.ray.io/en/latest/cluster/cli.html#ray-start for all available options in `rayStartParams`.
+        rayStartParams:
+          resources: '"{\"accelerator_type_cpu\": 4, \"accelerator_type_3090\": 1}"'
+        #pod template
+        template:
+          spec:
+            volumes:
+            - name: model-data
+              hostPath:
+                path: /NFS/125_bakup/models
+                type: Directory
+            - name: tz-config
+              hostPath:
+                path: /etc/localtime
+            - name: dshm
+              emptyDir:
+                medium: Memory
+                sizeLimit: "5.24Gi"
+            containers:
+              - name: ray-worker # must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name',  or '123-abc'
+                #image: rayproject/ray-ml:2.10.0-py310-zip
+                image: vllm/vllm-openai:ray-2.11.0-py3.10.12-llm-app
+                lifecycle:
+                  preStop:
+                    exec:
+                      command: ["/bin/sh","-c","ray stop"]
+                resources:
+                  limits:
+                    cpu: "4"
+                    memory: "16Gi"
+                    nvidia.com/gpu: 1
+                  requests:
+                    cpu: "2"
+                    memory: "2Gi"
+                    nvidia.com/gpu: 1
+                volumeMounts:
+                - mountPath: /data/models
+                  name: model-data
+                - name: tz-config
+                  mountPath: /etc/localtime
+                - mountPath: /dev/shm
+                  name: dshm
