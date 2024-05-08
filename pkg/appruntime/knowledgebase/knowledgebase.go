@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	appnode "github.com/kubeagi/arcadia/api/app-node"
 	"github.com/kubeagi/arcadia/api/base/v1alpha1"
 	"github.com/kubeagi/arcadia/pkg/appruntime/base"
 )
@@ -39,6 +40,9 @@ func NewKnowledgebase(baseNode base.BaseNode) *Knowledgebase {
 }
 
 func (k *Knowledgebase) Init(ctx context.Context, cli client.Client, _ map[string]any) error {
+	if appnode.IsPlaceholderConversationKnowledgebase(k.Ref.Name) {
+		return nil
+	}
 	instance := &v1alpha1.KnowledgeBase{}
 	if err := cli.Get(ctx, types.NamespacedName{Namespace: k.RefNamespace(), Name: k.Ref.Name}, instance); err != nil {
 		return fmt.Errorf("can't find the knowledgebase in cluster: %w", err)
@@ -47,10 +51,9 @@ func (k *Knowledgebase) Init(ctx context.Context, cli client.Client, _ map[strin
 	return nil
 }
 
-func (k *Knowledgebase) Run(_ context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
-	return args, nil
-}
-
 func (k *Knowledgebase) Ready() (isReady bool, msg string) {
+	if appnode.IsPlaceholderConversationKnowledgebase(k.Ref.Name) {
+		return true, ""
+	}
 	return k.Instance.Status.IsReadyOrGetReadyMessage()
 }

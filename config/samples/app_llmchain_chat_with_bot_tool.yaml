@@ -116,3 +116,5 @@ spec:
         blacklist: "login,signup,signin,register,logout,download,redirect" # the url endpoints to be excluded from the scraping, default value is login,signup,signin,register,logout,download,redirect
   options:
     maxIterations: 5
+    memory:
+      conversionWindowSize: 10

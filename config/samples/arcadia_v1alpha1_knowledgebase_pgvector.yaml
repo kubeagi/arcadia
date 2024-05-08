@@ -22,3 +22,27 @@ spec:
     files:
     - path: qa.csv
     - path: chunk.csv
+---
+apiVersion: arcadia.kubeagi.k8s.com.cn/v1alpha1
+kind: KnowledgeBase
+metadata:
+  name: knowledgebase-sample-pgvector2
+  namespace: arcadia
+spec:
+  displayName: "测试 KnowledgeBase 2"
+  description: "测试 KnowledgeBase 2"
+  embedder:
+    kind: Embedders
+    name: embedders-sample
+    namespace: arcadia
+  vectorStore:
+    kind: VectorStores
+    name: pgvector-sample
+    namespace: arcadia
+  fileGroups:
+    - source:
+        kind: VersionedDataset
+        name: dataset-playground-v1
+        namespace: arcadia
+      files:
+        - path: CODE_OF_CONDUCT.md

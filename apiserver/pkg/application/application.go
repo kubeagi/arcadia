@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	appnode "github.com/kubeagi/arcadia/api/app-node"
 	apiagent "github.com/kubeagi/arcadia/api/app-node/agent/v1alpha1"
 	apichain "github.com/kubeagi/arcadia/api/app-node/chain/v1alpha1"
 	apidocumentloader "github.com/kubeagi/arcadia/api/app-node/documentloader/v1alpha1"
@@ -65,7 +66,7 @@ func addDefaultValue(gApp *generated.Application, app *v1alpha1.Application) {
 	if len(app.Spec.Nodes) > 0 {
 		return
 	}
-	gApp.DocNullReturn = pointer.String("未找到您询问的内容，请详细描述您的问题")
+	// gApp.DocNullReturn = pointer.String("未找到您询问的内容，请详细描述您的问题")
 	gApp.NumDocuments = pointer.Int(5)
 	gApp.ScoreThreshold = pointer.Float64(0.3)
 	gApp.Temperature = pointer.Float64(0.7)
@@ -136,9 +137,10 @@ func cr2app(prompt *apiprompt.Prompt, chainConfig *apichain.CommonChainConfig, r
 		case "llm":
 			gApp.Llm = node.Ref.Name
 		case "knowledgebase":
-			gApp.Knowledgebase = pointer.String(node.Ref.Name)
+			gApp.Knowledgebases = append(gApp.Knowledgebases, pointer.String(node.Ref.Name))
 		}
 	}
+	gApp.Knowledgebase = ConvertKnowledgebases2Knowledgebase(gApp.Knowledgebases) // nolint:staticcheck
 	if retriever != nil {
 		gApp.ScoreThreshold = pointer.Float64(float64(pointer.Float32Deref(retriever.ScoreThreshold, 0.0)))
 		gApp.NumDocuments = pointer.Int(retriever.NumDocuments)
@@ -429,6 +431,9 @@ func ListApplicationMeatadatas(ctx context.Context, c client.Client, input gener
 }
 
 func UpdateApplicationConfig(ctx context.Context, c client.Client, input generated.UpdateApplicationConfigInput) (*generated.Application, error) {
+	input.Knowledgebases = ConvertKnowledgebase2Knowledgebases(input.Knowledgebase, input.Knowledgebases)                       // nolint:staticcheck
+	hasKnowledgebaseOrEnableUpload := utils.HasValues(input.Knowledgebases) || pointer.BoolDeref(input.EnableUploadFile, false) // input has knowledgebases or enable upload file(may have conversation knowledgebase)
+	// check tool name not duplicated
 	if len(input.Tools) != 0 {
 		key := make(map[string]bool, len(input.Tools))
 		for _, tool := range input.Tools {
@@ -438,6 +443,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			key[tool.Name] = true
 		}
 	}
+
 	key := types.NamespacedName{Namespace: input.Namespace, Name: input.Name}
 	// get application cr, if not exist, return error
 	app := &v1alpha1.Application{}
@@ -510,12 +516,53 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}
 	}
 
+	// create or update placeholder conversation knowledgebase, if enable upload file
+	var (
+		conversationKnowledgebaseRetriever *apiretriever.KnowledgeBaseRetriever
+	)
+	// note: no need to create placeholder conversation knowledgebase cr, it will be replaced by true conversation knowledgebase in appruntime
+	if pointer.BoolDeref(input.EnableUploadFile, false) {
+		conversationKnowledgebaseRetriever = &apiretriever.KnowledgeBaseRetriever{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name + "-" + appnode.ConversationKnowledgebaseName,
+				Namespace: input.Namespace,
+			},
+			Spec: apiretriever.KnowledgeBaseRetrieverSpec{
+				CommonSpec: v1alpha1.CommonSpec{
+					DisplayName: "retriever",
+					Description: "retriever",
+				},
+				CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
+					ScoreThreshold: pointer.Float32(float32(pointer.Float64Deref(input.ScoreThreshold, apiretriever.DefaultScoreThreshold))),
+					NumDocuments:   pointer.IntDeref(input.NumDocuments, apiretriever.DefaultNumDocuments),
+				},
+			},
+		}
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, conversationKnowledgebaseRetriever, func() error {
+			if input.ScoreThreshold != nil {
+				conversationKnowledgebaseRetriever.Spec.ScoreThreshold = pointer.Float32(float32(*input.ScoreThreshold))
+			}
+			conversationKnowledgebaseRetriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, conversationKnowledgebaseRetriever.Spec.NumDocuments)
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+	} else {
+		conversationKnowledgebaseRetriever = &apiretriever.KnowledgeBaseRetriever{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name + "-" + appnode.ConversationKnowledgebaseName,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, conversationKnowledgebaseRetriever)
+	}
+
 	// create or update chain
 	var (
 		chainConfig *apichain.CommonChainConfig
 		retriever   *apiretriever.CommonRetrieverConfig
 	)
-	if utils.HasValue(input.Knowledgebase) {
+	if hasKnowledgebaseOrEnableUpload {
 		qachain := &apichain.RetrievalQAChain{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
@@ -547,6 +594,13 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}); err != nil {
 			return nil, err
 		}
+		llmchain := &apichain.LLMChain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, llmchain)
 		chainConfig = &qachain.Spec.CommonChainConfig
 	} else {
 		llmchain := &apichain.LLMChain{
@@ -580,43 +634,88 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}); err != nil {
 			return nil, err
 		}
+		qachain := &apichain.RetrievalQAChain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, qachain)
 		chainConfig = &llmchain.Spec.CommonChainConfig
 	}
 
 	// create or update retrievers
-	// knowledgebaseRetriever (must have) -> multiQueryRetriever (optional) -> rerankRetriever (optional) -> Output
-	hasKnowledgebaseRetriever := utils.HasValue(input.Knowledgebase)
+	//                                                                       (must have)                        (must have)             (optional)                  (optional)
+	// knowledgebase1                                            ->     knowledgebaseRetriever1
+	// knowledgebase2                                            ->     knowledgebaseRetriever2     -->        mergerRetriever   -->   multiQueryRetriever  -->   rerankRetriever -->  Output
+	// conversation knowledgebase (placeholder or has true data) ->     knowledgebaseRetriever3
+	hasKnowledgebaseRetriever := hasKnowledgebaseOrEnableUpload
 	hasMultiQueryRetriever := hasKnowledgebaseRetriever && pointer.BoolDeref(input.EnableMultiQuery, false)
 	hasRerankRetriever := hasKnowledgebaseRetriever && pointer.BoolDeref(input.EnableRerank, false)
 	rerankModel := ""
 	var knowledgebaseRetriever *apiretriever.KnowledgeBaseRetriever
 	if hasKnowledgebaseRetriever {
-		knowledgebaseRetriever = &apiretriever.KnowledgeBaseRetriever{
+		for i := range input.Knowledgebases {
+			indexStr := fmt.Sprintf("-%d", i)
+			if i == 0 {
+				// Compatible with previous versions when there is only one knowledgebase
+				indexStr = ""
+			}
+			knowledgebaseRetriever = &apiretriever.KnowledgeBaseRetriever{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      input.Name + indexStr,
+					Namespace: input.Namespace,
+					Labels: map[string]string{
+						"application": input.Name,
+					},
+				},
+				Spec: apiretriever.KnowledgeBaseRetrieverSpec{
+					CommonSpec: v1alpha1.CommonSpec{
+						DisplayName: "retriever",
+						Description: "retriever",
+					},
+					CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
+						ScoreThreshold: pointer.Float32(float32(pointer.Float64Deref(input.ScoreThreshold, apiretriever.DefaultScoreThreshold))),
+						NumDocuments:   pointer.IntDeref(input.NumDocuments, apiretriever.DefaultNumDocuments),
+					},
+				},
+			}
+			if _, err = controllerutil.CreateOrUpdate(ctx, c, knowledgebaseRetriever, func() error {
+				if input.ScoreThreshold != nil {
+					knowledgebaseRetriever.Spec.ScoreThreshold = pointer.Float32(float32(*input.ScoreThreshold))
+				}
+				knowledgebaseRetriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, knowledgebaseRetriever.Spec.NumDocuments)
+				return nil
+			}); err != nil {
+				return nil, err
+			}
+			retriever = &knowledgebaseRetriever.Spec.CommonRetrieverConfig
+		}
+	} else {
+		knowledgebaseRetriever = &apiretriever.KnowledgeBaseRetriever{}
+		_ = c.DeleteAllOf(ctx, knowledgebaseRetriever, client.InNamespace(input.Namespace), client.MatchingLabels{"application": input.Name})
+	}
+
+	if hasKnowledgebaseRetriever {
+		mergerRetriever := &apiretriever.MergerRetriever{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
 				Namespace: input.Namespace,
 			},
-			Spec: apiretriever.KnowledgeBaseRetrieverSpec{
-				CommonSpec: v1alpha1.CommonSpec{
-					DisplayName: "retriever",
-					Description: "retriever",
-				},
-				CommonRetrieverConfig: apiretriever.CommonRetrieverConfig{
-					ScoreThreshold: pointer.Float32(float32(pointer.Float64Deref(input.ScoreThreshold, apiretriever.DefaultScoreThreshold))),
-					NumDocuments:   pointer.IntDeref(input.NumDocuments, apiretriever.DefaultNumDocuments),
-				},
-			},
 		}
-		if _, err = controllerutil.CreateOrUpdate(ctx, c, knowledgebaseRetriever, func() error {
-			if input.ScoreThreshold != nil {
-				knowledgebaseRetriever.Spec.ScoreThreshold = pointer.Float32(float32(*input.ScoreThreshold))
-			}
-			knowledgebaseRetriever.Spec.NumDocuments = pointer.IntDeref(input.NumDocuments, knowledgebaseRetriever.Spec.NumDocuments)
+		if _, err = controllerutil.CreateOrUpdate(ctx, c, mergerRetriever, func() error {
 			return nil
 		}); err != nil {
 			return nil, err
 		}
-		retriever = &knowledgebaseRetriever.Spec.CommonRetrieverConfig
+	} else {
+		mergerRetriever := &apiretriever.MergerRetriever{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, mergerRetriever)
 	}
 
 	if hasMultiQueryRetriever {
@@ -653,7 +752,16 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 			return nil, err
 		}
 		retriever = &multiQueryRetriever.Spec.CommonRetrieverConfig
+	} else {
+		multiQueryRetriever := &apiretriever.MultiQueryRetriever{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, multiQueryRetriever)
 	}
+
 	if hasRerankRetriever {
 		rerankRetriever := &apiretriever.RerankRetriever{
 			ObjectMeta: metav1.ObjectMeta{
@@ -695,17 +803,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		if rerankRetriever.Spec.Model != nil {
 			rerankModel = rerankRetriever.Spec.Model.Name
 		}
-	}
-	if !hasMultiQueryRetriever {
-		multiQueryRetriever := &apiretriever.MultiQueryRetriever{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      input.Name,
-				Namespace: input.Namespace,
-			},
-		}
-		_ = c.Delete(ctx, multiQueryRetriever)
-	}
-	if !hasRerankRetriever {
+	} else {
 		reRankRetriever := &apiretriever.RerankRetriever{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      input.Name,
@@ -714,6 +812,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}
 		_ = c.Delete(ctx, reRankRetriever)
 	}
+
 	// create or update agent for tools
 	var agent *apiagent.Agent
 	if len(input.Tools) != 0 {
@@ -742,6 +841,14 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 		}); err != nil {
 			return nil, err
 		}
+	} else {
+		agent = &apiagent.Agent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      input.Name,
+				Namespace: input.Namespace,
+			},
+		}
+		_ = c.Delete(ctx, agent)
 	}
 
 	// update application
@@ -765,7 +872,7 @@ func UpdateApplicationConfig(ctx context.Context, c client.Client, input generat
 }
 
 func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfigInput, hasMultiQueryRetriever, hasRerankRetriever bool) error {
-	app.Spec.Nodes = redefineNodes(input.Knowledgebase, input.Namespace, input.Name, input.Llm, input.Tools, hasMultiQueryRetriever, hasRerankRetriever, input.EnableUploadFile)
+	app.Spec.Nodes = redefineNodes(input.Knowledgebases, input.Namespace, input.Name, input.Llm, input.Tools, hasMultiQueryRetriever, hasRerankRetriever, input.EnableUploadFile)
 	app.Spec.Prologue = pointer.StringDeref(input.Prologue, app.Spec.Prologue)
 	app.Spec.ShowRespInfo = pointer.BoolDeref(input.ShowRespInfo, app.Spec.ShowRespInfo)
 	app.Spec.ShowRetrievalInfo = pointer.BoolDeref(input.ShowRetrievalInfo, app.Spec.ShowRetrievalInfo)
@@ -779,7 +886,7 @@ func mutateApp(app *v1alpha1.Application, input generated.UpdateApplicationConfi
 }
 
 // redefineNodes redefine nodes in application
-func redefineNodes(knowledgebase *string, namespace string, name string, llmName string, tools []*generated.ToolInput, hasMultiQueryRetriever, hasRerankRetriever bool, enableUploadFile *bool) (nodes []v1alpha1.Node) {
+func redefineNodes(knowledgebases []*string, namespace string, name string, llmName string, tools []*generated.ToolInput, hasMultiQueryRetriever, hasRerankRetriever bool, enableUploadFile *bool) (nodes []v1alpha1.Node) {
 	nodes = []v1alpha1.Node{
 		{
 			NodeConfig: v1alpha1.NodeConfig{
@@ -808,41 +915,25 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 			},
 			NextNodeName: []string{"chain-node"},
 		},
-	}
-	if pointer.BoolDeref(enableUploadFile, false) {
-		nodes = append(nodes, v1alpha1.Node{
+		{
 			NodeConfig: v1alpha1.NodeConfig{
-				Name:        "documentloader-node",
-				DisplayName: "documentloader",
-				Description: "文档加载，可选",
+				Name:        "llm-node",
+				DisplayName: "llm",
+				Description: "设定大模型的访问信息",
 				Ref: &v1alpha1.TypedObjectReference{
 					APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
-					Kind:      "DocumentLoader",
-					Name:      name,
+					Kind:      "LLM",
+					Name:      llmName,
 					Namespace: &namespace,
 				},
 			},
 			NextNodeName: []string{"chain-node"},
-		})
-	}
-	nodes = append(nodes, v1alpha1.Node{
-		NodeConfig: v1alpha1.NodeConfig{
-			Name:        "llm-node",
-			DisplayName: "llm",
-			Description: "设定大模型的访问信息",
-			Ref: &v1alpha1.TypedObjectReference{
-				APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
-				Kind:      "LLM",
-				Name:      llmName,
-				Namespace: &namespace,
-			},
 		},
-		NextNodeName: []string{"chain-node"},
-	})
+	}
 	if len(tools) != 0 {
 		nodes[len(nodes)-1].NextNodeName = []string{"chain-node", "agent-node"}
 	}
-	if knowledgebase == nil {
+	if !utils.HasValues(knowledgebases) && !pointer.BoolDeref(enableUploadFile, false) {
 		nodes = append(nodes, v1alpha1.Node{
 			NodeConfig: v1alpha1.NodeConfig{
 				Name:        "chain-node",
@@ -858,50 +949,102 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 			NextNodeName: []string{"Output"},
 		})
 	} else {
+		for i, knowledgebase := range knowledgebases {
+			indexStr := fmt.Sprintf("-%d", i)
+			if i == 0 {
+				// Compatible with previous versions when there is only one knowledgebase
+				indexStr = ""
+			}
+			nodes = append(nodes,
+				v1alpha1.Node{
+					NodeConfig: v1alpha1.NodeConfig{
+						Name:        fmt.Sprintf("knowledgebase%s-node", indexStr),
+						DisplayName: "知识库",
+						Description: "连接知识库",
+						Ref: &v1alpha1.TypedObjectReference{
+							APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "KnowledgeBase",
+							Name:      pointer.StringDeref(knowledgebase, ""),
+							Namespace: &namespace,
+						},
+					},
+					NextNodeName: []string{fmt.Sprintf("retriever%s-node", indexStr)},
+				},
+				v1alpha1.Node{
+					NodeConfig: v1alpha1.NodeConfig{
+						Name:        fmt.Sprintf("retriever%s-node", indexStr),
+						DisplayName: "从知识库提取信息的retriever",
+						Description: "连接应用和知识库",
+						Ref: &v1alpha1.TypedObjectReference{
+							APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "KnowledgeBaseRetriever",
+							Name:      fmt.Sprintf("%s%s", name, indexStr),
+							Namespace: &namespace,
+						},
+					},
+					NextNodeName: []string{"mergerretriever-node"},
+				})
+		}
+		if pointer.BoolDeref(enableUploadFile, false) {
+			nodes = append(nodes,
+				v1alpha1.Node{
+					NodeConfig: v1alpha1.NodeConfig{
+						Name:        "conversation-knowledgebase-node",
+						DisplayName: "会话知识库",
+						Description: "连接会话知识库，包含会话中上传的文件",
+						Ref: &v1alpha1.TypedObjectReference{
+							APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "KnowledgeBase",
+							Name:      appnode.ConversationKnowledgebaseName,
+							Namespace: &namespace,
+						},
+					},
+					NextNodeName: []string{"conversation-knowledgebase-retriever-node"},
+				},
+				v1alpha1.Node{
+					NodeConfig: v1alpha1.NodeConfig{
+						Name:        "conversation-knowledgebase-retriever-node",
+						DisplayName: "从会话知识库提取信息的retriever",
+						Description: "连接应用和知识库",
+						Ref: &v1alpha1.TypedObjectReference{
+							APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
+							Kind:      "KnowledgeBaseRetriever",
+							Name:      name + "-" + appnode.ConversationKnowledgebaseName,
+							Namespace: &namespace,
+						},
+					},
+					NextNodeName: []string{"mergerretriever-node"},
+				})
+		}
+		mergerRetrierNextNodeName := "chain-node"
+		multiqueryRetrieverNodeName := "chain-node"
+		switch {
+		case hasMultiQueryRetriever:
+			mergerRetrierNextNodeName = "multiqueryretriever-node"
+			if hasRerankRetriever {
+				multiqueryRetrieverNodeName = "rerankretriever-node"
+			}
+		case !hasMultiQueryRetriever && hasRerankRetriever:
+			mergerRetrierNextNodeName = "rerankretriever-node"
+		case !hasMultiQueryRetriever && !hasRerankRetriever:
+			mergerRetrierNextNodeName = "chain-node"
+		}
 		nodes = append(nodes,
 			v1alpha1.Node{
 				NodeConfig: v1alpha1.NodeConfig{
-					Name:        "knowledgebase-node",
-					DisplayName: "知识库",
-					Description: "连接知识库",
-					Ref: &v1alpha1.TypedObjectReference{
-						APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
-						Kind:      "KnowledgeBase",
-						Name:      pointer.StringDeref(knowledgebase, ""),
-						Namespace: &namespace,
-					},
-				},
-				NextNodeName: []string{"retriever-node"},
-			},
-			v1alpha1.Node{
-				NodeConfig: v1alpha1.NodeConfig{
-					Name:        "retriever-node",
-					DisplayName: "从知识库提取信息的retriever",
-					Description: "连接应用和知识库",
+					Name:        "mergerretriever-node",
+					DisplayName: "知识库合并retriever",
+					Description: "知识库合并retriever",
 					Ref: &v1alpha1.TypedObjectReference{
 						APIGroup:  pointer.String("retriever.arcadia.kubeagi.k8s.com.cn"),
-						Kind:      "KnowledgeBaseRetriever",
+						Kind:      "MergerRetriever",
 						Name:      name,
 						Namespace: &namespace,
 					},
 				},
-				NextNodeName: []string{"chain-node"},
+				NextNodeName: []string{mergerRetrierNextNodeName},
 			})
-		knowledgebaseRetrierNextNodeName := "chain-node"
-		switch {
-		case hasMultiQueryRetriever:
-			knowledgebaseRetrierNextNodeName = "multiqueryretriever-node"
-		case !hasMultiQueryRetriever && hasRerankRetriever:
-			knowledgebaseRetrierNextNodeName = "rerankretriever-node"
-		case !hasMultiQueryRetriever && !hasRerankRetriever:
-			knowledgebaseRetrierNextNodeName = "chain-node"
-		}
-		nodes[len(nodes)-1].NextNodeName = []string{knowledgebaseRetrierNextNodeName}
 		if hasMultiQueryRetriever {
-			nextNodeName := "chain-node"
-			if hasRerankRetriever {
-				nextNodeName = "rerankretriever-node"
-			}
 			nodes = append(nodes,
 				v1alpha1.Node{
 					NodeConfig: v1alpha1.NodeConfig{
@@ -915,7 +1058,7 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 							Namespace: &namespace,
 						},
 					},
-					NextNodeName: []string{nextNodeName},
+					NextNodeName: []string{multiqueryRetrieverNodeName},
 				})
 		}
 		if hasRerankRetriever {
@@ -951,6 +1094,7 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 				NextNodeName: []string{"Output"},
 			})
 	}
+
 	if len(tools) != 0 {
 		nodes = append(nodes, v1alpha1.Node{
 			NodeConfig: v1alpha1.NodeConfig{
@@ -967,6 +1111,24 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 			NextNodeName: []string{"chain-node"},
 		})
 	}
+
+	if pointer.BoolDeref(enableUploadFile, false) {
+		nodes = append(nodes, v1alpha1.Node{
+			NodeConfig: v1alpha1.NodeConfig{
+				Name:        "documentloader-node",
+				DisplayName: "documentloader",
+				Description: "文档加载，可选",
+				Ref: &v1alpha1.TypedObjectReference{
+					APIGroup:  pointer.String("arcadia.kubeagi.k8s.com.cn"),
+					Kind:      "DocumentLoader",
+					Name:      name,
+					Namespace: &namespace,
+				},
+			},
+			NextNodeName: []string{"chain-node"},
+		})
+	}
+
 	nodes = append(nodes, v1alpha1.Node{
 		NodeConfig: v1alpha1.NodeConfig{
 			Name:        "Output",
@@ -980,6 +1142,25 @@ func redefineNodes(knowledgebase *string, namespace string, name string, llmName
 		},
 	})
 	return nodes
+}
+
+// Deprecated: just for backward compatibility, should remove after new version
+func ConvertKnowledgebase2Knowledgebases(knowledgebase *string, knowledgebases []*string) []*string {
+	if knowledgebases != nil {
+		return knowledgebases
+	}
+	if knowledgebase == nil {
+		return nil
+	}
+	return []*string{knowledgebase}
+}
+
+// Deprecated: just for backward compatibility, should remove after new version
+func ConvertKnowledgebases2Knowledgebase(knowledgebases []*string) *string {
+	if len(knowledgebases) == 0 {
+		return nil
+	}
+	return knowledgebases[0]
 }
 
 func UploadIcon(ctx context.Context, client client.Client, icon, appName, namespace string) (string, error) {

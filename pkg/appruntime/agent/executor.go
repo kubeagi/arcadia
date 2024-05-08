@@ -23,6 +23,7 @@ import (
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/callbacks"
+	"github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/llms"
 	langchaingoschema "github.com/tmc/langchaingo/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -79,15 +80,21 @@ func (p *Executor) Run(ctx context.Context, cli client.Client, args map[string]a
 				agents.WithCallbacksHandler(streamHandler)(o)
 			}
 		}
-		agents.WithMemory(chain.GetMemory(llm, instance.Spec.AgentConfig.Options.Memory, history, "", ""))(o)
+		agents.WithMemory(chain.GetMemory(llm, instance.Spec.AgentConfig.Options.Memory, history, "input", ""))(o)
 	}
-	executor, err := agents.Initialize(llm, allowedTools, agents.ZeroShotReactDescription, executorOptions)
+	executor, err := agents.Initialize(llm, allowedTools, agents.ConversationalReactDescription, executorOptions)
 	if err != nil {
 		return args, fmt.Errorf("failed to initialize executor: %w", err)
 	}
+	executor.CallbacksHandler = log.KLogHandler{LogLevel: 3}
 	input := make(map[string]any)
-	input["input"] = fmt.Sprintf("%s, %s", instance.Spec.Prompt, args["question"])
-	response, err := executor.Call(ctx, input)
+	if instance.Spec.Prompt != "" {
+		input["input"] = fmt.Sprintf("%s, %s", instance.Spec.Prompt, args["question"])
+	} else {
+		input["input"] = args["question"]
+	}
+	// chains.Call will add history to args
+	response, err := chains.Call(ctx, executor, input)
 	if err != nil {
 		klog.FromContext(ctx).Error(err, "error when call agent")
 		// return args, fmt.Errorf("error when call agent: %w", err)

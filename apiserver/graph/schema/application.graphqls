@@ -60,9 +60,14 @@ type Application {
     conversionWindowSize: Int
 
     """
+    knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+    """
+    knowledgebases: [String]
+
+    """
     knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
     """
-    knowledgebase: String
+    knowledgebase: String @deprecated(reason: "Use knowledgebases")
 
     """
     scoreThreshold 最终返回结果的最低相似度
@@ -383,7 +388,12 @@ input UpdateApplicationConfigInput {
     """
     knowledgebase 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，目前一个应用只支持0或1个知识库
     """
-    knowledgebase: String
+    knowledgebase: String @deprecated(reason: "Use knowledgebases")
+
+    """
+    knowledgebases 指当前知识库应用使用的知识库，即 Kind 为 KnowledgeBase 的 CR 的名称，支持选择零个或一个或多个
+    """
+    knowledgebases: [String]
 
     """
     scoreThreshold 最终返回结果的最低相似度

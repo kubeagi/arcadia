@@ -55,6 +55,7 @@ const (
 	KnowledgebaseRetrieverIndexKey = "metadata.knowledgebaseretriever"
 	RerankRetrieverIndexKey        = "metadata.rerankretriever"
 	MultiQueryRetrieverIndexKey    = "metadata.multiqueryretriever"
+	MergerRetrieverIndexKey        = "metadata.mergerretriever"
 	AgentIndexKey                  = "metadata.agent"
 	DocumentLoaderIndexKey         = "metadata.documentloader"
 )
@@ -368,6 +369,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		{KnowledgebaseRetrieverIndexKey, "retriever", "knowledgebaseretriever"},
 		{RerankRetrieverIndexKey, "retriever", "rerankretriever"},
 		{MultiQueryRetrieverIndexKey, "retriever", "multiqueryretriever"},
+		{MergerRetrieverIndexKey, "retriever", "mergerretriever"},
 		{AgentIndexKey, "", "agent"},
 		{DocumentLoaderIndexKey, "", "documentloader"},
 	}
@@ -424,6 +426,7 @@ func (r *ApplicationReconciler) SetupWithManager(ctx context.Context, mgr ctrl.M
 		Watches(&source.Kind{Type: &retrieveralpha1.KnowledgeBaseRetriever{}}, getEventHandler(KnowledgebaseRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.RerankRetriever{}}, getEventHandler(RerankRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &retrieveralpha1.MultiQueryRetriever{}}, getEventHandler(MultiQueryRetrieverIndexKey)).
+		Watches(&source.Kind{Type: &retrieveralpha1.MergerRetriever{}}, getEventHandler(MergerRetrieverIndexKey)).
 		Watches(&source.Kind{Type: &agentv1alpha1.Agent{}}, getEventHandler(AgentIndexKey)).
 		Watches(&source.Kind{Type: &documentloaderv1alpha1.DocumentLoader{}}, getEventHandler(DocumentLoaderIndexKey)).
 		Complete(r)

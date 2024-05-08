@@ -25,8 +25,6 @@ import (
 	"strings"
 
 	langchaingoschema "github.com/tmc/langchaingo/schema"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -149,31 +147,11 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 		base.InputIsNeedStreamKeyInArg:             input.NeedStream,
 		base.LangchaingoChatMessageHistoryKeyInArg: input.History,
 		// Use an empty context before run
-		"context": "",
+		"context":                "",
+		base.ConversationIDInArg: input.ConversationID,
 	}
 	if a.Spec.DocNullReturn != "" {
 		out[base.APPDocNullReturn] = a.Spec.DocNullReturn
-	}
-	if input.ConversationID != "" { // means this is not a new conversation
-		conversationKnowledgebaseExist := true
-		kb := &arcadiav1alpha1.KnowledgeBase{}
-		err := cli.Get(ctx, types.NamespacedName{Namespace: a.Namespace, Name: input.ConversationID}, kb)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				conversationKnowledgebaseExist = false
-				// TODO We can search for whether there should be a conversation knowledgebase from the pg
-				klog.FromContext(ctx).V(5).Info("conversation knowledgebase not exist", "ConversationID", input.ConversationID)
-			} else {
-				return output, err
-			}
-		}
-		if conversationKnowledgebaseExist {
-			if kb.Status.IsReady() {
-				out[base.ConversationKnowledgeBaseInArg] = kb
-			} else {
-				klog.FromContext(ctx).V(3).Info("conversation knowledgebase not ready", "ConversationID", input.ConversationID)
-			}
-		}
 	}
 	visited := make(map[string]bool)
 	waitRunningNodes := list.New()
@@ -194,7 +172,6 @@ func (a *Application) Run(ctx context.Context, cli client.Client, respStream cha
 				waitRunningNodes.PushBack(e)
 				continue
 			}
-			klog.FromContext(ctx).V(3).Info(fmt.Sprintf("try to run node:%s", e.Name()))
 			defer func() {
 				if r := recover(); r != nil {
 					klog.FromContext(ctx).Info(fmt.Sprintf("Recovered from node:%s error:%s stack:%s", e.Name(), r, string(debug.Stack())))
@@ -253,7 +230,7 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		}
 	}()
 	baseNode := base.NewBaseNode(appNamespace, name, ref)
-	err = fmt.Errorf("unknown kind %s:%v", name, ref)
+	err = fmt.Errorf("unknown kind %s:%v, get group:%s kind:%s", name, ref, baseNode.Group(), baseNode.Kind())
 	switch baseNode.Group() {
 	case "chain":
 		switch baseNode.Kind() {
@@ -280,6 +257,9 @@ func InitNode(ctx context.Context, appNamespace, name string, ref arcadiav1alpha
 		case "multiqueryretriever":
 			logger.V(3).Info("initnode multiqueryretriever")
 			return retriever.NewMultiQueryRetriever(baseNode), nil
+		case "mergerretriever":
+			logger.V(3).Info("initnode mergerretriever")
+			return retriever.NewMergerRetriever(baseNode), nil
 		default:
 			return nil, err
 		}

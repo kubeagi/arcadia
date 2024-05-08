@@ -82,7 +82,8 @@ func (l KLogHandler) HandleStreamingFunc(ctx context.Context, chunk []byte) {
 	logger := klog.FromContext(ctx)
 	logger.WithValues("logger", "arcadia")
 	// Lower level for log streaming
-	logger.V(l.LogLevel + 1).Info("log streaming: " + string(chunk))
+	// maybe 6 is enough
+	logger.V(6).Info("log streaming: " + string(chunk))
 }
 
 func (l KLogHandler) HandleText(ctx context.Context, text string) {

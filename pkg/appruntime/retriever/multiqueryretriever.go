@@ -69,13 +69,12 @@ func (l *MultiQueryRetriever) Run(ctx context.Context, cli client.Client, args m
 		return args, errors.New("empty question")
 	}
 
-	v1, ok := args[base.LangchaingoRetrieverKeyInArg]
-	if !ok {
-		return args, errors.New("no retriever")
-	}
-	retriever, ok := v1.(langchainschema.Retriever)
-	if !ok {
-		return args, errors.New("retriever not schema.Retriever")
+	retrieversInArg, err := base.GetRetrieversFromArg(args)
+	if err != nil {
+		if errors.Is(err, base.ErrNoRetrievers) {
+			return args, nil
+		}
+		return args, err
 	}
 
 	v2, ok := args[base.LangchaingoLLMKeyInArg]
@@ -88,7 +87,7 @@ func (l *MultiQueryRetriever) Run(ctx context.Context, cli client.Client, args m
 	}
 	prompt := prompts.NewPromptTemplate(_defaultQueryTemplate, []string{"question"})
 	llmchain := chains.NewLLMChain(llm, prompt, chains.WithCallback(log.KLogHandler{LogLevel: 3}))
-	multiqueryRetriever := retrievers.NewMultiQueryRetriever(retriever, llmchain, true)
+	multiqueryRetriever := retrievers.NewMultiQueryRetriever(retrieversInArg[0], llmchain, true)
 	multiqueryRetriever.CallbacksHandler = log.KLogHandler{LogLevel: 3}
 	docs, err := multiqueryRetriever.GetRelevantDocuments(ctx, query)
 	if err != nil {
@@ -107,7 +106,7 @@ func (l *MultiQueryRetriever) Run(ctx context.Context, cli client.Client, args m
 	newDocs, newRef := ConvertDocuments(ctx, newDocs, "multiquery")
 	// note: the references in args will be replaced, not append
 	args[base.RuntimeRetrieverReferencesKeyInArg] = newRef
-	args[base.LangchaingoRetrieverKeyInArg] = &Fakeretriever{Docs: newDocs, Name: "MultiqueryRetriever"}
+	args[base.LangchaingoRetrieversKeyInArg] = []langchainschema.Retriever{&Fakeretriever{Docs: newDocs, Name: "MultiqueryRetriever"}}
 	return args, nil
 }
 

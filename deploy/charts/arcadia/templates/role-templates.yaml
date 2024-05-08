@@ -171,6 +171,7 @@ spec:
       - knowledgebaseretrievers
       - multiqueryretrievers
       - rerankretrievers
+      - mergerretrievers
       verbs:
       - create
       - delete
@@ -188,6 +189,7 @@ spec:
       - knowledgebaseretrievers/status
       - multiqueryretrievers/status
       - rerankretrievers/status
+      - mergerretrievers/status
       verbs:
       - get
       - patch

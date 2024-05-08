@@ -16,5 +16,6 @@ spec:
       files:
       - path: qa.csv
       - path: chunk.csv
+      - path: CODE_OF_CONDUCT.md
   released: 0
   version: v1

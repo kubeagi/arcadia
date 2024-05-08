@@ -25,7 +25,14 @@ import (
 const (
 	InputLengthAnnotationKey  = v1alpha1.Group + `/input-rules`
 	OutputLengthAnnotationKey = v1alpha1.Group + `/output-rules`
+
+	// ConversationKnowledgebaseName is the placeholder name of the conversation knowledgebase
+	ConversationKnowledgebaseName = "conversation-knowledgebase-placeholder"
 )
+
+func IsPlaceholderConversationKnowledgebase(name string) bool {
+	return name == ConversationKnowledgebaseName
+}
 
 type Ref struct {
 	Kind   string `json:"kind,omitempty"`

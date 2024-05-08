@@ -78,6 +78,7 @@ mutation updateApplicationConfig($input: UpdateApplicationConfigInput!){
             maxTokens
             conversionWindowSize
             knowledgebase
+            knowledgebases
             scoreThreshold
             numDocuments
             docNullReturn
@@ -131,6 +132,7 @@ query getApplication($name: String!, $namespace: String!){
             maxTokens
             conversionWindowSize
             knowledgebase
+            knowledgebases
             scoreThreshold
             numDocuments
             docNullReturn

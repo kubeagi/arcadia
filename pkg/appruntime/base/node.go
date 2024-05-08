@@ -111,8 +111,8 @@ func (c *BaseNode) Init(_ context.Context, _ client.Client, _ map[string]any) er
 	return nil
 }
 
-func (c *BaseNode) Run(_ context.Context, _ client.Client, _ map[string]any) (map[string]any, error) {
-	return nil, nil
+func (c *BaseNode) Run(_ context.Context, _ client.Client, args map[string]any) (map[string]any, error) {
+	return args, nil
 }
 
 func (c *BaseNode) Ready() (bool, string) {
