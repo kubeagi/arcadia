@@ -1,4 +1,4 @@
-# Arcadia: A diverse, simple, and secure one-stop LLMOps platform
+# Arcadia: A diverse, simple, and secure all-in-one LLMOps platform
 
 <div align="left">
   <p>
@@ -16,7 +16,7 @@
 
 ## What is Arcadia?
 
-**Arcadia** is a one-stop enterprise-grade LLMOps platform that provides a unified interface for developers and operators to build, debug,deploy and manage AI agents with a orchestration engine(**RAG(Retrieval Augmented Generation)** and **LLM finetuning** has been supported).
+**Arcadia** is a all-in-one enterprise-grade LLMOps platform that provides a unified interface for developers and operators to build, debug,deploy and manage AI agents with a orchestration engine(**RAG(Retrieval Augmented Generation)** and **LLM finetuning** has been supported).
 
 ## Features
 
